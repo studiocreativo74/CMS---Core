@@ -11,44 +11,21 @@ class Auth
         }
     }
 
-    public static function loginWithMagicCode(string $code): bool
+    public static function loginWithMagicCodeForEmail(string $email, string $code): bool
     {
         self::startSession();
 
-        $cleanCode = strtoupper(trim($code));
-        if ($cleanCode === '' || strlen($cleanCode) > 10) {
-            return false;
-        }
+        $record = MagicCode::verifyAdminCodeForEmail($email, $code);
+        if ($record !== null) {
+            session_regenerate_id(true);
 
-        try {
-            $candidates = DB::fetchAll(
-                "SELECT * FROM magic_codes 
-                 WHERE usage_type = 'admin_login' 
-                   AND used_count < max_uses 
-                   AND (expires_at IS NULL OR expires_at > NOW())"
-            );
-        } catch (\Throwable $e) {
-            return false;
-        }
+            $_SESSION['magic_authenticated'] = true;
+            $_SESSION['magic_code_id'] = (int) $record['id'];
+            $_SESSION['magic_email'] = (string) $record['email'];
 
-        foreach ($candidates as $row) {
-            if (password_verify($cleanCode, (string) ($row['code_hash'] ?? ''))) {
-                session_regenerate_id(true);
+            MagicCode::markUsed((int) $record['id']);
 
-                $_SESSION['magic_authenticated'] = true;
-                $_SESSION['magic_code_id'] = (int) $row['id'];
-
-                try {
-                    DB::execute(
-                        'UPDATE magic_codes SET used_count = used_count + 1, used_at = NOW() WHERE id = :id',
-                        ['id' => $row['id']]
-                    );
-                } catch (\Throwable $e) {
-                    // Update error handled gracefully
-                }
-
-                return true;
-            }
+            return true;
         }
 
         return false;
@@ -134,10 +111,11 @@ class Auth
         }
 
         if (!empty($_SESSION['magic_authenticated'])) {
+            $email = (string) ($_SESSION['magic_email'] ?? 'admin@magic-code');
             return [
                 'id' => 0,
                 'name' => 'Magic-Admin',
-                'email' => 'admin@magic-code',
+                'email' => $email,
                 'is_magic' => true,
             ];
         }
