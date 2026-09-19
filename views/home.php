@@ -4,8 +4,9 @@ declare(strict_types=1);
 $sessionEmail = $_SESSION['magic_input_email'] ?? null;
 $error = $error ?? ($_SESSION['flash_home_error'] ?? null);
 $success = $success ?? ($_SESSION['flash_home_success'] ?? null);
+$info = $info ?? ($_SESSION['flash_home_info'] ?? null);
 
-unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success']);
+unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success'], $_SESSION['flash_home_info']);
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -43,6 +44,11 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success']);
             color: #1e6b37;
             border: 1px solid #c2ebd0;
         }
+        .alert-info {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
         .card {
             border: 1px solid #e0e0e0;
             border-radius: 6px;
@@ -58,7 +64,6 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success']);
             font-weight: 600;
             margin-bottom: 0.35rem;
         }
-        .form-row input[type="text"],
         .form-row input[type="email"] {
             width: 100%;
             box-sizing: border-box;
@@ -117,11 +122,42 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success']);
             color: #1f2937;
             word-break: break-all;
         }
-        .code-input {
-            letter-spacing: 2px;
+        /* 10 einzelne Ziffern-Felder */
+        .code-digits-wrapper {
+            display: flex;
+            gap: 6px;
+            justify-content: space-between;
+            margin: 1rem 0;
+        }
+        .code-digit {
+            width: 38px;
+            height: 48px;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 600;
+            font-family: monospace, monospace;
             text-transform: uppercase;
-            font-family: monospace;
-            font-size: 1.1rem !important;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 0;
+            box-sizing: border-box;
+            background: #fff;
+            color: #111;
+        }
+        .code-digit:focus {
+            border-color: #0066cc;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+        }
+        @media (max-width: 480px) {
+            .code-digits-wrapper {
+                gap: 4px;
+            }
+            .code-digit {
+                width: 30px;
+                height: 42px;
+                font-size: 1.05rem;
+            }
         }
         .links {
             margin-top: 2rem;
@@ -145,6 +181,12 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success']);
     <?php if (!empty($error)): ?>
         <div class="alert alert-error">
             <p style="color: red; margin: 0;"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($info)): ?>
+        <div class="alert alert-info">
+            <p style="margin: 0;"><?= htmlspecialchars((string) $info, ENT_QUOTES, 'UTF-8') ?></p>
         </div>
     <?php endif; ?>
 
@@ -180,10 +222,22 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success']);
             </div>
 
             <p>Gib deinen 10-stelligen Magic Code ein:</p>
-            <form method="post" action="?route=magic-login">
-                <div class="form-row">
-                    <input type="text" name="magic_code" class="code-input" maxlength="10" required placeholder="ABCDE12345" autofocus>
+            <form method="post" action="?route=magic-login" id="magic_login_form">
+                <input type="hidden" name="magic_code" id="magic_code_hidden">
+
+                <div class="code-digits-wrapper" id="magic_code_container">
+                    <?php for ($i = 0; $i < 10; $i++): ?>
+                        <input type="text"
+                               class="code-digit"
+                               data-index="<?= $i ?>"
+                               maxlength="1"
+                               autocomplete="off"
+                               autocapitalize="characters"
+                               spellcheck="false"
+                               <?= $i === 0 ? 'autofocus' : '' ?>>
+                    <?php endfor; ?>
                 </div>
+
                 <div class="btn-group">
                     <button type="submit" class="btn">Code einloggen</button>
                 </div>
@@ -198,11 +252,83 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success']);
         </div>
     <?php endif; ?>
 
-    <div class="links">
-        <a href="?route=db-test">Zum DB-Test</a>
-        <?php if (!empty($_SESSION['magic_authenticated'])): ?>
+    <?php if (!empty($_SESSION['magic_authenticated'])): ?>
+        <div class="links">
             <a href="?route=admin">Zum Admin-Dashboard</a>
-        <?php endif; ?>
-    </div>
+        </div>
+    <?php endif; ?>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('magic_login_form');
+        if (!form) return;
+
+        const hiddenInput = document.getElementById('magic_code_hidden');
+        const inputs = Array.from(form.querySelectorAll('.code-digit'));
+
+        function updateHiddenValue() {
+            if (hiddenInput) {
+                hiddenInput.value = inputs.map(function(inp) {
+                    return inp.value.trim().toUpperCase();
+                }).join('');
+            }
+        }
+
+        inputs.forEach(function(input, index) {
+            // Nur Grossbuchstaben und Ziffern A-Z, 0-9 erlauben
+            input.addEventListener('input', function() {
+                const clean = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                this.value = clean.slice(0, 1);
+
+                if (this.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                    inputs[index + 1].select();
+                }
+                updateHiddenValue();
+            });
+
+            // Backspace-Sprung zum vorherigen Feld
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace') {
+                    if (this.value === '' && index > 0) {
+                        e.preventDefault();
+                        inputs[index - 1].focus();
+                        inputs[index - 1].value = '';
+                        updateHiddenValue();
+                    }
+                } else if (e.key === 'ArrowLeft' && index > 0) {
+                    e.preventDefault();
+                    inputs[index - 1].focus();
+                } else if (e.key === 'ArrowRight' && index < inputs.length - 1) {
+                    e.preventDefault();
+                    inputs[index + 1].focus();
+                }
+            });
+
+            // Unterstützung für Copy & Paste des gesamten Codes
+            input.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const pasteData = (e.clipboardData || window.clipboardData).getData('text') || '';
+                const cleanData = pasteData.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+                if (!cleanData) return;
+
+                let targetIndex = index;
+                for (let i = 0; i < cleanData.length && targetIndex < inputs.length; i++, targetIndex++) {
+                    inputs[targetIndex].value = cleanData[i];
+                }
+                updateHiddenValue();
+
+                const focusIndex = Math.min(targetIndex, inputs.length - 1);
+                inputs[focusIndex].focus();
+                inputs[focusIndex].select();
+            });
+        });
+
+        form.addEventListener('submit', function() {
+            updateHiddenValue();
+        });
+    });
+    </script>
 </body>
 </html>

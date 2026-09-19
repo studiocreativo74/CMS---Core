@@ -6,6 +6,11 @@ require_once __DIR__ . '/DB.php';
 require_once __DIR__ . '/core/Router.php';
 require_once __DIR__ . '/core/MagicCode.php';
 require_once __DIR__ . '/core/Auth.php';
+require_once __DIR__ . '/core/Mailer.php';
+require_once __DIR__ . '/core/Csrf.php';
+require_once __DIR__ . '/core/ModuleManager.php';
+require_once __DIR__ . '/core/User.php';
+require_once __DIR__ . '/core/Rbac.php';
 
 Auth::startSession();
 
@@ -119,7 +124,7 @@ $router->get('/logout', function (): void {
     exit;
 });
 
-// GET /admin - Streng geschützt: NUR erreichbar wenn magic_authenticated true ist
+// GET /admin - Admin Dashboard
 $router->get('/admin', function (): void {
     if (!Auth::checkMagic()) {
         header('Location: ?route=/');
@@ -128,19 +133,54 @@ $router->get('/admin', function (): void {
 
     $user = Auth::user();
     $magicCodes = MagicCode::getAll();
+    $currentRoute = 'admin';
     require __DIR__ . '/views/admin/dashboard.php';
 });
 
-// POST /admin/magic-code/create - Manueller Code-Generator im Dashboard
-$createCodeHandler = function (): void {
+// GET /admin/magic-codes - Vollständige Magic-Code-Verwaltung mit Filtern
+$router->get('/admin/magic-codes', function (): void {
     if (!Auth::checkMagic()) {
         header('Location: ?route=/');
         exit;
     }
 
+    $filters = [
+        'email' => (string) ($_GET['email'] ?? ''),
+        'status' => (string) ($_GET['status'] ?? 'all'),
+        'usage_type' => (string) ($_GET['usage_type'] ?? 'all'),
+        'date_from' => (string) ($_GET['date_from'] ?? ''),
+        'date_to' => (string) ($_GET['date_to'] ?? ''),
+    ];
+
+    $user = Auth::user();
+    $magicCodes = MagicCode::list($filters);
+    $currentRoute = 'admin/magic-codes';
+    require __DIR__ . '/views/admin/magic_codes.php';
+});
+
+// Helper zur CSRF- und Auth-Prüfung in POST-Routen
+$requireAdminAuthAndCsrf = function (string $redirectRoute = 'admin/magic-codes'): void {
+    if (!Auth::checkMagic()) {
+        header('Location: ?route=/');
+        exit;
+    }
+
+    if (!Csrf::validateRequest()) {
+        $_SESSION['flash_error'] = 'Ungültiges oder abgelaufenes CSRF-Sicherheitstoken. Bitte die Seite neu laden und die Aktion wiederholen.';
+        header('Location: ?route=' . $redirectRoute);
+        exit;
+    }
+};
+
+// POST /admin/magic-codes/create (und Alias /admin/magic-code/create)
+$createCodeHandler = function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/magic-codes');
+
     $email = trim((string) ($_POST['email'] ?? 'office@studiocreativo.ch'));
     if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $email = 'office@studiocreativo.ch';
+        $_SESSION['flash_error'] = 'Bitte eine gültige E-Mail-Adresse für den Magic-Code eingeben.';
+        header('Location: ?route=admin/magic-codes');
+        exit;
     }
 
     $usageType = in_array($_POST['usage_type'] ?? '', ['admin_login', 'frontend'], true)
@@ -168,14 +208,90 @@ $createCodeHandler = function (): void {
         $_SESSION['flash_error'] = 'Fehler beim Erstellen des Magic-Codes: ' . $e->getMessage();
     }
 
-    header('Location: ?route=admin');
+    header('Location: ?route=admin/magic-codes');
     exit;
 };
 
+$router->post('/admin/magic-codes/create', $createCodeHandler);
 $router->post('/admin/magic-code/create', $createCodeHandler);
 $router->post('/admin-create-code', $createCodeHandler);
 
+// POST /admin/magic-codes/deactivate - Deaktiviert/Sperrt einen Code
+$router->post('/admin/magic-codes/deactivate', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/magic-codes');
+
+    $id = (int) ($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        $_SESSION['flash_error'] = 'Ungültige Magic-Code-ID.';
+        header('Location: ?route=admin/magic-codes');
+        exit;
+    }
+
+    try {
+        MagicCode::deactivate($id);
+        $_SESSION['flash_success'] = "Magic-Code #{$id} wurde erfolgreich deaktiviert und gesperrt.";
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Deaktivieren des Codes: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/magic-codes');
+    exit;
+});
+
+// POST /admin/magic-codes/delete - Soft-Delete für einen Code
+$router->post('/admin/magic-codes/delete', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/magic-codes');
+
+    $id = (int) ($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        $_SESSION['flash_error'] = 'Ungültige Magic-Code-ID.';
+        header('Location: ?route=admin/magic-codes');
+        exit;
+    }
+
+    try {
+        MagicCode::softDelete($id);
+        $_SESSION['flash_success'] = "Magic-Code #{$id} wurde erfolgreich archiviert (Soft-Delete).";
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Löschen des Codes: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/magic-codes');
+    exit;
+});
+
+// POST /admin/magic-codes/resend - Neuen Code erzeugen & versenden
+$router->post('/admin/magic-codes/resend', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/magic-codes');
+
+    $id = (int) ($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        $_SESSION['flash_error'] = 'Ungültige Magic-Code-ID.';
+        header('Location: ?route=admin/magic-codes');
+        exit;
+    }
+
+    try {
+        $result = MagicCode::resendCode($id);
+        if ($result !== null) {
+            $_SESSION['flash_success'] = 'Ein frischer Magic-Code wurde generiert und erfolgreich an ' . htmlspecialchars($result['email'], ENT_QUOTES, 'UTF-8') . ' gesendet.';
+            $_SESSION['flash_created_code'] = $result['code'];
+        } else {
+            $_SESSION['flash_error'] = "Der Magic-Code #{$id} konnte nicht gefunden werden.";
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim erneuten Senden des Codes: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/magic-codes');
+    exit;
+});
+
+// Aktive Module laden (Routen & Hooks registrieren)
+ModuleManager::loadActiveModules(__DIR__ . '/modules', $router);
+
 $route = $_GET['route'] ?? '/';
+$currentRoute = (string) $route;
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 $router->dispatch($method, (string) $route);
