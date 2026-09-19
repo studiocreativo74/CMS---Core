@@ -115,6 +115,7 @@ final class Rbac
     /**
      * Prüft, ob ein User (oder die aktuelle Session) eine bestimmte Berechtigung hat.
      * WICHTIG: Wenn eine Magic-Code-Admin-Session aktiv ist, wird IMMER true zurückgegeben (Superadmin-Bypass).
+     * Ebenso wird für Benutzer mit der Rolle 'superadmin' immer true zurückgegeben.
      *
      * @param int|null $userId
      * @param string $permissionKey
@@ -122,7 +123,11 @@ final class Rbac
      */
     public static function userHasPermission(?int $userId, string $permissionKey): bool
     {
-        // 1. Superadmin-Bypass: Aktive Magic-Code-Admin-Session hat ausnahmslos alle Rechte
+        // =====================================================================
+        // 1. Superadmin-Bypass (Gewollt):
+        // Wenn eine Magic-Code-Admin-Session aktiv ist ($_SESSION['magic_authenticated'] === true),
+        // wird IMMER true zurückgegeben, egal ob ein user_id gesetzt ist oder nicht.
+        // =====================================================================
         if (!empty($_SESSION['magic_authenticated'])) {
             return true;
         }
@@ -140,7 +145,22 @@ final class Rbac
             }
         }
 
-        // 3. User-Rechte ermitteln und prüfen
+        // =====================================================================
+        // 3. Superadmin-Rollen-Bypass (Gewollt):
+        // Wenn der Benutzer die Rolle 'superadmin' besitzt, hat er uneingeschränkten Zugriff.
+        // =====================================================================
+        try {
+            $roles = self::getUserRoles($userId);
+            foreach ($roles as $role) {
+                if (($role['key'] ?? '') === 'superadmin') {
+                    return true;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Rollen-Tabelle existiert evtl. noch nicht
+        }
+
+        // 4. Reguläre User-Rechte aus Rollen ermitteln und prüfen
         $permissions = self::getUserPermissions($userId);
         return in_array($permissionKey, $permissions, true);
     }
@@ -153,7 +173,10 @@ final class Rbac
      */
     public static function can(string $permissionKey): bool
     {
-        // Magic-Code Session hat immer vollen Zugriff
+        // =====================================================================
+        // 1. Superadmin-Bypass (Gewollt):
+        // Magic-Code Session hat immer vollen Zugriff auf alle Bereiche
+        // =====================================================================
         if (!empty($_SESSION['magic_authenticated'])) {
             return true;
         }
