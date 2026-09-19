@@ -11,6 +11,19 @@ Auth::startSession();
 $router = new Router();
 
 $router->get('/', function (): void {
+    $error = $_GET['error'] ?? null;
+    require __DIR__ . '/views/home.php';
+});
+
+$router->post('/magic-login', function (): void {
+    $code = (string) ($_POST['magic_code'] ?? '');
+
+    if (Auth::loginWithMagicCode($code)) {
+        header('Location: ?route=admin');
+        exit;
+    }
+
+    $error = 'Ungültiger oder abgelaufener Magic-Code.';
     require __DIR__ . '/views/home.php';
 });
 
@@ -51,7 +64,7 @@ $router->get('/logout', function (): void {
 $router->get('/admin', function (): void {
     $user = Auth::user();
     if ($user === null) {
-        header('Location: ?route=login');
+        header('Location: ?route=/');
         exit;
     }
 
