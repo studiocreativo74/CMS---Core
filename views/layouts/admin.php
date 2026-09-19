@@ -71,33 +71,48 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #f8f9fa;
         }
-        .sidebar {
+        .sidebar,
+        #sidebarMenu,
+        .sidebar.offcanvas-md {
             min-height: calc(100vh - 56px);
-            background-color: #212529;
+            background-color: #212529 !important;
+            color: #f8f9fa !important;
         }
         @media (max-width: 767.98px) {
-            .sidebar {
+            .sidebar,
+            #sidebarMenu,
+            .sidebar.offcanvas-md {
                 min-height: 100vh;
+                background-color: #212529 !important;
             }
         }
         .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.75);
+            color: rgba(255, 255, 255, 0.85) !important;
             padding: 0.65rem 1rem;
             border-radius: 0.375rem;
             margin-bottom: 0.2rem;
             display: flex;
             align-items: center;
             font-size: 0.95rem;
+            text-decoration: none;
             transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
         }
         .sidebar .nav-link:hover {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.15) !important;
         }
         .sidebar .nav-link.active {
-            color: #fff;
-            background-color: #0d6efd;
+            color: #ffffff !important;
+            background-color: #0d6efd !important;
             font-weight: 600;
+        }
+        .sidebar .nav-link svg {
+            flex-shrink: 0;
+            color: rgba(255, 255, 255, 0.85);
+        }
+        .sidebar .nav-link:hover svg,
+        .sidebar .nav-link.active svg {
+            color: #ffffff;
         }
         .code-highlight {
             font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -134,8 +149,8 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar Navigation (Desktop sichtbar, Mobile als Offcanvas) -->
-            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar offcanvas-md offcanvas-start p-3 text-white" 
-                 tabindex="-1" aria-labelledby="sidebarMenuLabel">
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar offcanvas-md offcanvas-start p-3 bg-dark text-bg-dark" 
+                 data-bs-theme="dark" tabindex="-1" aria-labelledby="sidebarMenuLabel">
                 <div class="offcanvas-header d-md-none border-bottom border-secondary pb-2 mb-3">
                     <h5 class="offcanvas-title text-white" id="sidebarMenuLabel">CMS Admin</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Schließen"></button>

@@ -372,6 +372,262 @@ $router->post('/admin/magic-codes/resend', function () use ($requireAdminAuthAnd
     exit;
 });
 
+// =========================================================================
+// ROUTE-MAPPING FÜR DEN ADMIN-BEREICH (Navigation <-> Router-Pfade)
+// -------------------------------------------------------------------------
+// 1. Dashboard:         Link `?route=admin`            -> Pfad `/admin`
+// 2. Magic Codes:       Link `?route=admin/magic-codes`-> Pfad `/admin/magic-codes`
+// 3. Benutzer:          Link `?route=admin/users`      -> Pfad `/admin/users`
+// 4. Rollen & Rechte:   Link `?route=admin/roles`      -> Pfad `/admin/roles`
+// 5. Module:            Link `?route=admin/modules`    -> Pfad `/admin/modules`
+// 6. Activity / Logs:   Link `?route=admin/activity`   -> Pfad `/admin/activity`
+// =========================================================================
+
+// --- 3. BENUTZERVERWALTUNG (/admin/users) ---
+$router->get('/admin/users', function (): void {
+    if (!Auth::checkMagic() && !Auth::check()) {
+        header('Location: ?route=/');
+        exit;
+    }
+
+    if (class_exists('Rbac') && !Rbac::can('admin.users.view')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Sie haben keine Berechtigung für die Benutzerverwaltung.';
+        header('Location: ?route=admin');
+        exit;
+    }
+
+    $users = class_exists('User') ? User::all() : [];
+    $roles = class_exists('Rbac') ? Rbac::getAllRoles() : [];
+    $user = Auth::user();
+    $currentRoute = 'admin/users';
+    require __DIR__ . '/views/admin/users/index.php';
+});
+
+// POST /admin/users/create - Neuen Benutzer anlegen
+$router->post('/admin/users/create', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/users');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.users.manage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung zum Erstellen von Benutzern.';
+        header('Location: ?route=admin/users');
+        exit;
+    }
+
+    $name = trim((string) ($_POST['name'] ?? ''));
+    $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+    $password = (string) ($_POST['password'] ?? '');
+    $role = trim((string) ($_POST['role'] ?? 'admin'));
+    $isActive = !empty($_POST['is_active']) ? 1 : 0;
+
+    if ($name === '' || $email === '' || $password === '') {
+        $_SESSION['flash_error'] = 'Bitte Name, E-Mail-Adresse und Passwort angeben.';
+        header('Location: ?route=admin/users');
+        exit;
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['flash_error'] = 'Bitte eine gültige E-Mail-Adresse angeben.';
+        header('Location: ?route=admin/users');
+        exit;
+    }
+
+    try {
+        if (class_exists('User')) {
+            User::create([
+                'name' => $name,
+                'email' => $email,
+                'password' => $password,
+                'role' => $role,
+                'is_active' => $isActive,
+            ]);
+            $_SESSION['flash_success'] = "Benutzer '{$name}' ({$email}) wurde erfolgreich erstellt.";
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Erstellen des Benutzers: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/users');
+    exit;
+});
+
+// POST /admin/users/toggle - Benutzer aktivieren / deaktivieren
+$router->post('/admin/users/toggle', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/users');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.users.manage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung zum Bearbeiten von Benutzern.';
+        header('Location: ?route=admin/users');
+        exit;
+    }
+
+    $userId = (int) ($_POST['id'] ?? 0);
+    $active = (int) ($_POST['active'] ?? 0);
+
+    if ($userId <= 0) {
+        $_SESSION['flash_error'] = 'Ungültige Benutzer-ID.';
+        header('Location: ?route=admin/users');
+        exit;
+    }
+
+    try {
+        if (class_exists('User')) {
+            User::update($userId, ['is_active' => $active]);
+            $statusText = $active === 1 ? 'aktiviert' : 'deaktiviert';
+            $_SESSION['flash_success'] = "Benutzer #{$userId} wurde erfolgreich {$statusText}.";
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Aktualisieren des Benutzers: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/users');
+    exit;
+});
+
+// --- 4. ROLLEN & RECHTE (/admin/roles) ---
+$router->get('/admin/roles', function (): void {
+    if (!Auth::checkMagic() && !Auth::check()) {
+        header('Location: ?route=/');
+        exit;
+    }
+
+    if (class_exists('Rbac') && !Rbac::can('admin.roles.view')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Sie haben keine Berechtigung für Rollen & Rechte.';
+        header('Location: ?route=admin');
+        exit;
+    }
+
+    $roles = class_exists('Rbac') ? Rbac::getAllRoles() : [];
+    $permissions = class_exists('Rbac') ? Rbac::getAllPermissions() : [];
+    $user = Auth::user();
+    $currentRoute = 'admin/roles';
+    require __DIR__ . '/views/admin/roles/index.php';
+});
+
+// POST /admin/roles/permissions - Berechtigungen einer Rolle aktualisieren
+$router->post('/admin/roles/permissions', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/roles');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.roles.manage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung zur Rechteverwaltung.';
+        header('Location: ?route=admin/roles');
+        exit;
+    }
+
+    $roleId = (int) ($_POST['role_id'] ?? 0);
+    $permissionIds = isset($_POST['permissions']) && is_array($_POST['permissions'])
+        ? array_map('intval', $_POST['permissions'])
+        : [];
+
+    if ($roleId <= 0) {
+        $_SESSION['flash_error'] = 'Ungültige Rollen-ID.';
+        header('Location: ?route=admin/roles');
+        exit;
+    }
+
+    try {
+        if (class_exists('Rbac')) {
+            Rbac::setRolePermissions($roleId, $permissionIds);
+            $_SESSION['flash_success'] = 'Die Berechtigungen für diese Rolle wurden erfolgreich gespeichert.';
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Speichern der Berechtigungen: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/roles');
+    exit;
+});
+
+// --- 5. MODULVERWALTUNG (/admin/modules) ---
+$router->get('/admin/modules', function (): void {
+    if (!Auth::checkMagic() && !Auth::check()) {
+        header('Location: ?route=/');
+        exit;
+    }
+
+    if (class_exists('Rbac') && !Rbac::can('admin.modules.view')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Sie haben keine Berechtigung für die Modulverwaltung.';
+        header('Location: ?route=admin');
+        exit;
+    }
+
+    if (class_exists('ModuleManager')) {
+        ModuleManager::discover(__DIR__ . '/modules');
+    }
+
+    $modules = class_exists('ModuleManager') ? ModuleManager::all() : [];
+    $user = Auth::user();
+    $currentRoute = 'admin/modules';
+    require __DIR__ . '/views/admin/modules.php';
+});
+
+// POST /admin/modules/toggle - Modul aktivieren / deaktivieren
+$router->post('/admin/modules/toggle', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/modules');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.modules.manage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung zur Modulverwaltung.';
+        header('Location: ?route=admin/modules');
+        exit;
+    }
+
+    $key = trim((string) ($_POST['key'] ?? ''));
+    $enable = (int) ($_POST['enable'] ?? 0) === 1;
+
+    if ($key === '') {
+        $_SESSION['flash_error'] = 'Kein Modulschlüssel übergeben.';
+        header('Location: ?route=admin/modules');
+        exit;
+    }
+
+    try {
+        if (class_exists('ModuleManager')) {
+            ModuleManager::setEnabled($key, $enable);
+            $actionWord = $enable ? 'aktiviert' : 'deaktiviert';
+            $_SESSION['flash_success'] = "Modul '{$key}' wurde erfolgreich {$actionWord}.";
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Aktualisieren des Moduls: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/modules');
+    exit;
+});
+
+// POST /admin/modules/rescan - Dateisystem nach neuen Modulen scannen
+$router->post('/admin/modules/rescan', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/modules');
+
+    try {
+        if (class_exists('ModuleManager')) {
+            $found = ModuleManager::discover(__DIR__ . '/modules');
+            $_SESSION['flash_success'] = 'Dateisystem wurde erfolgreich gescannt. ' . count($found) . ' Modul(e) synchronisiert.';
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Scannen des Dateisystems: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/modules');
+    exit;
+});
+
+// --- 6. AKTIVITÄT & LOGS (/admin/activity) ---
+$router->get('/admin/activity', function (): void {
+    if (!Auth::checkMagic() && !Auth::check()) {
+        header('Location: ?route=/');
+        exit;
+    }
+
+    if (class_exists('Rbac') && !Rbac::can('admin.activity.view')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Sie haben keine Berechtigung für Protokolle.';
+        header('Location: ?route=admin');
+        exit;
+    }
+
+    $user = Auth::user();
+    $currentRoute = 'admin/activity';
+    require __DIR__ . '/views/admin/activity.php';
+});
+
 // Aktive Module laden (Routen & Hooks registrieren)
 ModuleManager::loadActiveModules(__DIR__ . '/modules', $router);
 

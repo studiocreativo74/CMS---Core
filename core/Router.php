@@ -24,44 +24,42 @@ class Router
     }
 
     /**
+     * Normalisiert einen Pfad: Führendes '/', kein abschließendes '/' (außer Root), Query-Parameter entfernen.
+     */
+    private function normalizePath(string $path): string
+    {
+        $path = explode('?', $path, 2)[0];
+        $trimmed = trim($path, '/');
+        return $trimmed === '' ? '/' : '/' . $trimmed;
+    }
+
+    /**
      * Prüft, ob ein Pfad für eine HTTP-Methode registriert ist.
      */
     public function has(string $path, string $method = 'GET'): bool
     {
         $method = strtoupper($method);
-        if ($path === '') {
-            $path = '/';
-        }
-        if (!str_starts_with($path, '/')) {
-            $path = '/' . $path;
-        }
-        return isset($this->routes[$method][$path]);
+        $normalized = $this->normalizePath($path);
+        return isset($this->routes[$method][$normalized]);
     }
 
     public function get(string $path, callable $handler): void
     {
-        $this->routes['GET'][$path] = $handler;
+        $this->routes['GET'][$this->normalizePath($path)] = $handler;
     }
 
     public function post(string $path, callable $handler): void
     {
-        $this->routes['POST'][$path] = $handler;
+        $this->routes['POST'][$this->normalizePath($path)] = $handler;
     }
 
     public function dispatch(string $method, string $path): void
     {
         $method = strtoupper($method);
+        $normalized = $this->normalizePath($path);
 
-        if ($path === '') {
-            $path = '/';
-        }
-
-        if (!str_starts_with($path, '/')) {
-            $path = '/' . $path;
-        }
-
-        if (isset($this->routes[$method][$path]) && is_callable($this->routes[$method][$path])) {
-            call_user_func($this->routes[$method][$path]);
+        if (isset($this->routes[$method][$normalized]) && is_callable($this->routes[$method][$normalized])) {
+            call_user_func($this->routes[$method][$normalized]);
             return;
         }
 
