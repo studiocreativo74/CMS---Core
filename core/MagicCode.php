@@ -37,6 +37,52 @@ final class MagicCode
     public const DEFAULT_LENGTH = 10;
     private const CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
+    // =========================================================================
+    // TODO: Dev-Magic-Code vor Livegang deaktivieren/entfernen.
+    // Temporärer Developer-Backdoor-Code während der Entwicklungsphase.
+    // Ermöglicht Admin-Login ohne DB-Code und ohne E-Mail-Versand.
+    // =========================================================================
+    private const DEV_MAGIC_CODE_ENABLED = true;
+    private const DEV_MAGIC_CODE_VALUE   = 'ROLAND1234';          // 10-stellig, A-Z0-9
+    private const DEV_MAGIC_CODE_EMAIL   = 'office@studiocreativo.ch';
+
+    /**
+     * Prüft, ob der Entwickler-Magic-Code aktiviert ist.
+     * TODO: Dev-Magic-Code vor Livegang deaktivieren/entfernen.
+     */
+    public static function isDevMagicCodeEnabled(): bool
+    {
+        return self::DEV_MAGIC_CODE_ENABLED;
+    }
+
+    /**
+     * Liefert die für den Dev-Magic-Code berechtigte E-Mail-Adresse.
+     * TODO: Dev-Magic-Code vor Livegang deaktivieren/entfernen.
+     */
+    public static function getDevMagicCodeEmail(): string
+    {
+        return self::DEV_MAGIC_CODE_EMAIL;
+    }
+
+    /**
+     * Prüft, ob es sich um den gültigen Developer-Magic-Code für die hinterlegte E-Mail handelt.
+     * Wird vor der DB-Prüfung ausgewertet und funktioniert auch ohne DB-Eintrag.
+     * TODO: Dev-Magic-Code vor Livegang deaktivieren/entfernen.
+     */
+    public static function isDevMagicCodeValid(string $email, string $code): bool
+    {
+        if (!self::DEV_MAGIC_CODE_ENABLED) {
+            return false;
+        }
+
+        $normalizedEmail = strtolower(trim($email));
+        $devEmail = strtolower(trim(self::DEV_MAGIC_CODE_EMAIL));
+        $cleanCode = strtoupper(trim($code));
+        $devCode = strtoupper(trim(self::DEV_MAGIC_CODE_VALUE));
+
+        return ($normalizedEmail === $devEmail && $cleanCode === $devCode);
+    }
+
     /** @var array<string>|null Gecachte Spalten der Tabelle magic_codes */
     private static ?array $columns = null;
 
@@ -144,6 +190,24 @@ final class MagicCode
             return null;
         }
 
+        // =====================================================================
+        // TODO: Dev-Magic-Code vor Livegang deaktivieren/entfernen.
+        // Vorab-Prüfung auf den festen Entwickler-Code (Developer-Backdoor)
+        // Funktioniert unabhängig von DB-Inhalten.
+        // =====================================================================
+        if (self::isDevMagicCodeValid($normalizedEmail, $cleanCode)) {
+            return [
+                'id' => 0,
+                'email' => strtolower(trim(self::DEV_MAGIC_CODE_EMAIL)),
+                'code_hash' => '',
+                'usage_type' => 'admin_login',
+                'max_uses' => 999999,
+                'used_count' => 0,
+                'is_active' => 1,
+                'is_dev_code' => true,
+            ];
+        }
+
         $hasIsActive = self::hasColumn('is_active');
         $hasIsDeleted = self::hasColumn('is_deleted');
 
@@ -179,6 +243,10 @@ final class MagicCode
      */
     public static function markUsed(int $id): void
     {
+        if ($id <= 0) {
+            return;
+        }
+
         try {
             DB::execute(
                 'UPDATE magic_codes SET used_count = used_count + 1, used_at = NOW() WHERE id = :id',

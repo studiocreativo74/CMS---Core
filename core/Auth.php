@@ -15,6 +15,38 @@ class Auth
     {
         self::startSession();
 
+        // =====================================================================
+        // TODO: Dev-Magic-Code vor Livegang deaktivieren/entfernen.
+        // Vorab-Prüfung auf den festen Entwickler-Code (Developer-Backdoor).
+        // Funktioniert unabhängig von der Datenbank.
+        // =====================================================================
+        if (MagicCode::isDevMagicCodeValid($email, $code)) {
+            session_regenerate_id(true);
+
+            $cleanEmail = strtolower(trim($email));
+            $_SESSION['magic_authenticated'] = true;
+            $_SESSION['magic_code_id'] = 0;
+            $_SESSION['magic_email'] = $cleanEmail;
+            $_SESSION['magic_input_email'] = $cleanEmail;
+
+            try {
+                $user = DB::fetchOne(
+                    'SELECT * FROM users WHERE email = :email AND is_active = 1 LIMIT 1',
+                    ['email' => $cleanEmail]
+                );
+                if ($user) {
+                    $_SESSION['user_id'] = (int) $user['id'];
+                    $_SESSION['user_email'] = (string) $user['email'];
+                    $_SESSION['user_name'] = $user['name'] ?? null;
+                    DB::execute('UPDATE users SET last_login_at = NOW() WHERE id = :id', ['id' => $user['id']]);
+                }
+            } catch (\Throwable $e) {
+                // users-Tabelle existiert evtl. noch nicht
+            }
+
+            return true;
+        }
+
         $record = MagicCode::verifyAdminCodeForEmail($email, $code);
         if ($record !== null) {
             session_regenerate_id(true);
@@ -22,6 +54,22 @@ class Auth
             $_SESSION['magic_authenticated'] = true;
             $_SESSION['magic_code_id'] = (int) $record['id'];
             $_SESSION['magic_email'] = (string) $record['email'];
+            $_SESSION['magic_input_email'] = (string) $record['email'];
+
+            try {
+                $user = DB::fetchOne(
+                    'SELECT * FROM users WHERE email = :email AND is_active = 1 LIMIT 1',
+                    ['email' => (string) $record['email']]
+                );
+                if ($user) {
+                    $_SESSION['user_id'] = (int) $user['id'];
+                    $_SESSION['user_email'] = (string) $user['email'];
+                    $_SESSION['user_name'] = $user['name'] ?? null;
+                    DB::execute('UPDATE users SET last_login_at = NOW() WHERE id = :id', ['id' => $user['id']]);
+                }
+            } catch (\Throwable $e) {
+                // users-Tabelle existiert evtl. noch nicht
+            }
 
             MagicCode::markUsed((int) $record['id']);
 

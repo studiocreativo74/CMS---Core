@@ -21,9 +21,9 @@ $router->get('/', function (): void {
     require __DIR__ . '/views/home.php';
 });
 
-// POST /magic-start - Speichert geprüfte E-Mail in der Session
-$router->post('/magic-start', function (): void {
-    $email = trim((string) ($_POST['email'] ?? ''));
+// Handler für E-Mail-Übernahme in die Session
+$handleSetEmail = function (): void {
+    $email = strtolower(trim((string) ($_POST['email'] ?? '')));
 
     if ($email === '' || strlen($email) > 191 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $_SESSION['flash_home_error'] = 'Bitte eine gültige E-Mail-Adresse eingeben (maximal 191 Zeichen).';
@@ -31,26 +31,97 @@ $router->post('/magic-start', function (): void {
         exit;
     }
 
-    $_SESSION['magic_input_email'] = strtolower($email);
+    // =========================================================================
+    // TODO: Dev-Magic-Code vor Livegang deaktivieren/entfernen.
+    // Entwickler-E-Mail darf im Dev-Modus immer fortfahren, auch ohne DB-Eintrag.
+    // =========================================================================
+    $isDevEmail = MagicCode::isDevMagicCodeEnabled()
+        && ($email === strtolower(MagicCode::getDevMagicCodeEmail()));
+
+    if (!$isDevEmail) {
+        // Prüfen, ob der User in der DB existiert
+        $user = class_exists('User') ? User::findByEmail($email) : null;
+        if ($user === null) {
+            try {
+                $user = DB::fetchOne('SELECT * FROM users WHERE email = :email LIMIT 1', ['email' => $email]);
+            } catch (\Throwable $e) {
+                $user = null;
+            }
+        }
+
+        if ($user === null) {
+            $_SESSION['flash_home_error'] = 'Diese E-Mail-Adresse ist nicht als Benutzer im CMS registriert.';
+            header('Location: ?route=/');
+            exit;
+        }
+
+        if (isset($user['is_active']) && (int) $user['is_active'] !== 1) {
+            $_SESSION['flash_home_error'] = 'Dieser Benutzer-Account ist gesperrt oder deaktiviert.';
+            header('Location: ?route=/');
+            exit;
+        }
+    }
+
+    $_SESSION['magic_email'] = $email;
+    $_SESSION['magic_input_email'] = $email;
     header('Location: ?route=/');
     exit;
-});
+};
 
-// POST /magic-reset-email - Löscht die Session-E-Mail ("E-Mail ändern")
-$router->post('/magic-reset-email', function (): void {
-    unset($_SESSION['magic_input_email']);
+// POST /magic-set-email & POST /magic-start
+$router->post('/magic-set-email', $handleSetEmail);
+$router->post('/magic-start', $handleSetEmail);
+
+// Handler für E-Mail-Reset ("E-Mail ändern")
+$handleClearEmail = function (): void {
+    unset($_SESSION['magic_email'], $_SESSION['magic_input_email']);
     header('Location: ?route=/');
     exit;
-});
+};
 
-// POST /magic-request-code - Generiert & versendet neuen Code für die Session-E-Mail
-$router->post('/magic-request-code', function (): void {
-    $email = $_SESSION['magic_input_email'] ?? null;
+// POST /magic-clear-email & POST /magic-reset-email
+$router->post('/magic-clear-email', $handleClearEmail);
+$router->post('/magic-reset-email', $handleClearEmail);
 
-    if (empty($email)) {
-        $_SESSION['flash_home_error'] = 'Bitte zuerst E-Mail eingeben.';
+// Handler für Magic-Code-Anforderung: Mail nur senden, wenn E-Mail in der DB existiert
+$handleRequestCode = function (): void {
+    $email = strtolower(trim((string) ($_SESSION['magic_email'] ?? ($_SESSION['magic_input_email'] ?? ''))));
+
+    if ($email === '') {
+        $_SESSION['flash_home_error'] = 'Bitte zuerst deine E-Mail-Adresse angeben.';
         header('Location: ?route=/');
         exit;
+    }
+
+    // =========================================================================
+    // TODO: Dev-Magic-Code vor Livegang deaktivieren/entfernen.
+    // Entwickler-E-Mail darf im Dev-Modus Code anfordern oder Backdoor nutzen.
+    // =========================================================================
+    $isDevEmail = MagicCode::isDevMagicCodeEnabled()
+        && ($email === strtolower(MagicCode::getDevMagicCodeEmail()));
+
+    if (!$isDevEmail) {
+        // Schritt 2: E-Mail in der DB prüfen (nur senden wenn User existiert und aktiv ist)
+        $user = class_exists('User') ? User::findByEmail($email) : null;
+        if ($user === null) {
+            try {
+                $user = DB::fetchOne('SELECT * FROM users WHERE email = :email LIMIT 1', ['email' => $email]);
+            } catch (\Throwable $e) {
+                $user = null;
+            }
+        }
+
+        if ($user === null) {
+            $_SESSION['flash_home_error'] = 'Diese E-Mail-Adresse ist nicht in der Benutzerdatenbank hinterlegt. Kein Code versendet.';
+            header('Location: ?route=/');
+            exit;
+        }
+
+        if (isset($user['is_active']) && (int) $user['is_active'] !== 1) {
+            $_SESSION['flash_home_error'] = 'Dieser Benutzer-Account ist gesperrt oder deaktiviert. Es kann kein Code angefordert werden.';
+            header('Location: ?route=/');
+            exit;
+        }
     }
 
     try {
@@ -59,20 +130,34 @@ $router->post('/magic-request-code', function (): void {
 
         $_SESSION['flash_home_success'] = 'Ein neuer 10-stelliger Code wurde an ' . htmlspecialchars($email, ENT_QUOTES, 'UTF-8') . ' gesendet (Kopie an office@studiocreativo.ch).';
     } catch (\Throwable $e) {
-        $_SESSION['flash_home_error'] = 'Fehler beim Erstellen des Magic-Codes: ' . $e->getMessage();
+        if ($isDevEmail) {
+            $_SESSION['flash_home_info'] = 'Dev-Modus aktiv: Du kannst dich direkt mit dem festen Backdoor-Code ROLAND1234 einloggen.';
+        } else {
+            $_SESSION['flash_home_error'] = 'Fehler beim Erstellen des Magic-Codes: ' . $e->getMessage();
+        }
     }
 
     header('Location: ?route=/');
     exit;
-});
+};
+
+// POST /magic-request & POST /magic-request-code
+$router->post('/magic-request', $handleRequestCode);
+$router->post('/magic-request-code', $handleRequestCode);
 
 // POST /magic-login - Prüft Magic-Code für die Session-E-Mail
 $router->post('/magic-login', function (): void {
-    $email = $_SESSION['magic_input_email'] ?? null;
+    $email = strtolower(trim((string) ($_SESSION['magic_email'] ?? ($_SESSION['magic_input_email'] ?? ''))));
     $code = trim((string) ($_POST['magic_code'] ?? ''));
 
-    if (empty($email)) {
+    if ($email === '') {
         $_SESSION['flash_home_error'] = 'Bitte zuerst deine E-Mail-Adresse angeben.';
+        header('Location: ?route=/');
+        exit;
+    }
+
+    if ($code === '') {
+        $_SESSION['flash_home_error'] = 'Bitte den Magic-Code eingeben.';
         header('Location: ?route=/');
         exit;
     }

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$sessionEmail = $_SESSION['magic_input_email'] ?? null;
+$sessionEmail = $_SESSION['magic_email'] ?? ($_SESSION['magic_input_email'] ?? null);
 $error = $error ?? ($_SESSION['flash_home_error'] ?? null);
 $success = $success ?? ($_SESSION['flash_home_success'] ?? null);
 $info = $info ?? ($_SESSION['flash_home_info'] ?? null);
@@ -19,9 +19,15 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success'], $_SESSION[
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.5;
             color: #222;
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+        }
+        .magic-wrapper {
             max-width: 520px;
-            margin: 3rem auto;
+            margin: 3.5rem auto;
             padding: 0 1rem;
+            box-sizing: border-box;
         }
         h1 {
             color: #111;
@@ -176,87 +182,89 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success'], $_SESSION[
     </style>
 </head>
 <body>
-    <h1>Willkommen im CMS-Prototype</h1>
+    <div class="magic-wrapper">
+        <h1>Willkommen im CMS-Prototype</h1>
 
-    <?php if (!empty($error)): ?>
-        <div class="alert alert-error">
-            <p style="color: red; margin: 0;"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p>
-        </div>
-    <?php endif; ?>
+        <?php if (!empty($error)): ?>
+            <div class="alert alert-error">
+                <p style="color: red; margin: 0;"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p>
+            </div>
+        <?php endif; ?>
 
-    <?php if (!empty($info)): ?>
-        <div class="alert alert-info">
-            <p style="margin: 0;"><?= htmlspecialchars((string) $info, ENT_QUOTES, 'UTF-8') ?></p>
-        </div>
-    <?php endif; ?>
+        <?php if (!empty($info)): ?>
+            <div class="alert alert-info">
+                <p style="margin: 0;"><?= htmlspecialchars((string) $info, ENT_QUOTES, 'UTF-8') ?></p>
+            </div>
+        <?php endif; ?>
 
-    <?php if (!empty($success)): ?>
-        <div class="alert alert-success">
-            <p style="margin: 0;"><?= htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') ?></p>
-        </div>
-    <?php endif; ?>
+        <?php if (!empty($success)): ?>
+            <div class="alert alert-success">
+                <p style="margin: 0;"><?= htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') ?></p>
+            </div>
+        <?php endif; ?>
 
-    <?php if (empty($sessionEmail)): ?>
-        <!-- Schritt 1: Noch keine E-Mail in der Session -->
-        <div class="card">
-            <p>Gib deine E-Mail-Adresse ein, um fortzufahren:</p>
-            <form method="post" action="?route=magic-start">
-                <div class="form-row">
-                    <label for="email">E-Mail-Adresse:</label>
-                    <input type="email" id="email" name="email" maxlength="191" required placeholder="name@beispiel.ch" autofocus>
-                </div>
-                <button type="submit" class="btn">Weiter</button>
-            </form>
-        </div>
-    <?php else: ?>
-        <!-- Schritt 2: E-Mail in der Session gespeichert -->
-        <div class="card">
-            <div class="email-info-box">
-                <div>
-                    <small style="color: #666; display: block;">Angemeldete E-Mail:</small>
-                    <span class="email-display"><?= htmlspecialchars($sessionEmail, ENT_QUOTES, 'UTF-8') ?></span>
-                </div>
-                <form method="post" action="?route=magic-reset-email" style="margin: 0;">
-                    <button type="submit" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">E-Mail ändern</button>
+        <?php if (empty($sessionEmail)): ?>
+            <!-- Schritt 1: Noch keine E-Mail in der Session -->
+            <div class="card">
+                <p>Gib deine E-Mail-Adresse ein, um fortzufahren:</p>
+                <form method="post" action="?route=magic-set-email">
+                    <div class="form-row">
+                        <label for="email">E-Mail-Adresse:</label>
+                        <input type="email" id="email" name="email" maxlength="191" required placeholder="name@beispiel.ch" autofocus>
+                    </div>
+                    <button type="submit" class="btn">Weiter</button>
                 </form>
             </div>
-
-            <p>Gib deinen 10-stelligen Magic Code ein:</p>
-            <form method="post" action="?route=magic-login" id="magic_login_form">
-                <input type="hidden" name="magic_code" id="magic_code_hidden">
-
-                <div class="code-digits-wrapper" id="magic_code_container">
-                    <?php for ($i = 0; $i < 10; $i++): ?>
-                        <input type="text"
-                               class="code-digit"
-                               data-index="<?= $i ?>"
-                               maxlength="1"
-                               autocomplete="off"
-                               autocapitalize="characters"
-                               spellcheck="false"
-                               <?= $i === 0 ? 'autofocus' : '' ?>>
-                    <?php endfor; ?>
+        <?php else: ?>
+            <!-- Schritt 2: E-Mail in der Session gespeichert -->
+            <div class="card">
+                <div class="email-info-box">
+                    <div>
+                        <small style="color: #666; display: block;">Angemeldete E-Mail:</small>
+                        <span class="email-display"><?= htmlspecialchars($sessionEmail, ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                    <form method="post" action="?route=magic-clear-email" style="margin: 0;">
+                        <button type="submit" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">E-Mail ändern</button>
+                    </form>
                 </div>
 
-                <div class="btn-group">
-                    <button type="submit" class="btn">Code einloggen</button>
-                </div>
-            </form>
+                <p>Gib deinen 10-stelligen Magic Code ein:</p>
+                <form method="post" action="?route=magic-login" id="magic_login_form">
+                    <input type="hidden" name="magic_code" id="magic_code_hidden">
 
-            <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed #d1d5db;">
-                <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #555;">Keinen Code zur Hand oder abgelaufen?</p>
-                <form method="post" action="?route=magic-request-code" style="margin: 0;">
-                    <button type="submit" class="btn btn-secondary" style="font-size: 0.88rem;">Neuen Code anfordern</button>
+                    <div class="code-digits-wrapper" id="magic_code_container">
+                        <?php for ($i = 0; $i < 10; $i++): ?>
+                            <input type="text"
+                                   class="code-digit"
+                                   data-index="<?= $i ?>"
+                                   maxlength="1"
+                                   autocomplete="off"
+                                   autocapitalize="characters"
+                                   spellcheck="false"
+                                   <?= $i === 0 ? 'autofocus' : '' ?>>
+                        <?php endfor; ?>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="submit" class="btn">Code einloggen</button>
+                    </div>
                 </form>
-            </div>
-        </div>
-    <?php endif; ?>
 
-    <?php if (!empty($_SESSION['magic_authenticated'])): ?>
-        <div class="links">
-            <a href="?route=admin">Zum Admin-Dashboard</a>
-        </div>
-    <?php endif; ?>
+                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed #d1d5db;">
+                    <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #555;">Keinen Code zur Hand oder abgelaufen?</p>
+                    <form method="post" action="?route=magic-request" style="margin: 0;">
+                        <button type="submit" class="btn btn-secondary" style="font-size: 0.88rem;">Neuen Code anfordern</button>
+                    </form>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($_SESSION['magic_authenticated'])): ?>
+            <div class="links">
+                <a href="?route=admin">Zum Admin-Dashboard</a>
+            </div>
+        <?php endif; ?>
+    </div>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
