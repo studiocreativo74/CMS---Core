@@ -1,0 +1,6 @@
+{
+  "name": "Modular CMS Prototype",
+  "description": "Ein kleines modulares PHP-CMS mit Router und Front-Controller.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
