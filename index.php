@@ -12,6 +12,7 @@ require_once __DIR__ . '/core/ModuleManager.php';
 require_once __DIR__ . '/core/User.php';
 require_once __DIR__ . '/core/Rbac.php';
 require_once __DIR__ . '/core/Settings.php';
+require_once __DIR__ . '/core/HomepageBlock.php';
 
 Auth::startSession();
 
@@ -416,11 +417,11 @@ $router->get('/admin/homepage', function (): void {
     require __DIR__ . '/views/admin/homepage.php';
 });
 
-// POST /admin/homepage - Startseiten-Einstellungen speichern
+// POST /admin/homepage - Startseiten-Einstellungen speichern (Design, Farben, Logo, Texte)
 $router->post('/admin/homepage', function () use ($requireAdminAuthAndCsrf): void {
     $requireAdminAuthAndCsrf('admin/homepage');
 
-    if (class_exists('Rbac') && !Rbac::can('admin.homepage.manage')) {
+    if (class_exists('Rbac') && !Rbac::can('admin.homepage.manage') && !Rbac::can('admin.homepage')) {
         $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung zum Bearbeiten der Startseite.';
         header('Location: ?route=admin/homepage');
         exit;
@@ -433,10 +434,15 @@ $router->post('/admin/homepage', function () use ($requireAdminAuthAndCsrf): voi
     $redirect = trim((string) ($_POST['after_login_redirect'] ?? 'admin'));
     $customUrl = trim((string) ($_POST['after_login_custom_url'] ?? ''));
 
+    $primaryColor = trim((string) ($_POST['homepage_primary_color'] ?? '#0d6efd'));
+    $secondaryColor = trim((string) ($_POST['homepage_secondary_color'] ?? '#6c757d'));
+    $bgColor = trim((string) ($_POST['homepage_background_color'] ?? '#f8fafc'));
+    $textColor = trim((string) ($_POST['homepage_text_color'] ?? '#222222'));
+    $layout = trim((string) ($_POST['homepage_layout'] ?? 'contained'));
+    $removeLogo = !empty($_POST['remove_logo']);
+
     if ($title === '') {
-        $_SESSION['flash_error'] = 'Der Haupttitel der Startseite darf nicht leer sein.';
-        header('Location: ?route=admin/homepage');
-        exit;
+        $title = 'Willkommen im CMS-Prototype';
     }
 
     if (!in_array($theme, ['standard', 'light', 'dark', 'blue'], true)) {
@@ -447,19 +453,221 @@ $router->post('/admin/homepage', function () use ($requireAdminAuthAndCsrf): voi
         $redirect = 'admin';
     }
 
+    if (!in_array($layout, ['contained', 'wide', 'full'], true)) {
+        $layout = 'contained';
+    }
+
     try {
         if (class_exists('Settings')) {
             Settings::set('homepage_title', $title);
             Settings::set('homepage_subtitle', $subtitle);
             Settings::set('homepage_description', $description);
             Settings::set('homepage_theme', $theme);
+            Settings::set('homepage_primary_color', $primaryColor);
+            Settings::set('homepage_secondary_color', $secondaryColor);
+            Settings::set('homepage_background_color', $bgColor);
+            Settings::set('homepage_text_color', $textColor);
+            Settings::set('homepage_layout', $layout);
             Settings::set('after_login_redirect', $redirect);
             Settings::set('after_login_custom_url', $customUrl);
 
-            $_SESSION['flash_success'] = 'Die Startseiten-Einstellungen wurden erfolgreich gespeichert.';
+            // Logo-Entfernung
+            if ($removeLogo) {
+                Settings::set('homepage_logo_path', '');
+            }
+
+            // Logo-Upload verarbeiten
+            if (isset($_FILES['logo_file']) && is_array($_FILES['logo_file']) && ($_FILES['logo_file']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                $file = $_FILES['logo_file'];
+                $allowedMimes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp', 'image/gif'];
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mime = $finfo->file($file['tmp_name']);
+
+                if (in_array($mime, $allowedMimes, true)) {
+                    $ext = match ($mime) {
+                        'image/png' => 'png',
+                        'image/jpeg' => 'jpg',
+                        'image/svg+xml' => 'svg',
+                        'image/webp' => 'webp',
+                        'image/gif' => 'gif',
+                        default => 'png',
+                    };
+
+                    $uploadDir = __DIR__ . '/public/assets/uploads';
+                    if (!is_dir($uploadDir)) {
+                        @mkdir($uploadDir, 0755, true);
+                    }
+
+                    $filename = 'logo_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                    $targetPath = $uploadDir . '/' . $filename;
+
+                    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                        $webPath = 'public/assets/uploads/' . $filename;
+                        Settings::set('homepage_logo_path', $webPath);
+                    } else {
+                        $_SESSION['flash_error'] = 'Das Logo konnte nicht im Upload-Verzeichnis gespeichert werden.';
+                    }
+                } else {
+                    $_SESSION['flash_error'] = 'Ungültiges Dateiformat für das Logo. Bitte PNG, JPG, SVG, WebP oder GIF verwenden.';
+                }
+            }
+
+            if (empty($_SESSION['flash_error'])) {
+                $_SESSION['flash_success'] = 'Die Startseiten-Einstellungen wurden erfolgreich gespeichert.';
+            }
         }
     } catch (\Throwable $e) {
         $_SESSION['flash_error'] = 'Fehler beim Speichern der Einstellungen: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/homepage');
+    exit;
+});
+
+// POST /admin/homepage/block-create - Neuen Inhaltsblock anlegen
+$router->post('/admin/homepage/block-create', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/homepage');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.homepage.manage') && !Rbac::can('admin.homepage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung für Startseiten-Blöcke.';
+        header('Location: ?route=admin/homepage');
+        exit;
+    }
+
+    $type = trim((string) ($_POST['type'] ?? 'text'));
+    $title = trim((string) ($_POST['title'] ?? ''));
+    $subtitle = trim((string) ($_POST['subtitle'] ?? ''));
+    $content = trim((string) ($_POST['content'] ?? ''));
+    $sortOrder = (int) ($_POST['sort_order'] ?? 10);
+    $isVisible = !empty($_POST['is_visible']) ? 1 : 0;
+    $extra = trim((string) ($_POST['extra'] ?? ''));
+
+    try {
+        if (class_exists('HomepageBlock')) {
+            HomepageBlock::create([
+                'type'       => $type,
+                'title'      => $title,
+                'subtitle'   => $subtitle,
+                'content'    => $content,
+                'extra'      => $extra !== '' ? $extra : null,
+                'sort_order' => $sortOrder,
+                'is_visible' => $isVisible,
+            ]);
+
+            $_SESSION['flash_success'] = "Neuer Inhaltsblock ('" . htmlspecialchars($type, ENT_QUOTES, 'UTF-8') . "') wurde erfolgreich angelegt.";
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Anlegen des Blocks: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/homepage');
+    exit;
+});
+
+// POST /admin/homepage/block-edit - Inhaltsblock bearbeiten
+$router->post('/admin/homepage/block-edit', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/homepage');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.homepage.manage') && !Rbac::can('admin.homepage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung für Startseiten-Blöcke.';
+        header('Location: ?route=admin/homepage');
+        exit;
+    }
+
+    $id = (int) ($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        $_SESSION['flash_error'] = 'Ungültige Block-ID.';
+        header('Location: ?route=admin/homepage');
+        exit;
+    }
+
+    $type = trim((string) ($_POST['type'] ?? 'text'));
+    $title = trim((string) ($_POST['title'] ?? ''));
+    $subtitle = trim((string) ($_POST['subtitle'] ?? ''));
+    $content = (string) ($_POST['content'] ?? '');
+    $sortOrder = (int) ($_POST['sort_order'] ?? 10);
+    $isVisible = !empty($_POST['is_visible']) ? 1 : 0;
+    $extra = trim((string) ($_POST['extra'] ?? ''));
+
+    try {
+        if (class_exists('HomepageBlock')) {
+            HomepageBlock::update($id, [
+                'type'       => $type,
+                'title'      => $title,
+                'subtitle'   => $subtitle,
+                'content'    => $content,
+                'extra'      => $extra !== '' ? $extra : null,
+                'sort_order' => $sortOrder,
+                'is_visible' => $isVisible,
+            ]);
+
+            $_SESSION['flash_success'] = "Inhaltsblock #{$id} wurde erfolgreich aktualisiert.";
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Aktualisieren des Blocks: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/homepage');
+    exit;
+});
+
+// POST /admin/homepage/block-toggle - Sichtbarkeit eines Blocks umschalten
+$router->post('/admin/homepage/block-toggle', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/homepage');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.homepage.manage') && !Rbac::can('admin.homepage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung für Startseiten-Blöcke.';
+        header('Location: ?route=admin/homepage');
+        exit;
+    }
+
+    $id = (int) ($_POST['id'] ?? 0);
+    $isVisible = (int) ($_POST['is_visible'] ?? 0);
+
+    if ($id <= 0) {
+        $_SESSION['flash_error'] = 'Ungültige Block-ID.';
+        header('Location: ?route=admin/homepage');
+        exit;
+    }
+
+    try {
+        if (class_exists('HomepageBlock')) {
+            HomepageBlock::toggleVisibility($id, $isVisible);
+            $statusText = $isVisible === 1 ? 'eingeblendet' : 'ausgeblendet';
+            $_SESSION['flash_success'] = "Block #{$id} wurde erfolgreich {$statusText}.";
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Ändern des Status: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/homepage');
+    exit;
+});
+
+// POST /admin/homepage/block-delete - Inhaltsblock löschen
+$router->post('/admin/homepage/block-delete', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/homepage');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.homepage.manage') && !Rbac::can('admin.homepage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung für Startseiten-Blöcke.';
+        header('Location: ?route=admin/homepage');
+        exit;
+    }
+
+    $id = (int) ($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        $_SESSION['flash_error'] = 'Ungültige Block-ID.';
+        header('Location: ?route=admin/homepage');
+        exit;
+    }
+
+    try {
+        if (class_exists('HomepageBlock')) {
+            HomepageBlock::delete($id);
+            $_SESSION['flash_success'] = "Inhaltsblock #{$id} wurde dauerhaft gelöscht.";
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Löschen des Blocks: ' . $e->getMessage();
     }
 
     header('Location: ?route=admin/homepage');

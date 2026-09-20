@@ -36,12 +36,18 @@ final class Settings
      * Standardwerte für bekannte System-Einstellungen.
      */
     private const DEFAULTS = [
-        'homepage_title'         => 'Willkommen im CMS-Prototype',
-        'homepage_subtitle'      => '',
-        'homepage_description'   => '',
-        'homepage_theme'         => 'standard',
-        'after_login_redirect'   => 'admin',
-        'after_login_custom_url' => '',
+        'homepage_title'            => 'Willkommen im CMS-Prototype',
+        'homepage_subtitle'         => '',
+        'homepage_description'      => '',
+        'homepage_theme'            => 'standard',
+        'homepage_primary_color'    => '#0d6efd',
+        'homepage_secondary_color'  => '#6c757d',
+        'homepage_background_color' => '#f8fafc',
+        'homepage_text_color'       => '#222222',
+        'homepage_logo_path'        => '',
+        'homepage_layout'           => 'contained',
+        'after_login_redirect'      => 'admin',
+        'after_login_custom_url'    => '',
     ];
 
     private function __construct()
