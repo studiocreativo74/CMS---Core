@@ -81,16 +81,18 @@ ob_start();
                             <th>Name</th>
                             <th>E-Mail</th>
                             <th>Rolle</th>
+                            <th>Theme</th>
                             <th>Status</th>
                             <th>Letzter Login</th>
                             <th>Erstellt</th>
-                            <th class="text-end pe-3" style="width: 140px;">Aktionen</th>
+                            <th class="text-end pe-3" style="width: 170px;">Aktionen</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($users as $userItem): 
                             $isActive = (int) ($userItem['is_active'] ?? 1) === 1;
                             $roleKey = (string) ($userItem['role'] ?? 'admin');
+                            $userTheme = (string) ($userItem['theme_mode'] ?? 'system');
                         ?>
                             <tr>
                                 <td class="ps-3 fw-semibold text-muted">#<?= (int) $userItem['id'] ?></td>
@@ -106,6 +108,15 @@ ob_start();
                                     </span>
                                 </td>
                                 <td>
+                                    <?php if ($userTheme === 'light'): ?>
+                                        <span class="badge bg-light text-dark border">Hell</span>
+                                    <?php elseif ($userTheme === 'dark'): ?>
+                                        <span class="badge bg-dark text-white">Dunkel</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary-subtle text-secondary border">System</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
                                     <?php if ($isActive): ?>
                                         <span class="badge bg-success">Aktiv</span>
                                     <?php else: ?>
@@ -118,7 +129,10 @@ ob_start();
                                 <td class="small text-muted">
                                     <?= !empty($userItem['created_at']) ? htmlspecialchars((string) $userItem['created_at'], ENT_QUOTES, 'UTF-8') : '—' ?>
                                 </td>
-                                <td class="text-end pe-3">
+                                <td class="text-end pe-3 text-nowrap">
+                                    <a href="?route=admin/users/edit&id=<?= (int) $userItem['id'] ?>" class="btn btn-sm btn-outline-primary me-1" title="Benutzer bearbeiten">
+                                        Bearbeiten
+                                    </a>
                                     <form method="POST" action="?route=admin/users/toggle" class="d-inline" onsubmit="return confirm('Möchten Sie den Status dieses Benutzers wirklich ändern?');">
                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(class_exists('Csrf') ? Csrf::getToken() : '', ENT_QUOTES, 'UTF-8') ?>">
                                         <input type="hidden" name="id" value="<?= (int) $userItem['id'] ?>">
@@ -169,20 +183,30 @@ ob_start();
                     <input type="password" class="form-control" id="userPassword" name="password" required minlength="6" placeholder="Mindestens 6 Zeichen">
                 </div>
 
-                <div class="mb-3">
-                    <label for="userRole" class="form-label">Rolle</label>
-                    <select class="form-select" id="userRole" name="role">
-                        <?php if (!empty($roles)): ?>
-                            <?php foreach ($roles as $r): ?>
-                                <option value="<?= htmlspecialchars((string) ($r['key'] ?? 'admin'), ENT_QUOTES, 'UTF-8') ?>">
-                                    <?= htmlspecialchars((string) ($r['name'] ?? $r['key']), ENT_QUOTES, 'UTF-8') ?>
-                                </option>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <option value="admin">Administrator</option>
-                            <option value="editor">Redakteur</option>
-                        <?php endif; ?>
-                    </select>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <label for="userRole" class="form-label">Rolle</label>
+                        <select class="form-select" id="userRole" name="role">
+                            <?php if (!empty($roles)): ?>
+                                <?php foreach ($roles as $r): ?>
+                                    <option value="<?= htmlspecialchars((string) ($r['key'] ?? 'admin'), ENT_QUOTES, 'UTF-8') ?>">
+                                        <?= htmlspecialchars((string) ($r['name'] ?? $r['key']), ENT_QUOTES, 'UTF-8') ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <option value="admin">Administrator</option>
+                                <option value="editor">Redakteur</option>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="createThemeMode" class="form-label">Admin-Theme</label>
+                        <select class="form-select" id="createThemeMode" name="theme_mode">
+                            <option value="system" selected>System (Standard)</option>
+                            <option value="light">Hell</option>
+                            <option value="dark">Dunkel</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="form-check">

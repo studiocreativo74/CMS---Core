@@ -19,6 +19,19 @@ $activeEmail = $_SESSION['magic_email']
     ?? ($_SESSION['user_email'] 
     ?? (isset($user['email']) ? (string) $user['email'] : 'Admin'));
 
+// Theme-Ermittlung für den aktuellen Benutzer (light, dark, system)
+$currentUser = class_exists('Auth') ? Auth::currentUser() : null;
+$userTheme = 'system';
+if ($currentUser !== null && !empty($currentUser['theme_mode'])) {
+    $userTheme = (string) $currentUser['theme_mode'];
+} elseif (!empty($_SESSION['theme_mode'])) {
+    $userTheme = (string) $_SESSION['theme_mode'];
+}
+if (!in_array($userTheme, ['light', 'dark', 'system'], true)) {
+    $userTheme = 'system';
+}
+$csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
+
 // =========================================================================
 // Berechtigungs- und Sichtbarkeitsprüfung für Navigation:
 // - Wenn $_SESSION['magic_authenticated'] === true ist, hat der Benutzer
@@ -57,7 +70,7 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
     || (isset($_GET['route']) && str_starts_with((string) $_GET['route'], 'admin/activity'));
 ?>
 <!doctype html>
-<html lang="de">
+<html lang="de" data-bs-theme="<?= $userTheme === 'dark' ? 'dark' : ($userTheme === 'light' ? 'light' : 'auto') ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -65,6 +78,25 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
 
     <!-- Bootstrap 5 CSS via CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+    <script>
+        (function() {
+            var theme = <?= json_encode($userTheme) ?>;
+            function applyTheme(t) {
+                var effective = t;
+                if (t === 'system') {
+                    effective = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-bs-theme', effective);
+            }
+            applyTheme(theme);
+            if (theme === 'system' && window.matchMedia) {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+                    applyTheme('system');
+                });
+            }
+        })();
+    </script>
 
     <style>
         body {
@@ -119,9 +151,80 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
             font-size: 1.15rem;
             letter-spacing: 2px;
         }
+
+        /* ------------------------------------------------------------- */
+        /* PRO-USER-THEME STYLING (Hell, Dunkel, System)                 */
+        /* ------------------------------------------------------------- */
+        body.admin-theme-dark,
+        [data-bs-theme="dark"] body {
+            background-color: #121212 !important;
+            color: #f5f5f5 !important;
+        }
+        body.admin-theme-dark main,
+        [data-bs-theme="dark"] main {
+            background-color: #16181b !important;
+            color: #f5f5f5 !important;
+        }
+        body.admin-theme-dark .card,
+        [data-bs-theme="dark"] .card {
+            background-color: #212529 !important;
+            color: #f5f5f5 !important;
+            border-color: #343a40 !important;
+        }
+        body.admin-theme-dark .card-header,
+        [data-bs-theme="dark"] .card-header {
+            background-color: #282c31 !important;
+            color: #ffffff !important;
+            border-bottom-color: #343a40 !important;
+        }
+        body.admin-theme-dark .list-group-item,
+        [data-bs-theme="dark"] .list-group-item {
+            background-color: #212529 !important;
+            color: #e0e0e0 !important;
+            border-color: #343a40 !important;
+        }
+        body.admin-theme-dark .text-dark,
+        [data-bs-theme="dark"] .text-dark {
+            color: #f8f9fa !important;
+        }
+        body.admin-theme-dark .text-muted,
+        [data-bs-theme="dark"] .text-muted {
+            color: #9da5af !important;
+        }
+        body.admin-theme-dark .border-bottom,
+        [data-bs-theme="dark"] .border-bottom {
+            border-color: #343a40 !important;
+        }
+        body.admin-theme-dark .border-top,
+        [data-bs-theme="dark"] .border-top {
+            border-color: #343a40 !important;
+        }
+        body.admin-theme-dark .table,
+        [data-bs-theme="dark"] .table {
+            --bs-table-bg: #212529;
+            --bs-table-color: #f5f5f5;
+            --bs-table-border-color: #343a40;
+        }
+        body.admin-theme-dark .table-light,
+        [data-bs-theme="dark"] .table-light {
+            --bs-table-bg: #2a2e33;
+            --bs-table-color: #ffffff;
+        }
+        body.admin-theme-dark footer,
+        [data-bs-theme="dark"] footer {
+            color: #9da5af !important;
+        }
+        body.admin-theme-dark .navbar,
+        body.admin-theme-dark .sidebar {
+            background-color: #0d0e11 !important;
+        }
+        body.admin-theme-light {
+            background-color: #f8f9fa !important;
+            color: #212529 !important;
+        }
     </style>
 </head>
-<body>
+<body class="admin-theme-<?= htmlspecialchars($userTheme, ENT_QUOTES, 'UTF-8') ?>">
     <!-- Top-Navigationsleiste -->
     <header class="navbar navbar-dark bg-dark sticky-top flex-md-nowrap p-0 shadow">
         <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 text-white fw-bold" href="?route=admin">
@@ -135,8 +238,74 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <!-- Rechte Navbar-Elemente (E-Mail & Logout) -->
+        <!-- Rechte Navbar-Elemente (Theme-Toggle, E-Mail & Logout) -->
         <div class="d-none d-md-flex align-items-center ms-auto px-3">
+            <!-- Pro-User-Theme Switcher Dropdown -->
+            <div class="dropdown me-3">
+                <button class="btn btn-sm btn-outline-light dropdown-toggle d-inline-flex align-items-center" type="button" id="themeDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Design/Theme umschalten">
+                    <?php if ($userTheme === 'light'): ?>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="bi bi-sun-fill text-warning me-1" viewBox="0 0 16 16">
+                            <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+                        </svg>
+                        <span>Hell</span>
+                    <?php elseif ($userTheme === 'dark'): ?>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="bi bi-moon-stars-fill text-info me-1" viewBox="0 0 16 16">
+                            <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/>
+                            <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.3 6.206l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+                        </svg>
+                        <span>Dunkel</span>
+                    <?php else: ?>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="bi bi-display text-secondary me-1" viewBox="0 0 16 16">
+                            <path d="M0 4s0-2 2-2h12s2 0 2 2v6s0 2-2 2h-4q0 1 .25 1.5H11a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1h.75Q6 13 6 12H2s-2 0-2-2zm1.398-.855a.76.76 0 0 0-.253.538L1 4v6c0 .193.07.366.184.498l.061.054c.088.067.195.11.31.11h12.89q.166 0 .31-.11l.061-.054a.76.76 0 0 0 .184-.498V4a.76.76 0 0 0-.253-.538l-.061-.055A.76.76 0 0 0 14.39 3H1.61q-.166 0-.31.11z"/>
+                        </svg>
+                        <span>System</span>
+                    <?php endif; ?>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="themeDropdown">
+                    <li><h6 class="dropdown-header">Darstellung</h6></li>
+                    <li>
+                        <form method="POST" action="?route=admin/theme">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentRoute, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="theme" value="light">
+                            <button type="submit" class="dropdown-item d-flex align-items-center <?= $userTheme === 'light' ? 'active fw-bold' : '' ?>">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-sun-fill text-warning me-2" viewBox="0 0 16 16">
+                                    <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+                                </svg>
+                                Hell
+                            </button>
+                        </form>
+                    </li>
+                    <li>
+                        <form method="POST" action="?route=admin/theme">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentRoute, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="theme" value="dark">
+                            <button type="submit" class="dropdown-item d-flex align-items-center <?= $userTheme === 'dark' ? 'active fw-bold' : '' ?>">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-moon-stars-fill text-info me-2" viewBox="0 0 16 16">
+                                    <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/>
+                                    <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.3 6.206l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+                                </svg>
+                                Dunkel
+                            </button>
+                        </form>
+                    </li>
+                    <li>
+                        <form method="POST" action="?route=admin/theme">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentRoute, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="theme" value="system">
+                            <button type="submit" class="dropdown-item d-flex align-items-center <?= $userTheme === 'system' ? 'active fw-bold' : '' ?>">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-display text-secondary me-2" viewBox="0 0 16 16">
+                                    <path d="M0 4s0-2 2-2h12s2 0 2 2v6s0 2-2 2h-4q0 1 .25 1.5H11a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1h.75Q6 13 6 12H2s-2 0-2-2zm1.398-.855a.76.76 0 0 0-.253.538L1 4v6c0 .193.07.366.184.498l.061.054c.088.067.195.11.31.11h12.89q.166 0 .31-.11l.061-.054a.76.76 0 0 0 .184-.498V4a.76.76 0 0 0-.253-.538l-.061-.055A.76.76 0 0 0 14.39 3H1.61q-.166 0-.31.11z"/>
+                                </svg>
+                                System (Standard)
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+
             <span class="text-light small me-3">
                 Angemeldet: <strong><?= htmlspecialchars($activeEmail, ENT_QUOTES, 'UTF-8') ?></strong>
             </span>
@@ -156,10 +325,41 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Schließen"></button>
                 </div>
 
-                <!-- Mobile Benutzerinfo in der Sidebar -->
+                <!-- Mobile Benutzerinfo & Theme in der Sidebar -->
                 <div class="d-md-none mb-3 pb-3 border-bottom border-secondary">
                     <small class="text-white-50 d-block">Angemeldet als:</small>
                     <span class="fw-semibold text-white text-break"><?= htmlspecialchars($activeEmail, ENT_QUOTES, 'UTF-8') ?></span>
+                    
+                    <div class="mt-2 mb-2">
+                        <small class="text-white-50 d-block mb-1">Design / Theme:</small>
+                        <div class="btn-group w-100 btn-group-sm" role="group">
+                            <form method="POST" action="?route=admin/theme" class="d-inline flex-fill">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentRoute, ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="theme" value="light">
+                                <button type="submit" class="btn btn-outline-light w-100 <?= $userTheme === 'light' ? 'active' : '' ?>" title="Hell">
+                                    ☀️ Hell
+                                </button>
+                            </form>
+                            <form method="POST" action="?route=admin/theme" class="d-inline flex-fill">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentRoute, ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="theme" value="dark">
+                                <button type="submit" class="btn btn-outline-light w-100 <?= $userTheme === 'dark' ? 'active' : '' ?>" title="Dunkel">
+                                    🌙 Dunkel
+                                </button>
+                            </form>
+                            <form method="POST" action="?route=admin/theme" class="d-inline flex-fill">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="redirect" value="<?= htmlspecialchars($currentRoute, ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="theme" value="system">
+                                <button type="submit" class="btn btn-outline-light w-100 <?= $userTheme === 'system' ? 'active' : '' ?>" title="System">
+                                    💻 Auto
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
                     <div class="mt-2">
                         <a href="?route=logout" class="btn btn-sm btn-outline-danger w-100">Abmelden</a>
                     </div>
@@ -178,6 +378,21 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
                                     <path d="M0 10a8 8 0 1 1 15.547 2.661c-.442 1.253-1.845 1.602-2.932 1.25-1.026-.33-2.023-.974-3.11-1.911-.476-.41-1.002-.87-1.505-1.341v-.002A5 5 0 1 0 2.89 12.18c.386.417.804.819 1.25 1.196.447.377.934.73 1.455 1.054 1.134.704 2.455 1.194 3.738 1.464A8 8 0 0 1 0 10m7.5-6a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13"/>
                                 </svg>
                                 Dashboard
+                            </a>
+                        </li>
+                        <?php endif; ?>
+
+                        <!-- 1.1 Startseite bearbeiten -->
+                        <?php if ($canViewNav(['admin.homepage.manage', 'admin.homepage.view', 'admin.homepage', 'admin.settings'])): 
+                            $isHomepageActive = str_starts_with($currentRouteNormalized, 'admin/homepage');
+                        ?>
+                        <li class="nav-item">
+                            <a class="nav-link <?= $isHomepageActive ? 'active' : '' ?>" href="?route=admin/homepage">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window-sidebar me-2" viewBox="0 0 16 16">
+                                    <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1m2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/>
+                                    <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v2H1V3a1 1 0 0 1 1-1zM1 13V6h4v8H2a1 1 0 0 1-1-1m5 1V6h9v7a1 1 0 0 1-1 1z"/>
+                                </svg>
+                                Startseite
                             </a>
                         </li>
                         <?php endif; ?>
@@ -314,16 +529,26 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
                             </a>
                         </li>
                     </ul>
+
+                    <div class="mt-auto pt-4 pb-2 text-center text-white-50 small" style="font-size: 0.78rem;">
+                        &copy; <?= date('Y') ?> StudioCreativo
+                    </div>
                 </div>
             </nav>
 
             <!-- Zentraler Inhaltsbereich -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 bg-light min-vh-100">
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 bg-light min-vh-100 d-flex flex-column">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-4 border-bottom">
                     <h1 class="h2 mb-0"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h1>
                 </div>
 
-                <?= $content ?>
+                <div class="flex-grow-1">
+                    <?= $content ?>
+                </div>
+
+                <footer class="pt-4 mt-5 border-top text-center text-muted small">
+                    &copy; <?= date('Y') ?> StudioCreativo
+                </footer>
             </main>
         </div>
     </div>

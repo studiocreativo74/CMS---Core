@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 $user = $user ?? Auth::user();
-$magicCodes = $magicCodes ?? MagicCode::getAll();
+$magicCodes = $magicCodes ?? (class_exists('MagicCode') ? MagicCode::getAll() : []);
 $flashSuccess = $_SESSION['flash_success'] ?? null;
 $flashCreatedCode = $_SESSION['flash_created_code'] ?? null;
 $flashError = $_SESSION['flash_error'] ?? null;
@@ -13,21 +13,69 @@ unset($_SESSION['flash_success'], $_SESSION['flash_created_code'], $_SESSION['fl
 // Titel für das Admin-Layout festlegen
 $title = 'Dashboard';
 
+// =========================================================================
+// RBAC Berechtigungsprüfung für Dashboard-Widgets:
+// - Wenn $_SESSION['magic_authenticated'] === true ist (Superadmin via Magic-Code),
+//   sind immer ausnahmslos alle Widgets sichtbar.
+// - Ansonsten greift Rbac::can() auf die feingranularen Berechtigungen.
+// =========================================================================
+$isMagicAdmin = !empty($_SESSION['magic_authenticated']);
+
+$can = static function (array|string $permissions) use ($isMagicAdmin): bool {
+    if ($isMagicAdmin) {
+        return true;
+    }
+    if (class_exists('Rbac') && method_exists('Rbac', 'can')) {
+        foreach ((array) $permissions as $perm) {
+            if (Rbac::can((string) $perm)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    return true;
+};
+
+// Berechtigungen für einzelne Dashboard-Widgets auswerten
+$canViewMagicCodes   = $can(['admin.magic_codes.view', 'admin.magic_codes']);
+$canManageMagicCodes = $can(['admin.magic_codes.manage', 'admin.magic_codes']);
+$canViewUsers        = $can(['admin.users.view', 'admin.users.manage', 'admin.users']);
+$canViewHomepage     = $can(['admin.homepage.view', 'admin.homepage.manage', 'admin.homepage', 'admin.settings']);
+$canViewModules      = $can(['admin.modules.view', 'admin.modules.manage', 'admin.modules']);
+$canViewRoles        = $can(['admin.roles.view', 'admin.roles.manage', 'admin.rbac.manage', 'admin.rbac']);
+
 // Kennzahlen berechnen
 $totalCount = count($magicCodes);
 $activeCount = 0;
 $usedCount = 0;
 $expiredCount = 0;
 
-foreach ($magicCodes as $item) {
-    $st = MagicCode::getStatus($item);
-    if ($st['key'] === 'active') {
-        $activeCount++;
-    } elseif ($st['key'] === 'used') {
-        $usedCount++;
-    } elseif ($st['key'] === 'expired') {
-        $expiredCount++;
+if ($canViewMagicCodes && class_exists('MagicCode')) {
+    foreach ($magicCodes as $item) {
+        $st = MagicCode::getStatus($item);
+        if ($st['key'] === 'active') {
+            $activeCount++;
+        } elseif ($st['key'] === 'used') {
+            $usedCount++;
+        } elseif ($st['key'] === 'expired') {
+            $expiredCount++;
+        }
     }
+}
+
+// Optionale Zusatzdaten für berechtigte Widgets laden
+$userList = ($canViewUsers && class_exists('User')) ? User::all() : [];
+$allRoles = ($canViewRoles && class_exists('Rbac')) ? Rbac::getAllRoles() : [];
+$modulesList = ($canViewModules && class_exists('ModuleManager')) ? ModuleManager::getAll() : [];
+
+// Startseiten-Daten
+$homepageTitle = 'StudioCreativo CMS';
+$homepageTheme = 'standard';
+$afterLoginRedirect = 'admin';
+if ($canViewHomepage && class_exists('Settings')) {
+    $homepageTitle = (string) Settings::get('homepage_title', 'StudioCreativo CMS');
+    $homepageTheme = (string) Settings::get('homepage_theme', 'standard');
+    $afterLoginRedirect = (string) Settings::get('after_login_redirect', 'admin');
 }
 
 // Seiteninhalt via Output-Buffering erfassen
@@ -68,7 +116,10 @@ ob_start();
     </div>
 <?php endif; ?>
 
-<!-- Statistik-Kacheln -->
+<!-- ======================================================================= -->
+<!-- 1. WIDGET-BLOCK: STATISTIK-KACHELN (RBAC: admin.magic_codes.view)       -->
+<!-- ======================================================================= -->
+<?php if ($canViewMagicCodes): ?>
 <div class="row g-3 mb-4">
     <div class="col-sm-6 col-xl-3">
         <div class="card shadow-sm border-0 h-100">
@@ -133,10 +184,16 @@ ob_start();
         </div>
     </div>
 </div>
+<?php endif; ?>
 
+<!-- ======================================================================= -->
+<!-- 2. WIDGET-BLOCK: MAGIC CODES ERSTELLEN & TABELLE                       -->
+<!-- ======================================================================= -->
+<?php if ($canManageMagicCodes || $canViewMagicCodes): ?>
 <div class="row g-4 mb-4">
-    <!-- Formular: Neuen Magic-Code erstellen -->
-    <div class="col-lg-5 col-xl-4">
+    <?php if ($canManageMagicCodes): ?>
+    <!-- Formular-Widget: Neuen Magic-Code erstellen -->
+    <div class="<?= $canViewMagicCodes ? 'col-lg-5 col-xl-4' : 'col-12' ?>">
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white py-3 border-bottom">
                 <h5 class="card-title mb-0 fw-bold text-dark">
@@ -184,9 +241,11 @@ ob_start();
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
-    <!-- Tabelle: Vorhandene Magic-Codes (Übersicht) -->
-    <div class="col-lg-7 col-xl-8">
+    <?php if ($canViewMagicCodes): ?>
+    <!-- Tabellen-Widget: Vorhandene Magic-Codes (Übersicht) -->
+    <div class="<?= $canManageMagicCodes ? 'col-lg-7 col-xl-8' : 'col-12' ?>">
         <div class="card shadow-sm border-0 h-100" id="magic-codes-card">
             <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
@@ -226,7 +285,7 @@ ob_start();
                                 <?php
                                 $displaySlice = array_slice($magicCodes, 0, 7);
                                 foreach ($displaySlice as $row):
-                                    $usedCount = (int) ($row['used_count'] ?? 0);
+                                    $rowUsedCount = (int) ($row['used_count'] ?? 0);
                                     $maxUses = (int) ($row['max_uses'] ?? 1);
                                     $statusInfo = MagicCode::getStatus($row);
                                 ?>
@@ -239,7 +298,7 @@ ob_start();
                                         <code class="text-secondary small bg-light px-2 py-1 rounded border"><?= htmlspecialchars((string) $row['usage_type'], ENT_QUOTES, 'UTF-8') ?></code>
                                     </td>
                                     <td>
-                                        <span class="fw-medium"><?= $usedCount ?></span> / <span class="text-muted"><?= $maxUses ?></span>
+                                        <span class="fw-medium"><?= $rowUsedCount ?></span> / <span class="text-muted"><?= $maxUses ?></span>
                                     </td>
                                     <td>
                                         <span class="badge <?= $statusInfo['badge_class'] ?>">
@@ -265,7 +324,155 @@ ob_start();
             </div>
         </div>
     </div>
+    <?php endif; ?>
 </div>
+<?php endif; ?>
+
+<!-- ======================================================================= -->
+<!-- 3. WIDGET-BLOCK: WEITERE ADMIN-BEREICHE (RBAC GESTEUERT)                -->
+<!-- ======================================================================= -->
+<?php if ($canViewUsers || $canViewHomepage || $canViewModules || $canViewRoles): ?>
+<div class="row g-4 mb-4">
+    <?php if ($canViewUsers): ?>
+    <!-- Widget: Benutzerübersicht -->
+    <div class="col-md-6 col-xl-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0 fw-bold text-dark">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-people-fill text-primary me-2" viewBox="0 0 16 16">
+                        <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/>
+                    </svg>
+                    Benutzer (<?= count($userList) ?>)
+                </h6>
+                <a href="?route=admin/users" class="btn btn-sm btn-outline-primary">Verwalten</a>
+            </div>
+            <div class="card-body p-3">
+                <?php if (empty($userList)): ?>
+                    <p class="text-muted small mb-0">Keine Benutzer angelegt.</p>
+                <?php else: ?>
+                    <ul class="list-group list-group-flush small">
+                        <?php foreach (array_slice($userList, 0, 4) as $u): ?>
+                            <li class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fw-semibold text-dark"><?= htmlspecialchars((string) ($u['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span class="text-muted d-block"><?= htmlspecialchars((string) ($u['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-secondary mb-1"><?= htmlspecialchars((string) ($u['role'] ?? 'user'), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php if (!empty($u['theme_mode'])): ?>
+                                        <span class="badge bg-light text-dark border d-block"><?= htmlspecialchars((string) $u['theme_mode'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php if (count($userList) > 4): ?>
+                        <div class="text-center pt-2">
+                            <a href="?route=admin/users" class="small text-decoration-none">+ <?= count($userList) - 4 ?> weitere Benutzer</a>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($canViewHomepage): ?>
+    <!-- Widget: Startseiten-Status -->
+    <div class="col-md-6 col-xl-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0 fw-bold text-dark">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window-sidebar text-success me-2" viewBox="0 0 16 16">
+                        <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1m2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/>
+                        <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v2H1V3a1 1 0 0 1 1-1zM1 13V6h4v8H2a1 1 0 0 1-1-1m5 1V6h9v7a1 1 0 0 1-1 1z"/>
+                    </svg>
+                    Startseite &amp; Landing
+                </h6>
+                <a href="?route=admin/homepage" class="btn btn-sm btn-outline-success">Bearbeiten</a>
+            </div>
+            <div class="card-body p-3">
+                <div class="mb-2">
+                    <small class="text-muted d-block">Öffentlicher Titel:</small>
+                    <span class="fw-semibold text-dark"><?= htmlspecialchars($homepageTitle, ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Startseiten-Design:</small>
+                    <span class="badge bg-info text-dark"><?= htmlspecialchars(ucfirst($homepageTheme), ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block">Weiterleitung nach Login:</small>
+                    <code class="text-secondary small bg-light px-2 py-1 rounded border"><?= htmlspecialchars($afterLoginRedirect, ENT_QUOTES, 'UTF-8') ?></code>
+                </div>
+                <a href="?route=/" target="_blank" class="btn btn-sm btn-light border w-100">
+                    Öffentliche Startseite aufrufen ↗
+                </a>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($canViewModules || $canViewRoles): ?>
+    <!-- Widget: System & Module -->
+    <div class="col-md-6 col-xl-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0 fw-bold text-dark">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-grid-fill text-warning me-2" viewBox="0 0 16 16">
+                        <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5z"/>
+                    </svg>
+                    Module &amp; Sicherheit
+                </h6>
+            </div>
+            <div class="card-body p-3">
+                <?php if ($canViewModules): ?>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted fw-semibold">Erweiterungs-Module:</small>
+                            <a href="?route=admin/modules" class="small text-decoration-none">Verwalten</a>
+                        </div>
+                        <span class="badge bg-success">
+                            <?= count($modulesList) ?> Modul(e) registriert
+                        </span>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($canViewRoles): ?>
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted fw-semibold">RBAC-Rollen:</small>
+                            <a href="?route=admin/roles" class="small text-decoration-none">Rollen &amp; Rechte</a>
+                        </div>
+                        <span class="badge bg-secondary">
+                            <?= count($allRoles) ?> Rolle(n) konfiguriert
+                        </span>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
+
+<!-- ======================================================================= -->
+<!-- 4. FALLBACK-HINWEIS: WENN KEINE SPEZIFISCHEN WIDGETS FREIGESCHALTET SIND-->
+<!-- ======================================================================= -->
+<?php if (!$canViewMagicCodes && !$canManageMagicCodes && !$canViewUsers && !$canViewHomepage && !$canViewModules && !$canViewRoles): ?>
+<div class="card shadow-sm border-0 p-4 text-center">
+    <div class="py-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-person-badge text-secondary mb-3" viewBox="0 0 16 16">
+            <path d="M6.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1zM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+            <path d="M4.5 0A2.5 2.5 0 0 0 2 2.5V14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2.5A2.5 2.5 0 0 0 11.5 0zM3 2.5A1.5 1.5 0 0 1 4.5 1h7A1.5 1.5 0 0 1 13 2.5V14a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 3 14z"/>
+        </svg>
+        <h5 class="fw-bold text-dark">Willkommen im Admin-Bereich</h5>
+        <p class="text-muted max-w-lg mx-auto mb-0" style="max-width: 500px;">
+            Sie sind erfolgreich angemeldet. Für Ihre Rolle sind derzeit keine spezifischen Dashboard-Widgets freigeschaltet.
+            Wenden Sie sich bitte an einen Administrator, falls Sie zusätzliche Berechtigungen benötigen.
+        </p>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php
 $content = ob_get_clean();

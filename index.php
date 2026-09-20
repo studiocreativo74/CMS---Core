@@ -11,6 +11,7 @@ require_once __DIR__ . '/core/Csrf.php';
 require_once __DIR__ . '/core/ModuleManager.php';
 require_once __DIR__ . '/core/User.php';
 require_once __DIR__ . '/core/Rbac.php';
+require_once __DIR__ . '/core/Settings.php';
 
 Auth::startSession();
 
@@ -163,6 +164,19 @@ $router->post('/magic-login', function (): void {
     }
 
     if (Auth::loginWithMagicCodeForEmail($email, $code)) {
+        $redirectMode = class_exists('Settings') ? (string) Settings::get('after_login_redirect', 'admin') : 'admin';
+        if ($redirectMode === 'stay') {
+            header('Location: ?route=/');
+            exit;
+        }
+        if ($redirectMode === 'custom_url') {
+            $customUrl = class_exists('Settings') ? trim((string) Settings::get('after_login_custom_url', '')) : '';
+            if ($customUrl !== '') {
+                header('Location: ' . $customUrl);
+                exit;
+            }
+        }
+
         header('Location: ?route=admin');
         exit;
     }
@@ -245,7 +259,7 @@ $router->get('/admin/magic-codes', function (): void {
 
 // Helper zur CSRF- und Auth-Prüfung in POST-Routen
 $requireAdminAuthAndCsrf = function (string $redirectRoute = 'admin/magic-codes'): void {
-    if (!Auth::checkMagic()) {
+    if (!Auth::checkMagic() && !Auth::check()) {
         header('Location: ?route=/');
         exit;
     }
@@ -376,12 +390,81 @@ $router->post('/admin/magic-codes/resend', function () use ($requireAdminAuthAnd
 // ROUTE-MAPPING FÜR DEN ADMIN-BEREICH (Navigation <-> Router-Pfade)
 // -------------------------------------------------------------------------
 // 1. Dashboard:         Link `?route=admin`            -> Pfad `/admin`
-// 2. Magic Codes:       Link `?route=admin/magic-codes`-> Pfad `/admin/magic-codes`
-// 3. Benutzer:          Link `?route=admin/users`      -> Pfad `/admin/users`
-// 4. Rollen & Rechte:   Link `?route=admin/roles`      -> Pfad `/admin/roles`
-// 5. Module:            Link `?route=admin/modules`    -> Pfad `/admin/modules`
-// 6. Activity / Logs:   Link `?route=admin/activity`   -> Pfad `/admin/activity`
+// 2. Startseite:        Link `?route=admin/homepage`   -> Pfad `/admin/homepage`
+// 3. Magic Codes:       Link `?route=admin/magic-codes`-> Pfad `/admin/magic-codes`
+// 4. Benutzer:          Link `?route=admin/users`      -> Pfad `/admin/users`
+// 5. Rollen & Rechte:   Link `?route=admin/roles`      -> Pfad `/admin/roles`
+// 6. Module:            Link `?route=admin/modules`    -> Pfad `/admin/modules`
+// 7. Activity / Logs:   Link `?route=admin/activity`   -> Pfad `/admin/activity`
 // =========================================================================
+
+// --- 2. STARTSEITEN-VERWALTUNG (/admin/homepage) ---
+$router->get('/admin/homepage', function (): void {
+    if (!Auth::checkMagic() && !Auth::check()) {
+        header('Location: ?route=/');
+        exit;
+    }
+
+    if (class_exists('Rbac') && !Rbac::can('admin.homepage.manage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Sie haben keine Berechtigung für die Startseiten-Einstellungen.';
+        header('Location: ?route=admin');
+        exit;
+    }
+
+    $user = Auth::user();
+    $currentRoute = 'admin/homepage';
+    require __DIR__ . '/views/admin/homepage.php';
+});
+
+// POST /admin/homepage - Startseiten-Einstellungen speichern
+$router->post('/admin/homepage', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/homepage');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.homepage.manage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung zum Bearbeiten der Startseite.';
+        header('Location: ?route=admin/homepage');
+        exit;
+    }
+
+    $title = trim((string) ($_POST['homepage_title'] ?? ''));
+    $subtitle = trim((string) ($_POST['homepage_subtitle'] ?? ''));
+    $description = trim((string) ($_POST['homepage_description'] ?? ''));
+    $theme = trim((string) ($_POST['homepage_theme'] ?? 'standard'));
+    $redirect = trim((string) ($_POST['after_login_redirect'] ?? 'admin'));
+    $customUrl = trim((string) ($_POST['after_login_custom_url'] ?? ''));
+
+    if ($title === '') {
+        $_SESSION['flash_error'] = 'Der Haupttitel der Startseite darf nicht leer sein.';
+        header('Location: ?route=admin/homepage');
+        exit;
+    }
+
+    if (!in_array($theme, ['standard', 'light', 'dark', 'blue'], true)) {
+        $theme = 'standard';
+    }
+
+    if (!in_array($redirect, ['admin', 'stay', 'custom_url'], true)) {
+        $redirect = 'admin';
+    }
+
+    try {
+        if (class_exists('Settings')) {
+            Settings::set('homepage_title', $title);
+            Settings::set('homepage_subtitle', $subtitle);
+            Settings::set('homepage_description', $description);
+            Settings::set('homepage_theme', $theme);
+            Settings::set('after_login_redirect', $redirect);
+            Settings::set('after_login_custom_url', $customUrl);
+
+            $_SESSION['flash_success'] = 'Die Startseiten-Einstellungen wurden erfolgreich gespeichert.';
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Speichern der Einstellungen: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/homepage');
+    exit;
+});
 
 // --- 3. BENUTZERVERWALTUNG (/admin/users) ---
 $router->get('/admin/users', function (): void {
@@ -417,6 +500,10 @@ $router->post('/admin/users/create', function () use ($requireAdminAuthAndCsrf):
     $email = strtolower(trim((string) ($_POST['email'] ?? '')));
     $password = (string) ($_POST['password'] ?? '');
     $role = trim((string) ($_POST['role'] ?? 'admin'));
+    $themeMode = strtolower(trim((string) ($_POST['theme_mode'] ?? 'system')));
+    if (!in_array($themeMode, ['light', 'dark', 'system'], true)) {
+        $themeMode = 'system';
+    }
     $isActive = !empty($_POST['is_active']) ? 1 : 0;
 
     if ($name === '' || $email === '' || $password === '') {
@@ -439,6 +526,7 @@ $router->post('/admin/users/create', function () use ($requireAdminAuthAndCsrf):
                 'password' => $password,
                 'role' => $role,
                 'is_active' => $isActive,
+                'theme_mode' => $themeMode,
             ]);
             $_SESSION['flash_success'] = "Benutzer '{$name}' ({$email}) wurde erfolgreich erstellt.";
         }
@@ -447,6 +535,130 @@ $router->post('/admin/users/create', function () use ($requireAdminAuthAndCsrf):
     }
 
     header('Location: ?route=admin/users');
+    exit;
+});
+
+// GET /admin/users/edit - Benutzer bearbeiten
+$router->get('/admin/users/edit', function (): void {
+    if (!Auth::checkMagic() && !Auth::check()) {
+        header('Location: ?route=/');
+        exit;
+    }
+
+    if (class_exists('Rbac') && !Rbac::can('admin.users.manage') && !Rbac::can('admin.users')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung zum Bearbeiten von Benutzern.';
+        header('Location: ?route=admin/users');
+        exit;
+    }
+
+    $id = (int) ($_GET['id'] ?? 0);
+    if ($id <= 0) {
+        $_SESSION['flash_error'] = 'Ungültige Benutzer-ID.';
+        header('Location: ?route=admin/users');
+        exit;
+    }
+
+    $editUser = class_exists('User') ? User::find($id) : null;
+    if ($editUser === null) {
+        $_SESSION['flash_error'] = "Benutzer #{$id} wurde nicht gefunden.";
+        header('Location: ?route=admin/users');
+        exit;
+    }
+
+    $roles = class_exists('Rbac') ? Rbac::getAllRoles() : [];
+    $user = Auth::user();
+    $currentRoute = 'admin/users';
+    require __DIR__ . '/views/admin/users/edit.php';
+});
+
+// POST /admin/users/edit - Benutzer aktualisieren
+$router->post('/admin/users/edit', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/users');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.users.manage') && !Rbac::can('admin.users')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung zum Bearbeiten von Benutzern.';
+        header('Location: ?route=admin/users');
+        exit;
+    }
+
+    $id = (int) ($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        $_SESSION['flash_error'] = 'Ungültige Benutzer-ID.';
+        header('Location: ?route=admin/users');
+        exit;
+    }
+
+    $name = trim((string) ($_POST['name'] ?? ''));
+    $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+    $role = trim((string) ($_POST['role'] ?? 'admin'));
+    $themeMode = strtolower(trim((string) ($_POST['theme_mode'] ?? 'system')));
+    if (!in_array($themeMode, ['light', 'dark', 'system'], true)) {
+        $themeMode = 'system';
+    }
+    $isActive = !empty($_POST['is_active']) ? 1 : 0;
+    $password = (string) ($_POST['password'] ?? '');
+
+    if ($name === '' || $email === '') {
+        $_SESSION['flash_error'] = 'Bitte Name und E-Mail-Adresse angeben.';
+        header("Location: ?route=admin/users/edit&id={$id}");
+        exit;
+    }
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['flash_error'] = 'Bitte eine gültige E-Mail-Adresse angeben.';
+        header("Location: ?route=admin/users/edit&id={$id}");
+        exit;
+    }
+
+    try {
+        if (class_exists('User')) {
+            $updateData = [
+                'name' => $name,
+                'email' => $email,
+                'role' => $role,
+                'is_active' => $isActive,
+                'theme_mode' => $themeMode,
+            ];
+            if ($password !== '') {
+                $updateData['password'] = $password;
+            }
+
+            User::update($id, $updateData);
+
+            // Falls der angemeldete Benutzer sich selbst editiert hat, Theme in Session sofort anwenden
+            if (!empty($_SESSION['user_id']) && (int) $_SESSION['user_id'] === $id) {
+                $_SESSION['theme_mode'] = $themeMode;
+            }
+
+            $_SESSION['flash_success'] = "Benutzer '{$name}' wurde erfolgreich aktualisiert.";
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Aktualisieren des Benutzers: ' . $e->getMessage();
+        header("Location: ?route=admin/users/edit&id={$id}");
+        exit;
+    }
+
+    header('Location: ?route=admin/users');
+    exit;
+});
+
+// POST /admin/theme - Schnellwechsel des Themes für aktuellen Benutzer
+$router->post('/admin/theme', function () use ($requireAdminAuthAndCsrf): void {
+    $redirect = (string) ($_POST['redirect'] ?? 'admin');
+    $redirectRoute = ltrim($redirect, '/');
+    if ($redirectRoute === '' || str_starts_with($redirectRoute, 'http')) {
+        $redirectRoute = 'admin';
+    }
+    
+    $requireAdminAuthAndCsrf($redirectRoute);
+
+    $theme = strtolower(trim((string) ($_POST['theme'] ?? 'system')));
+    if (in_array($theme, ['light', 'dark', 'system'], true)) {
+        Auth::setCurrentTheme($theme);
+        $_SESSION['flash_success'] = "Theme erfolgreich auf '" . ucfirst($theme) . "' umgestellt.";
+    }
+
+    header("Location: ?route={$redirectRoute}");
     exit;
 });
 

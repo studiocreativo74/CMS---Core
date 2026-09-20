@@ -149,12 +149,19 @@ class Auth
         self::startSession();
 
         if (!empty($_SESSION['user_id'])) {
-            $user = DB::fetchOne(
-                'SELECT * FROM users WHERE id = :id AND is_active = 1',
-                ['id' => $_SESSION['user_id']]
-            );
-            if ($user) {
-                return $user;
+            try {
+                $user = DB::fetchOne(
+                    'SELECT * FROM users WHERE id = :id AND is_active = 1',
+                    ['id' => $_SESSION['user_id']]
+                );
+                if ($user) {
+                    if (empty($user['theme_mode']) || !in_array($user['theme_mode'], ['light', 'dark', 'system'], true)) {
+                        $user['theme_mode'] = $_SESSION['theme_mode'] ?? 'system';
+                    }
+                    return $user;
+                }
+            } catch (\Throwable $e) {
+                // users-Tabelle oder Spalte noch nicht vorhanden
             }
         }
 
@@ -165,10 +172,68 @@ class Auth
                 'name' => 'Magic-Admin',
                 'email' => $email,
                 'is_magic' => true,
+                'theme_mode' => (string) ($_SESSION['theme_mode'] ?? 'system'),
             ];
         }
 
         return null;
+    }
+
+    /**
+     * Alias für self::user()
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function currentUser(): ?array
+    {
+        return self::user();
+    }
+
+    /**
+     * Liefert das Theme des aktuellen Benutzers ('light', 'dark', 'system').
+     *
+     * @return string
+     */
+    public static function getCurrentTheme(): string
+    {
+        self::startSession();
+
+        $user = self::user();
+        if ($user !== null && !empty($user['theme_mode'])) {
+            $mode = (string) $user['theme_mode'];
+            if (in_array($mode, ['light', 'dark', 'system'], true)) {
+                return $mode;
+            }
+        }
+
+        $sessionTheme = (string) ($_SESSION['theme_mode'] ?? 'system');
+        return in_array($sessionTheme, ['light', 'dark', 'system'], true) ? $sessionTheme : 'system';
+    }
+
+    /**
+     * Speichert das Theme für den aktuellen Benutzer (in Session und DB).
+     *
+     * @param string $theme
+     * @return void
+     */
+    public static function setCurrentTheme(string $theme): void
+    {
+        self::startSession();
+
+        $theme = strtolower(trim($theme));
+        if (!in_array($theme, ['light', 'dark', 'system'], true)) {
+            $theme = 'system';
+        }
+
+        $_SESSION['theme_mode'] = $theme;
+
+        if (!empty($_SESSION['user_id']) && class_exists('User')) {
+            try {
+                User::updatePreferences((int) $_SESSION['user_id'], ['theme_mode' => $theme]);
+            } catch (\Throwable $e) {
+                error_log('Auth::setCurrentTheme DB Update Fehler: ' . $e->getMessage());
+            }
+        }
     }
 
     public static function check(): bool

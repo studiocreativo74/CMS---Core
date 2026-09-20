@@ -7,36 +7,74 @@ $success = $success ?? ($_SESSION['flash_home_success'] ?? null);
 $info = $info ?? ($_SESSION['flash_home_info'] ?? null);
 
 unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success'], $_SESSION['flash_home_info']);
+
+// Dynamische Startseiten-Einstellungen laden (mit robusten Fallbacks)
+$homepageTitle = class_exists('Settings') ? Settings::get('homepage_title', 'Willkommen im CMS-Prototype') : 'Willkommen im CMS-Prototype';
+$homepageSubtitle = class_exists('Settings') ? Settings::get('homepage_subtitle', '') : '';
+$homepageDescription = class_exists('Settings') ? Settings::get('homepage_description', '') : '';
+$homepageTheme = class_exists('Settings') ? Settings::get('homepage_theme', 'standard') : 'standard';
+if ($homepageTheme === '' || !in_array($homepageTheme, ['standard', 'light', 'dark', 'blue'], true)) {
+    $homepageTheme = 'standard';
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Willkommen im CMS-Prototype</title>
+    <title><?= htmlspecialchars($homepageTitle, ENT_QUOTES, 'UTF-8') ?></title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.5;
             color: #222;
-            margin: 0;
-            padding: 0;
             background-color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .page-content {
+            flex: 1 0 auto;
         }
         .magic-wrapper {
             max-width: 520px;
-            margin: 3.5rem auto;
+            margin: 3.5rem auto 1.5rem auto;
             padding: 0 1rem;
-            box-sizing: border-box;
+            width: 100%;
+        }
+        .home-header {
+            margin-bottom: 1.5rem;
         }
         h1 {
             color: #111;
-            font-size: 1.6rem;
-            margin-bottom: 1.5rem;
+            font-size: 1.65rem;
+            margin: 0 0 0.5rem 0;
+            line-height: 1.25;
+            font-weight: 700;
+        }
+        .subtitle {
+            font-size: 1.05rem;
+            color: #4b5563;
+            margin: 0 0 0.75rem 0;
+            font-weight: 500;
+        }
+        .description {
+            font-size: 0.95rem;
+            color: #6b7280;
+            margin: 0 0 1.25rem 0;
+            line-height: 1.6;
         }
         .alert {
             padding: 0.65rem 0.85rem;
-            border-radius: 4px;
+            border-radius: 6px;
             margin-bottom: 1.25rem;
             font-size: 0.95rem;
         }
@@ -57,10 +95,11 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success'], $_SESSION[
         }
         .card {
             border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 1.25rem;
+            border-radius: 8px;
+            padding: 1.35rem;
             background: #fafafa;
             margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         }
         .form-row {
             margin-bottom: 1rem;
@@ -73,21 +112,28 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success'], $_SESSION[
         .form-row input[type="email"] {
             width: 100%;
             box-sizing: border-box;
-            padding: 0.5rem 0.65rem;
+            padding: 0.55rem 0.75rem;
             border: 1px solid #ccc;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 1rem;
+        }
+        .form-row input[type="email"]:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
         }
         .btn {
             display: inline-block;
             background: #0066cc;
             color: #fff;
             border: none;
-            padding: 0.55rem 1.1rem;
+            padding: 0.6rem 1.2rem;
             font-size: 0.95rem;
-            border-radius: 4px;
+            font-weight: 500;
+            border-radius: 6px;
             cursor: pointer;
             text-decoration: none;
+            transition: background 0.15s ease;
         }
         .btn:hover {
             background: #0052a3;
@@ -119,8 +165,8 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success'], $_SESSION[
             align-items: center;
             background: #fff;
             border: 1px solid #e2e8f0;
-            padding: 0.6rem 0.85rem;
-            border-radius: 4px;
+            padding: 0.65rem 0.85rem;
+            border-radius: 6px;
             margin-bottom: 1.25rem;
         }
         .email-display {
@@ -128,7 +174,6 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success'], $_SESSION[
             color: #1f2937;
             word-break: break-all;
         }
-        /* 10 einzelne Ziffern-Felder */
         .code-digits-wrapper {
             display: flex;
             gap: 6px;
@@ -141,19 +186,20 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success'], $_SESSION[
             text-align: center;
             font-size: 1.25rem;
             font-weight: 600;
-            font-family: monospace, monospace;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             text-transform: uppercase;
             border: 1px solid #ccc;
-            border-radius: 4px;
+            border-radius: 6px;
             padding: 0;
             box-sizing: border-box;
             background: #fff;
             color: #111;
+            transition: border-color 0.15s, box-shadow 0.15s;
         }
         .code-digit:focus {
             border-color: #0066cc;
             outline: none;
-            box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.2);
         }
         @media (max-width: 480px) {
             .code-digits-wrapper {
@@ -166,105 +212,229 @@ unset($_SESSION['flash_home_error'], $_SESSION['flash_home_success'], $_SESSION[
             }
         }
         .links {
-            margin-top: 2rem;
+            margin-top: 1.75rem;
             padding-top: 1rem;
             border-top: 1px solid #e5e7eb;
-            font-size: 0.9rem;
+            font-size: 0.92rem;
         }
         .links a {
             color: #0066cc;
             text-decoration: none;
-            margin-right: 1rem;
+            font-weight: 500;
         }
         .links a:hover {
             text-decoration: underline;
         }
+        /* Einheitlicher Footer */
+        .site-footer {
+            flex-shrink: 0;
+            text-align: center;
+            padding: 2rem 1rem;
+            font-size: 0.88rem;
+            color: #6b7280;
+            border-top: 1px solid transparent;
+        }
+
+        /* --- THEMES --- */
+        /* 1. Theme: Light (Clean White) */
+        body.theme-light {
+            background-color: #ffffff;
+            color: #1e293b;
+        }
+        body.theme-light .card {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        body.theme-light .site-footer {
+            border-top-color: #f1f5f9;
+            color: #94a3b8;
+        }
+
+        /* 2. Theme: Dark */
+        body.theme-dark {
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
+        body.theme-dark h1 {
+            color: #ffffff;
+        }
+        body.theme-dark .subtitle {
+            color: #94a3b8;
+        }
+        body.theme-dark .description {
+            color: #cbd5e1;
+        }
+        body.theme-dark .card {
+            background: #1e293b;
+            border-color: #334155;
+            color: #f1f5f9;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        body.theme-dark .form-row input[type="email"] {
+            background: #0f172a;
+            border-color: #475569;
+            color: #ffffff;
+        }
+        body.theme-dark .email-info-box {
+            background: #0f172a;
+            border-color: #334155;
+        }
+        body.theme-dark .email-display {
+            color: #f1f5f9;
+        }
+        body.theme-dark .code-digit {
+            background: #0f172a;
+            border-color: #475569;
+            color: #ffffff;
+        }
+        body.theme-dark .btn-outline {
+            color: #cbd5e1;
+            border-color: #475569;
+        }
+        body.theme-dark .btn-outline:hover {
+            background: #334155;
+            color: #ffffff;
+        }
+        body.theme-dark .links {
+            border-top-color: #334155;
+        }
+        body.theme-dark .links a {
+            color: #38bdf8;
+        }
+        body.theme-dark .site-footer {
+            color: #64748b;
+            border-top-color: #1e293b;
+        }
+
+        /* 3. Theme: Blue (Corporate Blue) */
+        body.theme-blue {
+            background-color: #f0f7ff;
+            color: #1e293b;
+        }
+        body.theme-blue h1 {
+            color: #0c4a6e;
+        }
+        body.theme-blue .subtitle {
+            color: #0369a1;
+        }
+        body.theme-blue .card {
+            background: #ffffff;
+            border-color: #bae6fd;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.08);
+        }
+        body.theme-blue .btn {
+            background: #0284c7;
+        }
+        body.theme-blue .btn:hover {
+            background: #0369a1;
+        }
+        body.theme-blue .site-footer {
+            color: #0284c7;
+        }
     </style>
 </head>
-<body>
-    <div class="magic-wrapper">
-        <h1>Willkommen im CMS-Prototype</h1>
+<body class="theme-<?= htmlspecialchars($homepageTheme, ENT_QUOTES, 'UTF-8') ?>">
+    <div class="page-content">
+        <div class="magic-wrapper">
+            <header class="home-header">
+                <h1><?= htmlspecialchars($homepageTitle, ENT_QUOTES, 'UTF-8') ?></h1>
 
-        <?php if (!empty($error)): ?>
-            <div class="alert alert-error">
-                <p style="color: red; margin: 0;"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p>
-            </div>
-        <?php endif; ?>
+                <?php if ($homepageSubtitle !== ''): ?>
+                    <p class="subtitle"><?= htmlspecialchars($homepageSubtitle, ENT_QUOTES, 'UTF-8') ?></p>
+                <?php endif; ?>
 
-        <?php if (!empty($info)): ?>
-            <div class="alert alert-info">
-                <p style="margin: 0;"><?= htmlspecialchars((string) $info, ENT_QUOTES, 'UTF-8') ?></p>
-            </div>
-        <?php endif; ?>
+                <?php if ($homepageDescription !== ''): ?>
+                    <div class="description"><?= nl2br(htmlspecialchars($homepageDescription, ENT_QUOTES, 'UTF-8')) ?></div>
+                <?php endif; ?>
+            </header>
 
-        <?php if (!empty($success)): ?>
-            <div class="alert alert-success">
-                <p style="margin: 0;"><?= htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') ?></p>
-            </div>
-        <?php endif; ?>
+            <?php if (!empty($error)): ?>
+                <div class="alert alert-error">
+                    <p style="color: #9b1c1c; margin: 0;"><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></p>
+                </div>
+            <?php endif; ?>
 
-        <?php if (empty($sessionEmail)): ?>
-            <!-- Schritt 1: Noch keine E-Mail in der Session -->
-            <div class="card">
-                <p>Gib deine E-Mail-Adresse ein, um fortzufahren:</p>
-                <form method="post" action="?route=magic-set-email">
-                    <div class="form-row">
-                        <label for="email">E-Mail-Adresse:</label>
-                        <input type="email" id="email" name="email" maxlength="191" required placeholder="name@beispiel.ch" autofocus>
-                    </div>
-                    <button type="submit" class="btn">Weiter</button>
-                </form>
-            </div>
-        <?php else: ?>
-            <!-- Schritt 2: E-Mail in der Session gespeichert -->
-            <div class="card">
-                <div class="email-info-box">
-                    <div>
-                        <small style="color: #666; display: block;">Angemeldete E-Mail:</small>
-                        <span class="email-display"><?= htmlspecialchars($sessionEmail, ENT_QUOTES, 'UTF-8') ?></span>
-                    </div>
-                    <form method="post" action="?route=magic-clear-email" style="margin: 0;">
-                        <button type="submit" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">E-Mail ändern</button>
+            <?php if (!empty($info)): ?>
+                <div class="alert alert-info">
+                    <p style="margin: 0;"><?= htmlspecialchars((string) $info, ENT_QUOTES, 'UTF-8') ?></p>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($success)): ?>
+                <div class="alert alert-success">
+                    <p style="margin: 0;"><?= htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') ?></p>
+                </div>
+            <?php endif; ?>
+
+            <?php if (empty($sessionEmail)): ?>
+                <!-- Schritt 1: Noch keine E-Mail in der Session -->
+                <div class="card">
+                    <p style="margin-top: 0; margin-bottom: 1rem; font-weight: 500;">Gib deine E-Mail-Adresse ein, um fortzufahren:</p>
+                    <form method="post" action="?route=magic-set-email">
+                        <div class="form-row">
+                            <label for="email">E-Mail-Adresse:</label>
+                            <input type="email" id="email" name="email" maxlength="191" required placeholder="name@beispiel.ch" autofocus>
+                        </div>
+                        <button type="submit" class="btn">Weiter</button>
                     </form>
                 </div>
-
-                <p>Gib deinen 10-stelligen Magic Code ein:</p>
-                <form method="post" action="?route=magic-login" id="magic_login_form">
-                    <input type="hidden" name="magic_code" id="magic_code_hidden">
-
-                    <div class="code-digits-wrapper" id="magic_code_container">
-                        <?php for ($i = 0; $i < 10; $i++): ?>
-                            <input type="text"
-                                   class="code-digit"
-                                   data-index="<?= $i ?>"
-                                   maxlength="1"
-                                   autocomplete="off"
-                                   autocapitalize="characters"
-                                   spellcheck="false"
-                                   <?= $i === 0 ? 'autofocus' : '' ?>>
-                        <?php endfor; ?>
+            <?php else: ?>
+                <!-- Schritt 2: E-Mail in der Session gespeichert -->
+                <div class="card">
+                    <div class="email-info-box">
+                        <div>
+                            <small style="color: #666; display: block;">Angemeldete E-Mail:</small>
+                            <span class="email-display"><?= htmlspecialchars($sessionEmail, ENT_QUOTES, 'UTF-8') ?></span>
+                        </div>
+                        <form method="post" action="?route=magic-clear-email" style="margin: 0;">
+                            <button type="submit" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">E-Mail ändern</button>
+                        </form>
                     </div>
 
-                    <div class="btn-group">
-                        <button type="submit" class="btn">Code einloggen</button>
-                    </div>
-                </form>
+                    <p style="margin-top: 0; margin-bottom: 0.75rem; font-weight: 500;">Gib deinen 10-stelligen Magic Code ein:</p>
+                    <form method="post" action="?route=magic-login" id="magic_login_form">
+                        <input type="hidden" name="magic_code" id="magic_code_hidden">
 
-                <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed #d1d5db;">
-                    <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #555;">Keinen Code zur Hand oder abgelaufen?</p>
-                    <form method="post" action="?route=magic-request" style="margin: 0;">
-                        <button type="submit" class="btn btn-secondary" style="font-size: 0.88rem;">Neuen Code anfordern</button>
+                        <div class="code-digits-wrapper" id="magic_code_container">
+                            <?php for ($i = 0; $i < 10; $i++): ?>
+                                <input type="text"
+                                       class="code-digit"
+                                       data-index="<?= $i ?>"
+                                       maxlength="1"
+                                       autocomplete="off"
+                                       autocapitalize="characters"
+                                       spellcheck="false"
+                                       <?= $i === 0 ? 'autofocus' : '' ?>>
+                            <?php endfor; ?>
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="submit" class="btn">Code einloggen</button>
+                        </div>
                     </form>
-                </div>
-            </div>
-        <?php endif; ?>
 
-        <?php if (!empty($_SESSION['magic_authenticated'])): ?>
-            <div class="links">
-                <a href="?route=admin">Zum Admin-Dashboard</a>
-            </div>
-        <?php endif; ?>
+                    <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed #d1d5db;">
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #555;">Keinen Code zur Hand oder abgelaufen?</p>
+                        <form method="post" action="?route=magic-request" style="margin: 0;">
+                            <button type="submit" class="btn btn-secondary" style="font-size: 0.88rem;">Neuen Code anfordern</button>
+                        </form>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($_SESSION['magic_authenticated'])): ?>
+                <div class="links">
+                    <a href="?route=admin">Zum Admin-Dashboard</a>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
+
+    <!-- Einheitlicher Footer -->
+    <footer class="site-footer">
+        &copy; <?= date('Y') ?> StudioCreativo
+    </footer>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {

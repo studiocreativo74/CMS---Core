@@ -22,14 +22,34 @@ final class User
     public static function all(): array
     {
         try {
-            return DB::fetchAll(
-                'SELECT `id`, `email`, `name`, `role`, `is_active`, `last_login_at`, `created_at`, `updated_at` 
+            // Zuerst versuchen wir die Abfrage inklusive theme_mode
+            $users = DB::fetchAll(
+                'SELECT `id`, `email`, `name`, `role`, `is_active`, `theme_mode`, `last_login_at`, `created_at`, `updated_at` 
                  FROM `users` 
                  ORDER BY `id` ASC'
             );
+            return array_map(static function (array $u): array {
+                if (!isset($u['theme_mode']) || !in_array($u['theme_mode'], ['light', 'dark', 'system'], true)) {
+                    $u['theme_mode'] = 'system';
+                }
+                return $u;
+            }, $users);
         } catch (\Throwable $e) {
-            error_log('User::all Fehler: ' . $e->getMessage());
-            return [];
+            // Fallback, falls die Spalte theme_mode in der DB noch nicht existiert
+            try {
+                $users = DB::fetchAll(
+                    'SELECT `id`, `email`, `name`, `role`, `is_active`, `last_login_at`, `created_at`, `updated_at` 
+                     FROM `users` 
+                     ORDER BY `id` ASC'
+                );
+                return array_map(static function (array $u): array {
+                    $u['theme_mode'] = 'system';
+                    return $u;
+                }, $users);
+            } catch (\Throwable $e2) {
+                error_log('User::all Fehler: ' . $e2->getMessage());
+                return [];
+            }
         }
     }
 
@@ -42,16 +62,39 @@ final class User
     public static function find(int $id): ?array
     {
         try {
-            return DB::fetchOne(
-                'SELECT `id`, `email`, `name`, `role`, `is_active`, `last_login_at`, `created_at`, `updated_at` 
+            $user = DB::fetchOne(
+                'SELECT `id`, `email`, `name`, `role`, `is_active`, `theme_mode`, `last_login_at`, `created_at`, `updated_at` 
                  FROM `users` 
                  WHERE `id` = :id 
                  LIMIT 1',
                 ['id' => $id]
             );
-        } catch (\Throwable $e) {
-            error_log('User::find Fehler: ' . $e->getMessage());
+            if ($user !== null) {
+                if (!isset($user['theme_mode']) || !in_array($user['theme_mode'], ['light', 'dark', 'system'], true)) {
+                    $user['theme_mode'] = 'system';
+                }
+                return $user;
+            }
             return null;
+        } catch (\Throwable $e) {
+            // Fallback ohne theme_mode Spalte
+            try {
+                $user = DB::fetchOne(
+                    'SELECT `id`, `email`, `name`, `role`, `is_active`, `last_login_at`, `created_at`, `updated_at` 
+                     FROM `users` 
+                     WHERE `id` = :id 
+                     LIMIT 1',
+                    ['id' => $id]
+                );
+                if ($user !== null) {
+                    $user['theme_mode'] = 'system';
+                    return $user;
+                }
+                return null;
+            } catch (\Throwable $e2) {
+                error_log('User::find Fehler: ' . $e2->getMessage());
+                return null;
+            }
         }
     }
 
@@ -63,17 +106,41 @@ final class User
      */
     public static function findByEmail(string $email): ?array
     {
+        $cleanEmail = strtolower(trim($email));
         try {
-            return DB::fetchOne(
-                'SELECT `id`, `email`, `name`, `role`, `is_active`, `last_login_at`, `created_at`, `updated_at` 
+            $user = DB::fetchOne(
+                'SELECT `id`, `email`, `name`, `role`, `is_active`, `theme_mode`, `last_login_at`, `created_at`, `updated_at` 
                  FROM `users` 
                  WHERE `email` = :email 
                  LIMIT 1',
-                ['email' => strtolower(trim($email))]
+                ['email' => $cleanEmail]
             );
-        } catch (\Throwable $e) {
-            error_log('User::findByEmail Fehler: ' . $e->getMessage());
+            if ($user !== null) {
+                if (!isset($user['theme_mode']) || !in_array($user['theme_mode'], ['light', 'dark', 'system'], true)) {
+                    $user['theme_mode'] = 'system';
+                }
+                return $user;
+            }
             return null;
+        } catch (\Throwable $e) {
+            // Fallback ohne theme_mode Spalte
+            try {
+                $user = DB::fetchOne(
+                    'SELECT `id`, `email`, `name`, `role`, `is_active`, `last_login_at`, `created_at`, `updated_at` 
+                     FROM `users` 
+                     WHERE `email` = :email 
+                     LIMIT 1',
+                    ['email' => $cleanEmail]
+                );
+                if ($user !== null) {
+                    $user['theme_mode'] = 'system';
+                    return $user;
+                }
+                return null;
+            } catch (\Throwable $e2) {
+                error_log('User::findByEmail Fehler: ' . $e2->getMessage());
+                return null;
+            }
         }
     }
 
@@ -116,24 +183,46 @@ final class User
         }
 
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $themeMode = strtolower(trim((string) ($data['theme_mode'] ?? 'system')));
+        if (!in_array($themeMode, ['light', 'dark', 'system'], true)) {
+            $themeMode = 'system';
+        }
 
         try {
             DB::execute(
-                'INSERT INTO `users` (`email`, `password_hash`, `name`, `role`, `is_active`, `created_at`, `updated_at`) 
-                 VALUES (:email, :password_hash, :name, :role, :is_active, NOW(), NOW())',
+                'INSERT INTO `users` (`email`, `password_hash`, `name`, `role`, `is_active`, `theme_mode`, `created_at`, `updated_at`) 
+                 VALUES (:email, :password_hash, :name, :role, :is_active, :theme_mode, NOW(), NOW())',
                 [
                     'email' => $email,
                     'password_hash' => $passwordHash,
                     'name' => $name,
                     'role' => $role,
                     'is_active' => $isActive,
+                    'theme_mode' => $themeMode,
                 ]
             );
 
             return (int) DB::lastInsertId();
         } catch (\Throwable $e) {
-            error_log('User::create Fehler: ' . $e->getMessage());
-            throw new RuntimeException('Fehler beim Erstellen des Benutzers: ' . $e->getMessage(), 0, $e);
+            // Fallback, falls theme_mode Spalte noch nicht existiert
+            try {
+                DB::execute(
+                    'INSERT INTO `users` (`email`, `password_hash`, `name`, `role`, `is_active`, `created_at`, `updated_at`) 
+                     VALUES (:email, :password_hash, :name, :role, :is_active, NOW(), NOW())',
+                    [
+                        'email' => $email,
+                        'password_hash' => $passwordHash,
+                        'name' => $name,
+                        'role' => $role,
+                        'is_active' => $isActive,
+                    ]
+                );
+
+                return (int) DB::lastInsertId();
+            } catch (\Throwable $e2) {
+                error_log('User::create Fehler: ' . $e2->getMessage());
+                throw new RuntimeException('Fehler beim Erstellen des Benutzers: ' . $e2->getMessage(), 0, $e2);
+            }
         }
     }
 
@@ -190,6 +279,15 @@ final class User
             $params['is_active'] = (bool) $data['is_active'] ? 1 : 0;
         }
 
+        if (array_key_exists('theme_mode', $data)) {
+            $themeMode = strtolower(trim((string) $data['theme_mode']));
+            if (!in_array($themeMode, ['light', 'dark', 'system'], true)) {
+                $themeMode = 'system';
+            }
+            $fields[] = '`theme_mode` = :theme_mode';
+            $params['theme_mode'] = $themeMode;
+        }
+
         if (!empty($data['password'])) {
             $password = (string) $data['password'];
             $fields[] = '`password_hash` = :password_hash';
@@ -206,9 +304,55 @@ final class User
             $sql = 'UPDATE `users` SET ' . implode(', ', $fields) . ' WHERE `id` = :id';
             DB::execute($sql, $params);
         } catch (\Throwable $e) {
+            // Falls theme_mode in der DB noch nicht existiert, versuchen wir es ohne theme_mode
+            if (array_key_exists('theme_mode', $params)) {
+                unset($params['theme_mode']);
+                $filteredFields = array_filter($fields, static fn(string $f): bool => !str_contains($f, '`theme_mode`'));
+                if (!empty($filteredFields)) {
+                    try {
+                        $sqlFallback = 'UPDATE `users` SET ' . implode(', ', $filteredFields) . ' WHERE `id` = :id';
+                        DB::execute($sqlFallback, $params);
+                        return;
+                    } catch (\Throwable $eFallback) {
+                        // Weitermachen zum Hauptfehler
+                    }
+                }
+            }
             error_log('User::update Fehler: ' . $e->getMessage());
             throw new RuntimeException('Fehler beim Aktualisieren des Benutzers: ' . $e->getMessage(), 0, $e);
         }
+    }
+
+    /**
+     * Aktualisiert Benutzereinstellungen wie z.B. das Theme.
+     *
+     * @param int $id Benutzer-ID
+     * @param array<string, mixed> $preferences
+     */
+    public static function updatePreferences(int $id, array $preferences): void
+    {
+        $allowed = [];
+        if (array_key_exists('theme_mode', $preferences)) {
+            $themeMode = strtolower(trim((string) $preferences['theme_mode']));
+            $allowed['theme_mode'] = in_array($themeMode, ['light', 'dark', 'system'], true) ? $themeMode : 'system';
+        }
+
+        if (!empty($allowed)) {
+            self::update($id, $allowed);
+        }
+    }
+
+    /**
+     * Gibt das eingestellte Theme eines Benutzers zurück ('light', 'dark', 'system').
+     *
+     * @param int $id Benutzer-ID
+     * @return string
+     */
+    public static function getTheme(int $id): string
+    {
+        $user = self::find($id);
+        $mode = (string) ($user['theme_mode'] ?? 'system');
+        return in_array($mode, ['light', 'dark', 'system'], true) ? $mode : 'system';
     }
 
     /**
