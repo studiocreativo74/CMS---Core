@@ -66,7 +66,9 @@ if ($canViewMagicCodes && class_exists('MagicCode')) {
 // Optionale Zusatzdaten für berechtigte Widgets laden
 $userList = ($canViewUsers && class_exists('User')) ? User::all() : [];
 $allRoles = ($canViewRoles && class_exists('Rbac')) ? Rbac::getAllRoles() : [];
-$modulesList = ($canViewModules && class_exists('ModuleManager')) ? ModuleManager::getAll() : [];
+$modulesList = ($canViewModules && class_exists('ModuleManager')) 
+    ? (method_exists('ModuleManager', 'all') ? ModuleManager::all() : (method_exists('ModuleManager', 'getAll') ? ModuleManager::getAll() : []))
+    : [];
 
 // Startseiten-Daten
 $homepageTitle = 'StudioCreativo CMS';

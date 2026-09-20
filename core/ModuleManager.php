@@ -56,6 +56,17 @@ final class ModuleManager
     }
 
     /**
+     * Alias für `all()` zur Rückwärtskompatibilität.
+     *
+     * @param bool $onlyEnabled
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getAll(bool $onlyEnabled = false): array
+    {
+        return self::all($onlyEnabled);
+    }
+
+    /**
      * Liefert ein einzelnes Modul nach `key` oder null, falls nicht gefunden.
      *
      * @param string $key Eindeutiger Modulschlüssel (z.B. 'contact_form')
