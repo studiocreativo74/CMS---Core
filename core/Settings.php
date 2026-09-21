@@ -24,7 +24,10 @@ declare(strict_types=1);
  *   ('homepage_description', ''),
  *   ('homepage_theme', 'standard'),
  *   ('after_login_redirect', 'admin'),
- *   ('after_login_custom_url', '')
+ *   ('after_login_custom_url', ''),
+ *   ('homepage_mode', 'blocks'),
+ *   ('homepage_module_key', ''),
+ *   ('homepage_module_route', '')
  * ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);
  */
 final class Settings
@@ -48,6 +51,12 @@ final class Settings
         'homepage_layout'           => 'contained',
         'after_login_redirect'      => 'admin',
         'after_login_custom_url'    => '',
+        'homepage_mode'             => 'blocks',
+        'homepage_module_key'       => '',
+        'homepage_module_route'     => '',
+        'admin_brand_color'         => '#0d6efd',
+        'admin_accent_color'        => '#0ea5e9',
+        'admin_default_theme'       => 'system',
     ];
 
     private function __construct()

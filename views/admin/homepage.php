@@ -23,6 +23,17 @@ $homepageLayout = (string) ($settings['homepage_layout'] ?? 'contained');
 $afterLoginRedirect = (string) ($settings['after_login_redirect'] ?? 'admin');
 $afterLoginCustomUrl = (string) ($settings['after_login_custom_url'] ?? '');
 
+// Startseiten-Modus & Modul-Einstellungen
+$homepageMode = (string) ($settings['homepage_mode'] ?? 'blocks');
+if (!in_array($homepageMode, ['blocks', 'module'], true)) {
+    $homepageMode = 'blocks';
+}
+$homepageModuleKey = (string) ($settings['homepage_module_key'] ?? '');
+$homepageModuleRoute = (string) ($settings['homepage_module_route'] ?? '');
+
+// Aktive Module für Auswahl ermitteln
+$activeModules = class_exists('ModuleManager') ? ModuleManager::all(true) : [];
+
 // Blöcke laden
 $blocks = class_exists('HomepageBlock') ? HomepageBlock::all(false) : [];
 $validTypes = class_exists('HomepageBlock') ? HomepageBlock::VALID_TYPES : [];
@@ -94,6 +105,24 @@ ob_start();
     <!-- TAB 1: INHALTSBLÖCKE (SECTIONS) VERWALTEN                         -->
     <!-- ================================================================= -->
     <div class="tab-pane fade show active" id="tab-blocks" role="tabpanel" aria-labelledby="blocks-tab">
+        <?php if ($homepageMode === 'module'): ?>
+            <div class="alert alert-warning d-flex align-items-start gap-3 mb-4 shadow-sm" role="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1" viewBox="0 0 16 16">
+                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                </svg>
+                <div class="flex-grow-1">
+                    <h6 class="alert-heading fw-bold mb-1">Startseiten-Modus „Modul als Startseite“ ist aktiv</h6>
+                    <p class="small mb-2">
+                        Besucher der Hauptdomain-Root (<code>/</code>) werden derzeit automatisch auf das gewählte Modul weitergeleitet.
+                        Die hier angelegten Inhaltsblöcke bleiben vollständig erhalten, werden jedoch im Frontend pausiert, bis wieder auf „CMS-Startseite“ gewechselt wird.
+                    </p>
+                    <button type="button" class="btn btn-sm btn-outline-dark" onclick="var triggerEl = document.querySelector('#settings-tab'); if(triggerEl){ new bootstrap.Tab(triggerEl).show(); }">
+                        Zu den Startseiten-Einstellungen wechseln &rarr;
+                    </button>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
@@ -222,6 +251,9 @@ ob_start();
             <input type="hidden" name="section" value="design">
 
             <!-- Bestehende Textwerte weiterreichen, damit nichts überschrieben wird -->
+            <input type="hidden" name="homepage_mode" value="<?= htmlspecialchars($homepageMode, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="homepage_module_key" value="<?= htmlspecialchars($homepageModuleKey, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="homepage_module_route" value="<?= htmlspecialchars($homepageModuleRoute, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="homepage_title" value="<?= htmlspecialchars($homepageTitle, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="homepage_subtitle" value="<?= htmlspecialchars($homepageSubtitle, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="homepage_description" value="<?= htmlspecialchars($homepageDescription, ENT_QUOTES, 'UTF-8') ?>">
@@ -358,6 +390,97 @@ ob_start();
             <input type="hidden" name="homepage_layout" value="<?= htmlspecialchars($homepageLayout, ENT_QUOTES, 'UTF-8') ?>">
 
             <div class="col-lg-8">
+                <!-- Startseiten-Modus: CMS-Startseite vs. Modul als Startseite -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <h5 class="card-title mb-0 fw-semibold text-dark">Startseiten-Modus</h5>
+                            <small class="text-muted">Lege fest, welche Ansicht bei Aufruf der Hauptdomain <code>/</code> geladen wird.</small>
+                        </div>
+                        <span class="badge <?= $homepageMode === 'module' ? 'bg-info text-dark' : 'bg-primary' ?> px-2 py-1">
+                            <?= $homepageMode === 'module' ? 'Modul als Startseite aktiv' : 'CMS-Startseite aktiv' ?>
+                        </span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100 <?= $homepageMode === 'blocks' ? 'border-primary bg-light' : '' ?>" id="mode_card_blocks" style="cursor: pointer;" onclick="document.getElementById('mode_blocks').checked = true; toggleHomepageMode('blocks');">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="homepage_mode" id="mode_blocks" value="blocks"
+                                               <?= $homepageMode === 'blocks' ? 'checked' : '' ?> onchange="toggleHomepageMode('blocks')">
+                                        <label class="form-check-label fw-bold" for="mode_blocks">
+                                            Variante A: CMS-Startseite
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mb-0 mt-2">
+                                        Rendert konfigurierte Inhaltsblöcke, Hero-Texte, Farben, Logo und das integrierte Magic-Login-Formular.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100 <?= $homepageMode === 'module' ? 'border-primary bg-light' : '' ?>" id="mode_card_module" style="cursor: pointer;" onclick="document.getElementById('mode_module').checked = true; toggleHomepageMode('module');">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="homepage_mode" id="mode_module" value="module"
+                                               <?= $homepageMode === 'module' ? 'checked' : '' ?> onchange="toggleHomepageMode('module')">
+                                        <label class="form-check-label fw-bold" for="mode_module">
+                                            Variante B: Modul als Startseite
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mb-0 mt-2">
+                                        Leitet Aufrufe von <code>/</code> automatisch auf die Frontend-Route eines aktiven Moduls um.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modul-Einstellungen (nur bei Variante B eingeblendet) -->
+                        <div id="module_settings_container" class="<?= $homepageMode === 'module' ? '' : 'd-none' ?> bg-light p-3 rounded border">
+                            <h6 class="fw-bold mb-3 text-dark">Modul-Auswahl &amp; Ziel-Route</h6>
+
+                            <div class="mb-3">
+                                <label for="homepage_module_key" class="form-label fw-medium">Aktives Modul wählen <span class="text-danger">*</span></label>
+                                <select class="form-select" id="homepage_module_key" name="homepage_module_key" onchange="onModuleSelectChange(this)">
+                                    <option value="">-- Bitte aktives Modul auswählen --</option>
+                                    <?php foreach ($activeModules as $mod): ?>
+                                        <option value="<?= htmlspecialchars($mod['module_key'], ENT_QUOTES, 'UTF-8') ?>"
+                                                <?= $homepageModuleKey === $mod['module_key'] ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($mod['name'] ?? $mod['module_key'], ENT_QUOTES, 'UTF-8') ?>
+                                            (<?= htmlspecialchars($mod['module_key'], ENT_QUOTES, 'UTF-8') ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <?php if (empty($activeModules)): ?>
+                                    <div class="form-text text-warning mt-1">
+                                        Hinweis: Es ist aktuell kein Modul in der Datenbank aktiviert. Aktiviere zuerst ein Modul unter <a href="?route=admin/modules">Module</a>.
+                                    </div>
+                                <?php else: ?>
+                                    <div class="form-text">Zur Auswahl stehen alle derzeit aktivierten Module des Systems.</div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="mb-2">
+                                <label for="homepage_module_route" class="form-label fw-medium">Modul-Route / Weiterleitungspfad</label>
+                                <input type="text" class="form-control" id="homepage_module_route" name="homepage_module_route"
+                                       value="<?= htmlspecialchars($homepageModuleRoute, ENT_QUOTES, 'UTF-8') ?>"
+                                       placeholder="z.B. /contact_form oder /kontakt">
+                                <div class="form-text">
+                                    Pfad oder Unterseite, auf die weitergeleitet werden soll. Wird das Feld leer gelassen, leitet das CMS automatisch auf <code>/{modul_key}</code> weiter.
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info py-2 px-3 small mb-0 mt-3 d-flex align-items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shield-check me-2 flex-shrink-0 text-primary" viewBox="0 0 16 16">
+                                    <path d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .101.025 1 1 0 0 0 .1-.025q.114-.034.294-.118c.24-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
+                                    <path d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
+                                </svg>
+                                <div>
+                                    <strong>Login-Erreichbarkeit gewährleistet:</strong> Magic-Code- und Admin-Anmeldungen bleiben über <a href="?route=/&login=1" target="_blank" class="fw-medium text-decoration-none">/?login=1</a> bzw. <code>/login</code> uneingeschränkt aktiv.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white py-3 border-bottom">
                         <h5 class="card-title mb-0 fw-semibold text-dark">Texte &amp; Beschreibungen</h5>
@@ -581,6 +704,29 @@ ob_start();
 <?php endforeach; ?>
 
 <script>
+function toggleHomepageMode(mode) {
+    const container = document.getElementById('module_settings_container');
+    const cardBlocks = document.getElementById('mode_card_blocks');
+    const cardModule = document.getElementById('mode_card_module');
+
+    if (mode === 'module') {
+        if (container) container.classList.remove('d-none');
+        if (cardModule) cardModule.classList.add('border-primary', 'bg-light');
+        if (cardBlocks) cardBlocks.classList.remove('border-primary', 'bg-light');
+    } else {
+        if (container) container.classList.add('d-none');
+        if (cardBlocks) cardBlocks.classList.add('border-primary', 'bg-light');
+        if (cardModule) cardModule.classList.remove('border-primary', 'bg-light');
+    }
+}
+
+function onModuleSelectChange(selectEl) {
+    const routeInput = document.getElementById('homepage_module_route');
+    if (routeInput && selectEl.value && routeInput.value.trim() === '') {
+        routeInput.value = '/' + selectEl.value;
+    }
+}
+
 function toggleCustomUrlField() {
     const isCustom = document.getElementById('redirect_custom') && document.getElementById('redirect_custom').checked;
     const container = document.getElementById('custom_url_container');

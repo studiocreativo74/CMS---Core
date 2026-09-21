@@ -38,11 +38,20 @@ ob_start();
     </div>
 <?php endif; ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
     <div>
         <p class="text-muted mb-0">Übersicht aller installierten Erweiterungen und Plugins für das CMS.</p>
     </div>
-    <div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-light text-dark border px-3 py-2 d-inline-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-cpu text-primary me-2" viewBox="0 0 16 16">
+                <path d="M5 0a.5.5 0 0 1 .5.5V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2A2.5 2.5 0 0 1 14 4.5h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14A2.5 2.5 0 0 1 11.5 14v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14A2.5 2.5 0 0 1 2 11.5H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2A2.5 2.5 0 0 1 4.5 2V.5A.5.5 0 0 1 5 0m-.5 3A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13h7a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 11.5 3zM5 6.5A1.5 1.5 0 0 1 6.5 5h3A1.5 1.5 0 0 1 11 6.5v3A1.5 1.5 0 0 1 9.5 11h-3A1.5 1.5 0 0 1 5 9.5zM6.5 6a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5z"/>
+            </svg>
+            Core: <strong>v<?= htmlspecialchars(class_exists('CoreVersion') ? CoreVersion::VERSION : '1.0.0', ENT_QUOTES, 'UTF-8') ?></strong>
+        </span>
+        <a href="?route=admin/system" class="btn btn-outline-primary d-inline-flex align-items-center">
+            System &amp; Migrationen
+        </a>
         <form method="POST" action="?route=admin/modules/rescan" class="d-inline">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(class_exists('Csrf') ? Csrf::getToken() : '', ENT_QUOTES, 'UTF-8') ?>">
             <button type="submit" class="btn btn-outline-secondary d-inline-flex align-items-center">
@@ -76,7 +85,8 @@ ob_start();
                         <tr>
                             <th class="ps-3">Name / Schlüssel</th>
                             <th>Beschreibung</th>
-                            <th>Version</th>
+                            <th>Modul-Version</th>
+                            <th>Benötigt Core</th>
                             <th>Status</th>
                             <th>Installiert</th>
                             <th class="text-end pe-3" style="width: 140px;">Aktion</th>
@@ -88,7 +98,9 @@ ob_start();
                             $key = (string) ($mod['key'] ?? '');
                             $name = (string) ($mod['name'] ?? $key);
                             $version = (string) ($mod['version'] ?? '1.0.0');
+                            $requiresCore = (string) ($mod['requires_core'] ?? '');
                             $desc = (string) ($mod['description'] ?? '—');
+                            $compat = class_exists('ModuleManager') ? ModuleManager::getCompatibilityInfo($mod) : ['is_compatible' => true, 'message' => 'OK'];
                         ?>
                             <tr>
                                 <td class="ps-3">
@@ -100,6 +112,22 @@ ob_start();
                                 </td>
                                 <td>
                                     <span class="badge bg-light text-dark border">v<?= htmlspecialchars($version, ENT_QUOTES, 'UTF-8') ?></span>
+                                </td>
+                                <td>
+                                    <?php if ($requiresCore !== ''): ?>
+                                        <code class="small text-dark"><?= htmlspecialchars($requiresCore, ENT_QUOTES, 'UTF-8') ?></code>
+                                        <?php if ($compat['is_compatible']): ?>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle ms-1" title="<?= htmlspecialchars($compat['message'], ENT_QUOTES, 'UTF-8') ?>">
+                                                ✓ OK
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1" title="<?= htmlspecialchars($compat['message'], ENT_QUOTES, 'UTF-8') ?>">
+                                                ⚠ Inkompatibel
+                                            </span>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span class="text-muted small">Beliebig (*)</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if ($isEnabled): ?>

@@ -14,12 +14,17 @@ $homepageTitle = (string) ($settings['homepage_title'] ?? 'Willkommen im CMS-Pro
 $homepageSubtitle = (string) ($settings['homepage_subtitle'] ?? '');
 $homepageDescription = (string) ($settings['homepage_description'] ?? '');
 $homepageTheme = (string) ($settings['homepage_theme'] ?? 'standard');
-$homepagePrimaryColor = (string) ($settings['homepage_primary_color'] ?? '#0d6efd');
-$homepageSecondaryColor = (string) ($settings['homepage_secondary_color'] ?? '#6c757d');
+$adminBrandColor = (string) ($settings['admin_brand_color'] ?? '#0d6efd');
+$adminAccentColor = (string) ($settings['admin_accent_color'] ?? '#6c757d');
+$homepagePrimaryColor = (string) (!empty($settings['homepage_primary_color']) ? $settings['homepage_primary_color'] : $adminBrandColor);
+$homepageSecondaryColor = (string) (!empty($settings['homepage_secondary_color']) ? $settings['homepage_secondary_color'] : $adminAccentColor);
 $homepageBgColor = (string) ($settings['homepage_background_color'] ?? '#f8fafc');
 $homepageTextColor = (string) ($settings['homepage_text_color'] ?? '#222222');
 $homepageLogoPath = (string) ($settings['homepage_logo_path'] ?? '');
 $homepageLayout = (string) ($settings['homepage_layout'] ?? 'contained');
+
+$homepageMode = (string) ($settings['homepage_mode'] ?? 'blocks');
+$isModuleMode = ($homepageMode === 'module');
 
 if ($homepageTheme === '' || !in_array($homepageTheme, ['standard', 'light', 'dark', 'blue'], true)) {
     $homepageTheme = 'standard';
@@ -497,7 +502,7 @@ $containerMaxWidth = match ($homepageLayout) {
         <!-- ============================================================= -->
         <!-- DYNAMISCHE INHALTSBLÖCKE (MINI-CMS)                           -->
         <!-- ============================================================= -->
-        <?php if (!empty($blocks)): ?>
+        <?php if (!$isModuleMode && !empty($blocks)): ?>
             <?php foreach ($blocks as $block): ?>
                 <?php
                 $bType = $block['type'] ?? 'text';
@@ -640,7 +645,7 @@ $containerMaxWidth = match ($homepageLayout) {
                     </section>
                 <?php endif; ?>
             <?php endforeach; ?>
-        <?php else: ?>
+        <?php elseif (!$isModuleMode): ?>
             <!-- Fallback-Hero falls noch keine Blöcke in der Datenbank gepflegt wurden -->
             <section class="cms-section cms-hero" style="padding-bottom: 1rem;">
                 <div class="cms-container">
@@ -651,6 +656,14 @@ $containerMaxWidth = match ($homepageLayout) {
                     <?php if ($homepageDescription !== ''): ?>
                         <div class="description"><?= nl2br(htmlspecialchars($homepageDescription, ENT_QUOTES, 'UTF-8')) ?></div>
                     <?php endif; ?>
+                </div>
+            </section>
+        <?php else: ?>
+            <!-- Kompakter Hero für Direkt-Login bei aktivem Modul-Startseiten-Modus -->
+            <section class="cms-section cms-hero" style="padding-top: 2rem; padding-bottom: 0.5rem;">
+                <div class="cms-container">
+                    <h1 style="font-size: 1.75rem; margin-bottom: 0.25rem;"><?= htmlspecialchars($homepageTitle, ENT_QUOTES, 'UTF-8') ?></h1>
+                    <p class="subtitle" style="font-size: 0.95rem; margin-bottom: 0;">Anmeldung &amp; Authentifizierung</p>
                 </div>
             </section>
         <?php endif; ?>
@@ -737,6 +750,12 @@ $containerMaxWidth = match ($homepageLayout) {
                 <?php if (!empty($_SESSION['magic_authenticated']) || class_exists('Auth') && (Auth::checkMagic() || Auth::check())): ?>
                     <div class="links">
                         <a href="?route=admin">→ Direkt zum Admin-Dashboard</a>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($isModuleMode): ?>
+                    <div style="text-align: center; margin-top: 1.25rem;">
+                        <a href="?route=/" style="color: var(--cms-primary); text-decoration: none; font-size: 0.88rem; font-weight: 500;">&larr; Zurück zur Startseite</a>
                     </div>
                 <?php endif; ?>
             </div>

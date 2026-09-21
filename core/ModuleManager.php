@@ -23,10 +23,34 @@ final class ModuleManager
     private static ?array $loadedModules = null;
 
     /**
+     * Cache zur Prüfung, ob die Spalte `requires_core` in der DB existiert.
+     */
+    private static ?bool $hasRequiresCoreCol = null;
+
+    /**
      * Privater Konstruktor: rein statische Utility-Klasse.
      */
     private function __construct()
     {
+    }
+
+    /**
+     * Prüft, ob die Spalte `requires_core` in der Tabelle `modules` vorhanden ist.
+     */
+    public static function hasRequiresCoreColumn(): bool
+    {
+        if (self::$hasRequiresCoreCol !== null) {
+            return self::$hasRequiresCoreCol;
+        }
+
+        try {
+            $cols = DB::fetchAll("SHOW COLUMNS FROM `modules` LIKE 'requires_core'");
+            self::$hasRequiresCoreCol = !empty($cols);
+        } catch (\Throwable) {
+            self::$hasRequiresCoreCol = false;
+        }
+
+        return self::$hasRequiresCoreCol;
     }
 
     /**
@@ -39,7 +63,13 @@ final class ModuleManager
     public static function all(bool $onlyEnabled = false): array
     {
         try {
-            $sql = 'SELECT `id`, `key`, `name`, `description`, `version`, `is_enabled`, `installed_at`, `updated_at` FROM `modules`';
+            $hasReqCol = self::hasRequiresCoreColumn();
+            $selectCols = '`id`, `key`, `name`, `description`, `version`, `is_enabled`, `installed_at`, `updated_at`';
+            if ($hasReqCol) {
+                $selectCols .= ', `requires_core`';
+            }
+
+            $sql = "SELECT {$selectCols} FROM `modules`";
 
             if ($onlyEnabled) {
                 $sql .= ' WHERE `is_enabled` = 1';
@@ -47,12 +77,49 @@ final class ModuleManager
 
             $sql .= ' ORDER BY `name` ASC, `id` ASC';
 
-            return DB::fetchAll($sql);
+            $rows = DB::fetchAll($sql);
+
+            // Falls die DB-Spalte noch nicht existiert, prüfen wir auf vorhandene module.php/module.json
+            if (!$hasReqCol) {
+                $baseDir = dirname(__DIR__) . '/modules';
+                foreach ($rows as &$row) {
+                    $key = (string) ($row['key'] ?? '');
+                    $row['requires_core'] = self::getManifestRequiresCore($baseDir, $key);
+                }
+                unset($row);
+            }
+
+            return $rows;
         } catch (\Throwable $e) {
             // Falls Tabelle in phpMyAdmin noch nicht angelegt wurde
             error_log('ModuleManager::all Fehler: ' . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Liest requires_core aus dem Dateisystem-Manifest eines Moduls aus.
+     */
+    public static function getManifestRequiresCore(string $baseDir, string $key): ?string
+    {
+        $dir = rtrim($baseDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $key;
+        $phpFile = $dir . DIRECTORY_SEPARATOR . 'module.php';
+        if (file_exists($phpFile)) {
+            $data = @include $phpFile;
+            if (is_array($data) && !empty($data['requires_core'])) {
+                return (string) $data['requires_core'];
+            }
+        }
+
+        $jsonFile = $dir . DIRECTORY_SEPARATOR . 'module.json';
+        if (file_exists($jsonFile)) {
+            $jsonData = json_decode((string) @file_get_contents($jsonFile), true);
+            if (is_array($jsonData) && !empty($jsonData['requires_core'])) {
+                return (string) $jsonData['requires_core'];
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -75,12 +142,21 @@ final class ModuleManager
     public static function findByKey(string $key): ?array
     {
         try {
-            $sql = 'SELECT `id`, `key`, `name`, `description`, `version`, `is_enabled`, `installed_at`, `updated_at` 
-                    FROM `modules` 
-                    WHERE `key` = :key 
-                    LIMIT 1';
+            $hasReqCol = self::hasRequiresCoreColumn();
+            $selectCols = '`id`, `key`, `name`, `description`, `version`, `is_enabled`, `installed_at`, `updated_at`';
+            if ($hasReqCol) {
+                $selectCols .= ', `requires_core`';
+            }
 
-            return DB::fetchOne($sql, ['key' => $key]);
+            $sql = "SELECT {$selectCols} FROM `modules` WHERE `key` = :key LIMIT 1";
+
+            $row = DB::fetchOne($sql, ['key' => $key]);
+            if ($row !== null && !$hasReqCol) {
+                $baseDir = dirname(__DIR__) . '/modules';
+                $row['requires_core'] = self::getManifestRequiresCore($baseDir, $key);
+            }
+
+            return $row;
         } catch (\Throwable $e) {
             error_log('ModuleManager::findByKey Fehler: ' . $e->getMessage());
             return null;
@@ -100,52 +176,137 @@ final class ModuleManager
     }
 
     /**
+     * Prüft die Kompatibilität eines Moduls zur aktuellen Core-Version.
+     *
+     * @param array<string, mixed>|string $moduleOrKey Moduldaten-Array oder Modul-Key
+     * @return bool
+     */
+    public static function isCompatible(array|string $moduleOrKey): bool
+    {
+        $info = self::getCompatibilityInfo($moduleOrKey);
+        return (bool) $info['is_compatible'];
+    }
+
+    /**
+     * Liefert detaillierte Informationen zur Core-Kompatibilität eines Moduls.
+     *
+     * @param array<string, mixed>|string $moduleOrKey Moduldaten-Array oder Modul-Key
+     * @return array{is_compatible: bool, requires_core: string, core_version: string, status: string, message: string}
+     */
+    public static function getCompatibilityInfo(array|string $moduleOrKey): array
+    {
+        $module = is_array($moduleOrKey) ? $moduleOrKey : self::findByKey($moduleOrKey);
+        $req = (string) ($module['requires_core'] ?? '');
+        $req = trim($req);
+        $coreVer = class_exists('CoreVersion') ? CoreVersion::VERSION : '1.0.0';
+
+        if ($req === '' || !class_exists('CoreVersion')) {
+            return [
+                'is_compatible' => true,
+                'requires_core' => $req !== '' ? $req : '*',
+                'core_version'  => $coreVer,
+                'status'        => 'ok',
+                'message'       => 'Vollständig kompatibel',
+            ];
+        }
+
+        $compatible = CoreVersion::satisfies($req);
+        return [
+            'is_compatible' => $compatible,
+            'requires_core' => $req,
+            'core_version'  => $coreVer,
+            'status'        => $compatible ? 'ok' : 'incompatible',
+            'message'       => $compatible
+                ? 'Kompatibel mit Core v' . $coreVer
+                : 'Inkompatibel: Erfordert Core ' . $req . ' (Aktuell: v' . $coreVer . ')',
+        ];
+    }
+
+    /**
      * Registriert ein Modul in der DB, falls noch nicht vorhanden (z.B. bei Neuinstallation).
-     * Aktualisiert bei bereits vorhandenem Modul Metadaten wie Name, Beschreibung und Version,
+     * Aktualisiert bei bereits vorhandenem Modul Metadaten wie Name, Beschreibung, Version und requires_core,
      * behält jedoch den vom Administrator gesetzten Aktivierungsstatus bei.
      *
      * @param string $key Eindeutiger Bezeichner (z.B. 'contact_form')
-     * @param array<string, mixed> $meta Metadaten (name, description, version, is_enabled)
+     * @param array<string, mixed> $meta Metadaten (name, description, version, requires_core, is_enabled)
      */
     public static function register(string $key, array $meta): void
     {
         $name = (string) ($meta['name'] ?? $key);
         $description = isset($meta['description']) ? (string) $meta['description'] : null;
         $version = (string) ($meta['version'] ?? '1.0.0');
+        $requiresCore = isset($meta['requires_core']) && trim((string) $meta['requires_core']) !== '' 
+            ? trim((string) $meta['requires_core']) 
+            : null;
         $defaultEnabled = isset($meta['is_enabled']) ? ((bool) $meta['is_enabled'] ? 1 : 0) : 0;
 
         try {
             $existing = self::findByKey($key);
+            $hasReqCol = self::hasRequiresCoreColumn();
 
             if ($existing === null) {
-                DB::execute(
-                    'INSERT INTO `modules` (`key`, `name`, `description`, `version`, `is_enabled`, `installed_at`, `updated_at`) 
-                     VALUES (:key, :name, :description, :version, :is_enabled, NOW(), NOW())',
-                    [
-                        'key' => $key,
-                        'name' => $name,
-                        'description' => $description,
-                        'version' => $version,
-                        'is_enabled' => $defaultEnabled,
-                    ]
-                );
+                if ($hasReqCol) {
+                    DB::execute(
+                        'INSERT INTO `modules` (`key`, `name`, `description`, `version`, `requires_core`, `is_enabled`, `installed_at`, `updated_at`) 
+                         VALUES (:key, :name, :description, :version, :requires_core, :is_enabled, NOW(), NOW())',
+                        [
+                            'key'           => $key,
+                            'name'          => $name,
+                            'description'   => $description,
+                            'version'       => $version,
+                            'requires_core' => $requiresCore,
+                            'is_enabled'    => $defaultEnabled,
+                        ]
+                    );
+                } else {
+                    DB::execute(
+                        'INSERT INTO `modules` (`key`, `name`, `description`, `version`, `is_enabled`, `installed_at`, `updated_at`) 
+                         VALUES (:key, :name, :description, :version, :is_enabled, NOW(), NOW())',
+                        [
+                            'key'         => $key,
+                            'name'        => $name,
+                            'description' => $description,
+                            'version'     => $version,
+                            'is_enabled'  => $defaultEnabled,
+                        ]
+                    );
+                }
             } else {
-                // Bei bestehenden Modulen aktualisieren wir Name, Beschreibung & Version,
+                // Bei bestehenden Modulen aktualisieren wir Name, Beschreibung, Version & requires_core,
                 // lassen den bestehenden is_enabled Status des Admins unberührt.
-                DB::execute(
-                    'UPDATE `modules` 
-                     SET `name` = :name, 
-                         `description` = :description, 
-                         `version` = :version, 
-                         `updated_at` = NOW() 
-                     WHERE `key` = :key',
-                    [
-                        'key' => $key,
-                        'name' => $name,
-                        'description' => $description,
-                        'version' => $version,
-                    ]
-                );
+                if ($hasReqCol) {
+                    DB::execute(
+                        'UPDATE `modules` 
+                         SET `name` = :name, 
+                             `description` = :description, 
+                             `version` = :version, 
+                             `requires_core` = :requires_core,
+                             `updated_at` = NOW() 
+                         WHERE `key` = :key',
+                        [
+                            'key'           => $key,
+                            'name'          => $name,
+                            'description'   => $description,
+                            'version'       => $version,
+                            'requires_core' => $requiresCore,
+                        ]
+                    );
+                } else {
+                    DB::execute(
+                        'UPDATE `modules` 
+                         SET `name` = :name, 
+                             `description` = :description, 
+                             `version` = :version, 
+                             `updated_at` = NOW() 
+                         WHERE `key` = :key',
+                        [
+                            'key'         => $key,
+                            'name'        => $name,
+                            'description' => $description,
+                            'version'     => $version,
+                        ]
+                    );
+                }
             }
 
             self::$loadedModules = null;
@@ -215,6 +376,7 @@ final class ModuleManager
                 'name' => ucfirst(str_replace(['_', '-'], ' ', $key)),
                 'description' => null,
                 'version' => '1.0.0',
+                'requires_core' => null,
             ];
 
             // 1. Prüfung auf module.php

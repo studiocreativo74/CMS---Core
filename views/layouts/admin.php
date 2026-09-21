@@ -19,6 +19,15 @@ $activeEmail = $_SESSION['magic_email']
     ?? ($_SESSION['user_email'] 
     ?? (isset($user['email']) ? (string) $user['email'] : 'Admin'));
 
+// Settings für Brand-Farben und Standard-Theme laden
+$adminDefaultTheme = class_exists('Settings') ? (string) Settings::get('admin_default_theme', 'system') : 'system';
+if (!in_array($adminDefaultTheme, ['system', 'light', 'dark'], true)) {
+    $adminDefaultTheme = 'system';
+}
+
+$adminBrandColor = class_exists('Settings') ? (string) Settings::get('admin_brand_color', '#0d6efd') : '#0d6efd';
+$adminAccentColor = class_exists('Settings') ? (string) Settings::get('admin_accent_color', '#0ea5e9') : '#0ea5e9';
+
 // Theme-Ermittlung für den aktuellen Benutzer (light, dark, system)
 $currentUser = class_exists('Auth') ? Auth::currentUser() : null;
 $userTheme = 'system';
@@ -30,6 +39,9 @@ if ($currentUser !== null && !empty($currentUser['theme_mode'])) {
 if (!in_array($userTheme, ['light', 'dark', 'system'], true)) {
     $userTheme = 'system';
 }
+
+// Effektives Theme für das Layout
+$effectiveTheme = ($userTheme === 'system') ? $adminDefaultTheme : $userTheme;
 $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
 
 // =========================================================================
@@ -70,7 +82,7 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
     || (isset($_GET['route']) && str_starts_with((string) $_GET['route'], 'admin/activity'));
 ?>
 <!doctype html>
-<html lang="de" data-bs-theme="<?= $userTheme === 'dark' ? 'dark' : ($userTheme === 'light' ? 'light' : 'auto') ?>">
+<html lang="de" data-bs-theme="<?= $effectiveTheme === 'dark' ? 'dark' : ($effectiveTheme === 'light' ? 'light' : 'auto') ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -81,45 +93,142 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
 
     <script>
         (function() {
-            var theme = <?= json_encode($userTheme) ?>;
-            function applyTheme(t) {
-                var effective = t;
-                if (t === 'system') {
+            var userTheme = <?= json_encode($userTheme) ?>;
+            var defaultTheme = <?= json_encode($adminDefaultTheme) ?>;
+            function applyTheme() {
+                var effective = (userTheme === 'system') ? defaultTheme : userTheme;
+                if (effective === 'system') {
                     effective = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
                 }
                 document.documentElement.setAttribute('data-bs-theme', effective);
             }
-            applyTheme(theme);
-            if (theme === 'system' && window.matchMedia) {
-                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
-                    applyTheme('system');
-                });
+            applyTheme();
+            if (window.matchMedia) {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
             }
         })();
     </script>
 
     <style>
+        /* ------------------------------------------------------------- */
+        /* BASIS-TOKENS & FARB-SYSTEM (CSS-VARIABLEN)                     */
+        /* ------------------------------------------------------------- */
+        :root {
+            /* Dynamische Brand- & Akzent-Farben aus den Settings */
+            --sc-primary: <?= htmlspecialchars($adminBrandColor, ENT_QUOTES, 'UTF-8') ?>;
+            --sc-primary-soft: <?= htmlspecialchars($adminBrandColor, ENT_QUOTES, 'UTF-8') ?>1f;
+            --sc-accent: <?= htmlspecialchars($adminAccentColor, ENT_QUOTES, 'UTF-8') ?>;
+            --sc-accent-soft: <?= htmlspecialchars($adminAccentColor, ENT_QUOTES, 'UTF-8') ?>1f;
+
+            /* Standard (Light Preset) Tokens */
+            --sc-bg: #f8fafc;
+            --sc-bg-elevated: #ffffff;
+            --sc-border: #e2e8f0;
+            --sc-border-subtle: #f1f5f9;
+            --sc-text: #1e293b;
+            --sc-text-muted: #64748b;
+
+            --sc-danger: #dc3545;
+            --sc-success: #198754;
+            --sc-warning: #d97706;
+            --sc-info: #0ea5e9;
+
+            /* Sidebar- und Navigationstokens (dunkel/kontrastreich per default) */
+            --sc-nav-bg: #1e293b;
+            --sc-nav-text: rgba(255, 255, 255, 0.82);
+            --sc-nav-text-hover: #ffffff;
+            --sc-nav-hover-bg: rgba(255, 255, 255, 0.1);
+            --sc-nav-active-bg: var(--sc-primary);
+            --sc-nav-active-text: #ffffff;
+            --sc-nav-border: #334155;
+
+            /* Topbar */
+            --sc-topbar-bg: #0f172a;
+            --sc-topbar-text: #f8fafc;
+        }
+
+        /* Dark-Theme Preset */
+        body.admin-theme-dark,
+        [data-bs-theme="dark"] body {
+            --sc-bg: #0f172a;
+            --sc-bg-elevated: #1e293b;
+            --sc-border: #334155;
+            --sc-border-subtle: #1e293b;
+            --sc-text: #f8fafc;
+            --sc-text-muted: #94a3b8;
+            --sc-primary-soft: rgba(255, 255, 255, 0.12);
+
+            --sc-nav-bg: #090d16;
+            --sc-nav-text: #94a3b8;
+            --sc-nav-text-hover: #f8fafc;
+            --sc-nav-hover-bg: rgba(255, 255, 255, 0.06);
+            --sc-nav-active-bg: var(--sc-primary);
+            --sc-nav-active-text: #ffffff;
+            --sc-nav-border: #1e293b;
+
+            --sc-topbar-bg: #090d16;
+            --sc-topbar-text: #f8fafc;
+        }
+
+        /* System-Theme Media-Query Fallback */
+        @media (prefers-color-scheme: dark) {
+            body.admin-theme-system {
+                --sc-bg: #0f172a;
+                --sc-bg-elevated: #1e293b;
+                --sc-border: #334155;
+                --sc-border-subtle: #1e293b;
+                --sc-text: #f8fafc;
+                --sc-text-muted: #94a3b8;
+                --sc-primary-soft: rgba(255, 255, 255, 0.12);
+
+                --sc-nav-bg: #090d16;
+                --sc-nav-text: #94a3b8;
+                --sc-nav-text-hover: #f8fafc;
+                --sc-nav-hover-bg: rgba(255, 255, 255, 0.06);
+                --sc-nav-active-bg: var(--sc-primary);
+                --sc-nav-active-text: #ffffff;
+                --sc-nav-border: #1e293b;
+
+                --sc-topbar-bg: #090d16;
+                --sc-topbar-text: #f8fafc;
+            }
+        }
+
+        /* Globale Stile via CSS-Variablen */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f8f9fa;
+            background-color: var(--sc-bg) !important;
+            color: var(--sc-text) !important;
         }
+
+        /* Topbar Header */
+        header.navbar {
+            background-color: var(--sc-topbar-bg) !important;
+            border-bottom: 1px solid var(--sc-border) !important;
+        }
+        header.navbar .navbar-brand {
+            color: var(--sc-topbar-text) !important;
+        }
+
+        /* Sidebar Navigation - Nie mehr weiß auf weiß */
         .sidebar,
         #sidebarMenu,
         .sidebar.offcanvas-md {
             min-height: calc(100vh - 56px);
-            background-color: #212529 !important;
-            color: #f8f9fa !important;
+            background-color: var(--sc-nav-bg) !important;
+            color: var(--sc-nav-text) !important;
+            border-right: 1px solid var(--sc-nav-border) !important;
         }
         @media (max-width: 767.98px) {
             .sidebar,
             #sidebarMenu,
             .sidebar.offcanvas-md {
                 min-height: 100vh;
-                background-color: #212529 !important;
+                background-color: var(--sc-nav-bg) !important;
             }
         }
         .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.85) !important;
+            color: var(--sc-nav-text) !important;
             padding: 0.65rem 1rem;
             border-radius: 0.375rem;
             margin-bottom: 0.2rem;
@@ -130,103 +239,112 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
             transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
         }
         .sidebar .nav-link:hover {
-            color: #ffffff !important;
-            background-color: rgba(255, 255, 255, 0.15) !important;
+            color: var(--sc-nav-text-hover) !important;
+            background-color: var(--sc-nav-hover-bg) !important;
         }
         .sidebar .nav-link.active {
-            color: #ffffff !important;
-            background-color: #0d6efd !important;
+            color: var(--sc-nav-active-text) !important;
+            background-color: var(--sc-nav-active-bg) !important;
             font-weight: 600;
         }
         .sidebar .nav-link svg {
             flex-shrink: 0;
-            color: rgba(255, 255, 255, 0.85);
+            color: inherit;
         }
-        .sidebar .nav-link:hover svg,
-        .sidebar .nav-link.active svg {
-            color: #ffffff;
+
+        /* Main Content Area */
+        main {
+            background-color: var(--sc-bg) !important;
+            color: var(--sc-text) !important;
+        }
+
+        /* Cards & Panels */
+        .card {
+            background-color: var(--sc-bg-elevated) !important;
+            border: 1px solid var(--sc-border) !important;
+            color: var(--sc-text) !important;
+        }
+        .card-header {
+            background-color: var(--sc-bg-elevated) !important;
+            border-bottom: 1px solid var(--sc-border) !important;
+            color: var(--sc-text) !important;
+        }
+        .list-group-item {
+            background-color: var(--sc-bg-elevated) !important;
+            border-color: var(--sc-border) !important;
+            color: var(--sc-text) !important;
+        }
+
+        /* Buttons mit Brand-Farbe */
+        .btn-primary {
+            background-color: var(--sc-primary) !important;
+            border-color: var(--sc-primary) !important;
+            color: #ffffff !important;
+        }
+        .btn-primary:hover, .btn-primary:focus {
+            filter: brightness(0.92);
+        }
+        .btn-outline-primary {
+            color: var(--sc-primary) !important;
+            border-color: var(--sc-primary) !important;
+        }
+        .btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary.active {
+            background-color: var(--sc-primary) !important;
+            border-color: var(--sc-primary) !important;
+            color: #ffffff !important;
+        }
+
+        /* Badges */
+        .badge.bg-primary {
+            background-color: var(--sc-primary) !important;
+        }
+
+        /* Tabellen */
+        .table {
+            --bs-table-bg: var(--sc-bg-elevated);
+            --bs-table-color: var(--sc-text);
+            --bs-table-border-color: var(--sc-border);
+        }
+        .table thead th,
+        .table .table-light {
+            --bs-table-bg: var(--sc-border-subtle);
+            --bs-table-color: var(--sc-text);
+        }
+
+        /* Form Controls */
+        .form-control, .form-select {
+            background-color: var(--sc-bg-elevated);
+            border-color: var(--sc-border);
+            color: var(--sc-text);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--sc-primary);
+            box-shadow: 0 0 0 0.25rem var(--sc-primary-soft);
+        }
+
+        /* Hilfsklassen */
+        .text-dark {
+            color: var(--sc-text) !important;
+        }
+        .text-muted {
+            color: var(--sc-text-muted) !important;
+        }
+        .border-bottom {
+            border-bottom-color: var(--sc-border) !important;
+        }
+        .border-top {
+            border-top-color: var(--sc-border) !important;
         }
         .code-highlight {
             font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
             font-size: 1.15rem;
             letter-spacing: 2px;
         }
-
-        /* ------------------------------------------------------------- */
-        /* PRO-USER-THEME STYLING (Hell, Dunkel, System)                 */
-        /* ------------------------------------------------------------- */
-        body.admin-theme-dark,
-        [data-bs-theme="dark"] body {
-            background-color: #121212 !important;
-            color: #f5f5f5 !important;
-        }
-        body.admin-theme-dark main,
-        [data-bs-theme="dark"] main {
-            background-color: #16181b !important;
-            color: #f5f5f5 !important;
-        }
-        body.admin-theme-dark .card,
-        [data-bs-theme="dark"] .card {
-            background-color: #212529 !important;
-            color: #f5f5f5 !important;
-            border-color: #343a40 !important;
-        }
-        body.admin-theme-dark .card-header,
-        [data-bs-theme="dark"] .card-header {
-            background-color: #282c31 !important;
-            color: #ffffff !important;
-            border-bottom-color: #343a40 !important;
-        }
-        body.admin-theme-dark .list-group-item,
-        [data-bs-theme="dark"] .list-group-item {
-            background-color: #212529 !important;
-            color: #e0e0e0 !important;
-            border-color: #343a40 !important;
-        }
-        body.admin-theme-dark .text-dark,
-        [data-bs-theme="dark"] .text-dark {
-            color: #f8f9fa !important;
-        }
-        body.admin-theme-dark .text-muted,
-        [data-bs-theme="dark"] .text-muted {
-            color: #9da5af !important;
-        }
-        body.admin-theme-dark .border-bottom,
-        [data-bs-theme="dark"] .border-bottom {
-            border-color: #343a40 !important;
-        }
-        body.admin-theme-dark .border-top,
-        [data-bs-theme="dark"] .border-top {
-            border-color: #343a40 !important;
-        }
-        body.admin-theme-dark .table,
-        [data-bs-theme="dark"] .table {
-            --bs-table-bg: #212529;
-            --bs-table-color: #f5f5f5;
-            --bs-table-border-color: #343a40;
-        }
-        body.admin-theme-dark .table-light,
-        [data-bs-theme="dark"] .table-light {
-            --bs-table-bg: #2a2e33;
-            --bs-table-color: #ffffff;
-        }
-        body.admin-theme-dark footer,
-        [data-bs-theme="dark"] footer {
-            color: #9da5af !important;
-        }
-        body.admin-theme-dark .navbar,
-        body.admin-theme-dark .sidebar {
-            background-color: #0d0e11 !important;
-        }
-        body.admin-theme-light {
-            background-color: #f8f9fa !important;
-            color: #212529 !important;
-        }
     </style>
 </head>
-<body class="admin-theme-<?= htmlspecialchars($userTheme, ENT_QUOTES, 'UTF-8') ?>">
+<body class="admin-theme-<?= htmlspecialchars($effectiveTheme, ENT_QUOTES, 'UTF-8') ?>">
     <!-- Top-Navigationsleiste -->
-    <header class="navbar navbar-dark bg-dark sticky-top flex-md-nowrap p-0 shadow">
+    <header class="navbar navbar-dark sticky-top flex-md-nowrap p-0 shadow">
         <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 text-white fw-bold" href="?route=admin">
             CMS Admin
         </a>
@@ -397,6 +515,20 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
                         </li>
                         <?php endif; ?>
 
+                        <!-- 1.2 Design & Brand -->
+                        <?php if ($canViewNav(['admin.settings', 'admin.homepage.manage', 'admin.design.manage', 'admin.design.view'])): 
+                            $isDesignActive = str_starts_with($currentRouteNormalized, 'admin/design');
+                        ?>
+                        <li class="nav-item">
+                            <a class="nav-link <?= $isDesignActive ? 'active' : '' ?>" href="?route=admin/design">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-palette-fill me-2" viewBox="0 0 16 16">
+                                    <path d="M12.433 10.07C14.133 10.585 16 11.15 16 8a8 8 0 1 0-8 8c1.996 0 1.826-1.504 1.649-3.08-.124-1.101-.252-2.237.351-2.92.465-.527 1.42-.237 2.433.07"/>
+                                </svg>
+                                Design &amp; Brand
+                            </a>
+                        </li>
+                        <?php endif; ?>
+
                         <!-- 2. Magic Codes (Verwaltung) -->
                         <?php if ($canViewNav(['admin.magic_codes.manage', 'admin.magic_codes.view', 'admin.magic_codes'])): 
                             $isMagicActive = str_starts_with($currentRouteNormalized, 'admin/magic-codes') || str_starts_with($currentRouteNormalized, 'admin/magic-code');
@@ -537,10 +669,12 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
             </nav>
 
             <!-- Zentraler Inhaltsbereich -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 bg-light min-vh-100 d-flex flex-column">
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 min-vh-100 d-flex flex-column">
+                <?php if (!empty($title) && ($currentRouteNormalized !== 'admin' && $currentRouteNormalized !== 'admin/dashboard')): ?>
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-4 border-bottom">
                     <h1 class="h2 mb-0"><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></h1>
                 </div>
+                <?php endif; ?>
 
                 <div class="flex-grow-1">
                     <?= $content ?>

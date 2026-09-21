@@ -13,23 +13,66 @@ require_once __DIR__ . '/core/User.php';
 require_once __DIR__ . '/core/Rbac.php';
 require_once __DIR__ . '/core/Settings.php';
 require_once __DIR__ . '/core/HomepageBlock.php';
+require_once __DIR__ . '/core/Version.php';
+require_once __DIR__ . '/core/MigrationManager.php';
 
 Auth::startSession();
 
 $router = new Router();
 
-// GET / - Startseite mit Magic-Code-Flow
+// Hilfsfunktion: Ermittelt die korrekte Ziel-URL für die Login-Maske (berücksichtigt Startseiten-Modus)
+$getLoginRedirect = function (bool $loginIntent = true): string {
+    $mode = class_exists('Settings') ? (string) Settings::get('homepage_mode', 'blocks') : 'blocks';
+    if ($mode === 'module' && $loginIntent) {
+        return '?route=/&login=1';
+    }
+    return '?route=/';
+};
+
+// GET / - Startseite (CMS-Startseite oder Weiterleitung auf Modul-Route)
 $router->get('/', function (): void {
+    // Wenn die Login-Spezialansicht nicht explizit aufgerufen wird und keine Session-E-Mail aktiv ist:
+    $isLoginIntent = isset($_GET['login']) || isset($_GET['magic']) || !empty($_SESSION['magic_email']);
+    $homepageMode = class_exists('Settings') ? (string) Settings::get('homepage_mode', 'blocks') : 'blocks';
+
+    // Variante B: Modul als Startseite
+    if ($homepageMode === 'module' && !$isLoginIntent) {
+        $moduleKey = class_exists('Settings') ? trim((string) Settings::get('homepage_module_key', '')) : '';
+
+        // Prüfen, ob das Modul hinterlegt und in der DB aktiviert ist
+        if ($moduleKey !== '' && class_exists('ModuleManager') && ModuleManager::isEnabled($moduleKey)) {
+            $moduleRoute = class_exists('Settings') ? trim((string) Settings::get('homepage_module_route', '')) : '';
+
+            // Wenn keine spezifische Route definiert ist: sinnvolle Default-Route aus Modul-Key ableiten
+            // z.B. '/'.$moduleKey (z.B. '/contact_form' oder '/kontakt')
+            if ($moduleRoute === '') {
+                $moduleRoute = '/' . $moduleKey;
+            }
+
+            // Normalisieren und Absicherung gegen Endlos-Weiterleitungen auf '/'
+            $cleanTarget = trim($moduleRoute, '/');
+            if ($cleanTarget !== '' && $cleanTarget !== 'index.php') {
+                if (str_starts_with($moduleRoute, 'http://') || str_starts_with($moduleRoute, 'https://') || str_starts_with($moduleRoute, '?')) {
+                    header('Location: ' . $moduleRoute);
+                } else {
+                    header('Location: ?route=' . $cleanTarget);
+                }
+                exit;
+            }
+        }
+    }
+
+    // Variante A (Default): CMS-Startseite mit Blöcken und integrierter Login-Komponente
     require __DIR__ . '/views/home.php';
 });
 
 // Handler für E-Mail-Übernahme in die Session
-$handleSetEmail = function (): void {
+$handleSetEmail = function () use ($getLoginRedirect): void {
     $email = strtolower(trim((string) ($_POST['email'] ?? '')));
 
     if ($email === '' || strlen($email) > 191 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $_SESSION['flash_home_error'] = 'Bitte eine gültige E-Mail-Adresse eingeben (maximal 191 Zeichen).';
-        header('Location: ?route=/');
+        header('Location: ' . $getLoginRedirect(true));
         exit;
     }
 
@@ -53,20 +96,20 @@ $handleSetEmail = function (): void {
 
         if ($user === null) {
             $_SESSION['flash_home_error'] = 'Diese E-Mail-Adresse ist nicht als Benutzer im CMS registriert.';
-            header('Location: ?route=/');
+            header('Location: ' . $getLoginRedirect(true));
             exit;
         }
 
         if (isset($user['is_active']) && (int) $user['is_active'] !== 1) {
             $_SESSION['flash_home_error'] = 'Dieser Benutzer-Account ist gesperrt oder deaktiviert.';
-            header('Location: ?route=/');
+            header('Location: ' . $getLoginRedirect(true));
             exit;
         }
     }
 
     $_SESSION['magic_email'] = $email;
     $_SESSION['magic_input_email'] = $email;
-    header('Location: ?route=/');
+    header('Location: ' . $getLoginRedirect(true));
     exit;
 };
 
@@ -75,9 +118,9 @@ $router->post('/magic-set-email', $handleSetEmail);
 $router->post('/magic-start', $handleSetEmail);
 
 // Handler für E-Mail-Reset ("E-Mail ändern")
-$handleClearEmail = function (): void {
+$handleClearEmail = function () use ($getLoginRedirect): void {
     unset($_SESSION['magic_email'], $_SESSION['magic_input_email']);
-    header('Location: ?route=/');
+    header('Location: ' . $getLoginRedirect(true));
     exit;
 };
 
@@ -86,12 +129,12 @@ $router->post('/magic-clear-email', $handleClearEmail);
 $router->post('/magic-reset-email', $handleClearEmail);
 
 // Handler für Magic-Code-Anforderung: Mail nur senden, wenn E-Mail in der DB existiert
-$handleRequestCode = function (): void {
+$handleRequestCode = function () use ($getLoginRedirect): void {
     $email = strtolower(trim((string) ($_SESSION['magic_email'] ?? ($_SESSION['magic_input_email'] ?? ''))));
 
     if ($email === '') {
         $_SESSION['flash_home_error'] = 'Bitte zuerst deine E-Mail-Adresse angeben.';
-        header('Location: ?route=/');
+        header('Location: ' . $getLoginRedirect(true));
         exit;
     }
 
@@ -115,13 +158,13 @@ $handleRequestCode = function (): void {
 
         if ($user === null) {
             $_SESSION['flash_home_error'] = 'Diese E-Mail-Adresse ist nicht in der Benutzerdatenbank hinterlegt. Kein Code versendet.';
-            header('Location: ?route=/');
+            header('Location: ' . $getLoginRedirect(true));
             exit;
         }
 
         if (isset($user['is_active']) && (int) $user['is_active'] !== 1) {
             $_SESSION['flash_home_error'] = 'Dieser Benutzer-Account ist gesperrt oder deaktiviert. Es kann kein Code angefordert werden.';
-            header('Location: ?route=/');
+            header('Location: ' . $getLoginRedirect(true));
             exit;
         }
     }
@@ -139,7 +182,7 @@ $handleRequestCode = function (): void {
         }
     }
 
-    header('Location: ?route=/');
+    header('Location: ' . $getLoginRedirect(true));
     exit;
 };
 
@@ -148,19 +191,19 @@ $router->post('/magic-request', $handleRequestCode);
 $router->post('/magic-request-code', $handleRequestCode);
 
 // POST /magic-login - Prüft Magic-Code für die Session-E-Mail
-$router->post('/magic-login', function (): void {
+$router->post('/magic-login', function () use ($getLoginRedirect): void {
     $email = strtolower(trim((string) ($_SESSION['magic_email'] ?? ($_SESSION['magic_input_email'] ?? ''))));
     $code = trim((string) ($_POST['magic_code'] ?? ''));
 
     if ($email === '') {
         $_SESSION['flash_home_error'] = 'Bitte zuerst deine E-Mail-Adresse angeben.';
-        header('Location: ?route=/');
+        header('Location: ' . $getLoginRedirect(true));
         exit;
     }
 
     if ($code === '') {
         $_SESSION['flash_home_error'] = 'Bitte den Magic-Code eingeben.';
-        header('Location: ?route=/');
+        header('Location: ' . $getLoginRedirect(true));
         exit;
     }
 
@@ -183,7 +226,7 @@ $router->post('/magic-login', function (): void {
     }
 
     $_SESSION['flash_home_error'] = 'Ungültiger oder abgelaufener Magic-Code für diese E-Mail.';
-    header('Location: ?route=/');
+    header('Location: ' . $getLoginRedirect(true));
     exit;
 });
 
@@ -195,8 +238,14 @@ $router->get('/db-test', function (): void {
 
 // Standard-Login Routen (optional / Fallback)
 $router->get('/login', function (): void {
-    if (Auth::check()) {
+    if (Auth::check() || Auth::checkMagic()) {
         header('Location: ?route=admin');
+        exit;
+    }
+
+    $mode = class_exists('Settings') ? (string) Settings::get('homepage_mode', 'blocks') : 'blocks';
+    if ($mode === 'module') {
+        header('Location: ?route=/&login=1');
         exit;
     }
 
@@ -225,9 +274,9 @@ $router->get('/logout', function (): void {
 });
 
 // GET /admin - Admin Dashboard
-$router->get('/admin', function (): void {
+$router->get('/admin', function () use ($getLoginRedirect): void {
     if (!Auth::checkMagic()) {
-        header('Location: ?route=/');
+        header('Location: ' . $getLoginRedirect(true));
         exit;
     }
 
@@ -399,6 +448,64 @@ $router->post('/admin/magic-codes/resend', function () use ($requireAdminAuthAnd
 // 7. Activity / Logs:   Link `?route=admin/activity`   -> Pfad `/admin/activity`
 // =========================================================================
 
+// --- 2.0 DESIGN & BRAND-EINSTELLUNGEN (/admin/design) ---
+$router->get('/admin/design', function (): void {
+    if (!Auth::checkMagic() && !Auth::check()) {
+        header('Location: ?route=/');
+        exit;
+    }
+
+    if (class_exists('Rbac') && !Rbac::can('admin.settings') && !Rbac::can('admin.homepage.manage') && !Rbac::can('admin.design.manage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Sie haben keine Berechtigung für die Design-Einstellungen.';
+        header('Location: ?route=admin');
+        exit;
+    }
+
+    $user = Auth::user();
+    $currentRoute = 'admin/design';
+    require __DIR__ . '/views/admin/design.php';
+});
+
+$router->post('/admin/design', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/design');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.settings') && !Rbac::can('admin.homepage.manage') && !Rbac::can('admin.design.manage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung für die Design-Einstellungen.';
+        header('Location: ?route=admin/design');
+        exit;
+    }
+
+    $brandColor = trim((string) ($_POST['admin_brand_color'] ?? '#0d6efd'));
+    $accentColor = trim((string) ($_POST['admin_accent_color'] ?? '#0ea5e9'));
+    $defaultTheme = strtolower(trim((string) ($_POST['admin_default_theme'] ?? 'system')));
+
+    if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $brandColor)) {
+        $brandColor = '#0d6efd';
+    }
+
+    if ($accentColor !== '' && !preg_match('/^#[0-9A-Fa-f]{6}$/', $accentColor)) {
+        $accentColor = '#0ea5e9';
+    }
+
+    if (!in_array($defaultTheme, ['system', 'light', 'dark'], true)) {
+        $defaultTheme = 'system';
+    }
+
+    try {
+        if (class_exists('Settings')) {
+            Settings::set('admin_brand_color', $brandColor);
+            Settings::set('admin_accent_color', $accentColor);
+            Settings::set('admin_default_theme', $defaultTheme);
+            $_SESSION['flash_success'] = 'Design- und Brand-Einstellungen erfolgreich gespeichert.';
+        }
+    } catch (\Throwable $e) {
+        $_SESSION['flash_error'] = 'Fehler beim Speichern der Design-Einstellungen: ' . $e->getMessage();
+    }
+
+    header('Location: ?route=admin/design');
+    exit;
+});
+
 // --- 2. STARTSEITEN-VERWALTUNG (/admin/homepage) ---
 $router->get('/admin/homepage', function (): void {
     if (!Auth::checkMagic() && !Auth::check()) {
@@ -470,6 +577,20 @@ $router->post('/admin/homepage', function () use ($requireAdminAuthAndCsrf): voi
             Settings::set('homepage_layout', $layout);
             Settings::set('after_login_redirect', $redirect);
             Settings::set('after_login_custom_url', $customUrl);
+
+            // Startseiten-Modus & Modul-Routing
+            if (isset($_POST['homepage_mode'])) {
+                $hMode = trim((string) $_POST['homepage_mode']);
+                if (in_array($hMode, ['blocks', 'module'], true)) {
+                    Settings::set('homepage_mode', $hMode);
+                }
+            }
+            if (isset($_POST['homepage_module_key'])) {
+                Settings::set('homepage_module_key', trim((string) $_POST['homepage_module_key']));
+            }
+            if (isset($_POST['homepage_module_route'])) {
+                Settings::set('homepage_module_route', trim((string) $_POST['homepage_module_route']));
+            }
 
             // Logo-Entfernung
             if ($removeLogo) {
