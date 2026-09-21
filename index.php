@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/DB.php';
+require_once __DIR__ . '/core/ErrorHandler.php';
+require_once __DIR__ . '/core/Session.php';
+require_once __DIR__ . '/core/Security.php';
 require_once __DIR__ . '/core/Router.php';
 require_once __DIR__ . '/core/MagicCode.php';
 require_once __DIR__ . '/core/Auth.php';
@@ -15,8 +18,16 @@ require_once __DIR__ . '/core/Settings.php';
 require_once __DIR__ . '/core/HomepageBlock.php';
 require_once __DIR__ . '/core/Version.php';
 require_once __DIR__ . '/core/MigrationManager.php';
+require_once __DIR__ . '/core/Upload.php';
 
+// 1. Globales Error- & Exception-Handling initialisieren
+ErrorHandler::register();
+
+// 2. Gehärtete Session starten
 Auth::startSession();
+
+// 3. Sicherheitsheader senden (X-Content-Type-Options, Referrer-Policy, Anti-Clickjacking etc.)
+Security::sendHeaders((string) ($_GET['route'] ?? '/'));
 
 $router = new Router();
 
@@ -594,42 +605,31 @@ $router->post('/admin/homepage', function () use ($requireAdminAuthAndCsrf): voi
 
             // Logo-Entfernung
             if ($removeLogo) {
+                $oldLogo = (string) Settings::get('homepage_logo_path', '');
+                if ($oldLogo !== '' && class_exists('Upload')) {
+                    Upload::deleteFile($oldLogo);
+                }
                 Settings::set('homepage_logo_path', '');
             }
 
-            // Logo-Upload verarbeiten
-            if (isset($_FILES['logo_file']) && is_array($_FILES['logo_file']) && ($_FILES['logo_file']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
-                $file = $_FILES['logo_file'];
-                $allowedMimes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp', 'image/gif'];
-                $finfo = new finfo(FILEINFO_MIME_TYPE);
-                $mime = $finfo->file($file['tmp_name']);
+            // Logo-Upload sicher verarbeiten (über Upload-Hilfsklasse)
+            if (isset($_FILES['logo_file']) && is_array($_FILES['logo_file']) && ($_FILES['logo_file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                try {
+                    $targetDir = __DIR__ . '/uploads/homepage';
+                    $allowedMimes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp', 'image/gif'];
+                    $maxBytes = 2 * 1024 * 1024; // 2 MB
 
-                if (in_array($mime, $allowedMimes, true)) {
-                    $ext = match ($mime) {
-                        'image/png' => 'png',
-                        'image/jpeg' => 'jpg',
-                        'image/svg+xml' => 'svg',
-                        'image/webp' => 'webp',
-                        'image/gif' => 'gif',
-                        default => 'png',
-                    };
+                    $oldLogo = (string) Settings::get('homepage_logo_path', '');
+                    $webPath = Upload::saveImage($_FILES['logo_file'], $targetDir, $allowedMimes, $maxBytes, 'logo_');
 
-                    $uploadDir = __DIR__ . '/public/assets/uploads';
-                    if (!is_dir($uploadDir)) {
-                        @mkdir($uploadDir, 0755, true);
+                    // Altes Logo löschen, falls ersetzt
+                    if ($oldLogo !== '' && $oldLogo !== $webPath) {
+                        Upload::deleteFile($oldLogo);
                     }
 
-                    $filename = 'logo_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-                    $targetPath = $uploadDir . '/' . $filename;
-
-                    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-                        $webPath = 'public/assets/uploads/' . $filename;
-                        Settings::set('homepage_logo_path', $webPath);
-                    } else {
-                        $_SESSION['flash_error'] = 'Das Logo konnte nicht im Upload-Verzeichnis gespeichert werden.';
-                    }
-                } else {
-                    $_SESSION['flash_error'] = 'Ungültiges Dateiformat für das Logo. Bitte PNG, JPG, SVG, WebP oder GIF verwenden.';
+                    Settings::set('homepage_logo_path', $webPath);
+                } catch (\RuntimeException $e) {
+                    $_SESSION['flash_error'] = 'Fehler beim Logo-Upload: ' . $e->getMessage();
                 }
             }
 
@@ -1167,6 +1167,80 @@ $router->get('/admin/activity', function (): void {
     $user = Auth::user();
     $currentRoute = 'admin/activity';
     require __DIR__ . '/views/admin/activity.php';
+});
+
+// --- 7. SYSTEM, VERSIONEN & MIGRATIONEN (/admin/system) ---
+$router->get('/admin/system', function (): void {
+    if (!Auth::checkMagic() && !Auth::check()) {
+        header('Location: ?route=/');
+        exit;
+    }
+
+    if (class_exists('Rbac') && !Rbac::can('admin.system.view')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Sie haben keine Berechtigung für System- und Migrationsinformationen.';
+        header('Location: ?route=admin');
+        exit;
+    }
+
+    $user = Auth::user();
+    $currentRoute = 'admin/system';
+    require __DIR__ . '/views/admin/system.php';
+});
+
+// POST /admin/system/mark-migration - Migration als ausgeführt markieren
+$router->post('/admin/system/mark-migration', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/system');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.system.manage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung für Migrationsverwaltung.';
+        header('Location: ?route=admin/system');
+        exit;
+    }
+
+    $key = trim((string) ($_POST['key'] ?? ''));
+    if ($key !== '' && class_exists('MigrationManager')) {
+        try {
+            $success = MigrationManager::markAsApplied($key);
+            if ($success) {
+                $_SESSION['flash_success'] = "Migration '{$key}' wurde als ausgeführt markiert.";
+            } else {
+                $_SESSION['flash_error'] = "Migration '{$key}' konnte nicht markiert werden (evtl. existiert die Tabelle 'migrations' noch nicht).";
+            }
+        } catch (\Throwable $e) {
+            $_SESSION['flash_error'] = 'Fehler beim Markieren der Migration: ' . $e->getMessage();
+        }
+    }
+
+    header('Location: ?route=admin/system');
+    exit;
+});
+
+// POST /admin/system/unmark-migration - Migration auf ausstehend zurücksetzen
+$router->post('/admin/system/unmark-migration', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/system');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.system.manage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung für Migrationsverwaltung.';
+        header('Location: ?route=admin/system');
+        exit;
+    }
+
+    $key = trim((string) ($_POST['key'] ?? ''));
+    if ($key !== '' && class_exists('MigrationManager')) {
+        try {
+            $success = MigrationManager::unmarkApplied($key);
+            if ($success) {
+                $_SESSION['flash_success'] = "Migration '{$key}' wurde auf ausstehend zurückgesetzt.";
+            } else {
+                $_SESSION['flash_error'] = "Status der Migration '{$key}' konnte nicht zurückgesetzt werden.";
+            }
+        } catch (\Throwable $e) {
+            $_SESSION['flash_error'] = 'Fehler beim Zurücksetzen der Migration: ' . $e->getMessage();
+        }
+    }
+
+    header('Location: ?route=admin/system');
+    exit;
 });
 
 // Aktive Module laden (Routen & Hooks registrieren)

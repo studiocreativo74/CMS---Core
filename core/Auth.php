@@ -2,12 +2,31 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/Session.php';
+
 class Auth
 {
+    /**
+     * Startet die Session über die gehärtete Session-Klasse.
+     */
     public static function startSession(): void
     {
-        if (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
+        if (class_exists('Session')) {
+            Session::start();
+        } elseif (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
             session_start();
+        }
+    }
+
+    /**
+     * Rotiert die Session-ID (Schutz gegen Session Fixation).
+     */
+    public static function regenerateSessionId(bool $deleteOldSession = true): void
+    {
+        if (class_exists('Session')) {
+            Session::regenerateId($deleteOldSession);
+        } elseif (session_status() === PHP_SESSION_ACTIVE && !headers_sent()) {
+            session_regenerate_id($deleteOldSession);
         }
     }
 
@@ -21,7 +40,7 @@ class Auth
         // Funktioniert unabhängig von der Datenbank.
         // =====================================================================
         if (MagicCode::isDevMagicCodeValid($email, $code)) {
-            session_regenerate_id(true);
+            self::regenerateSessionId(true);
 
             $cleanEmail = strtolower(trim($email));
             $_SESSION['magic_authenticated'] = true;
@@ -49,7 +68,7 @@ class Auth
 
         $record = MagicCode::verifyAdminCodeForEmail($email, $code);
         if ($record !== null) {
-            session_regenerate_id(true);
+            self::regenerateSessionId(true);
 
             $_SESSION['magic_authenticated'] = true;
             $_SESSION['magic_code_id'] = (int) $record['id'];
@@ -108,7 +127,7 @@ class Auth
         }
 
         // Neue Session-ID generieren (Session Fixation Schutz)
-        session_regenerate_id(true);
+        self::regenerateSessionId(true);
 
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_email'] = $user['email'];
@@ -124,24 +143,25 @@ class Auth
 
     public static function logout(): void
     {
-        self::startSession();
-
-        $_SESSION = [];
-
-        if (ini_get('session.use_cookies') && !headers_sent()) {
-            $params = session_get_cookie_params();
-            setcookie(
-                session_name(),
-                '',
-                time() - 42000,
-                $params['path'],
-                $params['domain'],
-                (bool) $params['secure'],
-                (bool) $params['httponly']
-            );
+        if (class_exists('Session')) {
+            Session::destroy();
+        } else {
+            self::startSession();
+            $_SESSION = [];
+            if (ini_get('session.use_cookies') && !headers_sent()) {
+                $params = session_get_cookie_params();
+                setcookie(
+                    session_name(),
+                    '',
+                    time() - 42000,
+                    $params['path'],
+                    $params['domain'],
+                    (bool) $params['secure'],
+                    (bool) $params['httponly']
+                );
+            }
+            session_destroy();
         }
-
-        session_destroy();
     }
 
     public static function user(): ?array

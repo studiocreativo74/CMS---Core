@@ -11,7 +11,9 @@ final class Csrf
      */
     public static function getToken(): string
     {
-        if (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
+        if (class_exists('Auth')) {
+            Auth::startSession();
+        } elseif (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
             session_start();
         }
 
@@ -27,7 +29,9 @@ final class Csrf
      */
     public static function validate(?string $token): bool
     {
-        if (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
+        if (class_exists('Auth')) {
+            Auth::startSession();
+        } elseif (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
             session_start();
         }
 

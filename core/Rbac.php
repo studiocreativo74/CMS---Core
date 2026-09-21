@@ -203,7 +203,9 @@ final class Rbac
      */
     public static function requirePermission(string $permissionKey): void
     {
-        if (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
+        if (class_exists('Auth')) {
+            Auth::startSession();
+        } elseif (session_status() !== PHP_SESSION_ACTIVE && !headers_sent()) {
             session_start();
         }
 

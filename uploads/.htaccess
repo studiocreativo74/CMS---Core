@@ -1,0 +1,18 @@
+# StudioCreativo CMS - Upload Protection
+# Verhindert die Ausführung von Skripten im gesamten Upload-Verzeichnis
+<FilesMatch "(?i)\.(php|phtml|php3|php4|php5|php7|php8|phps|phar|inc|cgi|pl|py|sh|bash|js|jsp|asp|aspx|exe|shtml)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+Options -ExecCGI -Indexes
+
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>

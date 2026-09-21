@@ -292,7 +292,10 @@ ob_start();
                             <div class="mb-3">
                                 <label for="logo_file" class="form-label fw-medium">Neues Logo hochladen</label>
                                 <input type="file" class="form-control" id="logo_file" name="logo_file" accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif">
-                                <div class="form-text">Erlaubt: PNG, JPG, SVG, WebP, GIF (max. 2 MB).</div>
+                                <div class="form-text d-flex align-items-center justify-content-between mt-1">
+                                    <span>Erlaubte Formate: PNG, JPG, SVG, WebP, GIF (max. 2 MB)</span>
+                                    <span class="badge bg-secondary-subtle text-secondary border">MIME-geprüft</span>
+                                </div>
                             </div>
                         </div>
                     </div>
