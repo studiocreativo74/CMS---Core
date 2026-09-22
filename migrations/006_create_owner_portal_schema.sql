@@ -95,21 +95,21 @@ CREATE TABLE IF NOT EXISTS `case_messages` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 6. Berechtigungen (Permissions) für das Eigentümerportal einpflegen
-INSERT IGNORE INTO `permissions` (`key`, `name`, `description`, `created_at`, `updated_at`) VALUES
-('portal.view', 'Portal Zugriff', 'Zugriff auf das Eigentümer- & Mieterportal', NOW(), NOW()),
-('portal.properties.manage', 'Liegenschaften verwalten', 'Anlegen, Bearbeiten und Löschen von Liegenschaften', NOW(), NOW()),
-('portal.units.manage', 'Einheiten verwalten', 'Verwaltung von Einheiten und Nutzer-Zuweisungen', NOW(), NOW()),
-('portal.cases.manage', 'Cases verwalten', 'Verwaltung von Gebäudeakten, Versammlungen und Schäden', NOW(), NOW()),
-('portal.damage.create', 'Schaden melden', 'Möglichkeit zur Erfassung neuer Schadensmeldungen im Portal', NOW(), NOW()),
-('portal.documents.view', 'Portal Dokumente ansehen', 'Einsicht in Liegenschafts- und Einheiten-Dokumente', NOW(), NOW());
+INSERT IGNORE INTO `permissions` (`key`, `name`, `description`, `created_at`) VALUES
+('portal.view', 'Portal Zugriff', 'Zugriff auf das Eigentümer- & Mieterportal', NOW()),
+('portal.properties.manage', 'Liegenschaften verwalten', 'Anlegen, Bearbeiten und Löschen von Liegenschaften', NOW()),
+('portal.units.manage', 'Einheiten verwalten', 'Verwaltung von Einheiten und Nutzer-Zuweisungen', NOW()),
+('portal.cases.manage', 'Cases verwalten', 'Verwaltung von Gebäudeakten, Versammlungen und Schäden', NOW()),
+('portal.damage.create', 'Schaden melden', 'Möglichkeit zur Erfassung neuer Schadensmeldungen im Portal', NOW()),
+('portal.documents.view', 'Portal Dokumente ansehen', 'Einsicht in Liegenschafts- und Einheiten-Dokumente', NOW());
 
 -- 7. Rollen anlegen, falls noch nicht vorhanden
-INSERT IGNORE INTO `roles` (`key`, `name`, `description`, `created_at`, `updated_at`) VALUES
-('property_manager', 'Hausverwalter', 'Verwaltung von Liegenschaften, Einheiten, Versammlungen und Schäden', NOW(), NOW()),
-('advisory_board', 'Verwaltungsbeirat', 'Beiratsmitglied mit erweiterten Einsichtsrechten in Versammlungen und Dokumente', NOW(), NOW()),
-('owner', 'Eigentümer', 'Wohnungseigentümer mit Zugriff auf eigene Einheiten, Abrechnungen und Versammlungsakten', NOW(), NOW()),
-('tenant', 'Mieter', 'Mieter mit Zugriff auf die gemietete Einheit und Schadensmeldung', NOW(), NOW()),
-('external', 'Dienstleister / Handwerker', 'Externer Dienstleister für zugewiesene Schadenfälle und Aufträge', NOW(), NOW());
+INSERT IGNORE INTO `roles` (`key`, `name`, `description`, `created_at`) VALUES
+('property_manager', 'Hausverwalter', 'Verwaltung von Liegenschaften, Einheiten, Versammlungen und Schäden', NOW()),
+('advisory_board', 'Verwaltungsbeirat', 'Beiratsmitglied mit erweiterten Einsichtsrechten in Versammlungen und Dokumente', NOW()),
+('owner', 'Eigentümer', 'Wohnungseigentümer mit Zugriff auf eigene Einheiten, Abrechnungen und Versammlungsakten', NOW()),
+('tenant', 'Mieter', 'Mieter mit Zugriff auf die gemietete Einheit und Schadensmeldung', NOW()),
+('external', 'Dienstleister / Handwerker', 'Externer Dienstleister für zugewiesene Schadenfälle und Aufträge', NOW());
 
 -- 8. Berechtigungen den Rollen zuweisen
 INSERT IGNORE INTO `role_permissions` (`role_id`, `permission_id`)

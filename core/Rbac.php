@@ -34,7 +34,7 @@ final class Rbac
         try {
             // Rollen aus user_roles verknüpft mit roles
             $roles = DB::fetchAll(
-                'SELECT r.`id`, r.`key`, r.`name`, r.`description`, r.`created_at`, r.`updated_at` 
+                'SELECT r.`id`, r.`key`, r.`name`, r.`description`, r.`created_at` 
                  FROM `user_roles` ur 
                  JOIN `roles` r ON ur.`role_id` = r.`id` 
                  WHERE ur.`user_id` = :user_id 
@@ -47,7 +47,7 @@ final class Rbac
                 $user = DB::fetchOne('SELECT `role` FROM `users` WHERE `id` = :id LIMIT 1', ['id' => $userId]);
                 if (!empty($user['role'])) {
                     $fallbackRole = DB::fetchOne(
-                        'SELECT `id`, `key`, `name`, `description`, `created_at`, `updated_at` 
+                        'SELECT `id`, `key`, `name`, `description`, `created_at` 
                          FROM `roles` 
                          WHERE `key` = :key 
                          LIMIT 1',
@@ -333,7 +333,7 @@ final class Rbac
     public static function getAllRoles(): array
     {
         try {
-            return DB::fetchAll('SELECT `id`, `key`, `name`, `description`, `created_at`, `updated_at` FROM `roles` ORDER BY `id` ASC');
+            return DB::fetchAll('SELECT `id`, `key`, `name`, `description`, `created_at` FROM `roles` ORDER BY `id` ASC');
         } catch (\Throwable $e) {
             error_log('Rbac::getAllRoles Fehler: ' . $e->getMessage());
             return [];
