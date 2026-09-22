@@ -63,4 +63,12 @@ final class Csrf
         $token = htmlspecialchars(self::getToken(), ENT_QUOTES, 'UTF-8');
         return '<input type="hidden" name="csrf_token" value="' . $token . '">';
     }
+
+    /**
+     * Alias für input() zur nahtlosen Verwendung in Modul- und Formulartemplates.
+     */
+    public static function field(): string
+    {
+        return self::input();
+    }
 }

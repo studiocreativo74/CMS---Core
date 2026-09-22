@@ -46,15 +46,24 @@ final class Rbac
             if (empty($roles)) {
                 $user = DB::fetchOne('SELECT `role` FROM `users` WHERE `id` = :id LIMIT 1', ['id' => $userId]);
                 if (!empty($user['role'])) {
+                    $roleKey = (string) $user['role'];
                     $fallbackRole = DB::fetchOne(
                         'SELECT `id`, `key`, `name`, `description`, `created_at` 
                          FROM `roles` 
                          WHERE `key` = :key 
                          LIMIT 1',
-                        ['key' => (string) $user['role']]
+                        ['key' => $roleKey]
                     );
                     if ($fallbackRole) {
                         $roles[] = $fallbackRole;
+                    } else {
+                        $roles[] = [
+                            'id' => 0,
+                            'key' => $roleKey,
+                            'name' => ucfirst($roleKey),
+                            'description' => 'System-Rolle ' . $roleKey,
+                            'created_at' => date('Y-m-d H:i:s'),
+                        ];
                     }
                 }
             }
@@ -81,9 +90,10 @@ final class Rbac
         try {
             $roles = self::getUserRoles($userId);
 
-            // Superadmin-Rolle hat implizit immer alle existierenden Berechtigungen
+            // Superadmin- und Admin-Rollen haben implizit alle existierenden Berechtigungen
             foreach ($roles as $role) {
-                if (($role['key'] ?? '') === 'superadmin') {
+                $rKey = strtolower(trim((string) ($role['key'] ?? '')));
+                if ($rKey === 'superadmin' || $rKey === 'admin') {
                     $allPermissions = DB::fetchAll('SELECT `key` FROM `permissions`');
                     return array_values(array_filter(array_column($allPermissions, 'key')));
                 }
@@ -115,7 +125,7 @@ final class Rbac
     /**
      * Prüft, ob ein User (oder die aktuelle Session) eine bestimmte Berechtigung hat.
      * WICHTIG: Wenn eine Magic-Code-Admin-Session aktiv ist, wird IMMER true zurückgegeben (Superadmin-Bypass).
-     * Ebenso wird für Benutzer mit der Rolle 'superadmin' immer true zurückgegeben.
+     * Ebenso wird für Benutzer mit der Rolle 'superadmin' oder 'admin' immer true zurückgegeben.
      *
      * @param int|null $userId
      * @param string $permissionKey
@@ -146,13 +156,14 @@ final class Rbac
         }
 
         // =====================================================================
-        // 3. Superadmin-Rollen-Bypass (Gewollt):
-        // Wenn der Benutzer die Rolle 'superadmin' besitzt, hat er uneingeschränkten Zugriff.
+        // 3. Superadmin- und Admin-Rollen-Bypass (Gewollt):
+        // Wenn der Benutzer die Rolle 'superadmin' oder 'admin' besitzt, hat er vollen administrativen Zugriff.
         // =====================================================================
         try {
             $roles = self::getUserRoles($userId);
             foreach ($roles as $role) {
-                if (($role['key'] ?? '') === 'superadmin') {
+                $rKey = strtolower(trim((string) ($role['key'] ?? '')));
+                if ($rKey === 'superadmin' || $rKey === 'admin') {
                     return true;
                 }
             }
