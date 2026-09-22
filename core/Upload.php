@@ -27,6 +27,17 @@ final class Upload
         'image/webp'    => 'webp',
         'image/gif'     => 'gif',
         'image/svg+xml' => 'svg',
+        'image/tiff'    => 'tiff',
+        'application/pdf' => 'pdf',
+        'application/x-pdf' => 'pdf',
+        'application/msword' => 'doc',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+        'application/vnd.ms-excel' => 'xls',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+        'application/vnd.oasis.opendocument.text' => 'odt',
+        'application/vnd.oasis.opendocument.spreadsheet' => 'ods',
+        'text/plain'    => 'txt',
+        'text/csv'      => 'csv',
     ];
 
     /**
@@ -133,6 +144,144 @@ final class Upload
 
         // 8. Relativen Webroot-Pfad für Speicherung in der Datenbank berechnen
         return self::calculateRelativeWebPath($destinationPath);
+    }
+
+    /**
+     * Speichert ein hochgeladenes Dokument (PDF, Office, Text, Scan) sicher im Dateisystem.
+     * Ermittelt kryptografische Hash-Werte (SHA-256) und extrahiert Metadaten.
+     *
+     * @param array<string, mixed> $file
+     * @param string               $targetDir
+     * @param array<string>        $allowedMime
+     * @param int                  $maxBytes    Standard: 25 MB
+     * @param string               $prefix      Standard: 'doc_'
+     * @return array{
+     *     original_filename: string,
+     *     filename: string,
+     *     storage_path: string,
+     *     relative_path: string,
+     *     mime_type: string,
+     *     file_size: int,
+     *     file_hash: string,
+     *     extension: string
+     * }
+     * @throws RuntimeException
+     */
+    public static function saveDocument(
+        array $file,
+        string $targetDir,
+        array $allowedMime = [
+            'application/pdf',
+            'application/x-pdf',
+            'image/png',
+            'image/jpeg',
+            'image/webp',
+            'image/tiff',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.oasis.opendocument.text',
+            'application/vnd.oasis.opendocument.spreadsheet',
+            'text/plain',
+            'text/csv',
+        ],
+        int $maxBytes = 26214400, // 25 MB
+        string $prefix = 'doc_'
+    ): array {
+        // 1. Upload-Array und Fehlercode prüfen
+        self::validateUploadArray($file, $maxBytes);
+
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+
+        // 2. Sicherheitsprüfung: Echter HTTP-Upload?
+        if (!is_uploaded_file($tmpName)) {
+            throw new RuntimeException('Sicherheitswarnung: Die angegebene Datei stammt nicht aus einem regulären Upload.');
+        }
+
+        // 3. Echten MIME-Type serverseitig ermitteln
+        $detectedMime = self::detectMimeType($tmpName);
+
+        // MIME-Typ gegen die Whitelist abgleichen
+        if (!in_array($detectedMime, $allowedMime, true)) {
+            $readableAllowed = self::humanReadableMimes($allowedMime);
+            throw new RuntimeException(
+                "Nicht unterstütztes Dokumentenformat (erkannt: '{$detectedMime}'). Erlaubte Formate: {$readableAllowed}."
+            );
+        }
+
+        // 4. Endung ableiten
+        $extension = self::MIME_EXTENSION_MAP[$detectedMime] ?? 'bin';
+
+        // 5. Zielverzeichnis vorbereiten und absichern
+        $targetDir = rtrim(str_replace('\\', '/', $targetDir), '/');
+        if (!is_dir($targetDir)) {
+            if (!@mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
+                throw new RuntimeException("Das Dokumentenverzeichnis '{$targetDir}' konnte nicht erstellt werden.");
+            }
+        }
+
+        // Verzeichnis mit .htaccess und index.html absichern
+        self::secureUploadDirectory($targetDir);
+
+        // 6. Eindeutigen Dateinamen generieren (unbeeinflusst von Nutzereingaben)
+        $cleanPrefix = preg_replace('/[^a-zA-Z0-9_\-]/', '', $prefix);
+        if ($cleanPrefix === '') {
+            $cleanPrefix = 'doc_';
+        }
+
+        $filename = sprintf(
+            '%s%s_%s.%s',
+            $cleanPrefix,
+            date('Ymd_His'),
+            bin2hex(random_bytes(8)),
+            $extension
+        );
+
+        $destinationPath = $targetDir . '/' . $filename;
+
+        // 7. Datei verschieben
+        if (!@move_uploaded_file($tmpName, $destinationPath)) {
+            throw new RuntimeException('Das Dokument konnte nicht auf dem Speichermedium abgelegt werden.');
+        }
+
+        // Dateirechte restriktiv setzen
+        @chmod($destinationPath, 0644);
+
+        // 8. Prüfsumme (SHA-256) und Größe ermitteln
+        $fileHash = hash_file('sha256', $destinationPath) ?: '';
+        $fileSize = (int) (filesize($destinationPath) ?: ($file['size'] ?? 0));
+
+        // Original-Dateinamen bereinigen
+        $rawOriginalName = (string) ($file['name'] ?? 'dokument.' . $extension);
+        $cleanOriginalName = self::sanitizeFilename($rawOriginalName);
+
+        return [
+            'original_filename' => $cleanOriginalName,
+            'filename'          => $filename,
+            'storage_path'      => $destinationPath,
+            'relative_path'     => self::calculateRelativeWebPath($destinationPath),
+            'mime_type'         => $detectedMime,
+            'file_size'         => $fileSize,
+            'file_hash'         => $fileHash,
+            'extension'         => $extension,
+        ];
+    }
+
+    /**
+     * Bereinigt einen vom Client übergebenen Dateinamen von gefährlichen Zeichen.
+     */
+    public static function sanitizeFilename(string $filename): string
+    {
+        $filename = basename(str_replace(['\\', '/'], '/', $filename));
+        $filename = preg_replace('/[\x00-\x1F\x7F]/', '', $filename) ?? $filename;
+        $filename = trim($filename, " .\t\n\r\0\x0B");
+
+        if ($filename === '') {
+            $filename = 'dokument_' . date('Ymd');
+        }
+
+        return $filename;
     }
 
     /**

@@ -1,0 +1,6 @@
+# StudioCreativo CMS - Storage Protection
+# Verhindert den direkten Zugriff auf Dokumente über das Web
+Order Deny,Allow
+Deny from all
+
+Options -Indexes -ExecCGI

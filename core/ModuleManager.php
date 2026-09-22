@@ -423,6 +423,30 @@ final class ModuleManager
         }
 
         $activeModules = self::all(true);
+        $loadedKeys = [];
+        foreach ($activeModules as $m) {
+            $loadedKeys[(string) ($m['key'] ?? '')] = true;
+        }
+
+        // Automatische Erkennung und Registrierung neu hinzugefügter Modulordner mit module.php
+        $items = @scandir($baseDir);
+        if ($items !== false) {
+            foreach ($items as $item) {
+                if ($item === '.' || $item === '..' || isset($loadedKeys[$item])) {
+                    continue;
+                }
+                $mDir = rtrim($baseDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $item;
+                $phpMetaFile = $mDir . DIRECTORY_SEPARATOR . 'module.php';
+                if (is_dir($mDir) && file_exists($phpMetaFile)) {
+                    $mMeta = @require $phpMetaFile;
+                    if (is_array($mMeta) && !empty($mMeta['is_enabled'])) {
+                        self::register($item, $mMeta);
+                        $activeModules[] = array_merge(['key' => $item], $mMeta);
+                        $loadedKeys[$item] = true;
+                    }
+                }
+            }
+        }
 
         foreach ($activeModules as $module) {
             $key = (string) ($module['key'] ?? '');

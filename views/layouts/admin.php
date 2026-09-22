@@ -643,7 +643,8 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
                                     <span class="text-uppercase text-white-50 fw-semibold small" style="font-size: 0.72rem; letter-spacing: 0.5px;">Weitere Module</span>
                                 </li>
                                 <?php foreach ($customMenuItems as $item): 
-                                    $isItemActive = ($currentRouteNormalized === ltrim((string) ($item['route'] ?? ''), '/'));
+                                    $itemRouteClean = ltrim((string) ($item['route'] ?? ''), '/');
+                                    $isItemActive = ($currentRouteNormalized === $itemRouteClean) || ($itemRouteClean !== '' && str_starts_with($currentRouteNormalized, $itemRouteClean . '/'));
                                 ?>
                                 <li class="nav-item">
                                     <a class="nav-link <?= $isItemActive ? 'active' : '' ?>" 
