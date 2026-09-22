@@ -43,10 +43,14 @@ final class PortalRepository
 
     /**
      * Gibt Liegenschaften mit aggregierter Anzahl an Einheiten und offenen Vorgängen zurück.
+     * Unterstützt Suchstring oder Filter-Array (['search' => '...', 'city' => '...']).
      *
+     * @param string|array<string, mixed>|null $searchOrFilters
+     * @param int $limit
+     * @param int $offset
      * @return array<int, array<string, mixed>>
      */
-    public static function getProperties(?string $search = null, int $limit = 50, int $offset = 0): array
+    public static function getProperties($searchOrFilters = null, int $limit = 50, int $offset = 0): array
     {
         if (!self::isTableCreated()) {
             return [];
@@ -56,9 +60,24 @@ final class PortalRepository
             $where = [];
             $params = [];
 
+            $search = null;
+            $city = null;
+
+            if (is_array($searchOrFilters)) {
+                $search = !empty($searchOrFilters['search']) ? (string) $searchOrFilters['search'] : null;
+                $city = !empty($searchOrFilters['city']) ? (string) $searchOrFilters['city'] : null;
+            } elseif (is_string($searchOrFilters) && trim($searchOrFilters) !== '') {
+                $search = trim($searchOrFilters);
+            }
+
             if ($search !== null && trim($search) !== '') {
                 $where[] = '(p.`name` LIKE :search OR p.`street` LIKE :search OR p.`city` LIKE :search OR p.`external_ref` LIKE :search)';
                 $params['search'] = '%' . trim($search) . '%';
+            }
+
+            if ($city !== null && trim($city) !== '') {
+                $where[] = 'p.`city` LIKE :city';
+                $params['city'] = '%' . trim($city) . '%';
             }
 
             $whereSql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
@@ -78,7 +97,7 @@ final class PortalRepository
         }
     }
 
-    public static function countProperties(?string $search = null): int
+    public static function countProperties($searchOrFilters = null): int
     {
         if (!self::isTableCreated()) {
             return 0;
@@ -88,9 +107,24 @@ final class PortalRepository
             $where = [];
             $params = [];
 
+            $search = null;
+            $city = null;
+
+            if (is_array($searchOrFilters)) {
+                $search = !empty($searchOrFilters['search']) ? (string) $searchOrFilters['search'] : null;
+                $city = !empty($searchOrFilters['city']) ? (string) $searchOrFilters['city'] : null;
+            } elseif (is_string($searchOrFilters) && trim($searchOrFilters) !== '') {
+                $search = trim($searchOrFilters);
+            }
+
             if ($search !== null && trim($search) !== '') {
                 $where[] = '(p.`name` LIKE :search OR p.`street` LIKE :search OR p.`city` LIKE :search OR p.`external_ref` LIKE :search)';
                 $params['search'] = '%' . trim($search) . '%';
+            }
+
+            if ($city !== null && trim($city) !== '') {
+                $where[] = 'p.`city` LIKE :city';
+                $params['city'] = '%' . trim($city) . '%';
             }
 
             $whereSql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
@@ -102,6 +136,79 @@ final class PortalRepository
             error_log('PortalRepository::countProperties Fehler: ' . $e->getMessage());
             return 0;
         }
+    }
+
+    public static function countAllUnits(): int
+    {
+        if (!self::isTableCreated()) {
+            return 0;
+        }
+
+        try {
+            $row = DB::fetchOne('SELECT COUNT(*) AS `cnt` FROM `units`');
+            return (int) ($row['cnt'] ?? 0);
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    public static function countAllCases(): int
+    {
+        if (!self::isTableCreated()) {
+            return 0;
+        }
+
+        try {
+            $row = DB::fetchOne('SELECT COUNT(*) AS `cnt` FROM `cases`');
+            return (int) ($row['cnt'] ?? 0);
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    public static function getAllUsers(): array
+    {
+        try {
+            return DB::fetchAll('SELECT `id`, `name`, `email`, `role` FROM `users` WHERE `is_active` = 1 ORDER BY `name` ASC');
+        } catch (\Throwable $e) {
+            error_log('PortalRepository::getAllUsers Fehler: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public static function findProperty(int $id): ?array
+    {
+        return self::getProperty($id);
+    }
+
+    public static function findUnit(int $id): ?array
+    {
+        return self::getUnit($id);
+    }
+
+    public static function findCase(int $id): ?array
+    {
+        return self::getCase($id);
+    }
+
+    public static function getUnitsByProperty(int $propertyId): array
+    {
+        return self::getUnitsForProperty($propertyId);
+    }
+
+    public static function getAssignedUsersForUnit(int $unitId): array
+    {
+        return self::getUnitUsers($unitId);
+    }
+
+    public static function getUnitsForUser(int $userId): array
+    {
+        return self::getUserUnits($userId);
+    }
+
+    public static function getPropertiesForUser(int $userId): array
+    {
+        return self::getUserProperties($userId);
     }
 
     public static function getProperty(int $id): ?array

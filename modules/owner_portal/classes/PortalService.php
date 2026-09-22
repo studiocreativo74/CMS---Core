@@ -72,18 +72,60 @@ final class PortalService
     // 1. AUTORISIERUNG & ROLLENPRÜFUNG
     // =========================================================================
 
-    public static function getCurrentUserId(): ?int
+    /**
+     * Liefert die Daten des aktuell angemeldeten Benutzers (auch Magic-Admin).
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function getCurrentUser(): ?array
     {
-        if (class_exists('Auth') && Auth::check()) {
+        if (class_exists('Auth')) {
             $user = Auth::user();
-            return isset($user['id']) ? (int) $user['id'] : null;
+            if ($user !== null) {
+                return $user;
+            }
         }
 
         if (!empty($_SESSION['user_id'])) {
-            return (int) $_SESSION['user_id'];
+            try {
+                $user = DB::fetchOne('SELECT * FROM `users` WHERE `id` = :id AND `is_active` = 1 LIMIT 1', [
+                    'id' => (int) $_SESSION['user_id'],
+                ]);
+                if ($user) {
+                    return $user;
+                }
+            } catch (\Throwable $e) {
+                // Ignore DB error
+            }
+        }
+
+        if (!empty($_SESSION['magic_authenticated'])) {
+            return [
+                'id'         => 0,
+                'name'       => 'Magic-Admin',
+                'email'      => (string) ($_SESSION['magic_email'] ?? 'admin@magic-code'),
+                'is_magic'   => true,
+                'role'       => 'admin',
+                'theme_mode' => (string) ($_SESSION['theme_mode'] ?? 'system'),
+            ];
         }
 
         return null;
+    }
+
+    public static function getCurrentUserId(): ?int
+    {
+        $user = self::getCurrentUser();
+        if ($user !== null && isset($user['id'])) {
+            return (int) $user['id'];
+        }
+
+        return null;
+    }
+
+    public static function isMagicAdmin(): bool
+    {
+        return (class_exists('Auth') && Auth::checkMagic()) || !empty($_SESSION['magic_authenticated']);
     }
 
     /**
@@ -91,7 +133,7 @@ final class PortalService
      */
     public static function canManageProperties(): bool
     {
-        if (class_exists('Auth') && Auth::checkMagic()) {
+        if (self::isMagicAdmin()) {
             return true;
         }
 
@@ -101,9 +143,54 @@ final class PortalService
             }
         }
 
-        $user = class_exists('Auth') ? Auth::user() : null;
+        $user = self::getCurrentUser();
         $role = (string) ($user['role'] ?? '');
         return in_array($role, ['admin', 'superadmin', 'property_manager'], true);
+    }
+
+    /**
+     * Prüft, ob der aktuelle Benutzer Liegenschaften ansehen darf.
+     */
+    public static function canViewProperties(): bool
+    {
+        if (self::canManageProperties()) {
+            return true;
+        }
+
+        if (class_exists('Rbac') && (Rbac::can('portal.properties.manage') || Rbac::can('portal.view'))) {
+            return true;
+        }
+
+        $user = self::getCurrentUser();
+        $role = (string) ($user['role'] ?? '');
+        return in_array($role, ['admin', 'superadmin', 'property_manager', 'advisory_board'], true);
+    }
+
+    /**
+     * Prüft, ob der Benutzer Zugriff auf eine spezifische Liegenschaft hat.
+     */
+    public static function canAccessProperty(int $propertyId, ?int $userId = null): bool
+    {
+        if (self::canManageProperties()) {
+            return true;
+        }
+
+        if ($userId === null) {
+            $userId = self::getCurrentUserId();
+        }
+
+        if ($userId === null || $userId <= 0) {
+            return false;
+        }
+
+        $userProps = PortalRepository::getUserProperties($userId);
+        foreach ($userProps as $p) {
+            if ((int) $p['id'] === $propertyId) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -111,7 +198,7 @@ final class PortalService
      */
     public static function canManageUnits(): bool
     {
-        if (class_exists('Auth') && Auth::checkMagic()) {
+        if (self::isMagicAdmin()) {
             return true;
         }
 
@@ -121,7 +208,7 @@ final class PortalService
             }
         }
 
-        $user = class_exists('Auth') ? Auth::user() : null;
+        $user = self::getCurrentUser();
         $role = (string) ($user['role'] ?? '');
         return in_array($role, ['admin', 'superadmin', 'property_manager'], true);
     }
@@ -131,7 +218,7 @@ final class PortalService
      */
     public static function canManageCases(): bool
     {
-        if (class_exists('Auth') && Auth::checkMagic()) {
+        if (self::isMagicAdmin()) {
             return true;
         }
 
@@ -141,9 +228,46 @@ final class PortalService
             }
         }
 
-        $user = class_exists('Auth') ? Auth::user() : null;
+        $user = self::getCurrentUser();
         $role = (string) ($user['role'] ?? '');
         return in_array($role, ['admin', 'superadmin', 'property_manager'], true);
+    }
+
+    /**
+     * Prüft, ob der aktuelle Benutzer Vorgänge einsehen darf.
+     */
+    public static function canViewCases(): bool
+    {
+        return self::canManageCases() || self::canAccessPortal();
+    }
+
+    /**
+     * Prüft, ob der Benutzer Zugriff auf einen spezifischen Case hat.
+     */
+    public static function canAccessCase(int $caseId, ?int $userId = null): bool
+    {
+        if (self::canManageCases()) {
+            return true;
+        }
+
+        if ($userId === null) {
+            $userId = self::getCurrentUserId();
+        }
+
+        if ($userId === null || $userId <= 0) {
+            return false;
+        }
+
+        $case = PortalRepository::getCase($caseId);
+        if ($case === null) {
+            return false;
+        }
+
+        if ((int) ($case['creator_user_id'] ?? 0) === $userId) {
+            return true;
+        }
+
+        return self::canAccessProperty((int) $case['property_id'], $userId);
     }
 
     /**
@@ -151,7 +275,7 @@ final class PortalService
      */
     public static function canAccessPortal(): bool
     {
-        if (class_exists('Auth') && Auth::checkMagic()) {
+        if (self::isMagicAdmin()) {
             return true;
         }
 
@@ -163,7 +287,7 @@ final class PortalService
             return true;
         }
 
-        $user = class_exists('Auth') ? Auth::user() : null;
+        $user = self::getCurrentUser();
         $role = (string) ($user['role'] ?? '');
         return in_array($role, ['admin', 'superadmin', 'property_manager', 'owner', 'tenant', 'advisory_board', 'external'], true);
     }
@@ -173,7 +297,7 @@ final class PortalService
      */
     public static function canCreateDamage(): bool
     {
-        if (class_exists('Auth') && Auth::checkMagic()) {
+        if (self::isMagicAdmin()) {
             return true;
         }
 
@@ -185,7 +309,203 @@ final class PortalService
             return true;
         }
 
-        return true; // Jeder angemeldete Portalnutzer (Eigentümer, Mieter, Verwaltung) kann Schäden melden
+        return true;
+    }
+
+    // =========================================================================
+    // 2. CRUD-SERVICES FÜR LIEGENSCHAFTEN, EINHEITEN & VORGÄNGE
+    // =========================================================================
+
+    public static function createProperty(array $data): int
+    {
+        $name = trim((string) ($data['name'] ?? ''));
+        if ($name === '') {
+            throw new \InvalidArgumentException('Bitte geben Sie einen Namen für die Liegenschaft an.');
+        }
+
+        $id = PortalRepository::createProperty($data);
+        if ($id <= 0) {
+            throw new \RuntimeException('Die Liegenschaft konnte nicht angelegt werden.');
+        }
+
+        return $id;
+    }
+
+    public static function updateProperty(int $id, array $data): bool
+    {
+        if ($id <= 0) {
+            throw new \InvalidArgumentException('Ungültige Liegenschafts-ID.');
+        }
+
+        return PortalRepository::updateProperty($id, $data);
+    }
+
+    public static function createUnit(array $data): int
+    {
+        $propertyId = (int) ($data['property_id'] ?? 0);
+        $unitNumber = trim((string) ($data['unit_number'] ?? ''));
+
+        if ($propertyId <= 0 || $unitNumber === '') {
+            throw new \InvalidArgumentException('Liegenschaft und Einheiten-Nummer sind Pflichtangaben.');
+        }
+
+        $id = PortalRepository::createUnit($data);
+        if ($id <= 0) {
+            throw new \RuntimeException('Die Einheit konnte nicht angelegt werden.');
+        }
+
+        return $id;
+    }
+
+    public static function updateUnit(int $id, array $data): bool
+    {
+        if ($id <= 0) {
+            throw new \InvalidArgumentException('Ungültige Einheiten-ID.');
+        }
+
+        return PortalRepository::updateUnit($id, $data);
+    }
+
+    public static function assignUserToUnit(int $unitId, int $userId, string $relationType = 'owner'): int
+    {
+        if ($unitId <= 0 || $userId <= 0) {
+            throw new \InvalidArgumentException('Einheit und Benutzer müssen ausgewählt werden.');
+        }
+
+        $id = PortalRepository::assignUserToUnit($unitId, $userId, $relationType);
+        if ($id <= 0) {
+            throw new \RuntimeException('Der Benutzer konnte der Einheit nicht zugewiesen werden.');
+        }
+
+        return $id;
+    }
+
+    public static function createCase(array $data): int
+    {
+        $propertyId = (int) ($data['property_id'] ?? 0);
+        $title = trim((string) ($data['title'] ?? ''));
+
+        if ($propertyId <= 0 || $title === '') {
+            throw new \InvalidArgumentException('Liegenschaft und Titel sind Pflichtangaben.');
+        }
+
+        if (empty($data['creator_user_id'])) {
+            $data['creator_user_id'] = self::getCurrentUserId();
+        }
+
+        $id = PortalRepository::createCase($data);
+        if ($id <= 0) {
+            throw new \RuntimeException('Der Vorgang konnte nicht angelegt werden.');
+        }
+
+        return $id;
+    }
+
+    public static function updateCaseStatus(int $caseId, string $status, string $priority): bool
+    {
+        $case = PortalRepository::getCase($caseId);
+        if ($case === null) {
+            throw new \RuntimeException('Vorgang nicht gefunden.');
+        }
+
+        $data = $case;
+        $data['status'] = $status;
+        $data['priority'] = $priority;
+
+        return PortalRepository::updateCase($caseId, $data);
+    }
+
+    public static function addCaseMessage(int $caseId, string $message, bool $isInternal = false): int
+    {
+        if (trim($message) === '') {
+            throw new \InvalidArgumentException('Die Nachricht darf nicht leer sein.');
+        }
+
+        $userId = self::getCurrentUserId();
+        $id = PortalRepository::addCaseMessage($caseId, $userId, $message, $isInternal);
+        if ($id <= 0) {
+            throw new \RuntimeException('Die Nachricht konnte nicht gespeichert werden.');
+        }
+
+        return $id;
+    }
+
+    public static function submitDamageReport(array $post, ?array $file = null): int
+    {
+        $userId = self::getCurrentUserId();
+        return self::handleCreateDamageReport($post, $file, $userId);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getUserCases(int $userId): array
+    {
+        if (self::canManageCases()) {
+            return PortalRepository::getCases([], 50);
+        }
+
+        $props = PortalRepository::getUserProperties($userId);
+        $propIds = array_column($props, 'id');
+
+        if (empty($propIds)) {
+            return PortalRepository::getCases(['creator_user_id' => $userId], 50);
+        }
+
+        return PortalRepository::getCases(['allowed_property_ids' => $propIds], 50);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getDocumentsForEntity(string $entityType, int $entityId): array
+    {
+        return self::getLinkedDocuments($entityType, $entityId);
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getUserDocuments(int $userId, array $filters = []): array
+    {
+        if (!class_exists('DocumentRepository')) {
+            return [];
+        }
+
+        if (self::canManageProperties()) {
+            return DocumentRepository::getDocuments($filters, 100);
+        }
+
+        $props = PortalRepository::getUserProperties($userId);
+        $units = PortalRepository::getUserUnits($userId);
+
+        $docMap = [];
+
+        foreach ($props as $p) {
+            $docs = DocumentRepository::getDocumentsForTarget('property', (string) $p['id']);
+            foreach ($docs as $d) {
+                $vis = (string) ($d['visibility'] ?? 'internal');
+                if (in_array($vis, ['public', 'portal', 'owner_portal'], true)) {
+                    $docMap[$d['id']] = $d;
+                }
+            }
+        }
+
+        foreach ($units as $u) {
+            $unitId = (int) ($u['unit_id'] ?? $u['id'] ?? 0);
+            if ($unitId > 0) {
+                $docs = DocumentRepository::getDocumentsForTarget('unit', (string) $unitId);
+                foreach ($docs as $d) {
+                    $vis = (string) ($d['visibility'] ?? 'internal');
+                    if (in_array($vis, ['public', 'portal', 'owner_portal'], true)) {
+                        $docMap[$d['id']] = $d;
+                    }
+                }
+            }
+        }
+
+        return array_values($docMap);
     }
 
     // =========================================================================

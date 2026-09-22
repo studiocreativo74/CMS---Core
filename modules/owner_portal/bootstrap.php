@@ -75,9 +75,11 @@ if (isset($router) && $router !== null) {
         ];
 
         $properties = PortalRepository::getProperties($filters);
-        $totalProperties = PortalRepository::countProperties();
+        $totalProperties = PortalRepository::countProperties($filters);
         $totalUnits = PortalRepository::countAllUnits();
         $totalCases = PortalRepository::countAllCases();
+        $search = $filters['search'];
+        $tablesCreated = PortalRepository::isTableCreated();
 
         require __DIR__ . '/views/admin/properties_index.php';
     });
@@ -215,6 +217,7 @@ if (isset($router) && $router !== null) {
         }
 
         $assignedUsers = PortalRepository::getAssignedUsersForUnit($id);
+        $unitUsers = $assignedUsers;
         $allUsers = PortalRepository::getAllUsers();
         $cases = PortalRepository::getCases(['unit_id' => $id]);
         $documents = PortalService::getDocumentsForEntity('unit', $id);
@@ -508,6 +511,7 @@ if (isset($router) && $router !== null) {
         $myProperties = PortalRepository::getPropertiesForUser($userId);
         $myCases = PortalService::getUserCases($userId);
         $myDocuments = PortalService::getUserDocuments($userId);
+        $stats = PortalRepository::getStats($userId);
 
         require __DIR__ . '/views/portal/dashboard.php';
     });
