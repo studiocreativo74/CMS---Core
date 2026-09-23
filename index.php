@@ -466,7 +466,7 @@ $router->get('/admin/design', function (): void {
         exit;
     }
 
-    if (class_exists('Rbac') && !Rbac::can('admin.settings') && !Rbac::can('admin.homepage.manage') && !Rbac::can('admin.design.manage')) {
+    if (class_exists('Rbac') && !Rbac::can('admin.settings') && !Rbac::can('admin.homepage.manage') && !Rbac::can('admin.design.manage') && !Rbac::can('admin.design.view')) {
         $_SESSION['flash_error'] = 'Zugriff verweigert: Sie haben keine Berechtigung für die Design-Einstellungen.';
         header('Location: ?route=admin');
         exit;
@@ -524,7 +524,7 @@ $router->get('/admin/homepage', function (): void {
         exit;
     }
 
-    if (class_exists('Rbac') && !Rbac::can('admin.homepage.manage')) {
+    if (class_exists('Rbac') && !Rbac::can('admin.homepage.manage') && !Rbac::can('admin.homepage.view') && !Rbac::can('admin.homepage') && !Rbac::can('admin.settings')) {
         $_SESSION['flash_error'] = 'Zugriff verweigert: Sie haben keine Berechtigung für die Startseiten-Einstellungen.';
         header('Location: ?route=admin');
         exit;

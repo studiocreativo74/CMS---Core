@@ -656,8 +656,8 @@ final class PortalRepository
             $sql = "SELECT c.*,
                            p.`name` AS `property_name`,
                            u.`unit_number`,
-                           cu.`name` AS `creator_name`,
-                           au.`name` AS `assigned_name`,
+                           COALESCE(cu.`name`, cu.`email`) AS `creator_name`,
+                           COALESCE(au.`name`, au.`email`) AS `assigned_name`,
                            (SELECT COUNT(*) FROM `case_messages` cm WHERE cm.`case_id` = c.`id`) AS `message_count`
                     FROM `cases` c
                     JOIN `properties` p ON c.`property_id` = p.`id`
@@ -754,9 +754,9 @@ final class PortalRepository
                            p.`street` AS `property_street`,
                            p.`city` AS `property_city`,
                            u.`unit_number`,
-                           cu.`name` AS `creator_name`,
+                           COALESCE(cu.`name`, cu.`email`) AS `creator_name`,
                            cu.`email` AS `creator_email`,
-                           au.`name` AS `assigned_name`
+                           COALESCE(au.`name`, au.`email`) AS `assigned_name`
                     FROM `cases` c
                     JOIN `properties` p ON c.`property_id` = p.`id`
                     LEFT JOIN `units` u ON c.`unit_id` = u.`id`

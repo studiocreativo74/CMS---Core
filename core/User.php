@@ -35,15 +35,18 @@ final class User
                 return $u;
             }, $users);
         } catch (\Throwable $e) {
-            // Fallback, falls die Spalte theme_mode in der DB noch nicht existiert
+            // Fallback, falls neuere Spalten (theme_mode, name, is_active, last_login_at) noch nicht existieren
             try {
                 $users = DB::fetchAll(
-                    'SELECT `id`, `email`, `name`, `role`, `is_active`, `last_login_at`, `created_at`, `updated_at` 
+                    'SELECT `id`, `email`, `role`, `created_at`, `updated_at` 
                      FROM `users` 
                      ORDER BY `id` ASC'
                 );
                 return array_map(static function (array $u): array {
+                    $u['name'] = explode('@', (string) ($u['email'] ?? ''))[0] ?: 'User';
+                    $u['is_active'] = 1;
                     $u['theme_mode'] = 'system';
+                    $u['last_login_at'] = null;
                     return $u;
                 }, $users);
             } catch (\Throwable $e2) {
@@ -77,17 +80,20 @@ final class User
             }
             return null;
         } catch (\Throwable $e) {
-            // Fallback ohne theme_mode Spalte
+            // Fallback, falls neuere Spalten (theme_mode, name, is_active, last_login_at) noch nicht existieren
             try {
                 $user = DB::fetchOne(
-                    'SELECT `id`, `email`, `name`, `role`, `is_active`, `last_login_at`, `created_at`, `updated_at` 
+                    'SELECT `id`, `email`, `role`, `created_at`, `updated_at` 
                      FROM `users` 
                      WHERE `id` = :id 
                      LIMIT 1',
                     ['id' => $id]
                 );
                 if ($user !== null) {
+                    $user['name'] = explode('@', (string) ($user['email'] ?? ''))[0] ?: 'User';
+                    $user['is_active'] = 1;
                     $user['theme_mode'] = 'system';
+                    $user['last_login_at'] = null;
                     return $user;
                 }
                 return null;
@@ -123,17 +129,20 @@ final class User
             }
             return null;
         } catch (\Throwable $e) {
-            // Fallback ohne theme_mode Spalte
+            // Fallback, falls neuere Spalten (theme_mode, name, is_active, last_login_at) noch nicht existieren
             try {
                 $user = DB::fetchOne(
-                    'SELECT `id`, `email`, `name`, `role`, `is_active`, `last_login_at`, `created_at`, `updated_at` 
+                    'SELECT `id`, `email`, `role`, `created_at`, `updated_at` 
                      FROM `users` 
                      WHERE `email` = :email 
                      LIMIT 1',
                     ['email' => $cleanEmail]
                 );
                 if ($user !== null) {
+                    $user['name'] = explode('@', (string) ($user['email'] ?? ''))[0] ?: 'User';
+                    $user['is_active'] = 1;
                     $user['theme_mode'] = 'system';
+                    $user['last_login_at'] = null;
                     return $user;
                 }
                 return null;

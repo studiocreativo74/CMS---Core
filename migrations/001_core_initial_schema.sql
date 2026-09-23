@@ -6,8 +6,12 @@
 CREATE TABLE IF NOT EXISTS `users` (
   `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   `email` VARCHAR(191) NOT NULL UNIQUE,
+  `password_hash` VARCHAR(255) NULL,
+  `name` VARCHAR(191) NULL,
   `role` VARCHAR(50) NOT NULL DEFAULT 'user',
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
   `theme_mode` VARCHAR(20) NOT NULL DEFAULT 'system',
+  `last_login_at` DATETIME NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -95,3 +99,38 @@ CREATE TABLE IF NOT EXISTS `activity_logs` (
   INDEX `idx_action` (`action`),
   INDEX `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 10. Initial-Rollen (Core)
+INSERT IGNORE INTO `roles` (`key`, `name`, `description`, `created_at`) VALUES
+('superadmin', 'Superadministrator', 'Uneingeschränkter Vollzugriff auf alle System- und Modulbereiche', NOW()),
+('admin', 'Administrator', 'Voller administrativer Zugriff auf Einstellungen, Inhalte und Benutzer', NOW()),
+('editor', 'Redakteur', 'Verwaltung von Inhalten, Startseite und Dokumenten', NOW()),
+('user', 'Standard-Benutzer', 'Basis-Benutzerkonto mit Standard-Zugriffsrechten', NOW());
+
+-- 11. Initial-Berechtigungen (Core)
+INSERT IGNORE INTO `permissions` (`key`, `name`, `description`, `created_at`) VALUES
+('admin.homepage.view', 'Startseite anzeigen', 'Einsicht in die Startseiten-Konfiguration', NOW()),
+('admin.homepage.manage', 'Startseite verwalten', 'Bearbeiten von Startseiten-Inhalten, Hero und Design', NOW()),
+('admin.design.view', 'Design anzeigen', 'Einsicht in Theme- und Design-Einstellungen', NOW()),
+('admin.design.manage', 'Design verwalten', 'Anpassen von Farben, Layout und Themes', NOW()),
+('admin.settings', 'Einstellungen verwalten', 'Zugriff auf allgemeine Systemeinstellungen', NOW()),
+('admin.users.view', 'Benutzer anzeigen', 'Einsicht in registrierte Benutzerkonten', NOW()),
+('admin.users.manage', 'Benutzer verwalten', 'Anlegen, Bearbeiten und Deaktivieren von Benutzern', NOW()),
+('admin.roles.view', 'Rollen anzeigen', 'Einsicht in Rollen- und Rechteverwaltung', NOW()),
+('admin.roles.manage', 'Rollen verwalten', 'Konfiguration von Rollen und Rechten', NOW()),
+('admin.modules.view', 'Module anzeigen', 'Übersicht über installierte und verfügbare Module', NOW()),
+('admin.modules.manage', 'Module verwalten', 'Aktivieren, Deaktivieren und Konfigurieren von Modulen', NOW()),
+('admin.activity.view', 'Aktivitätsprotokoll anzeigen', 'Einsicht in Audit- und Systemprotokolle', NOW()),
+('admin.system.view', 'Systemstatus anzeigen', 'Einsicht in Server- und Diagnoseinformationen', NOW()),
+('admin.system.manage', 'System verwalten', 'Wartungs- und Diagnosetools ausführen', NOW());
+
+-- 12. Berechtigungen Rollen zuweisen
+INSERT IGNORE INTO `role_permissions` (`role_id`, `permission_id`)
+SELECT r.`id`, p.`id` FROM `roles` r, `permissions` p
+WHERE r.`key` IN ('superadmin', 'admin');
+
+INSERT IGNORE INTO `role_permissions` (`role_id`, `permission_id`)
+SELECT r.`id`, p.`id` FROM `roles` r, `permissions` p
+WHERE r.`key` = 'editor' 
+  AND p.`key` IN ('admin.homepage.view', 'admin.homepage.manage', 'admin.design.view');
+
