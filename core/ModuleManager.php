@@ -80,14 +80,17 @@ final class ModuleManager
             $rows = DB::fetchAll($sql);
 
             // Falls die DB-Spalte noch nicht existiert, prüfen wir auf vorhandene module.php/module.json
-            if (!$hasReqCol) {
-                $baseDir = dirname(__DIR__) . '/modules';
-                foreach ($rows as &$row) {
-                    $key = (string) ($row['key'] ?? '');
+            $baseDir = dirname(__DIR__) . '/modules';
+            foreach ($rows as &$row) {
+                $key = (string) ($row['key'] ?? '');
+                if (!$hasReqCol) {
                     $row['requires_core'] = self::getManifestRequiresCore($baseDir, $key);
                 }
-                unset($row);
+                if (!isset($row['module_key'])) {
+                    $row['module_key'] = $key;
+                }
             }
+            unset($row);
 
             return $rows;
         } catch (\Throwable $e) {
@@ -151,9 +154,14 @@ final class ModuleManager
             $sql = "SELECT {$selectCols} FROM `modules` WHERE `key` = :key LIMIT 1";
 
             $row = DB::fetchOne($sql, ['key' => $key]);
-            if ($row !== null && !$hasReqCol) {
-                $baseDir = dirname(__DIR__) . '/modules';
-                $row['requires_core'] = self::getManifestRequiresCore($baseDir, $key);
+            if ($row !== null) {
+                if (!$hasReqCol) {
+                    $baseDir = dirname(__DIR__) . '/modules';
+                    $row['requires_core'] = self::getManifestRequiresCore($baseDir, $key);
+                }
+                if (!isset($row['module_key'])) {
+                    $row['module_key'] = (string) ($row['key'] ?? '');
+                }
             }
 
             return $row;

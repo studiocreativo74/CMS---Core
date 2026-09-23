@@ -59,14 +59,14 @@ ob_start();
 
 <?php if ($flashSuccess !== null): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <?= htmlspecialchars($flashSuccess, ENT_QUOTES, 'UTF-8') ?>
+        <?= htmlspecialchars((string) $flashSuccess, ENT_QUOTES, 'UTF-8') ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schließen"></button>
     </div>
 <?php endif; ?>
 
 <?php if ($flashError !== null): ?>
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <?= htmlspecialchars($flashError, ENT_QUOTES, 'UTF-8') ?>
+        <?= htmlspecialchars((string) $flashError, ENT_QUOTES, 'UTF-8') ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schließen"></button>
     </div>
 <?php endif; ?>
@@ -185,18 +185,18 @@ ob_start();
                                             <span class="badge bg-light text-dark border px-2 py-1"><?= (int)$b['sort_order'] ?></span>
                                         </td>
                                         <td>
-                                            <span class="badge <?= $badgeClass ?>"><?= htmlspecialchars($b['type'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="badge <?= $badgeClass ?>"><?= htmlspecialchars((string) ($b['type'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
                                         </td>
                                         <td>
                                             <div class="fw-semibold text-dark">
-                                                <?= $b['title'] !== '' ? htmlspecialchars($b['title'], ENT_QUOTES, 'UTF-8') : '<em class="text-muted">(Kein Titel)</em>' ?>
+                                                <?= (!empty($b['title'])) ? htmlspecialchars((string) $b['title'], ENT_QUOTES, 'UTF-8') : '<em class="text-muted">(Kein Titel)</em>' ?>
                                             </div>
-                                            <?php if ($b['subtitle'] !== ''): ?>
-                                                <small class="text-muted d-block"><?= htmlspecialchars(mb_strimwidth($b['subtitle'], 0, 70, '...'), ENT_QUOTES, 'UTF-8') ?></small>
+                                            <?php if (!empty($b['subtitle'])): ?>
+                                                <small class="text-muted d-block"><?= htmlspecialchars(mb_strimwidth((string) $b['subtitle'], 0, 70, '...'), ENT_QUOTES, 'UTF-8') ?></small>
                                             <?php endif; ?>
-                                            <?php if ($b['content'] !== ''): ?>
+                                            <?php if (!empty($b['content'])): ?>
                                                 <small class="text-secondary d-block font-monospace" style="font-size: 0.78rem;">
-                                                    <?= htmlspecialchars(mb_strimwidth(strip_tags($b['content']), 0, 90, '...'), ENT_QUOTES, 'UTF-8') ?>
+                                                    <?= htmlspecialchars(mb_strimwidth(strip_tags((string) $b['content']), 0, 90, '...'), ENT_QUOTES, 'UTF-8') ?>
                                                 </small>
                                             <?php endif; ?>
                                         </td>
@@ -444,11 +444,15 @@ ob_start();
                                 <label for="homepage_module_key" class="form-label fw-medium">Aktives Modul wählen <span class="text-danger">*</span></label>
                                 <select class="form-select" id="homepage_module_key" name="homepage_module_key" onchange="onModuleSelectChange(this)">
                                     <option value="">-- Bitte aktives Modul auswählen --</option>
-                                    <?php foreach ($activeModules as $mod): ?>
-                                        <option value="<?= htmlspecialchars($mod['module_key'], ENT_QUOTES, 'UTF-8') ?>"
-                                                <?= $homepageModuleKey === $mod['module_key'] ? 'selected' : '' ?>>
-                                            <?= htmlspecialchars($mod['name'] ?? $mod['module_key'], ENT_QUOTES, 'UTF-8') ?>
-                                            (<?= htmlspecialchars($mod['module_key'], ENT_QUOTES, 'UTF-8') ?>)
+                                    <?php foreach ($activeModules as $mod): 
+                                        $modKey = (string) ($mod['key'] ?? $mod['module_key'] ?? '');
+                                        if ($modKey === '') continue;
+                                        $modName = (string) ($mod['name'] ?? $modKey);
+                                    ?>
+                                        <option value="<?= htmlspecialchars($modKey, ENT_QUOTES, 'UTF-8') ?>"
+                                                <?= $homepageModuleKey === $modKey ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($modName, ENT_QUOTES, 'UTF-8') ?>
+                                            (<?= htmlspecialchars($modKey, ENT_QUOTES, 'UTF-8') ?>)
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -647,7 +651,7 @@ ob_start();
 
             <div class="modal-header">
                 <h5 class="modal-title fw-bold" id="editBlockModalLabel<?= $b['id'] ?>">
-                    Block #<?= $b['id'] ?> bearbeiten (<?= htmlspecialchars($b['type'], ENT_QUOTES, 'UTF-8') ?>)
+                    Block #<?= $b['id'] ?> bearbeiten (<?= htmlspecialchars((string) ($b['type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>)
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
             </div>
@@ -657,19 +661,19 @@ ob_start();
                         <label for="edit_type_<?= $b['id'] ?>" class="form-label fw-medium">Block-Typ</label>
                         <select class="form-select" id="edit_type_<?= $b['id'] ?>" name="type" required>
                             <?php foreach ($validTypes as $typeKey => $typeTitle): ?>
-                                <option value="<?= htmlspecialchars($typeKey, ENT_QUOTES, 'UTF-8') ?>" <?= $b['type'] === $typeKey ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($typeTitle, ENT_QUOTES, 'UTF-8') ?>
+                                <option value="<?= htmlspecialchars((string) $typeKey, ENT_QUOTES, 'UTF-8') ?>" <?= ($b['type'] ?? '') === $typeKey ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars((string) $typeTitle, ENT_QUOTES, 'UTF-8') ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="col-md-3">
                         <label for="edit_sort_<?= $b['id'] ?>" class="form-label fw-medium">Reihenfolge</label>
-                        <input type="number" class="form-control" id="edit_sort_<?= $b['id'] ?>" name="sort_order" value="<?= (int) $b['sort_order'] ?>">
+                        <input type="number" class="form-control" id="edit_sort_<?= $b['id'] ?>" name="sort_order" value="<?= (int) ($b['sort_order'] ?? 0) ?>">
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
                         <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" id="edit_visible_<?= $b['id'] ?>" name="is_visible" value="1" <?= $b['is_visible'] ? 'checked' : '' ?>>
+                            <input class="form-check-input" type="checkbox" id="edit_visible_<?= $b['id'] ?>" name="is_visible" value="1" <?= !empty($b['is_visible']) ? 'checked' : '' ?>>
                             <label class="form-check-label small" for="edit_visible_<?= $b['id'] ?>">Sichtbar</label>
                         </div>
                     </div>
@@ -677,24 +681,24 @@ ob_start();
 
                 <div class="mb-3">
                     <label for="edit_title_<?= $b['id'] ?>" class="form-label fw-medium">Titel / Überschrift</label>
-                    <input type="text" class="form-control" id="edit_title_<?= $b['id'] ?>" name="title" value="<?= htmlspecialchars($b['title'], ENT_QUOTES, 'UTF-8') ?>" maxlength="191">
+                    <input type="text" class="form-control" id="edit_title_<?= $b['id'] ?>" name="title" value="<?= htmlspecialchars((string) ($b['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="191">
                 </div>
 
                 <div class="mb-3">
                     <label for="edit_subtitle_<?= $b['id'] ?>" class="form-label fw-medium">Untertitel / Tagline (optional)</label>
-                    <input type="text" class="form-control" id="edit_subtitle_<?= $b['id'] ?>" name="subtitle" value="<?= htmlspecialchars($b['subtitle'], ENT_QUOTES, 'UTF-8') ?>" maxlength="191">
+                    <input type="text" class="form-control" id="edit_subtitle_<?= $b['id'] ?>" name="subtitle" value="<?= htmlspecialchars((string) ($b['subtitle'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" maxlength="191">
                 </div>
 
                 <div class="mb-3">
                     <label for="edit_content_<?= $b['id'] ?>" class="form-label fw-medium">Inhalt (Fließtext oder HTML)</label>
-                    <textarea class="form-control" id="edit_content_<?= $b['id'] ?>" name="content" rows="5"><?= htmlspecialchars($b['content'], ENT_QUOTES, 'UTF-8') ?></textarea>
+                    <textarea class="form-control" id="edit_content_<?= $b['id'] ?>" name="content" rows="5"><?= htmlspecialchars((string) ($b['content'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
                 </div>
 
                 <div class="p-3 bg-light rounded border">
                     <label for="edit_extra_<?= $b['id'] ?>" class="form-label fw-medium small text-dark mb-1">
                         Zusatz-Optionen (JSON-Struktur)
                     </label>
-                    <textarea class="form-control font-monospace form-control-sm" id="edit_extra_<?= $b['id'] ?>" name="extra" rows="3"><?= htmlspecialchars($b['extra_raw'], ENT_QUOTES, 'UTF-8') ?></textarea>
+                    <textarea class="form-control font-monospace form-control-sm" id="edit_extra_<?= $b['id'] ?>" name="extra" rows="3"><?= htmlspecialchars((string) ($b['extra_raw'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
                 </div>
             </div>
             <div class="modal-footer">
