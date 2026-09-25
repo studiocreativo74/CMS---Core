@@ -28,6 +28,17 @@ $adminBrandColor = (string) ($settings['admin_brand_color'] ?? '#0f4c81');
 $primaryColor = !empty($settings['homepage_primary_color']) ? (string) $settings['homepage_primary_color'] : $adminBrandColor;
 $logoPath = (string) ($settings['homepage_logo_path'] ?? '');
 
+$customerName = class_exists('Settings') 
+    ? (string) (Settings::get('customer_name') 
+        ?: Settings::get('company_name') 
+        ?: Settings::get('site_name') 
+        ?: Settings::get('homepage_title') 
+        ?: 'StudioCreativo CMS')
+    : 'StudioCreativo CMS';
+if (empty(trim($customerName))) {
+    $customerName = 'StudioCreativo CMS';
+}
+
 $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
 $securingTypes = SecurePortalRepository::SECURING_TYPES;
 $selectedType = (string) ($formData['securing_type'] ?? 'VIDEO');
@@ -697,7 +708,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
     <footer class="footer no-print">
         <div class="container text-center">
             <p class="mb-0 text-secondary small">
-                &copy; <?= date('Y') ?> Sicherungsportal &middot; Elektronischer Beweismittel-Workflow für Schweizer Ermittlungsbehörden
+                &copy; <?= date('Y') ?> <?= htmlspecialchars($customerName, ENT_QUOTES, 'UTF-8') ?> | design &amp; development by <a href="https://studiocreativo.ch" target="_blank" rel="noopener noreferrer">StudioCreativo</a>
             </p>
         </div>
     </footer>

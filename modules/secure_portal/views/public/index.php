@@ -22,6 +22,17 @@ $adminBrandColor = (string) ($settings['admin_brand_color'] ?? '#0f4c81');
 $primaryColor = !empty($settings['homepage_primary_color']) ? (string) $settings['homepage_primary_color'] : $adminBrandColor;
 $logoPath = (string) ($settings['homepage_logo_path'] ?? '');
 
+$customerName = class_exists('Settings') 
+    ? (string) (Settings::get('customer_name') 
+        ?: Settings::get('company_name') 
+        ?: Settings::get('site_name') 
+        ?: Settings::get('homepage_title') 
+        ?: 'StudioCreativo CMS')
+    : 'StudioCreativo CMS';
+if (empty(trim($customerName))) {
+    $customerName = 'StudioCreativo CMS';
+}
+
 $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
 ?>
 <!DOCTYPE html>
@@ -79,38 +90,54 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         }
 
         .portal-card {
-            background-color: var(--sec-card-bg);
-            border-radius: 0.75rem;
-            border: 1px solid var(--sec-border);
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+            background-color: #ffffff;
+            border-radius: 0.85rem;
             display: flex;
             flex-direction: column;
             height: 100%;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
             position: relative;
             overflow: hidden;
-        }
-
-        .portal-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 20px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.05);
-            border-color: #cbd5e1;
-        }
-
-        .portal-card.card-police {
-            border-top: 5px solid #2563eb;
+            box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.06);
         }
 
         .portal-card.card-private {
-            border-top: 5px solid #64748b;
+            border: 2.5px solid #475569;
+            border-top: 8px solid #1e293b;
+        }
+
+        .portal-card.card-private:hover {
+            transform: translateY(-5px);
+            border-color: #1e293b;
+            box-shadow: 0 20px 35px -5px rgba(30, 41, 59, 0.25), 0 8px 16px -4px rgba(30, 41, 59, 0.15);
+        }
+
+        .portal-card.card-police {
+            border: 3px solid #1d4ed8;
+            border-top: 8px solid #1e40af;
+            box-shadow: 0 14px 35px -5px rgba(29, 78, 216, 0.22), 0 6px 12px -3px rgba(15, 23, 42, 0.1);
+        }
+
+        .portal-card.card-police:hover {
+            transform: translateY(-5px);
+            border-color: #1e40af;
+            box-shadow: 0 24px 45px -5px rgba(29, 78, 216, 0.32), 0 10px 20px -4px rgba(29, 78, 216, 0.2);
         }
 
         .portal-card.card-access {
-            border-top: 5px solid #059669;
+            border: 2.5px solid #059669;
+            border-top: 8px solid #047857;
+            box-shadow: 0 12px 30px -5px rgba(5, 150, 105, 0.18), 0 4px 10px -2px rgba(15, 23, 42, 0.08);
+        }
+
+        .portal-card.card-access:hover {
+            transform: translateY(-5px);
+            border-color: #047857;
+            box-shadow: 0 20px 35px -5px rgba(5, 150, 105, 0.28), 0 8px 16px -4px rgba(5, 150, 105, 0.16);
         }
 
         .portal-card-header {
-            padding: 1.75rem 1.75rem 1rem;
+            padding: 1.5rem 1.5rem 0.75rem;
         }
 
         .portal-icon-wrapper {
@@ -121,26 +148,29 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
             align-items: center;
             justify-content: center;
             font-size: 1.65rem;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1rem;
         }
 
         .icon-police {
-            background-color: #eff6ff;
-            color: #2563eb;
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #93c5fd;
         }
 
         .icon-private {
-            background-color: #f1f5f9;
-            color: #475569;
+            background-color: #e2e8f0;
+            color: #1e293b;
+            border: 2px solid #cbd5e1;
         }
 
         .icon-access {
-            background-color: #ecfdf5;
-            color: #059669;
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 2px solid #a7f3d0;
         }
 
         .portal-card-body {
-            padding: 0 1.75rem 1.75rem;
+            padding: 0 1.5rem 1.25rem;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
@@ -148,45 +178,153 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
 
         .portal-card-footer {
             margin-top: auto;
-            padding-top: 1.25rem;
-            border-top: 1px solid #f1f5f9;
+            padding: 1rem 1.5rem 1.25rem;
+            border-top: 2px solid #e2e8f0;
+            background-color: #f8fafc;
         }
 
         .btn-portal-police {
-            background-color: #2563eb;
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
             color: #ffffff;
-            font-weight: 600;
-            padding: 0.75rem 1.25rem;
+            font-weight: 700;
+            padding: 0.85rem 1.25rem;
             border-radius: 0.5rem;
             border: 0;
-            transition: background-color 0.15s ease;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);
         }
 
         .btn-portal-police:hover {
-            background-color: #1d4ed8;
+            background: linear-gradient(135deg, #1e40af 0%, #172554 100%);
             color: #ffffff;
+            box-shadow: 0 6px 18px rgba(29, 78, 216, 0.45);
+            transform: translateY(-1px);
         }
 
         .btn-portal-access {
-            background-color: #059669;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
             color: #ffffff;
-            font-weight: 600;
-            padding: 0.75rem 1.25rem;
+            font-weight: 700;
+            padding: 0.85rem 1.25rem;
             border-radius: 0.5rem;
             border: 0;
-            transition: background-color 0.15s ease;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
         }
 
         .btn-portal-access:hover {
-            background-color: #047857;
+            background: linear-gradient(135deg, #047857 0%, #064e3b 100%);
             color: #ffffff;
+            box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45);
+            transform: translateY(-1px);
+        }
+
+        /* High Contrast Modals */
+        .modal-contrast .modal-content {
+            border: 3px solid #0f172a !important;
+            border-radius: 1rem;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45) !important;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+
+        .modal-contrast .modal-header {
+            padding: 1.25rem 1.75rem;
+            color: #ffffff;
+        }
+
+        .modal-contrast .modal-header.header-police {
+            background: linear-gradient(135deg, #0f2b5c 0%, #1e3a8a 100%);
+            border-bottom: 3px solid #3b82f6;
+        }
+
+        .modal-contrast .modal-header.header-private {
+            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+            border-bottom: 3px solid #64748b;
+        }
+
+        .modal-contrast .modal-header.header-access {
+            background: linear-gradient(135deg, #064e3b 0%, #047857 100%);
+            border-bottom: 3px solid #10b981;
+        }
+
+        .modal-contrast .modal-header .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+            opacity: 0.9;
+        }
+
+        .modal-contrast .modal-header .btn-close:hover {
+            opacity: 1;
+        }
+
+        .modal-contrast .modal-body {
+            padding: 2rem 1.75rem;
+            color: #0f172a;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .modal-contrast .modal-footer {
+            border-top: 2px solid #cbd5e1;
+            padding: 1.25rem 1.75rem;
+            background-color: #f1f5f9;
+        }
+
+        .modal-contrast .alert-warning-contrast {
+            background-color: #fef3c7;
+            border: 2.5px solid #d97706;
+            color: #78350f;
+            border-radius: 0.65rem;
+            font-weight: 500;
+        }
+
+        .modal-contrast .alert-info-contrast {
+            background-color: #eff6ff;
+            border: 2.5px solid #1d4ed8;
+            color: #1e3a8a;
+            border-radius: 0.65rem;
+            font-weight: 500;
+        }
+
+        .modal-contrast .step-card-contrast {
+            border: 2.5px solid #2563eb;
+            background-color: #f0f7ff;
+            border-radius: 0.65rem;
+            transition: all 0.15s ease;
+        }
+
+        .modal-contrast .step-card-contrast:hover {
+            border-color: #1e40af;
+            background-color: #ffffff;
+            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.2);
+        }
+
+        .modal-contrast .emergency-box-contrast {
+            background-color: #fee2e2;
+            border: 2.5px solid #b91c1c;
+            color: #7f1d1d;
+            border-radius: 0.65rem;
+        }
+
+        .modal-contrast .form-control {
+            border: 2.5px solid #475569;
+            color: #0f172a;
+            font-weight: 600;
+            background-color: #ffffff;
+        }
+
+        .modal-contrast .form-control:focus {
+            border-color: #059669;
+            box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.3);
+            color: #0f172a;
         }
 
         .legal-notice-box {
             background-color: #ffffff;
-            border: 1px solid var(--sec-border);
+            border: 2px solid #cbd5e1;
             border-radius: 0.75rem;
-            padding: 1.5rem;
+            padding: 1.75rem;
+            box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.06);
         }
 
         .footer {
@@ -233,8 +371,8 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                     <a href="?route=sicherung/fallzugang" class="btn btn-outline-light btn-sm px-3">
                         <i class="bi bi-key-fill me-1"></i> Fallzugang
                     </a>
-                    <a href="?route=admin" class="btn btn-sm btn-light px-3 fw-semibold">
-                        <i class="bi bi-person-lock me-1"></i> Behörden-Login / Admin
+                    <a href="?route=sicherung/antrag" class="btn btn-sm btn-light px-3 fw-bold shadow-sm">
+                        <i class="bi bi-file-earmark-plus-fill text-primary me-1"></i> Sicherungsantrag stellen
                     </a>
                 </div>
             </div>
@@ -299,30 +437,32 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                         <div class="portal-icon-wrapper icon-private">
                             <i class="bi bi-person-fill-exclamation"></i>
                         </div>
-                        <span class="badge bg-secondary-subtle text-secondary border px-2 py-1 mb-2">Bürger &amp; Zeugen</span>
-                        <h3 class="h4 fw-bold text-dark mb-2">1. Privatperson</h3>
-                        <p class="text-muted small mb-0">
-                            Wichtige Hinweise zur Datenherausgabe und Anzeigenerstattung in der Schweiz.
-                        </p>
+                        <div>
+                            <span class="badge bg-secondary text-white px-2 py-1 mb-2 fw-semibold">Geschädigter &amp; Zeugen</span>
+                            <h3 class="h4 fw-bold text-dark mb-1">1. Privatperson</h3>
+                            <p class="text-muted small mb-0">
+                                Hinweise zur Datenherausgabe in der Schweiz
+                            </p>
+                        </div>
                     </div>
 
                     <div class="portal-card-body">
                         <p class="small text-secondary mb-3">
-                            Aus Datenschutzgründen dürfen Aufzeichnungen <strong>nicht direkt an Privatpersonen</strong> ausgehändigt werden.
+                            Aus Datenschutzgründen (DSG / ZGB) dürfen Aufzeichnungen <strong>nicht direkt an Privatpersonen</strong> ausgehändigt werden.
                         </p>
-                        <div class="d-flex flex-wrap gap-2 mb-2">
+                        <div class="d-flex flex-wrap gap-2 mb-2 mt-auto">
                             <span class="badge bg-light text-dark border small">
                                 <i class="bi bi-shield-slash me-1 text-secondary"></i> Keine Direktherausgabe
                             </span>
-                            <span class="badge bg-light text-danger border small">
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle small fw-bold">
                                 <i class="bi bi-telephone-fill me-1"></i> Notruf 117
                             </span>
                         </div>
                     </div>
 
                     <div class="portal-card-footer">
-                        <button type="button" class="btn btn-outline-secondary w-100 fw-semibold d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#modalPrivatperson">
-                            <i class="bi bi-info-circle-fill"></i> Hinweise &amp; Notruf öffnen
+                        <button type="button" class="btn btn-outline-dark w-100 fw-bold d-flex align-items-center justify-content-center gap-2 border-2 py-2" data-bs-toggle="modal" data-bs-target="#modalPrivatperson">
+                            <i class="bi bi-info-circle-fill text-secondary"></i> Hinweise &amp; Notruf öffnen
                         </button>
                     </div>
                 </div>
@@ -335,19 +475,21 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                         <div class="portal-icon-wrapper icon-police">
                             <i class="bi bi-shield-fill-check"></i>
                         </div>
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 mb-2">Behördenzugang Schweiz</span>
-                        <h3 class="h4 fw-bold text-dark mb-2">2. Polizei &amp; StA</h3>
-                        <p class="text-muted small mb-0">
-                            Neues Editionsbegehren online einreichen und Editionsverfügung hochladen.
-                        </p>
+                        <div>
+                            <span class="badge bg-primary text-white px-2 py-1 mb-2 fw-semibold">Behördenzugang Schweiz</span>
+                            <h3 class="h4 fw-bold text-dark mb-1">2. Polizei &amp; StA</h3>
+                            <p class="text-muted small mb-0">
+                                Editionsbegehren nach Art. 265 StPO einreichen
+                            </p>
+                        </div>
                     </div>
 
                     <div class="portal-card-body">
                         <p class="small text-secondary mb-3">
-                            Strukturierte Erfassung für Kantonspolizeien, Stadtpolizeien, fedpol und Staatsanwaltschaften.
+                            Digitale Einreichung von Editionsverfügungen für Kantonspolizei, Stadtpolizei, fedpol und Staatsanwaltschaften.
                         </p>
-                        <div class="d-flex flex-wrap gap-2 mb-2">
-                            <span class="badge bg-light text-primary border small">
+                        <div class="d-flex flex-wrap gap-2 mb-2 mt-auto">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle small fw-bold">
                                 <i class="bi bi-shield-check me-1"></i> Art. 265 StPO
                             </span>
                             <span class="badge bg-light text-dark border small">
@@ -357,12 +499,14 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                     </div>
 
                     <div class="portal-card-footer">
-                        <div class="d-flex flex-column gap-2">
-                            <a href="?route=sicherung/antrag" class="btn btn-portal-police w-100 fw-semibold d-flex align-items-center justify-content-center gap-2">
-                                <i class="bi bi-file-earmark-plus-fill"></i> Sicherungsantrag stellen
+                        <div class="d-flex flex-column align-items-center gap-1 text-center">
+                            <!-- Hervorgehobener Direktlink zum Sicherungsantrag -->
+                            <a href="?route=sicherung/antrag" class="btn btn-portal-police w-100 fw-bold d-flex align-items-center justify-content-center gap-2 py-2 shadow">
+                                <i class="bi bi-file-earmark-plus-fill fs-5"></i> Sicherungsantrag einreichen &rarr;
                             </a>
-                            <button type="button" class="btn btn-link btn-sm text-decoration-none text-muted p-0" data-bs-toggle="modal" data-bs-target="#modalPolizeiInfo">
-                                <i class="bi bi-info-circle me-1"></i> Workflow &amp; rechtliche Vorgaben
+                            <!-- Klein: Workflow & Vorgaben ansehen -->
+                            <button type="button" class="btn btn-sm btn-link text-decoration-none text-muted mt-1 d-inline-flex align-items-center gap-1 hover-underline" data-bs-toggle="modal" data-bs-target="#modalPolizeiInfo">
+                                <i class="bi bi-diagram-3-fill text-primary"></i> Workflow &amp; Vorgaben ansehen
                             </button>
                         </div>
                     </div>
@@ -376,19 +520,21 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                         <div class="portal-icon-wrapper icon-access">
                             <i class="bi bi-folder-check"></i>
                         </div>
-                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 mb-2">Antragsteller-Bereich</span>
-                        <h3 class="h4 fw-bold text-dark mb-2">3. Fallzugang</h3>
-                        <p class="text-muted small mb-0">
-                            Statusabfrage, Bereitstellungsanzeige &amp; Mitteilungen zum eigenen Vorgang.
-                        </p>
+                        <div>
+                            <span class="badge bg-success text-white px-2 py-1 mb-2 fw-semibold">Antragsteller-Bereich</span>
+                            <h3 class="h4 fw-bold text-dark mb-1">3. Fallzugang</h3>
+                            <p class="text-muted small mb-0">
+                                Statusabfrage &amp; sicherer Datenabruf
+                            </p>
+                        </div>
                     </div>
 
                     <div class="portal-card-body">
                         <p class="small text-secondary mb-3">
-                            Sie haben bereits einen Antrag eingereicht? Rufen Sie Ihren Fall mit Vorgangs-ID und Zugangscode ab.
+                            Bereits eingereichten Fall mit Vorgangs-ID und 12-stelligem Fall-Zugangscode abrufen und Daten downloaden.
                         </p>
-                        <div class="d-flex flex-wrap gap-2 mb-2">
-                            <span class="badge bg-light text-success border small">
+                        <div class="d-flex flex-wrap gap-2 mb-2 mt-auto">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle small fw-bold">
                                 <i class="bi bi-key-fill me-1"></i> 12-stelliger Fallcode
                             </span>
                             <span class="badge bg-light text-dark border small">
@@ -398,8 +544,8 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                     </div>
 
                     <div class="portal-card-footer">
-                        <button type="button" class="btn btn-portal-access w-100 fw-semibold d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#modalFallzugang">
-                            <i class="bi bi-box-arrow-in-right"></i> Fallzugang öffnen
+                        <button type="button" class="btn btn-portal-access w-100 fw-bold d-flex align-items-center justify-content-center gap-2 py-2 shadow" data-bs-toggle="modal" data-bs-target="#modalFallzugang">
+                            <i class="bi bi-box-arrow-in-right fs-5"></i> Fallzugang öffnen
                         </button>
                     </div>
                 </div>
@@ -439,47 +585,47 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
     </main>
 
     <!-- ========================================================================= -->
-    <!-- MODALS: DETAILANSICHTEN DER 3 BEREICHE                                   -->
+    <!-- MODALS: DETAILANSICHTEN DER 3 BEREICHE (HIGH CONTRAST)                  -->
     <!-- ========================================================================= -->
 
     <!-- MODAL 1: Privatperson -->
-    <div class="modal fade" id="modalPrivatperson" tabindex="-1" aria-labelledby="modalPrivatpersonLabel" aria-hidden="true">
+    <div class="modal fade modal-contrast" id="modalPrivatperson" tabindex="-1" aria-labelledby="modalPrivatpersonLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-light">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="bg-secondary-subtle text-secondary p-2 rounded">
-                            <i class="bi bi-person-fill-exclamation fs-5"></i>
+            <div class="modal-content shadow-lg">
+                <div class="modal-header header-private">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-white text-dark p-2 rounded shadow-sm">
+                            <i class="bi bi-person-fill-exclamation fs-4"></i>
                         </div>
                         <div>
-                            <h5 class="modal-title fw-bold text-dark mb-0" id="modalPrivatpersonLabel">
+                            <h5 class="modal-title fw-bold text-white mb-0" id="modalPrivatpersonLabel">
                                 Wichtige Hinweise für Privatpersonen &amp; Zeugen
                             </h5>
-                            <small class="text-muted">Rechtliche Grundlagen &amp; Vorgehensweise in der Schweiz</small>
+                            <small class="text-white-50 fw-semibold">Rechtliche Grundlagen &amp; Vorgehensweise in der Schweiz</small>
                         </div>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schliessen"></button>
                 </div>
 
                 <div class="modal-body p-4">
-                    <div class="alert alert-warning border d-flex gap-3 mb-4">
+                    <div class="alert alert-warning-contrast p-3 d-flex gap-3 mb-4">
                         <i class="bi bi-shield-slash-fill fs-3 text-warning flex-shrink-0 mt-1"></i>
                         <div>
-                            <strong class="text-dark d-block mb-1">Keine Direktherausgabe an Privatpersonen</strong>
+                            <strong class="text-dark d-block mb-1 fs-6">Keine Direktherausgabe an Privatpersonen</strong>
                             Aus datenschutz- und persönlichkeitsrechtlichen Gründen gemäss Schweizer Recht
                             (Bundesgesetz über den Datenschutz <strong>DSG</strong>, Art. 28 Zivilgesetzbuch <strong>ZGB</strong>) dürfen Videoaufzeichnungen (CCTV),
                             Zutritts- und Kommunikationsdaten <strong>nicht direkt an Privatpersonen, Geschädigte oder Zeugen</strong> übergeben werden.
                         </div>
                     </div>
 
-                    <h6 class="fw-bold text-dark mb-2">
+                    <h6 class="fw-bold text-dark mb-2 fs-6">
                         <i class="bi bi-list-check text-primary me-2"></i>Sie sind Betroffener eines Vorfalls oder möchten einen Schaden melden?
                     </h6>
                     <p class="text-muted small mb-3">
                         Bitte beachten Sie die folgende Vorgehensweise, um eine rechtssichere Beweissicherung zu veranlassen:
                     </p>
 
-                    <ol class="small text-secondary ps-3 mb-4">
+                    <ol class="small text-dark ps-3 mb-4">
                         <li class="mb-2">
                             <strong>Anzeige erstatten:</strong> Erstatten Sie unverzüglich Anzeige beim zuständigen Polizeiposten Ihrer Kantons- oder Stadtpolizei.
                         </li>
@@ -491,81 +637,82 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                         </li>
                     </ol>
 
-                    <div class="p-3 bg-light rounded border text-center">
-                        <div class="fs-5 fw-bold text-danger mb-1">
+                    <div class="p-3 emergency-box-contrast text-center">
+                        <div class="fs-4 fw-bold text-danger mb-1">
                             <i class="bi bi-telephone-fill me-2"></i>Polizeinotruf Schweiz: 117
                         </div>
-                        <div class="text-muted small">
+                        <div class="small fw-bold text-danger">
                             Für akute Notfälle, Gefahrenlagen &amp; Sofortmeldungen (Europäischer Notruf: 112)
                         </div>
                     </div>
                 </div>
 
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Schliessen</button>
+                <div class="modal-footer bg-light d-flex justify-content-between">
+                    <span class="small text-muted"><i class="bi bi-shield-check text-success me-1"></i>Rechtskonform nach Schweizer DSG &amp; ZGB</span>
+                    <button type="button" class="btn btn-dark px-4 fw-bold" data-bs-dismiss="modal">Schliessen</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- MODAL 2: Polizei / StA Info -->
-    <div class="modal fade" id="modalPolizeiInfo" tabindex="-1" aria-labelledby="modalPolizeiInfoLabel" aria-hidden="true">
+    <div class="modal fade modal-contrast" id="modalPolizeiInfo" tabindex="-1" aria-labelledby="modalPolizeiInfoLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-light">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="bg-primary-subtle text-primary p-2 rounded">
-                            <i class="bi bi-shield-fill-check fs-5"></i>
+            <div class="modal-content shadow-lg">
+                <div class="modal-header header-police">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-white text-primary p-2 rounded shadow-sm">
+                            <i class="bi bi-shield-fill-check fs-4"></i>
                         </div>
                         <div>
-                            <h5 class="modal-title fw-bold text-dark mb-0" id="modalPolizeiInfoLabel">
+                            <h5 class="modal-title fw-bold text-white mb-0" id="modalPolizeiInfoLabel">
                                 Behörden-Workflow: Digitale Editionsverfügung
                             </h5>
-                            <small class="text-muted">Art. 265 ff. Schweizerische Strafprozessordnung (StPO)</small>
+                            <small class="text-white-50 fw-semibold">Art. 265 ff. Schweizerische Strafprozessordnung (StPO)</small>
                         </div>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schliessen"></button>
                 </div>
 
                 <div class="modal-body p-4">
-                    <p class="text-secondary small mb-4">
-                        Dieses Portal dient als sichere, verschlüsselte Schnittstelle für Ermittlungsbeamte der Schweizer Polizeibehörden (Kantonspolizei, Stadtpolizei, fedpol) sowie Staatsanwaltschaften und Gerichte.
+                    <p class="text-dark small mb-4">
+                        Dieses Portal dient als sichere, verschlüsselte Schnittstelle für Untersuchungs- und Ermittlungsbehörden der Schweizer Polizeibehörden (Kantonspolizei, Stadtpolizei, fedpol) sowie Staatsanwaltschaften und Gerichte.
                     </p>
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
-                            <div class="p-3 bg-light rounded border h-100">
-                                <div class="badge bg-primary text-white mb-2">Schritt 1</div>
+                            <div class="p-3 step-card-contrast h-100">
+                                <div class="badge bg-primary text-white mb-2 fw-bold">Schritt 1</div>
                                 <h6 class="fw-bold text-dark mb-1">Dienststelle &amp; Aktenzeichen</h6>
                                 <p class="text-muted small mb-0">Erfassung von Behörde, Aktenzeichen, Sachbearbeiter und eventuellen Fristen.</p>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="p-3 bg-light rounded border h-100">
-                                <div class="badge bg-primary text-white mb-2">Schritt 2</div>
+                            <div class="p-3 step-card-contrast h-100">
+                                <div class="badge bg-primary text-white mb-2 fw-bold">Schritt 2</div>
                                 <h6 class="fw-bold text-dark mb-1">Upload Editionsverfügung</h6>
                                 <p class="text-muted small mb-0">Rechtsgültige Editionsverfügung (Art. 265 StPO) als PDF hochladen (bis 30 MB).</p>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="p-3 bg-light rounded border h-100">
-                                <div class="badge bg-primary text-white mb-2">Schritt 3</div>
+                            <div class="p-3 step-card-contrast h-100">
+                                <div class="badge bg-primary text-white mb-2 fw-bold">Schritt 3</div>
                                 <h6 class="fw-bold text-dark mb-1">Typ &amp; Spezifikation</h6>
                                 <p class="text-muted small mb-0">Videoüberwachung (CCTV), Mail-Server, Cloud-Dateien oder Schliessprotokolle.</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="alert alert-info border small mb-0">
-                        <strong class="d-block mb-1 text-dark"><i class="bi bi-shield-lock-fill me-1 text-primary"></i>Sicherheits- &amp; Integritätsgarantie:</strong>
+                    <div class="alert alert-info-contrast p-3 small mb-0">
+                        <strong class="d-block mb-1 text-dark fs-6"><i class="bi bi-shield-lock-fill me-1 text-primary"></i>Sicherheits- &amp; Integritätsgarantie:</strong>
                         Nach Absenden des Antrags erhalten Sie sofort eine offizielle <strong>Vorgangs-ID (z. B. POL-2026-000123)</strong> sowie einen geheimen <strong>12-stelligen Fall-Zugangscode</strong> zur lückenlosen Statusverfolgung und Bereitstellungseinsicht.
                     </div>
                 </div>
 
                 <div class="modal-footer bg-light d-flex justify-content-between">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Schliessen</button>
-                    <a href="?route=sicherung/antrag" class="btn btn-primary px-4 fw-semibold">
-                        <i class="bi bi-file-earmark-plus-fill me-1"></i> Jetzt Sicherungsantrag stellen &rarr;
+                    <button type="button" class="btn btn-outline-secondary fw-semibold" data-bs-dismiss="modal">Schliessen</button>
+                    <a href="?route=sicherung/antrag" class="btn btn-primary px-4 fw-bold shadow">
+                        <i class="bi bi-file-earmark-plus-fill me-1"></i> Direkt zum Sicherungsantrag &rarr;
                     </a>
                 </div>
             </div>
@@ -573,34 +720,34 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
     </div>
 
     <!-- MODAL 3: Fallzugang Formular -->
-    <div class="modal fade" id="modalFallzugang" tabindex="-1" aria-labelledby="modalFallzugangLabel" aria-hidden="true">
+    <div class="modal fade modal-contrast" id="modalFallzugang" tabindex="-1" aria-labelledby="modalFallzugangLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-light">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="bg-success-subtle text-success p-2 rounded">
-                            <i class="bi bi-folder-check fs-5"></i>
+            <div class="modal-content shadow-lg">
+                <div class="modal-header header-access">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-white text-success p-2 rounded shadow-sm">
+                            <i class="bi bi-folder-check fs-4"></i>
                         </div>
                         <div>
-                            <h5 class="modal-title fw-bold text-dark mb-0" id="modalFallzugangLabel">
+                            <h5 class="modal-title fw-bold text-white mb-0" id="modalFallzugangLabel">
                                 Fallzugang aufrufen
                             </h5>
-                            <small class="text-muted">Einsicht für antragstellende Behörden</small>
+                            <small class="text-white-50 fw-semibold">Einsicht für antragstellende Behörden</small>
                         </div>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schliessen"></button>
                 </div>
 
                 <form method="POST" action="?route=sicherung/fallzugang">
                     <div class="modal-body p-4">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 
-                        <p class="text-secondary small mb-3">
+                        <p class="text-dark small mb-3">
                             Geben Sie Ihre bei Antragstellung erhaltene <strong>Vorgangs-ID</strong> und den <strong>12-stelligen Zugangscode</strong> ein:
                         </p>
 
                         <div class="mb-3">
-                            <label for="modal_case_number" class="form-label small fw-semibold text-dark mb-1">
+                            <label for="modal_case_number" class="form-label small fw-bold text-dark mb-1">
                                 Vorgangs-ID (z. B. POL-2026-123456) <span class="text-danger">*</span>
                             </label>
                             <input type="text" class="form-control form-control-lg font-monospace text-uppercase" 
@@ -609,7 +756,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                         </div>
 
                         <div class="mb-3">
-                            <label for="modal_access_code" class="form-label small fw-semibold text-dark mb-1">
+                            <label for="modal_access_code" class="form-label small fw-bold text-dark mb-1">
                                 12-stelliger Zugangscode <span class="text-danger">*</span>
                             </label>
                             <input type="password" class="form-control form-control-lg font-monospace text-uppercase" 
@@ -617,9 +764,9 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                                    placeholder="z. B. K7P2-9F4X-M8W3" required autocomplete="off">
                         </div>
 
-                        <div class="p-2 bg-light rounded border text-muted small mt-2">
-                            <i class="bi bi-shield-lock text-success me-1"></i>
-                            Isolierter Nur-Lese-Zugriff auf diesen Vorgang gemäss Schweizer Datenschutz.
+                        <div class="p-3 bg-light rounded border border-2 text-dark small mt-3">
+                            <i class="bi bi-shield-lock-fill text-success me-1"></i>
+                            <strong>Sicherheitshinweis:</strong> Isolierter Nur-Lese-Zugriff auf diesen Vorgang gemäss Schweizer Datenschutz (DSG).
                         </div>
                     </div>
 
@@ -628,8 +775,8 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                             Auf separater Seite öffnen
                         </a>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
-                            <button type="submit" class="btn btn-success fw-bold px-4">
+                            <button type="button" class="btn btn-outline-secondary fw-semibold" data-bs-dismiss="modal">Abbrechen</button>
+                            <button type="submit" class="btn btn-success fw-bold px-4 shadow">
                                 <i class="bi bi-box-arrow-in-right me-1"></i> Fall aufrufen
                             </button>
                         </div>
@@ -645,14 +792,14 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
             <div class="d-flex flex-wrap justify-content-center gap-3 mb-2 small">
                 <a href="?route=sicherung">Startseite Sicherung</a>
                 <span class="text-secondary">&middot;</span>
-                <a href="?route=sicherung/antrag">Neuer Antrag</a>
+                <a href="?route=sicherung/antrag">Sicherungsantrag stellen</a>
                 <span class="text-secondary">&middot;</span>
                 <a href="?route=sicherung/fallzugang">Fallzugang</a>
                 <span class="text-secondary">&middot;</span>
                 <a href="?route=admin">Behörden-Login / Verwaltung</a>
             </div>
             <p class="mb-0 text-secondary small">
-                &copy; <?= date('Y') ?> Sicherungsportal &middot; Elektronischer Beweismittel-Workflow für Schweizer Ermittlungsbehörden
+                &copy; <?= date('Y') ?> <?= htmlspecialchars($customerName, ENT_QUOTES, 'UTF-8') ?> | design &amp; development by <a href="https://studiocreativo.ch" target="_blank" rel="noopener noreferrer">StudioCreativo</a>
             </p>
         </div>
     </footer>
