@@ -1,0 +1,6 @@
+# Verhindert direkte Skriptausführung im Upload-Verzeichnis
+Options -Indexes -ExecCGI
+<FilesMatch "(?i)\.(php|phtml|php3|php4|php5|php7|php8|phps|cgi|pl|sh|bash|py)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>

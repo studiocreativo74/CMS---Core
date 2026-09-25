@@ -616,6 +616,156 @@ if (isset($router) && $router !== null) {
     });
 
     // =========================================================================
+    // PORTAL (STARTSEITE & LOGIN): ÖFFENTLICHER ZUGANG FÜR EIGENTÜMER & MIETER
+    // =========================================================================
+    $portalLandingHandler = static function (): void {
+        // Falls bereits eingeloggt: Direkt zum Portal-Dashboard weiterleiten
+        if (PortalService::getCurrentUser() !== null) {
+            header('Location: ?route=portal/dashboard');
+            exit;
+        }
+
+        require __DIR__ . '/views/portal/login.php';
+    };
+
+    $router->get('/portal', $portalLandingHandler);
+    $router->get('/portal/login', $portalLandingHandler);
+
+    // Passwort-Login über das Portal
+    $router->post('/portal/login', static function (): void {
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_portal_error'] = 'Ungültiges Sicherheitstoken (CSRF). Bitte erneut versuchen.';
+            header('Location: ?route=portal');
+            exit;
+        }
+
+        $email = trim((string) ($_POST['email'] ?? ''));
+        $password = (string) ($_POST['password'] ?? '');
+
+        if ($email === '' || $password === '') {
+            $_SESSION['flash_portal_error'] = 'Bitte E-Mail-Adresse und Passwort eingeben.';
+            header('Location: ?route=portal');
+            exit;
+        }
+
+        if (Auth::login($email, $password)) {
+            header('Location: ?route=portal/dashboard');
+            exit;
+        }
+
+        $_SESSION['flash_portal_error'] = 'Login fehlgeschlagen. Bitte Zugangsdaten prüfen.';
+        header('Location: ?route=portal');
+        exit;
+    });
+
+    // Magic-Code E-Mail setzen (Portal)
+    $router->post('/portal/magic-set-email', static function (): void {
+        $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+
+        if ($email === '' || strlen($email) > 191 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $_SESSION['flash_portal_error'] = 'Bitte eine gültige E-Mail-Adresse eingeben.';
+            header('Location: ?route=portal');
+            exit;
+        }
+
+        $_SESSION['magic_email'] = $email;
+        $_SESSION['magic_input_email'] = $email;
+
+        // Prüfen, ob User existiert
+        $user = null;
+        try {
+            $user = DB::fetchOne('SELECT * FROM users WHERE email = :email LIMIT 1', ['email' => $email]);
+        } catch (\Throwable $e) {
+            $user = null;
+        }
+
+        $isDevEmail = MagicCode::isDevMagicCodeEnabled() && ($email === strtolower(MagicCode::getDevMagicCodeEmail()));
+
+        if ($user === null && !$isDevEmail) {
+            $_SESSION['flash_portal_error'] = 'Diese E-Mail-Adresse ist nicht im System registriert.';
+            header('Location: ?route=portal');
+            exit;
+        }
+
+        if ($user !== null && isset($user['is_active']) && (int) $user['is_active'] !== 1) {
+            $_SESSION['flash_portal_error'] = 'Dieser Account ist deaktiviert oder gesperrt.';
+            header('Location: ?route=portal');
+            exit;
+        }
+
+        // Code generieren und versenden
+        try {
+            $created = MagicCode::createCodeForEmail($email, 'portal_login', 1, null);
+            MagicCode::sendEmailNotification($created['code'], $email, 'portal_login', 1, 'office@studiocreativo.ch');
+            $_SESSION['flash_portal_success'] = 'Ein 10-stelliger Magic Code wurde an Ihre E-Mail gesendet.';
+        } catch (\Throwable $e) {
+            if ($isDevEmail) {
+                $_SESSION['flash_portal_info'] = 'Dev-Modus aktiv: Nutzen Sie den Code ROLAND1234.';
+            } else {
+                $_SESSION['flash_portal_error'] = 'Fehler beim Erstellen des Magic-Codes: ' . $e->getMessage();
+            }
+        }
+
+        header('Location: ?route=portal');
+        exit;
+    });
+
+    // Magic-Code E-Mail zurücksetzen (Portal)
+    $router->post('/portal/magic-clear-email', static function (): void {
+        unset($_SESSION['magic_email'], $_SESSION['magic_input_email']);
+        header('Location: ?route=portal');
+        exit;
+    });
+
+    // Magic-Code erneut anfordern (Portal)
+    $router->post('/portal/magic-request', static function (): void {
+        $email = strtolower(trim((string) ($_SESSION['magic_email'] ?? ($_SESSION['magic_input_email'] ?? ''))));
+        if ($email === '') {
+            $_SESSION['flash_portal_error'] = 'Bitte zuerst Ihre E-Mail-Adresse eingeben.';
+            header('Location: ?route=portal');
+            exit;
+        }
+
+        try {
+            $created = MagicCode::createCodeForEmail($email, 'portal_login', 1, null);
+            MagicCode::sendEmailNotification($created['code'], $email, 'portal_login', 1, 'office@studiocreativo.ch');
+            $_SESSION['flash_portal_success'] = 'Ein neuer 10-stelliger Code wurde an Ihre E-Mail gesendet.';
+        } catch (\Throwable $e) {
+            $_SESSION['flash_portal_error'] = 'Fehler beim Senden: ' . $e->getMessage();
+        }
+
+        header('Location: ?route=portal');
+        exit;
+    });
+
+    // Magic-Code Login prüfen (Portal)
+    $router->post('/portal/magic-login', static function (): void {
+        $email = strtolower(trim((string) ($_SESSION['magic_email'] ?? ($_SESSION['magic_input_email'] ?? ''))));
+        $code = trim((string) ($_POST['magic_code'] ?? ''));
+
+        if ($email === '') {
+            $_SESSION['flash_portal_error'] = 'Bitte zuerst Ihre E-Mail-Adresse angeben.';
+            header('Location: ?route=portal');
+            exit;
+        }
+
+        if ($code === '') {
+            $_SESSION['flash_portal_error'] = 'Bitte den Magic-Code eingeben.';
+            header('Location: ?route=portal');
+            exit;
+        }
+
+        if (Auth::loginWithMagicCodeForEmail($email, $code)) {
+            header('Location: ?route=portal/dashboard');
+            exit;
+        }
+
+        $_SESSION['flash_portal_error'] = 'Ungültiger oder abgelaufener Magic-Code.';
+        header('Location: ?route=portal');
+        exit;
+    });
+
+    // =========================================================================
     // PORTAL (EIGENTÜMER / MIETER): NACHRICHT AN VERWALTUNG SENDEN
     // =========================================================================
     $router->post('/portal/case/message', static function () use ($ensureAuthenticated): void {

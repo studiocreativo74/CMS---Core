@@ -730,7 +730,13 @@ function toggleHomepageMode(mode) {
 function onModuleSelectChange(selectEl) {
     const routeInput = document.getElementById('homepage_module_route');
     if (routeInput && selectEl.value && routeInput.value.trim() === '') {
-        routeInput.value = '/' + selectEl.value;
+        if (selectEl.value === 'owner_portal') {
+            routeInput.value = '/portal';
+        } else if (selectEl.value === 'secure_portal') {
+            routeInput.value = '/sicherung';
+        } else {
+            routeInput.value = '/' + selectEl.value;
+        }
     }
 }
 

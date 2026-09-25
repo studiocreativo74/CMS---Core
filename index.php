@@ -48,16 +48,20 @@ $router->get('/', function (): void {
 
     // Variante B: Modul als Startseite
     if ($homepageMode === 'module' && !$isLoginIntent) {
-        $moduleKey = class_exists('Settings') ? trim((string) Settings::get('homepage_module_key', '')) : '';
+        $moduleKey   = class_exists('Settings') ? trim((string) Settings::get('homepage_module_key', '')) : '';
+        $moduleRoute = class_exists('Settings') ? trim((string) Settings::get('homepage_module_route', '')) : '';
 
         // Prüfen, ob das Modul hinterlegt und in der DB aktiviert ist
         if ($moduleKey !== '' && class_exists('ModuleManager') && ModuleManager::isEnabled($moduleKey)) {
-            $moduleRoute = class_exists('Settings') ? trim((string) Settings::get('homepage_module_route', '')) : '';
-
-            // Wenn keine spezifische Route definiert ist: sinnvolle Default-Route aus Modul-Key ableiten
-            // z.B. '/'.$moduleKey (z.B. '/contact_form' oder '/kontakt')
+            // Wenn keine spezifische Route definiert ist: sinnvolle Default-Route ableiten
             if ($moduleRoute === '') {
-                $moduleRoute = '/' . $moduleKey;
+                if ($moduleKey === 'owner_portal') {
+                    $moduleRoute = '/portal';
+                } elseif ($moduleKey === 'secure_portal') {
+                    $moduleRoute = '/sicherung';
+                } else {
+                    $moduleRoute = '/' . $moduleKey;
+                }
             }
 
             // Normalisieren und Absicherung gegen Endlos-Weiterleitungen auf '/'
@@ -1246,7 +1250,16 @@ $router->post('/admin/system/unmark-migration', function () use ($requireAdminAu
 // Aktive Module laden (Routen & Hooks registrieren)
 ModuleManager::loadActiveModules(__DIR__ . '/modules', $router);
 
-$route = $_GET['route'] ?? '/';
+$route = $_GET['route'] ?? null;
+if ($route === null || $route === '') {
+    $reqUri = $_SERVER['REQUEST_URI'] ?? '/';
+    $reqPath = parse_url($reqUri, PHP_URL_PATH) ?? '/';
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+    if ($scriptName !== '' && str_starts_with($reqPath, $scriptName)) {
+        $reqPath = substr($reqPath, strlen($scriptName));
+    }
+    $route = ($reqPath === '' || $reqPath === false) ? '/' : $reqPath;
+}
 $currentRoute = (string) $route;
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 

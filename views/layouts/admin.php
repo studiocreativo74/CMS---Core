@@ -377,6 +377,117 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
             white-space: nowrap;
         }
 
+        /* Submenu / Verschachtelte Navigation (Level 2) */
+        .admin-nav-parent {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            background: transparent;
+            border: 0;
+            color: var(--sc-nav-text) !important;
+            padding: 0.55rem 0.75rem;
+            border-radius: 0.45rem;
+            margin-bottom: 0.15rem;
+            font-size: 0.88rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+            white-space: nowrap;
+        }
+
+        .admin-nav-parent:hover,
+        .admin-nav-parent:focus-visible {
+            color: var(--sc-nav-text-hover) !important;
+            background-color: var(--sc-nav-hover-bg) !important;
+            outline: none;
+        }
+
+        .admin-nav-parent.active,
+        .admin-nav-parent[aria-expanded="true"] {
+            color: var(--sc-nav-text-hover) !important;
+        }
+
+        .admin-nav-parent .nav-icon,
+        .admin-nav-parent svg:not(.nav-chevron) {
+            width: 17px;
+            height: 17px;
+            flex-shrink: 0;
+            color: inherit;
+            margin-right: 0.65rem;
+        }
+
+        .admin-nav-parent .nav-text {
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .admin-nav-parent .nav-chevron {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            margin-left: auto;
+            color: var(--sc-nav-text);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .admin-nav-parent[aria-expanded="true"] .nav-chevron {
+            transform: rotate(90deg);
+            color: var(--sc-nav-text-hover);
+        }
+
+        /* Kinder-Menü / Sub-Links (Level 2) */
+        .admin-nav-children {
+            display: flex;
+            flex-direction: column;
+            padding-left: 1.15rem;
+            margin-left: 0.5rem;
+            margin-bottom: 0.35rem;
+            border-left: 1px solid var(--sc-nav-border);
+            overflow: hidden;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .admin-nav-children[hidden] {
+            display: none !important;
+        }
+
+        .admin-nav-children .admin-nav-link.child {
+            display: flex;
+            align-items: center;
+            color: var(--sc-nav-text) !important;
+            padding: 0.42rem 0.65rem;
+            border-radius: 0.4rem;
+            margin-bottom: 0.1rem;
+            font-size: 0.835rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+            white-space: nowrap;
+        }
+
+        .admin-nav-children .admin-nav-link.child:hover,
+        .admin-nav-children .admin-nav-link.child:focus-visible {
+            color: var(--sc-nav-text-hover) !important;
+            background-color: var(--sc-nav-hover-bg) !important;
+        }
+
+        .admin-nav-children .admin-nav-link.child.active {
+            background-color: var(--sc-nav-active-bg) !important;
+            color: var(--sc-nav-active-text) !important;
+            font-weight: 600;
+        }
+
+        .admin-nav-children .admin-nav-link.child svg,
+        .admin-nav-children .admin-nav-link.child .nav-icon {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+            margin-right: 0.55rem;
+        }
+
         /* Desktop Collapsed Sidebar */
         html.sidebar-collapsed .admin-sidebar,
         body.sidebar-collapsed .admin-sidebar {
@@ -385,13 +496,17 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
 
         html.sidebar-collapsed .admin-sidebar .nav-text,
         body.sidebar-collapsed .admin-sidebar .nav-text,
+        html.sidebar-collapsed .admin-sidebar .nav-chevron,
+        body.sidebar-collapsed .admin-sidebar .nav-chevron,
         html.sidebar-collapsed .admin-sidebar .admin-sidebar-section-label,
         body.sidebar-collapsed .admin-sidebar .admin-sidebar-section-label {
             display: none !important;
         }
 
         html.sidebar-collapsed .admin-sidebar .nav-link,
-        body.sidebar-collapsed .admin-sidebar .nav-link {
+        body.sidebar-collapsed .admin-sidebar .nav-link,
+        html.sidebar-collapsed .admin-sidebar .admin-nav-parent,
+        body.sidebar-collapsed .admin-sidebar .admin-nav-parent {
             justify-content: center;
             padding: 0.65rem 0.25rem;
         }
@@ -399,7 +514,29 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
         html.sidebar-collapsed .admin-sidebar .nav-link svg,
         body.sidebar-collapsed .admin-sidebar .nav-link svg,
         html.sidebar-collapsed .admin-sidebar .nav-link .nav-icon,
-        body.sidebar-collapsed .admin-sidebar .nav-link .nav-icon {
+        body.sidebar-collapsed .admin-sidebar .nav-link .nav-icon,
+        html.sidebar-collapsed .admin-sidebar .admin-nav-parent svg,
+        body.sidebar-collapsed .admin-sidebar .admin-nav-parent svg,
+        html.sidebar-collapsed .admin-sidebar .admin-nav-parent .nav-icon,
+        body.sidebar-collapsed .admin-sidebar .admin-nav-parent .nav-icon {
+            margin-right: 0 !important;
+        }
+
+        html.sidebar-collapsed .admin-nav-children,
+        body.sidebar-collapsed .admin-nav-children {
+            padding-left: 0;
+            margin-left: 0;
+            border-left: none;
+        }
+
+        html.sidebar-collapsed .admin-sidebar .admin-nav-children .admin-nav-link.child,
+        body.sidebar-collapsed .admin-sidebar .admin-nav-children .admin-nav-link.child {
+            justify-content: center;
+            padding: 0.5rem 0.25rem;
+        }
+
+        html.sidebar-collapsed .admin-sidebar .admin-nav-children .admin-nav-link.child svg,
+        body.sidebar-collapsed .admin-sidebar .admin-nav-children .admin-nav-link.child svg {
             margin-right: 0 !important;
         }
 
@@ -839,43 +976,10 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
                             </a>
                         </li>
                         <?php endif; ?>
-
-                        <!-- 8. Dynamisch durch aktive Module registrierte Menüpunkte -->
-                        <?php if (class_exists('ModuleManager') && !empty(ModuleManager::getAdminMenuItems())): ?>
-                            <?php 
-                            $customMenuItems = array_filter(ModuleManager::getAdminMenuItems(), function ($item) {
-                                $route = ltrim((string) ($item['route'] ?? ''), '/');
-                                return $route !== 'admin/contact-form' && $route !== 'admin/contact';
-                            });
-                            ?>
-                            <?php if (!empty($customMenuItems)): ?>
-                                <li class="nav-item pt-2 pb-1 px-3">
-                                    <span class="text-uppercase text-white-50 fw-semibold small" style="font-size: 0.72rem; letter-spacing: 0.5px;">Weitere Module</span>
-                                </li>
-                                <?php foreach ($customMenuItems as $item): 
-                                    $itemRouteClean = ltrim((string) ($item['route'] ?? ''), '/');
-                                    $isItemActive = ($currentRouteNormalized === $itemRouteClean) || ($itemRouteClean !== '' && str_starts_with($currentRouteNormalized, $itemRouteClean . '/'));
-                                ?>
-                                <li class="nav-item">
-                                    <a class="nav-link <?= $isItemActive ? 'active' : '' ?>" 
-                                       href="<?= htmlspecialchars((string) ($item['url'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>">
-                                        <?php if (!empty($item['icon'])): ?>
-                                            <span class="me-2 d-inline-flex align-items-center"><?= $item['icon'] ?></span>
-                                        <?php else: ?>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-puzzle me-2" viewBox="0 0 16 16">
-                                                <path d="M3.112 5.112a3.105 3.105 0 0 0-.17.613H1.5A1.5 1.5 0 0 0 0 7.225v2.493c0 .828.672 1.5 1.5 1.5h1.442c.045.218.102.43.17.613a3.105 3.105 0 0 0 2.87 2.169h.105c.828 0 1.5-.672 1.5-1.5v-1.442a3.1 3.1 0 0 0 .613-.17 3.105 3.105 0 0 0 2.169-2.87v-.105c0-.828-.672-1.5-1.5-1.5h-1.442a3.1 3.1 0 0 0-.17-.613 3.105 3.105 0 0 0-2.87-2.169h-.105c-.828 0-1.5.672-1.5 1.5v1.442a3.1 3.1 0 0 0-.613.17 3.105 3.105 0 0 0-2.169 2.87v.105z"/>
-                                            </svg>
-                                        <?php endif; ?>
-                                        <?= htmlspecialchars((string) ($item['label'] ?? 'Modul'), ENT_QUOTES, 'UTF-8') ?>
-                                    </a>
-                                </li>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        <?php endif; ?>
                     </ul>
                 </div>
 
-                <!-- 8. Dynamisch durch aktive Module registrierte Menüpunkte (Klar strukturiert) -->
+                <!-- 8. Verschachteltes Untermenü: Weitere Module (Dokumente, Liegenschaften, Vorgänge & Akten, Eigentümerportal) -->
                 <?php if (class_exists('ModuleManager') && !empty(ModuleManager::getAdminMenuItems())): ?>
                     <?php 
                     $customMenuItems = array_filter(ModuleManager::getAdminMenuItems(), function ($item) {
@@ -884,31 +988,55 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
                     });
                     ?>
                     <?php if (!empty($customMenuItems)): ?>
-                    <div class="admin-sidebar-section">
-                        <div class="admin-sidebar-section-label">Weitere Module</div>
-                        <ul class="admin-nav-list mb-0">
-                            <?php foreach ($customMenuItems as $item): 
-                                $itemRouteClean = ltrim((string) ($item['route'] ?? ''), '/');
-                                $isItemActive = ($currentRouteNormalized === $itemRouteClean) || ($itemRouteClean !== '' && str_starts_with($currentRouteNormalized, $itemRouteClean . '/'));
-                                $itemLabel = (string) ($item['label'] ?? 'Modul');
-                            ?>
-                            <li class="nav-item">
-                                <a class="nav-link <?= $isItemActive ? 'active' : '' ?>" 
+                        <?php 
+                        $hasActiveModuleChild = false;
+                        foreach ($customMenuItems as $item) {
+                            $itemRouteClean = ltrim((string) ($item['route'] ?? ''), '/');
+                            if (($currentRouteNormalized === $itemRouteClean) || ($itemRouteClean !== '' && str_starts_with($currentRouteNormalized, $itemRouteClean . '/'))) {
+                                $hasActiveModuleChild = true;
+                                break;
+                            }
+                        }
+                        ?>
+                        <div class="admin-sidebar-section">
+                            <button class="admin-nav-parent <?= $hasActiveModuleChild ? 'active' : '' ?>" 
+                                    type="button" 
+                                    data-nav-toggle="more-modules" 
+                                    aria-expanded="<?= $hasActiveModuleChild ? 'true' : 'false' ?>" 
+                                    aria-controls="admin-nav-children-more-modules"
+                                    title="Weitere Module aufklappen / zuklappen">
+                                <span class="nav-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-grid-fill" viewBox="0 0 16 16">
+                                        <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5z"/>
+                                    </svg>
+                                </span>
+                                <span class="nav-text fw-semibold">Weitere Module</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-chevron-right nav-chevron" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
+                                </svg>
+                            </button>
+
+                            <div class="admin-nav-children" id="admin-nav-children-more-modules" data-nav-section="more-modules" <?= $hasActiveModuleChild ? '' : 'hidden' ?>>
+                                <?php foreach ($customMenuItems as $item): 
+                                    $itemRouteClean = ltrim((string) ($item['route'] ?? ''), '/');
+                                    $isItemActive = ($currentRouteNormalized === $itemRouteClean) || ($itemRouteClean !== '' && str_starts_with($currentRouteNormalized, $itemRouteClean . '/'));
+                                    $itemLabel = (string) ($item['label'] ?? 'Modul');
+                                ?>
+                                <a class="admin-nav-link child <?= $isItemActive ? 'active' : '' ?>" 
                                    href="<?= htmlspecialchars((string) ($item['url'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>"
                                    title="<?= htmlspecialchars($itemLabel, ENT_QUOTES, 'UTF-8') ?>">
                                     <?php if (!empty($item['icon'])): ?>
                                         <span class="nav-icon me-2 d-inline-flex align-items-center"><?= $item['icon'] ?></span>
                                     <?php else: ?>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-puzzle" viewBox="0 0 16 16">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="bi bi-puzzle me-2" viewBox="0 0 16 16">
                                             <path d="M3.112 5.112a3.105 3.105 0 0 0-.17.613H1.5A1.5 1.5 0 0 0 0 7.225v2.493c0 .828.672 1.5 1.5 1.5h1.442c.045.218.102.43.17.613a3.105 3.105 0 0 0 2.87 2.169h.105c.828 0 1.5-.672 1.5-1.5v-1.442a3.1 3.1 0 0 0 .613-.17 3.105 3.105 0 0 0 2.169-2.87v-.105c0-.828-.672-1.5-1.5-1.5h-1.442a3.1 3.1 0 0 0-.17-.613 3.105 3.105 0 0 0-2.87-2.169h-.105c-.828 0-1.5.672-1.5 1.5v1.442a3.1 3.1 0 0 0-.613.17 3.105 3.105 0 0 0-2.169 2.87v.105z"/>
                                         </svg>
                                     <?php endif; ?>
                                     <span class="nav-text"><?= htmlspecialchars($itemLabel, ENT_QUOTES, 'UTF-8') ?></span>
                                 </a>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     <?php endif; ?>
                 <?php endif; ?>
 
@@ -951,6 +1079,7 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         (function() {
+            // Sidebar Desktop Collapse / Expand
             var toggleBtn = document.getElementById('sidebarCollapseToggle');
             if (toggleBtn) {
                 toggleBtn.addEventListener('click', function() {
@@ -960,6 +1089,46 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
                     } catch(e) {}
                 });
             }
+
+            // Aufklappbare Submenüs (data-nav-toggle)
+            var navToggles = document.querySelectorAll('[data-nav-toggle]');
+            navToggles.forEach(function(btn) {
+                var targetId = btn.getAttribute('data-nav-toggle');
+                var children = document.querySelector('[data-nav-section="' + targetId + '"]');
+                if (!children) return;
+
+                // Gespeicherten Zustand prüfen, falls nicht durch aktives Kind überschrieben
+                var storageKey = 'admin_nav_section_' + targetId;
+                var hasActiveChild = children.querySelector('.admin-nav-link.child.active') !== null;
+
+                if (!hasActiveChild) {
+                    try {
+                        var savedState = localStorage.getItem(storageKey);
+                        if (savedState === 'expanded') {
+                            btn.setAttribute('aria-expanded', 'true');
+                            children.removeAttribute('hidden');
+                        } else if (savedState === 'collapsed') {
+                            btn.setAttribute('aria-expanded', 'false');
+                            children.setAttribute('hidden', '');
+                        }
+                    } catch(e) {}
+                }
+
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var isExpanded = btn.getAttribute('aria-expanded') === 'true';
+                    var nextState = !isExpanded;
+                    btn.setAttribute('aria-expanded', nextState ? 'true' : 'false');
+                    if (nextState) {
+                        children.removeAttribute('hidden');
+                    } else {
+                        children.setAttribute('hidden', '');
+                    }
+                    try {
+                        localStorage.setItem(storageKey, nextState ? 'expanded' : 'collapsed');
+                    } catch(e) {}
+                });
+            });
         })();
     </script>
 </body>
