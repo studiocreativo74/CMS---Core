@@ -70,6 +70,29 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
             box-shadow: 0 2px 10px rgba(0,0,0,0.15);
         }
 
+        .btn-header-antrag {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #ffffff !important;
+            font-weight: 700;
+            padding: 0.45rem 1.15rem;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-header-antrag:hover {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #ffffff !important;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+            transform: translateY(-1px);
+        }
+
         .hero-banner {
             background: linear-gradient(180deg, rgba(15, 76, 129, 0.08) 0%, rgba(244, 246, 249, 1) 100%);
             padding: 3.5rem 0 2.5rem;
@@ -371,8 +394,8 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                     <a href="?route=sicherung/fallzugang" class="btn btn-outline-light btn-sm px-3">
                         <i class="bi bi-key-fill me-1"></i> Fallzugang
                     </a>
-                    <a href="?route=sicherung/antrag" class="btn btn-sm btn-light px-3 fw-bold shadow-sm">
-                        <i class="bi bi-file-earmark-plus-fill text-primary me-1"></i> Sicherungsantrag stellen
+                    <a href="?route=sicherung/antrag" class="btn-header-antrag">
+                        <i class="bi bi-file-earmark-plus-fill text-warning"></i> Sicherungsantrag einreichen
                     </a>
                 </div>
             </div>
@@ -499,16 +522,9 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                     </div>
 
                     <div class="portal-card-footer">
-                        <div class="d-flex flex-column align-items-center gap-1 text-center">
-                            <!-- Hervorgehobener Direktlink zum Sicherungsantrag -->
-                            <a href="?route=sicherung/antrag" class="btn btn-portal-police w-100 fw-bold d-flex align-items-center justify-content-center gap-2 py-2 shadow">
-                                <i class="bi bi-file-earmark-plus-fill fs-5"></i> Sicherungsantrag einreichen &rarr;
-                            </a>
-                            <!-- Klein: Workflow & Vorgaben ansehen -->
-                            <button type="button" class="btn btn-sm btn-link text-decoration-none text-muted mt-1 d-inline-flex align-items-center gap-1 hover-underline" data-bs-toggle="modal" data-bs-target="#modalPolizeiInfo">
-                                <i class="bi bi-diagram-3-fill text-primary"></i> Workflow &amp; Vorgaben ansehen
-                            </button>
-                        </div>
+                        <button type="button" class="btn btn-portal-police w-100 fw-bold d-flex align-items-center justify-content-center gap-2 py-2 shadow" data-bs-toggle="modal" data-bs-target="#modalPolizeiInfo">
+                            <i class="bi bi-diagram-3-fill fs-5"></i> Workflow &amp; Vorgaben ansehen
+                        </button>
                     </div>
                 </div>
             </div>
@@ -792,11 +808,9 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
             <div class="d-flex flex-wrap justify-content-center gap-3 mb-2 small">
                 <a href="?route=sicherung">Startseite Sicherung</a>
                 <span class="text-secondary">&middot;</span>
-                <a href="?route=sicherung/antrag">Sicherungsantrag stellen</a>
+                <a href="?route=sicherung/antrag">Sicherungsantrag einreichen</a>
                 <span class="text-secondary">&middot;</span>
                 <a href="?route=sicherung/fallzugang">Fallzugang</a>
-                <span class="text-secondary">&middot;</span>
-                <a href="?route=admin">Behörden-Login / Verwaltung</a>
             </div>
             <p class="mb-0 text-secondary small">
                 &copy; <?= date('Y') ?> <?= htmlspecialchars($customerName, ENT_QUOTES, 'UTF-8') ?> | design &amp; development by <a href="https://studiocreativo.ch" target="_blank" rel="noopener noreferrer">StudioCreativo</a>
