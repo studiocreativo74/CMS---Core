@@ -284,11 +284,11 @@ final class SecurePortalService
     public static function processWarrantUpload(array $file): array
     {
         if (!class_exists('Upload')) {
-            require_once dirname(__DIR__, 2) . '/core/Upload.php';
+            require_once dirname(__DIR__, 3) . '/core/Upload.php';
         }
 
         // Zielverzeichnis im geschützten Storage-Bereich
-        $baseDir = dirname(__DIR__, 2);
+        $baseDir = dirname(__DIR__, 3);
         $targetDir = $baseDir . '/storage/secure_portal/warrants';
 
         // Strikte Einschränkung auf echte PDFs

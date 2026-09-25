@@ -209,15 +209,23 @@ ob_start();
                 <span class="text-muted small">Verfolgt Schemaänderungen und Erweiterungen des CMS-Kerns.</span>
             </div>
 
-            <?php if (!$isMigrationTableCreated): ?>
-                <span class="badge bg-warning text-dark px-3 py-2">
-                    Tabelle `migrations` fehlt noch
-                </span>
-            <?php else: ?>
-                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
-                    Migrations-Tracking aktiv
-                </span>
-            <?php endif; ?>
+            <div class="d-flex align-items-center gap-2">
+                <?php if (!$isMigrationTableCreated): ?>
+                    <span class="badge bg-warning text-dark px-3 py-2">
+                        Tabelle `migrations` fehlt noch
+                    </span>
+                <?php else: ?>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                        Migrations-Tracking aktiv
+                    </span>
+                <?php endif; ?>
+
+                <?php if (!empty($migrations)): ?>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAllAppliedMigrations()" title="Alle eingespielten Migrationen ein- oder ausklappen">
+                        <span id="toggleAllAppliedText">Alle Eingespielten ausklappen</span>
+                    </button>
+                <?php endif; ?>
+            </div>
         </div>
 
         <div class="card-body p-0">
@@ -243,27 +251,38 @@ ob_start();
                     Keine Migrationen im Verzeichnis <code>/migrations</code> gefunden.
                 </div>
             <?php else: ?>
-                <div class="list-group list-group-flush">
+                <div class="list-group list-group-flush" id="migrations-accordion">
                     <?php foreach ($migrations as $idx => $mig): 
                         $isApplied = $mig['is_applied'];
                         $sqlId = 'mig-sql-' . $idx;
                         $trackingSqlId = 'mig-track-' . $idx;
+                        $collapseId = 'mig-collapse-' . $idx;
                     ?>
-                        <div class="list-group-item p-4">
-                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-                                <div>
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <h6 class="fw-bold mb-0 text-dark"><?= htmlspecialchars($mig['title'], ENT_QUOTES, 'UTF-8') ?></h6>
-                                        <span class="badge bg-light text-secondary border font-monospace small">
-                                            <?= htmlspecialchars($mig['filename'], ENT_QUOTES, 'UTF-8') ?>
+                        <div class="list-group-item p-3 p-md-4 <?= $isApplied ? 'bg-light-subtle migration-applied' : 'migration-pending' ?>">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                    <?php if ($isApplied): ?>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle p-1 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 24px; height: 24px;" title="Eingespielt">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
+                                                <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                                            </svg>
                                         </span>
-                                        <span class="badge bg-light text-dark border small">
-                                            Core v<?= htmlspecialchars($mig['version'], ENT_QUOTES, 'UTF-8') ?>
+                                    <?php else: ?>
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle p-1 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 24px; height: 24px;" title="Ausstehend">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-clock" viewBox="0 0 16 16">
+                                                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z"/>
+                                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0"/>
+                                            </svg>
                                         </span>
-                                    </div>
-                                    <?php if (!empty($mig['description'])): ?>
-                                        <p class="small text-muted mb-0"><?= htmlspecialchars($mig['description'], ENT_QUOTES, 'UTF-8') ?></p>
                                     <?php endif; ?>
+
+                                    <h6 class="fw-bold mb-0 text-dark"><?= htmlspecialchars($mig['title'], ENT_QUOTES, 'UTF-8') ?></h6>
+                                    <span class="badge bg-light text-secondary border font-monospace small">
+                                        <?= htmlspecialchars($mig['filename'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                    <span class="badge bg-light text-dark border small">
+                                        Core v<?= htmlspecialchars($mig['version'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
                                 </div>
 
                                 <div class="d-flex align-items-center gap-2">
@@ -277,7 +296,7 @@ ob_start();
                                         <form method="POST" action="?route=admin/system/unmark-migration" class="d-inline" onsubmit="return confirm('Möchten Sie den Status dieser Migration wirklich auf unerledigt zurücksetzen?');">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(class_exists('Csrf') ? Csrf::getToken() : '', ENT_QUOTES, 'UTF-8') ?>">
                                             <input type="hidden" name="key" value="<?= htmlspecialchars($mig['key'], ENT_QUOTES, 'UTF-8') ?>">
-                                            <button type="submit" class="btn btn-sm btn-link text-muted p-0 text-decoration-none" title="Status zurücksetzen">
+                                            <button type="submit" class="btn btn-sm btn-link text-muted p-0 text-decoration-none small" title="Status auf unerledigt zurücksetzen">
                                                 Zurücksetzen
                                             </button>
                                         </form>
@@ -293,18 +312,31 @@ ob_start();
                                             </button>
                                         </form>
                                     <?php endif; ?>
+
+                                    <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" type="button" data-bs-toggle="collapse" data-bs-target="#<?= $collapseId ?>" aria-expanded="<?= !$isApplied ? 'true' : 'false' ?>" aria-controls="<?= $collapseId ?>" title="Details und SQL ein- oder ausklappen">
+                                        <span class="collapse-btn-text"><?= $isApplied ? 'Details anzeigen' : 'Einklappen' ?></span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
 
-                            <!-- SQL Box zum Kopieren -->
-                            <div class="mt-3">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <small class="text-muted fw-semibold">SQL für phpMyAdmin:</small>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="copySql('<?= $sqlId ?>', this)">
-                                        SQL kopieren
-                                    </button>
+                            <div class="collapse <?= !$isApplied ? 'show' : '' ?> mt-3" id="<?= $collapseId ?>">
+                                <?php if (!empty($mig['description'])): ?>
+                                    <p class="small text-muted mb-2"><?= htmlspecialchars($mig['description'], ENT_QUOTES, 'UTF-8') ?></p>
+                                <?php endif; ?>
+
+                                <!-- SQL Box zum Kopieren -->
+                                <div class="mt-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small class="text-muted fw-semibold">SQL für phpMyAdmin:</small>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="copySql('<?= $sqlId ?>', this)">
+                                            SQL kopieren
+                                        </button>
+                                    </div>
+                                    <pre class="bg-dark text-light p-3 rounded small mb-0" style="max-height: 180px; overflow-y: auto;"><code id="<?= $sqlId ?>"><?= htmlspecialchars($mig['sql'], ENT_QUOTES, 'UTF-8') ?></code></pre>
                                 </div>
-                                <pre class="bg-dark text-light p-3 rounded small mb-0" style="max-height: 180px; overflow-y: auto;"><code id="<?= $sqlId ?>"><?= htmlspecialchars($mig['sql'], ENT_QUOTES, 'UTF-8') ?></code></pre>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -494,6 +526,43 @@ function showCopiedFeedback(btn) {
         btn.classList.add("btn-outline-secondary");
     }, 2000);
 }
+
+// Steuerung für das Ein-/Ausklappen eingespielter Migrationen
+var allAppliedExpanded = false;
+function toggleAllAppliedMigrations() {
+    var appliedItems = document.querySelectorAll('.migration-applied .collapse');
+    allAppliedExpanded = !allAppliedExpanded;
+    appliedItems.forEach(function(el) {
+        if (allAppliedExpanded) {
+            el.classList.add('show');
+            var btn = el.closest('.list-group-item').querySelector('.collapse-btn-text');
+            if (btn) btn.innerText = 'Einklappen';
+        } else {
+            el.classList.remove('show');
+            var btn = el.closest('.list-group-item').querySelector('.collapse-btn-text');
+            if (btn) btn.innerText = 'Details anzeigen';
+        }
+    });
+    var btnText = document.getElementById('toggleAllAppliedText');
+    if (btnText) {
+        btnText.innerText = allAppliedExpanded ? 'Alle Eingespielten einklappen' : 'Alle Eingespielten ausklappen';
+    }
+}
+
+// Aktualisierung der Button-Beschriftung bei individuellem Auf-/Zuklappen
+document.addEventListener('DOMContentLoaded', function() {
+    var collapseEls = document.querySelectorAll('#migrations-accordion .collapse');
+    collapseEls.forEach(function(el) {
+        el.addEventListener('show.bs.collapse', function() {
+            var btn = this.closest('.list-group-item').querySelector('.collapse-btn-text');
+            if (btn) btn.innerText = 'Einklappen';
+        });
+        el.addEventListener('hide.bs.collapse', function() {
+            var btn = this.closest('.list-group-item').querySelector('.collapse-btn-text');
+            if (btn) btn.innerText = 'Details anzeigen';
+        });
+    });
+});
 </script>
 
 <?php
