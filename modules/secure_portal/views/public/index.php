@@ -71,13 +71,13 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         }
 
         .btn-header-antrag {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
             color: #ffffff !important;
             font-weight: 700;
             padding: 0.45rem 1.15rem;
             border-radius: 0.5rem;
             border: 1px solid rgba(255, 255, 255, 0.35);
-            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4);
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
@@ -87,9 +87,9 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         }
 
         .btn-header-antrag:hover {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: #ffffff !important;
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
             transform: translateY(-1px);
         }
 
@@ -135,28 +135,30 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
             box-shadow: 0 20px 35px -5px rgba(30, 41, 59, 0.25), 0 8px 16px -4px rgba(30, 41, 59, 0.15);
         }
 
+        /* Box 2: NEU GRÜN */
         .portal-card.card-police {
-            border: 3px solid #1d4ed8;
-            border-top: 8px solid #1e40af;
-            box-shadow: 0 14px 35px -5px rgba(29, 78, 216, 0.22), 0 6px 12px -3px rgba(15, 23, 42, 0.1);
+            border: 3px solid #059669;
+            border-top: 8px solid #047857;
+            box-shadow: 0 14px 35px -5px rgba(5, 150, 105, 0.22), 0 6px 12px -3px rgba(15, 23, 42, 0.1);
         }
 
         .portal-card.card-police:hover {
             transform: translateY(-5px);
-            border-color: #1e40af;
-            box-shadow: 0 24px 45px -5px rgba(29, 78, 216, 0.32), 0 10px 20px -4px rgba(29, 78, 216, 0.2);
+            border-color: #047857;
+            box-shadow: 0 24px 45px -5px rgba(5, 150, 105, 0.32), 0 10px 20px -4px rgba(5, 150, 105, 0.2);
         }
 
+        /* Box 3: NEU BLAU */
         .portal-card.card-access {
-            border: 2.5px solid #059669;
-            border-top: 8px solid #047857;
-            box-shadow: 0 12px 30px -5px rgba(5, 150, 105, 0.18), 0 4px 10px -2px rgba(15, 23, 42, 0.08);
+            border: 2.5px solid #1d4ed8;
+            border-top: 8px solid #1e40af;
+            box-shadow: 0 12px 30px -5px rgba(29, 78, 216, 0.18), 0 4px 10px -2px rgba(15, 23, 42, 0.08);
         }
 
         .portal-card.card-access:hover {
             transform: translateY(-5px);
-            border-color: #047857;
-            box-shadow: 0 20px 35px -5px rgba(5, 150, 105, 0.28), 0 8px 16px -4px rgba(5, 150, 105, 0.16);
+            border-color: #1e40af;
+            box-shadow: 0 20px 35px -5px rgba(29, 78, 216, 0.28), 0 8px 16px -4px rgba(29, 78, 216, 0.16);
         }
 
         .portal-card-header {
@@ -175,9 +177,9 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         }
 
         .icon-police {
-            background-color: #dbeafe;
-            color: #1e40af;
-            border: 2px solid #93c5fd;
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 2px solid #a7f3d0;
         }
 
         .icon-private {
@@ -187,9 +189,9 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         }
 
         .icon-access {
-            background-color: #d1fae5;
-            color: #065f46;
-            border: 2px solid #a7f3d0;
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #93c5fd;
         }
 
         .portal-card-body {
@@ -207,24 +209,6 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         }
 
         .btn-portal-police {
-            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-            color: #ffffff;
-            font-weight: 700;
-            padding: 0.85rem 1.25rem;
-            border-radius: 0.5rem;
-            border: 0;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);
-        }
-
-        .btn-portal-police:hover {
-            background: linear-gradient(135deg, #1e40af 0%, #172554 100%);
-            color: #ffffff;
-            box-shadow: 0 6px 18px rgba(29, 78, 216, 0.45);
-            transform: translateY(-1px);
-        }
-
-        .btn-portal-access {
             background: linear-gradient(135deg, #059669 0%, #047857 100%);
             color: #ffffff;
             font-weight: 700;
@@ -235,10 +219,28 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
             box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
         }
 
-        .btn-portal-access:hover {
+        .btn-portal-police:hover {
             background: linear-gradient(135deg, #047857 0%, #064e3b 100%);
             color: #ffffff;
             box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .btn-portal-access {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            color: #ffffff;
+            font-weight: 700;
+            padding: 0.85rem 1.25rem;
+            border-radius: 0.5rem;
+            border: 0;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);
+        }
+
+        .btn-portal-access:hover {
+            background: linear-gradient(135deg, #1e40af 0%, #172554 100%);
+            color: #ffffff;
+            box-shadow: 0 6px 18px rgba(29, 78, 216, 0.45);
             transform: translateY(-1px);
         }
 
@@ -257,8 +259,8 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         }
 
         .modal-contrast .modal-header.header-police {
-            background: linear-gradient(135deg, #0f2b5c 0%, #1e3a8a 100%);
-            border-bottom: 3px solid #3b82f6;
+            background: linear-gradient(135deg, #064e3b 0%, #047857 100%);
+            border-bottom: 3px solid #10b981;
         }
 
         .modal-contrast .modal-header.header-private {
@@ -267,8 +269,8 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         }
 
         .modal-contrast .modal-header.header-access {
-            background: linear-gradient(135deg, #064e3b 0%, #047857 100%);
-            border-bottom: 3px solid #10b981;
+            background: linear-gradient(135deg, #0f2b5c 0%, #1e3a8a 100%);
+            border-bottom: 3px solid #3b82f6;
         }
 
         .modal-contrast .modal-header .btn-close {
@@ -346,8 +348,31 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
             background-color: #ffffff;
             border: 2px solid #cbd5e1;
             border-radius: 0.75rem;
-            padding: 1.75rem;
+            padding: 1.25rem 1.5rem;
             box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.06);
+            transition: all 0.2s ease;
+        }
+
+        .legal-notice-toggle {
+            cursor: pointer;
+            user-select: none;
+            width: 100%;
+            background: none;
+            border: 0;
+            padding: 0;
+            text-align: left;
+        }
+
+        .legal-notice-toggle:hover {
+            opacity: 0.9;
+        }
+
+        .legal-notice-toggle .collapse-icon {
+            transition: transform 0.25s ease;
+        }
+
+        .legal-notice-toggle[aria-expanded="true"] .collapse-icon {
+            transform: rotate(180deg);
         }
 
         .footer {
@@ -491,7 +516,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                 </div>
             </div>
 
-            <!-- BOX 2: Polizei / Staatsanwaltschaft -->
+            <!-- BOX 2: Polizei / Staatsanwaltschaft (GRÜN) -->
             <div class="col-lg-4 col-md-12">
                 <div class="portal-card card-police h-100">
                     <div class="portal-card-header">
@@ -499,7 +524,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                             <i class="bi bi-shield-fill-check"></i>
                         </div>
                         <div>
-                            <span class="badge bg-primary text-white px-2 py-1 mb-2 fw-semibold">Behördenzugang Schweiz</span>
+                            <span class="badge bg-success text-white px-2 py-1 mb-2 fw-semibold">Behördenzugang Schweiz</span>
                             <h3 class="h4 fw-bold text-dark mb-1">2. Polizei &amp; StA</h3>
                             <p class="text-muted small mb-0">
                                 Editionsbegehren nach Art. 265 StPO einreichen
@@ -512,7 +537,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                             Digitale Einreichung von Editionsverfügungen für Kantonspolizei, Stadtpolizei, fedpol und Staatsanwaltschaften.
                         </p>
                         <div class="d-flex flex-wrap gap-2 mb-2 mt-auto">
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle small fw-bold">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle small fw-bold">
                                 <i class="bi bi-shield-check me-1"></i> Art. 265 StPO
                             </span>
                             <span class="badge bg-light text-dark border small">
@@ -529,7 +554,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                 </div>
             </div>
 
-            <!-- BOX 3: Fallzugang (Case Login) -->
+            <!-- BOX 3: Fallzugang (BLAU) -->
             <div class="col-lg-4 col-md-12">
                 <div class="portal-card card-access h-100">
                     <div class="portal-card-header">
@@ -537,7 +562,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                             <i class="bi bi-folder-check"></i>
                         </div>
                         <div>
-                            <span class="badge bg-success text-white px-2 py-1 mb-2 fw-semibold">Antragsteller-Bereich</span>
+                            <span class="badge bg-primary text-white px-2 py-1 mb-2 fw-semibold">Antragsteller-Bereich</span>
                             <h3 class="h4 fw-bold text-dark mb-1">3. Fallzugang</h3>
                             <p class="text-muted small mb-0">
                                 Statusabfrage &amp; sicherer Datenabruf
@@ -550,7 +575,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                             Bereits eingereichten Fall mit Vorgangs-ID und 12-stelligem Fall-Zugangscode abrufen und Daten downloaden.
                         </p>
                         <div class="d-flex flex-wrap gap-2 mb-2 mt-auto">
-                            <span class="badge bg-success-subtle text-success border border-success-subtle small fw-bold">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle small fw-bold">
                                 <i class="bi bi-key-fill me-1"></i> 12-stelliger Fallcode
                             </span>
                             <span class="badge bg-light text-dark border small">
@@ -569,31 +594,52 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
 
         </div>
 
-        <!-- Vertrauens- & Prozess-Informationen -->
+        <!-- Vertrauens- & Prozess-Informationen (Zugeklappt, bei Klick öffnen) -->
         <div class="legal-notice-box mt-5">
-            <div class="row align-items-center g-4">
-                <div class="col-md-8">
-                    <h5 class="fw-bold text-dark mb-2">
-                        <i class="bi bi-file-earmark-lock text-primary me-2"></i>
-                        Rechtsgrundlagen (Schweiz) &amp; Sicherheitsstandards
-                    </h5>
-                    <p class="small text-muted mb-0">
-                        Das Sicherungsportal erfüllt die Vorgaben der Schweizerischen Strafprozessordnung (insbesondere Art. 265 ff. StPO zur Herausgabepflicht und Editionsverfügung)
-                        sowie des Bundesgesetzes über den Datenschutz (DSG, SR 235.1) und des BÜPF (SR 780.1). Hochgeladene Editionsverfügungen und bereitgestellte Beweismittel werden verschlüsselt gespeichert,
-                        vor unbefugtem Zugriff geschützt und nach Ablauf gesetzlicher Aufbewahrungsfristen revisionssicher vernichtet.
-                    </p>
+            <button class="legal-notice-toggle d-flex justify-content-between align-items-center text-decoration-none collapsed" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#legalNoticeCollapse" 
+                    aria-expanded="false" 
+                    aria-controls="legalNoticeCollapse">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-2 rounded bg-light border text-primary d-inline-flex align-items-center justify-content-center">
+                        <i class="bi bi-file-earmark-lock-fill fs-5"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0 fs-6">
+                            Rechtsgrundlagen (Schweiz) &amp; Sicherheitsstandards
+                        </h5>
+                        <small class="text-muted">Art. 265 ff. Schweizer StPO, DSG (SR 235.1), BÜPF &amp; SHA-256 Integritätsschutz</small>
+                    </div>
                 </div>
-                <div class="col-md-4 text-md-end">
-                    <div class="d-inline-flex flex-column gap-1 text-md-end">
-                        <span class="badge bg-light text-dark border p-2 text-start">
-                            <i class="bi bi-shield-check text-success me-1"></i> Art. 265 StPO konform
-                        </span>
-                        <span class="badge bg-light text-dark border p-2 text-start">
-                            <i class="bi bi-shield-lock text-primary me-1"></i> Schweizer Datenschutz (DSG)
-                        </span>
-                        <span class="badge bg-light text-dark border p-2 text-start">
-                            <i class="bi bi-hash text-secondary me-1"></i> SHA-256 Integritätsprüfung
-                        </span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-secondary border px-2 py-1 small d-none d-sm-inline-block">Details anzeigen</span>
+                    <i class="bi bi-chevron-down text-muted fs-5 collapse-icon"></i>
+                </div>
+            </button>
+
+            <div class="collapse mt-3 pt-3 border-top" id="legalNoticeCollapse">
+                <div class="row align-items-center g-4">
+                    <div class="col-md-8">
+                        <p class="small text-muted mb-0">
+                            Das Sicherungsportal erfüllt die Vorgaben der Schweizerischen Strafprozessordnung (insbesondere Art. 265 ff. StPO zur Herausgabepflicht und Editionsverfügung)
+                            sowie des Bundesgesetzes über den Datenschutz (DSG, SR 235.1) und des BÜPF (SR 780.1). Hochgeladene Editionsverfügungen und bereitgestellte Beweismittel werden verschlüsselt gespeichert,
+                            vor unbefugtem Zugriff geschützt und nach Ablauf gesetzlicher Aufbewahrungsfristen revisionssicher vernichtet.
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <div class="d-inline-flex flex-column gap-1 text-md-end w-100">
+                            <span class="badge bg-light text-dark border p-2 text-start">
+                                <i class="bi bi-shield-check text-success me-1"></i> Art. 265 StPO konform
+                            </span>
+                            <span class="badge bg-light text-dark border p-2 text-start">
+                                <i class="bi bi-shield-lock text-primary me-1"></i> Schweizer Datenschutz (DSG)
+                            </span>
+                            <span class="badge bg-light text-dark border p-2 text-start">
+                                <i class="bi bi-hash text-secondary me-1"></i> SHA-256 Integritätsprüfung
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -671,13 +717,13 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         </div>
     </div>
 
-    <!-- MODAL 2: Polizei / StA Info -->
+    <!-- MODAL 2: Polizei / StA Info (GRÜN) -->
     <div class="modal fade modal-contrast" id="modalPolizeiInfo" tabindex="-1" aria-labelledby="modalPolizeiInfoLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content shadow-lg">
                 <div class="modal-header header-police">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="bg-white text-primary p-2 rounded shadow-sm">
+                        <div class="bg-white text-success p-2 rounded shadow-sm">
                             <i class="bi bi-shield-fill-check fs-4"></i>
                         </div>
                         <div>
@@ -698,21 +744,21 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
                             <div class="p-3 step-card-contrast h-100">
-                                <div class="badge bg-primary text-white mb-2 fw-bold">Schritt 1</div>
+                                <div class="badge bg-success text-white mb-2 fw-bold">Schritt 1</div>
                                 <h6 class="fw-bold text-dark mb-1">Dienststelle &amp; Aktenzeichen</h6>
                                 <p class="text-muted small mb-0">Erfassung von Behörde, Aktenzeichen, Sachbearbeiter und eventuellen Fristen.</p>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="p-3 step-card-contrast h-100">
-                                <div class="badge bg-primary text-white mb-2 fw-bold">Schritt 2</div>
+                                <div class="badge bg-success text-white mb-2 fw-bold">Schritt 2</div>
                                 <h6 class="fw-bold text-dark mb-1">Upload Editionsverfügung</h6>
                                 <p class="text-muted small mb-0">Rechtsgültige Editionsverfügung (Art. 265 StPO) als PDF hochladen (bis 30 MB).</p>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="p-3 step-card-contrast h-100">
-                                <div class="badge bg-primary text-white mb-2 fw-bold">Schritt 3</div>
+                                <div class="badge bg-success text-white mb-2 fw-bold">Schritt 3</div>
                                 <h6 class="fw-bold text-dark mb-1">Typ &amp; Spezifikation</h6>
                                 <p class="text-muted small mb-0">Videoüberwachung (CCTV), Mail-Server, Cloud-Dateien oder Schliessprotokolle.</p>
                             </div>
@@ -720,14 +766,14 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                     </div>
 
                     <div class="alert alert-info-contrast p-3 small mb-0">
-                        <strong class="d-block mb-1 text-dark fs-6"><i class="bi bi-shield-lock-fill me-1 text-primary"></i>Sicherheits- &amp; Integritätsgarantie:</strong>
+                        <strong class="d-block mb-1 text-dark fs-6"><i class="bi bi-shield-lock-fill me-1 text-success"></i>Sicherheits- &amp; Integritätsgarantie:</strong>
                         Nach Absenden des Antrags erhalten Sie sofort eine offizielle <strong>Vorgangs-ID (z. B. POL-2026-000123)</strong> sowie einen geheimen <strong>12-stelligen Fall-Zugangscode</strong> zur lückenlosen Statusverfolgung und Bereitstellungseinsicht.
                     </div>
                 </div>
 
                 <div class="modal-footer bg-light d-flex justify-content-between">
                     <button type="button" class="btn btn-outline-secondary fw-semibold" data-bs-dismiss="modal">Schliessen</button>
-                    <a href="?route=sicherung/antrag" class="btn btn-primary px-4 fw-bold shadow">
+                    <a href="?route=sicherung/antrag" class="btn btn-success px-4 fw-bold shadow">
                         <i class="bi bi-file-earmark-plus-fill me-1"></i> Direkt zum Sicherungsantrag &rarr;
                     </a>
                 </div>
@@ -735,13 +781,13 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         </div>
     </div>
 
-    <!-- MODAL 3: Fallzugang Formular -->
+    <!-- MODAL 3: Fallzugang Formular (BLAU) -->
     <div class="modal fade modal-contrast" id="modalFallzugang" tabindex="-1" aria-labelledby="modalFallzugangLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content shadow-lg">
                 <div class="modal-header header-access">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="bg-white text-success p-2 rounded shadow-sm">
+                        <div class="bg-white text-primary p-2 rounded shadow-sm">
                             <i class="bi bi-folder-check fs-4"></i>
                         </div>
                         <div>
@@ -781,7 +827,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                         </div>
 
                         <div class="p-3 bg-light rounded border border-2 text-dark small mt-3">
-                            <i class="bi bi-shield-lock-fill text-success me-1"></i>
+                            <i class="bi bi-shield-lock-fill text-primary me-1"></i>
                             <strong>Sicherheitshinweis:</strong> Isolierter Nur-Lese-Zugriff auf diesen Vorgang gemäss Schweizer Datenschutz (DSG).
                         </div>
                     </div>
@@ -792,7 +838,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                         </a>
                         <div class="d-flex gap-2">
                             <button type="button" class="btn btn-outline-secondary fw-semibold" data-bs-dismiss="modal">Abbrechen</button>
-                            <button type="submit" class="btn btn-success fw-bold px-4 shadow">
+                            <button type="submit" class="btn btn-primary fw-bold px-4 shadow">
                                 <i class="bi bi-box-arrow-in-right me-1"></i> Fall aufrufen
                             </button>
                         </div>
