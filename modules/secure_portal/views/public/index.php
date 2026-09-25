@@ -288,13 +288,13 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         </div>
     </section>
 
-    <!-- Die 3 grossen Hauptboxen -->
+    <!-- Die 3 grossen Hauptboxen (kompakte Übersicht mit Modal-Detailansichten) -->
     <main class="container my-5">
         <div class="row g-4 align-items-stretch">
             
             <!-- BOX 1: Privatperson -->
             <div class="col-lg-4 col-md-12">
-                <div class="portal-card card-private">
+                <div class="portal-card card-private h-100">
                     <div class="portal-card-header">
                         <div class="portal-icon-wrapper icon-private">
                             <i class="bi bi-person-fill-exclamation"></i>
@@ -307,43 +307,36 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                     </div>
 
                     <div class="portal-card-body">
-                        <div class="alert alert-light border small text-muted mb-3">
-                            <strong class="text-dark d-block mb-1">
-                                <i class="bi bi-info-circle me-1 text-primary"></i> Keine Direktherausgabe an Privatpersonen
-                            </strong>
-                            Aus datenschutz- und persönlichkeitsrechtlichen Gründen gemäss Schweizer Recht (Datenschutzgesetz DSG, Art. 28 ZGB) dürfen Videoaufzeichnungen,
-                            Zutritts- und Kommunikationsdaten <strong>nicht direkt an Privatpersonen oder Zeugen</strong> übergeben werden.
-                        </div>
-
                         <p class="small text-secondary mb-3">
-                            Sie sind Betroffener eines Vorfalls, Zeuge oder möchten einen Schaden melden?
+                            Aus Datenschutzgründen dürfen Aufzeichnungen <strong>nicht direkt an Privatpersonen</strong> ausgehändigt werden.
                         </p>
-
-                        <ul class="small text-muted ps-3 mb-4">
-                            <li class="mb-1">Erstatten Sie unverzüglich Anzeige beim zuständigen Polizeiposten Ihrer Kantons- oder Stadtpolizei.</li>
-                            <li class="mb-1">Nennen Sie der Polizei Datum, Uhrzeit und den genauen Tat- oder Ereignisort.</li>
-                            <li class="mb-1">Verweisen Sie auf dieses Sicherungsportal (safecase.ch) zur fristgerechten Beweissicherung.</li>
-                        </ul>
-
-                        <div class="portal-card-footer">
-                            <div class="p-3 bg-light rounded text-center small">
-                                <div class="fw-bold text-dark mb-1">Polizei-Notruf Schweiz: 117</div>
-                                <span class="text-muted">Für akute Notfälle &amp; Sofortmeldungen (Europäischer Notruf: 112)</span>
-                            </div>
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            <span class="badge bg-light text-dark border small">
+                                <i class="bi bi-shield-slash me-1 text-secondary"></i> Keine Direktherausgabe
+                            </span>
+                            <span class="badge bg-light text-danger border small">
+                                <i class="bi bi-telephone-fill me-1"></i> Notruf 117
+                            </span>
                         </div>
+                    </div>
+
+                    <div class="portal-card-footer">
+                        <button type="button" class="btn btn-outline-secondary w-100 fw-semibold d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#modalPrivatperson">
+                            <i class="bi bi-info-circle-fill"></i> Hinweise &amp; Notruf öffnen
+                        </button>
                     </div>
                 </div>
             </div>
 
             <!-- BOX 2: Polizei / Staatsanwaltschaft -->
             <div class="col-lg-4 col-md-12">
-                <div class="portal-card card-police">
+                <div class="portal-card card-police h-100">
                     <div class="portal-card-header">
                         <div class="portal-icon-wrapper icon-police">
                             <i class="bi bi-shield-fill-check"></i>
                         </div>
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 mb-2">Behördenzugang Schweiz</span>
-                        <h3 class="h4 fw-bold text-dark mb-2">2. Polizei &amp; Staatsanwaltschaft</h3>
+                        <h3 class="h4 fw-bold text-dark mb-2">2. Polizei &amp; StA</h3>
                         <p class="text-muted small mb-0">
                             Neues Editionsbegehren online einreichen und Editionsverfügung hochladen.
                         </p>
@@ -351,26 +344,26 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
 
                     <div class="portal-card-body">
                         <p class="small text-secondary mb-3">
-                            Für Untersuchungsbehörden, Ermittlungsdienste der Kantonspolizeien, Stadtpolizeien, fedpol und Staatsanwaltschaften.
-                            Erfassen Sie Ihren Sicherungsantrag strukturiert gemäss Art. 265 StPO und übermitteln Sie die Editionsverfügung digital.
+                            Strukturierte Erfassung für Kantonspolizeien, Stadtpolizeien, fedpol und Staatsanwaltschaften.
                         </p>
-
-                        <div class="bg-light p-3 rounded border mb-3 small">
-                            <div class="fw-semibold text-dark mb-2">
-                                <i class="bi bi-check2-circle text-primary me-1"></i> Ihre Vorteile im Behörden-Workflow:
-                            </div>
-                            <ul class="list-unstyled mb-0 text-muted ps-1">
-                                <li class="mb-1"><i class="bi bi-arrow-right-short text-primary"></i> <strong>Schritt 1:</strong> Dienststelle &amp; Aktenzeichen (z. B. Kapo / StA)</li>
-                                <li class="mb-1"><i class="bi bi-arrow-right-short text-primary"></i> <strong>Schritt 2:</strong> PDF-Upload Editionsverfügung (Art. 265 StPO)</li>
-                                <li class="mb-1"><i class="bi bi-arrow-right-short text-primary"></i> <strong>Schritt 3:</strong> Spezifikation (CCTV-Video, Mail, Zutritt etc.)</li>
-                                <li><i class="bi bi-arrow-right-short text-primary"></i> Sofortige Vorgangs-ID &amp; persönlicher Zugangscode</li>
-                            </ul>
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            <span class="badge bg-light text-primary border small">
+                                <i class="bi bi-shield-check me-1"></i> Art. 265 StPO
+                            </span>
+                            <span class="badge bg-light text-dark border small">
+                                <i class="bi bi-file-earmark-pdf me-1"></i> PDF-Upload
+                            </span>
                         </div>
+                    </div>
 
-                        <div class="portal-card-footer">
-                            <a href="?route=sicherung/antrag" class="btn btn-portal-police w-100 d-flex align-items-center justify-content-center gap-2">
+                    <div class="portal-card-footer">
+                        <div class="d-flex flex-column gap-2">
+                            <a href="?route=sicherung/antrag" class="btn btn-portal-police w-100 fw-semibold d-flex align-items-center justify-content-center gap-2">
                                 <i class="bi bi-file-earmark-plus-fill"></i> Sicherungsantrag stellen
                             </a>
+                            <button type="button" class="btn btn-link btn-sm text-decoration-none text-muted p-0" data-bs-toggle="modal" data-bs-target="#modalPolizeiInfo">
+                                <i class="bi bi-info-circle me-1"></i> Workflow &amp; rechtliche Vorgaben
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -378,7 +371,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
 
             <!-- BOX 3: Fallzugang (Case Login) -->
             <div class="col-lg-4 col-md-12">
-                <div class="portal-card card-access">
+                <div class="portal-card card-access h-100">
                     <div class="portal-card-header">
                         <div class="portal-icon-wrapper icon-access">
                             <i class="bi bi-folder-check"></i>
@@ -392,42 +385,22 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
 
                     <div class="portal-card-body">
                         <p class="small text-secondary mb-3">
-                            Sie haben bereits einen Antrag eingereicht? Geben Sie Ihre <strong>Vorgangs-ID</strong> und den
-                            <strong>Zugangscode</strong> ein, um den aktuellen Bearbeitungsstatus in Echtzeit einzusehen.
+                            Sie haben bereits einen Antrag eingereicht? Rufen Sie Ihren Fall mit Vorgangs-ID und Zugangscode ab.
                         </p>
-
-                        <!-- Direktes Formular für schnellen Einstieg -->
-                        <form method="POST" action="?route=sicherung/fallzugang" class="mb-3">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-
-                            <div class="mb-2">
-                                <label for="login_case_number" class="form-label small fw-semibold text-dark mb-1">
-                                    Vorgangs-ID (z. B. POL-2026-123456)
-                                </label>
-                                <input type="text" class="form-control form-control-sm font-monospace text-uppercase" 
-                                       id="login_case_number" name="case_number" 
-                                       placeholder="POL-2026-XXXXXX" required autocomplete="off">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="login_access_code" class="form-label small fw-semibold text-dark mb-1">
-                                    12-stelliger Zugangscode
-                                </label>
-                                <input type="password" class="form-control form-control-sm font-monospace text-uppercase" 
-                                       id="login_access_code" name="access_code" 
-                                       placeholder="z. B. K7P2-9F4X-M8W3" required autocomplete="off">
-                            </div>
-
-                            <button type="submit" class="btn btn-portal-access w-100 d-flex align-items-center justify-content-center gap-2">
-                                <i class="bi bi-box-arrow-in-right"></i> Fall aufrufen
-                            </button>
-                        </form>
-
-                        <div class="portal-card-footer text-center">
-                            <span class="small text-muted">
-                                <i class="bi bi-lock-fill me-1 text-success"></i> Isolierter Nur-Lese-Zugriff auf diesen Vorgang
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            <span class="badge bg-light text-success border small">
+                                <i class="bi bi-key-fill me-1"></i> 12-stelliger Fallcode
+                            </span>
+                            <span class="badge bg-light text-dark border small">
+                                <i class="bi bi-eye me-1"></i> Status in Echtzeit
                             </span>
                         </div>
+                    </div>
+
+                    <div class="portal-card-footer">
+                        <button type="button" class="btn btn-portal-access w-100 fw-semibold d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#modalFallzugang">
+                            <i class="bi bi-box-arrow-in-right"></i> Fallzugang öffnen
+                        </button>
                     </div>
                 </div>
             </div>
@@ -464,6 +437,207 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
             </div>
         </div>
     </main>
+
+    <!-- ========================================================================= -->
+    <!-- MODALS: DETAILANSICHTEN DER 3 BEREICHE                                   -->
+    <!-- ========================================================================= -->
+
+    <!-- MODAL 1: Privatperson -->
+    <div class="modal fade" id="modalPrivatperson" tabindex="-1" aria-labelledby="modalPrivatpersonLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-secondary-subtle text-secondary p-2 rounded">
+                            <i class="bi bi-person-fill-exclamation fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-dark mb-0" id="modalPrivatpersonLabel">
+                                Wichtige Hinweise für Privatpersonen &amp; Zeugen
+                            </h5>
+                            <small class="text-muted">Rechtliche Grundlagen &amp; Vorgehensweise in der Schweiz</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning border d-flex gap-3 mb-4">
+                        <i class="bi bi-shield-slash-fill fs-3 text-warning flex-shrink-0 mt-1"></i>
+                        <div>
+                            <strong class="text-dark d-block mb-1">Keine Direktherausgabe an Privatpersonen</strong>
+                            Aus datenschutz- und persönlichkeitsrechtlichen Gründen gemäss Schweizer Recht
+                            (Bundesgesetz über den Datenschutz <strong>DSG</strong>, Art. 28 Zivilgesetzbuch <strong>ZGB</strong>) dürfen Videoaufzeichnungen (CCTV),
+                            Zutritts- und Kommunikationsdaten <strong>nicht direkt an Privatpersonen, Geschädigte oder Zeugen</strong> übergeben werden.
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-dark mb-2">
+                        <i class="bi bi-list-check text-primary me-2"></i>Sie sind Betroffener eines Vorfalls oder möchten einen Schaden melden?
+                    </h6>
+                    <p class="text-muted small mb-3">
+                        Bitte beachten Sie die folgende Vorgehensweise, um eine rechtssichere Beweissicherung zu veranlassen:
+                    </p>
+
+                    <ol class="small text-secondary ps-3 mb-4">
+                        <li class="mb-2">
+                            <strong>Anzeige erstatten:</strong> Erstatten Sie unverzüglich Anzeige beim zuständigen Polizeiposten Ihrer Kantons- oder Stadtpolizei.
+                        </li>
+                        <li class="mb-2">
+                            <strong>Ereignisdaten angeben:</strong> Nennen Sie den ermittelnden Beamten das genaue Datum, die Uhrzeit und den präzisen Tat- bzw. Vorfallsort.
+                        </li>
+                        <li class="mb-2">
+                            <strong>Auf das Sicherungsportal hinweisen:</strong> Verweisen Sie die Polizei auf dieses offizielle Sicherungsportal (<strong>safecase.ch</strong>). Die zuständige Behörde kann hier eine Editionsverfügung gemäss Art. 265 StPO einreichen, um eine fristgerechte Löschung der Aufnahmen zu verhindern.
+                        </li>
+                    </ol>
+
+                    <div class="p-3 bg-light rounded border text-center">
+                        <div class="fs-5 fw-bold text-danger mb-1">
+                            <i class="bi bi-telephone-fill me-2"></i>Polizeinotruf Schweiz: 117
+                        </div>
+                        <div class="text-muted small">
+                            Für akute Notfälle, Gefahrenlagen &amp; Sofortmeldungen (Europäischer Notruf: 112)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Schliessen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Polizei / StA Info -->
+    <div class="modal fade" id="modalPolizeiInfo" tabindex="-1" aria-labelledby="modalPolizeiInfoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-primary-subtle text-primary p-2 rounded">
+                            <i class="bi bi-shield-fill-check fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-dark mb-0" id="modalPolizeiInfoLabel">
+                                Behörden-Workflow: Digitale Editionsverfügung
+                            </h5>
+                            <small class="text-muted">Art. 265 ff. Schweizerische Strafprozessordnung (StPO)</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <p class="text-secondary small mb-4">
+                        Dieses Portal dient als sichere, verschlüsselte Schnittstelle für Ermittlungsbeamte der Schweizer Polizeibehörden (Kantonspolizei, Stadtpolizei, fedpol) sowie Staatsanwaltschaften und Gerichte.
+                    </p>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded border h-100">
+                                <div class="badge bg-primary text-white mb-2">Schritt 1</div>
+                                <h6 class="fw-bold text-dark mb-1">Dienststelle &amp; Aktenzeichen</h6>
+                                <p class="text-muted small mb-0">Erfassung von Behörde, Aktenzeichen, Sachbearbeiter und eventuellen Fristen.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded border h-100">
+                                <div class="badge bg-primary text-white mb-2">Schritt 2</div>
+                                <h6 class="fw-bold text-dark mb-1">Upload Editionsverfügung</h6>
+                                <p class="text-muted small mb-0">Rechtsgültige Editionsverfügung (Art. 265 StPO) als PDF hochladen (bis 30 MB).</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded border h-100">
+                                <div class="badge bg-primary text-white mb-2">Schritt 3</div>
+                                <h6 class="fw-bold text-dark mb-1">Typ &amp; Spezifikation</h6>
+                                <p class="text-muted small mb-0">Videoüberwachung (CCTV), Mail-Server, Cloud-Dateien oder Schliessprotokolle.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info border small mb-0">
+                        <strong class="d-block mb-1 text-dark"><i class="bi bi-shield-lock-fill me-1 text-primary"></i>Sicherheits- &amp; Integritätsgarantie:</strong>
+                        Nach Absenden des Antrags erhalten Sie sofort eine offizielle <strong>Vorgangs-ID (z. B. POL-2026-000123)</strong> sowie einen geheimen <strong>12-stelligen Fall-Zugangscode</strong> zur lückenlosen Statusverfolgung und Bereitstellungseinsicht.
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Schliessen</button>
+                    <a href="?route=sicherung/antrag" class="btn btn-primary px-4 fw-semibold">
+                        <i class="bi bi-file-earmark-plus-fill me-1"></i> Jetzt Sicherungsantrag stellen &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Fallzugang Formular -->
+    <div class="modal fade" id="modalFallzugang" tabindex="-1" aria-labelledby="modalFallzugangLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-success-subtle text-success p-2 rounded">
+                            <i class="bi bi-folder-check fs-5"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold text-dark mb-0" id="modalFallzugangLabel">
+                                Fallzugang aufrufen
+                            </h5>
+                            <small class="text-muted">Einsicht für antragstellende Behörden</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schliessen"></button>
+                </div>
+
+                <form method="POST" action="?route=sicherung/fallzugang">
+                    <div class="modal-body p-4">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+
+                        <p class="text-secondary small mb-3">
+                            Geben Sie Ihre bei Antragstellung erhaltene <strong>Vorgangs-ID</strong> und den <strong>12-stelligen Zugangscode</strong> ein:
+                        </p>
+
+                        <div class="mb-3">
+                            <label for="modal_case_number" class="form-label small fw-semibold text-dark mb-1">
+                                Vorgangs-ID (z. B. POL-2026-123456) <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control form-control-lg font-monospace text-uppercase" 
+                                   id="modal_case_number" name="case_number" 
+                                   placeholder="POL-2026-XXXXXX" required autocomplete="off">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="modal_access_code" class="form-label small fw-semibold text-dark mb-1">
+                                12-stelliger Zugangscode <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" class="form-control form-control-lg font-monospace text-uppercase" 
+                                   id="modal_access_code" name="access_code" 
+                                   placeholder="z. B. K7P2-9F4X-M8W3" required autocomplete="off">
+                        </div>
+
+                        <div class="p-2 bg-light rounded border text-muted small mt-2">
+                            <i class="bi bi-shield-lock text-success me-1"></i>
+                            Isolierter Nur-Lese-Zugriff auf diesen Vorgang gemäss Schweizer Datenschutz.
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-light d-flex justify-content-between">
+                        <a href="?route=sicherung/fallzugang" class="btn btn-link btn-sm text-decoration-none text-muted p-0">
+                            Auf separater Seite öffnen
+                        </a>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                            <button type="submit" class="btn btn-success fw-bold px-4">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Fall aufrufen
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="footer">
