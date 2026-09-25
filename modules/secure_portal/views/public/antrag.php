@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * Schritte:
  * 1. Basisdaten (Dienststelle, Ansprechpartner, Aktenzeichen, Umfang)
- * 2. Upload Editionsverfügung (PDF-Beschluss gem. § 94 ff. StPO)
+ * 2. Upload Editionsverfügung (PDF-Verfügung gemäss Art. 265 ff. Schweizer StPO)
  * 3. Typ der Sicherung & Spezifikation (Video, Mail, Cloud, Zutritt etc.)
  * success: Vorgangsbestätigung mit Vorgangs-ID & Zugangscode
  *
@@ -320,29 +320,29 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                     <input type="text" class="form-control <?= isset($errors['police_department']) ? 'is-invalid' : '' ?>" 
                                            id="police_department" name="police_department" 
                                            value="<?= htmlspecialchars((string) ($formData['police_department'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                           placeholder="z. B. Polizeipräsidium München, K 11" required>
-                                    <div class="form-text">Vollständige Bezeichnung der ermittelnden Dienststelle.</div>
+                                           placeholder="z. B. Kantonspolizei Zürich, Kriminalpolizei oder StA See/Oberland" required>
+                                    <div class="form-text">Vollständige Bezeichnung der ermittelnden Behörde (Kapo, Stapo, fedpol, StA).</div>
                                 </div>
 
                                 <div class="col-md-6">
                                     <label for="reference_number" class="form-label fw-semibold">
-                                        Behördliches Aktenzeichen / Vorgangs-Nr. <span class="text-danger">*</span>
+                                        Behördliches Aktenzeichen / Geschäfts-Nr. <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control <?= isset($errors['reference_number']) ? 'is-invalid' : '' ?>" 
                                            id="reference_number" name="reference_number" 
                                            value="<?= htmlspecialchars((string) ($formData['reference_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                           placeholder="z. B. 123 Js 4567/26 oder BY-98765" required>
-                                    <div class="form-text">Dient der behördeninternen Zuordnung.</div>
+                                           placeholder="z. B. Kapo ZH V-2026-1234 oder StAZH Ref. 2026/5678" required>
+                                    <div class="form-text">Dient der internen Zuordnung Ihrer Dienststelle.</div>
                                 </div>
 
                                 <div class="col-md-4">
                                     <label for="contact_name" class="form-label fw-semibold">
-                                        Sachbearbeiter (Name, Dienstgrad) <span class="text-danger">*</span>
+                                        Sachbearbeiter (Name, Grad / Funktion) <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control <?= isset($errors['contact_name']) ? 'is-invalid' : '' ?>" 
                                            id="contact_name" name="contact_name" 
                                            value="<?= htmlspecialchars((string) ($formData['contact_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                           placeholder="z. B. KHK Schneider" required>
+                                           placeholder="z. B. Det. Wm. M. Frei oder lic. iur. T. Meier" required>
                                 </div>
 
                                 <div class="col-md-4">
@@ -352,7 +352,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                     <input type="email" class="form-control <?= isset($errors['contact_email']) ? 'is-invalid' : '' ?>" 
                                            id="contact_email" name="contact_email" 
                                            value="<?= htmlspecialchars((string) ($formData['contact_email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                           placeholder="vorname.nachname@polizei.land.de" required>
+                                           placeholder="vorname.nachname@kapo.zh.ch" required>
                                     <div class="form-text">Für Statusaktualisierungen &amp; Rückfragen.</div>
                                 </div>
 
@@ -363,7 +363,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                     <input type="tel" class="form-control <?= isset($errors['contact_phone']) ? 'is-invalid' : '' ?>" 
                                            id="contact_phone" name="contact_phone" 
                                            value="<?= htmlspecialchars((string) ($formData['contact_phone'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                           placeholder="z. B. 089 12345-678" required>
+                                           placeholder="z. B. +41 44 247 22 11 oder 044 123 45 67" required>
                                 </div>
                             </div>
 
@@ -385,7 +385,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                     <input type="date" class="form-control <?= isset($errors['desired_date']) ? 'is-invalid' : '' ?>" 
                                            id="desired_date" name="desired_date" 
                                            value="<?= htmlspecialchars((string) ($formData['desired_date'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                                    <div class="form-text">Optional: Falls gerichtliche Fristen bestehen.</div>
+                                    <div class="form-text">Optional: Falls behördliche Fristen bestehen.</div>
                                 </div>
 
                                 <div class="col-md-6">
@@ -415,7 +415,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                         <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom">
                             <div>
                                 <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 mb-1">Schritt 2 von 3</span>
-                                <h2 class="h4 fw-bold text-dark mb-0">Editionsverfügung / Beschluss hochladen</h2>
+                                <h2 class="h4 fw-bold text-dark mb-0">Editionsverfügung (Art. 265 StPO) hochladen</h2>
                             </div>
                             <i class="bi bi-file-earmark-pdf-fill fs-2 text-danger opacity-75"></i>
                         </div>
@@ -423,10 +423,10 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                         <div class="alert alert-info d-flex align-items-start gap-3 mb-4">
                             <i class="bi bi-shield-check fs-4 flex-shrink-0 mt-1 text-primary"></i>
                             <div class="small">
-                                <strong>Rechtlicher Hinweis gem. § 94 ff. StPO:</strong><br>
-                                Voraussetzung für jede Beweissicherung und Datenauswertung ist die Vorlage einer rechtsgültigen
-                                behördlichen Editionsverfügung oder eines richterlichen Beschlusses. Bitte laden Sie das Dokument
-                                als PDF hoch. Das Dokument wird verschlüsselt gespeichert und vor Einsichtnahme verifiziert.
+                                <strong>Rechtlicher Hinweis gemäss Art. 265 ff. Schweizer StPO:</strong><br>
+                                Voraussetzung für jede Beweissicherung und Datenherausgabe ist die Vorlage einer rechtsgültigen
+                                behördlichen Editionsverfügung der Staatsanwaltschaft, des Gerichts oder der zuständigen Untersuchungsbehörde (Art. 265 StPO). Bitte laden Sie das Dokument
+                                als PDF hoch. Das Dokument wird verschlüsselt gespeichert und vor Bereitstellung verifiziert.
                             </div>
                         </div>
 
@@ -459,8 +459,8 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                        id="warrant_file" name="warrant_file" accept="application/pdf"
                                        <?= empty($formData['warrant_file_path']) ? 'required' : '' ?>>
                                 <div class="form-text d-flex justify-content-between mt-1">
-                                    <span>Zulässiges Format: <strong>Ausschließlich PDF</strong></span>
-                                    <span>Maximalgröße: <strong>30 MB</strong></span>
+                                    <span>Zulässiges Format: <strong>Ausschliesslich PDF</strong></span>
+                                    <span>Maximalgrösse: <strong>30 MB</strong></span>
                                 </div>
                             </div>
 
@@ -594,7 +594,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                 <!-- TYPE: ACCESS_LOG -->
                                 <div id="fields_ACCESS_LOG" class="securing-fields <?= $selectedType === 'ACCESS_LOG' ? '' : 'd-none' ?>">
                                     <div class="mb-3">
-                                        <label for="doors_points" class="form-label fw-semibold">Türen, Schließungen oder Zutrittskontrollpunkte <span class="text-danger">*</span></label>
+                                        <label for="doors_points" class="form-label fw-semibold">Türen, Schliessungen oder Zutrittskontrollpunkte <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="doors_points" name="securing_meta[doors_points]" 
                                                value="<?= htmlspecialchars((string) ($securingMeta['doors_points'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                                placeholder="z. B. Haupteingang Schranke Nord, Serverraum Tür 104">
@@ -697,7 +697,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
     <footer class="footer no-print">
         <div class="container text-center">
             <p class="mb-0 text-secondary small">
-                &copy; <?= date('Y') ?> Sicherungsportal &middot; Elektronischer Beweismittel-Workflow für Ermittlungsbehörden
+                &copy; <?= date('Y') ?> Sicherungsportal &middot; Elektronischer Beweismittel-Workflow für Schweizer Ermittlungsbehörden
             </p>
         </div>
     </footer>

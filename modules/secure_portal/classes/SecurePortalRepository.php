@@ -85,16 +85,16 @@ final class SecurePortalRepository
             'desc'  => 'Sicherung von Verzeichnissen, Serverlogs, Backups oder Cloud-Dateien'
         ],
         'ACCESS_LOG' => [
-            'label' => 'Zutritts- & Schließprotokolle',
+            'label' => 'Zutritts- & Schliessprotokolle',
             'short' => 'Zutrittsprotokolle',
             'icon'  => 'bi-key',
-            'desc'  => 'Sicherung elektronischer Zutrittsprotokolle, Transponder- und Schließdaten'
+            'desc'  => 'Sicherung elektronischer Zutrittsprotokolle, Transponder- und Schliessdaten'
         ],
         'OTHER' => [
             'label' => 'Sonstige elektronische Beweismittel',
             'short' => 'Sonstiges',
             'icon'  => 'bi-hdd-network',
-            'desc'  => 'Individuelle Sicherungsanforderungen gemäß Editionsverfügung'
+            'desc'  => 'Individuelle Sicherungsanforderungen gemäss Editionsverfügung'
         ],
     ];
 
@@ -446,7 +446,7 @@ final class SecurePortalRepository
     }
 
     /**
-     * Ermittelt die Anzahl der Fälle gemäß Filter.
+     * Ermittelt die Anzahl der Fälle gemäss Filter.
      *
      * @param array<string, mixed> $filters
      */

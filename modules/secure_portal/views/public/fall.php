@@ -481,7 +481,7 @@ $meta = (array) ($case['securing_meta_decoded'] ?? []);
                 <!-- Editionsverfügung Status -->
                 <div class="detail-card">
                     <div class="detail-card-header">
-                        <span><i class="bi bi-file-earmark-lock-fill text-danger me-2"></i> Editionsverfügung</span>
+                        <span><i class="bi bi-file-earmark-lock-fill text-danger me-2"></i> Editionsverfügung (Art. 265 StPO)</span>
                     </div>
                     <div class="detail-card-body">
                         <div class="d-flex align-items-center gap-3 mb-3">
@@ -489,7 +489,7 @@ $meta = (array) ($case['securing_meta_decoded'] ?? []);
                             <div>
                                 <div class="fw-bold text-dark">Editionsverfügung (PDF)</div>
                                 <small class="text-muted">
-                                    Größe: <?= number_format(((int)($case['warrant_file_size'] ?? 0)) / 1024 / 1024, 2) ?> MB
+                                    Grösse: <?= number_format(((int)($case['warrant_file_size'] ?? 0)) / 1024 / 1024, 2) ?> MB
                                 </small>
                             </div>
                         </div>
@@ -541,7 +541,7 @@ $meta = (array) ($case['securing_meta_decoded'] ?? []);
     <footer class="footer">
         <div class="container text-center">
             <p class="mb-0 text-secondary small">
-                &copy; <?= date('Y') ?> Sicherungsportal &middot; Elektronischer Beweismittel-Workflow für Ermittlungsbehörden
+                &copy; <?= date('Y') ?> Sicherungsportal &middot; Elektronischer Beweismittel-Workflow für Schweizer Ermittlungsbehörden
             </p>
         </div>
     </footer>

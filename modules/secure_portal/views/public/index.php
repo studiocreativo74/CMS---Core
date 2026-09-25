@@ -247,7 +247,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
             <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
                 <i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i>
                 <?= htmlspecialchars($flashError, ENT_QUOTES, 'UTF-8') ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schließen"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schliessen"></button>
             </div>
         </div>
     <?php endif; ?>
@@ -257,7 +257,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
             <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
                 <i class="bi bi-check-circle-fill me-2 fs-5"></i>
                 <?= htmlspecialchars($flashSuccess, ENT_QUOTES, 'UTF-8') ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schließen"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schliessen"></button>
             </div>
         </div>
     <?php endif; ?>
@@ -267,7 +267,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
             <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert">
                 <i class="bi bi-info-circle-fill me-2 fs-5"></i>
                 <?= htmlspecialchars($flashInfo, ENT_QUOTES, 'UTF-8') ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schließen"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schliessen"></button>
             </div>
         </div>
     <?php endif; ?>
@@ -276,19 +276,19 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
     <section class="hero-banner">
         <div class="container text-center">
             <div class="hero-badge mb-3 mx-auto">
-                <i class="bi bi-shield-check"></i> Rechtskonforme digitale Sicherungsbereitstellung gem. § 94 ff. StPO
+                <i class="bi bi-shield-check"></i> Rechtskonforme digitale Sicherungsbereitstellung gemäss Art. 265 ff. Schweizer StPO
             </div>
             <h2 class="display-6 fw-bold text-dark mb-3">
-                Zentrales Portal zur Sicherung digitaler Beweismittel
+                Zentrales Portal zur Sicherung digitaler Beweismittel (Schweiz)
             </h2>
-            <p class="lead text-muted mx-auto mb-0" style="max-width: 820px;">
-                Offizielle Schnittstelle zur Entgegennahme von Editionsverfügungen und gerichtlichen Beschlüssen,
+            <p class="lead text-muted mx-auto mb-0" style="max-width: 840px;">
+                Offizielle Schnittstelle zur Entgegennahme von Editionsverfügungen der Staatsanwaltschaften und Gerichte,
                 zur manipulationssicheren Bereitstellung von Video-, Zutritts- und Systemdaten sowie zur transparenten Fallverfolgung.
             </p>
         </div>
     </section>
 
-    <!-- Die 3 großen Hauptboxen -->
+    <!-- Die 3 grossen Hauptboxen -->
     <main class="container my-5">
         <div class="row g-4 align-items-stretch">
             
@@ -302,7 +302,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                         <span class="badge bg-secondary-subtle text-secondary border px-2 py-1 mb-2">Bürger &amp; Zeugen</span>
                         <h3 class="h4 fw-bold text-dark mb-2">1. Privatperson</h3>
                         <p class="text-muted small mb-0">
-                            Wichtige Hinweise zur Datenherausgabe und Anzeigenerstattung.
+                            Wichtige Hinweise zur Datenherausgabe und Anzeigenerstattung in der Schweiz.
                         </p>
                     </div>
 
@@ -311,7 +311,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                             <strong class="text-dark d-block mb-1">
                                 <i class="bi bi-info-circle me-1 text-primary"></i> Keine Direktherausgabe an Privatpersonen
                             </strong>
-                            Aus datenschutz- und persönlichkeitsrechtlichen Gründen (DSGVO, KunstUrhG) dürfen Videoaufzeichnungen,
+                            Aus datenschutz- und persönlichkeitsrechtlichen Gründen gemäss Schweizer Recht (Datenschutzgesetz DSG, Art. 28 ZGB) dürfen Videoaufzeichnungen,
                             Zutritts- und Kommunikationsdaten <strong>nicht direkt an Privatpersonen oder Zeugen</strong> übergeben werden.
                         </div>
 
@@ -320,15 +320,15 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                         </p>
 
                         <ul class="small text-muted ps-3 mb-4">
-                            <li class="mb-1">Erstatten Sie zeitnah Anzeige bei Ihrer zuständigen Polizeidienststelle.</li>
-                            <li class="mb-1">Nennen Sie den Beamten Datum, Uhrzeit und genauen Ort des Vorfalls.</li>
-                            <li class="mb-1">Verweisen Sie auf dieses Sicherungsportal zur schnellen Fristwahrung.</li>
+                            <li class="mb-1">Erstatten Sie unverzüglich Anzeige beim zuständigen Polizeiposten Ihrer Kantons- oder Stadtpolizei.</li>
+                            <li class="mb-1">Nennen Sie der Polizei Datum, Uhrzeit und den genauen Tat- oder Ereignisort.</li>
+                            <li class="mb-1">Verweisen Sie auf dieses Sicherungsportal (safecase.ch) zur fristgerechten Beweissicherung.</li>
                         </ul>
 
                         <div class="portal-card-footer">
                             <div class="p-3 bg-light rounded text-center small">
-                                <div class="fw-bold text-dark mb-1">Polizei-Notruf: 110</div>
-                                <span class="text-muted">Für akute Notfälle &amp; Sofortanzeigen</span>
+                                <div class="fw-bold text-dark mb-1">Polizei-Notruf Schweiz: 117</div>
+                                <span class="text-muted">Für akute Notfälle &amp; Sofortmeldungen (Europäischer Notruf: 112)</span>
                             </div>
                         </div>
                     </div>
@@ -342,28 +342,28 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                         <div class="portal-icon-wrapper icon-police">
                             <i class="bi bi-shield-fill-check"></i>
                         </div>
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 mb-2">Behördenzugang</span>
-                        <h3 class="h4 fw-bold text-dark mb-2">2. Polizei &amp; StA</h3>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 mb-2">Behördenzugang Schweiz</span>
+                        <h3 class="h4 fw-bold text-dark mb-2">2. Polizei &amp; Staatsanwaltschaft</h3>
                         <p class="text-muted small mb-0">
-                            Neuen Sicherungsvorgang online einreichen und Editionsverfügung hochladen.
+                            Neues Editionsbegehren online einreichen und Editionsverfügung hochladen.
                         </p>
                     </div>
 
                     <div class="portal-card-body">
                         <p class="small text-secondary mb-3">
-                            Für Ermittlungsbeamte der Polizeibehörden, Kriminalpolizei und Staatsanwaltschaften.
-                            Erfassen Sie Ihren Sicherungsantrag strukturiert und übermitteln Sie die Editionsverfügung direkt online.
+                            Für Untersuchungsbehörden, Ermittlungsdienste der Kantonspolizeien, Stadtpolizeien, fedpol und Staatsanwaltschaften.
+                            Erfassen Sie Ihren Sicherungsantrag strukturiert gemäss Art. 265 StPO und übermitteln Sie die Editionsverfügung digital.
                         </p>
 
                         <div class="bg-light p-3 rounded border mb-3 small">
                             <div class="fw-semibold text-dark mb-2">
-                                <i class="bi bi-check2-circle text-primary me-1"></i> Ihre Vorteile im Workflow:
+                                <i class="bi bi-check2-circle text-primary me-1"></i> Ihre Vorteile im Behörden-Workflow:
                             </div>
                             <ul class="list-unstyled mb-0 text-muted ps-1">
-                                <li class="mb-1"><i class="bi bi-arrow-right-short text-primary"></i> <strong>Schritt 1:</strong> Basisdaten &amp; Aktenzeichen</li>
-                                <li class="mb-1"><i class="bi bi-arrow-right-short text-primary"></i> <strong>Schritt 2:</strong> PDF-Upload Editionsverfügung</li>
-                                <li class="mb-1"><i class="bi bi-arrow-right-short text-primary"></i> <strong>Schritt 3:</strong> Typ-Spezifikation (Video, Mail etc.)</li>
-                                <li><i class="bi bi-arrow-right-short text-primary"></i> Sofortige Vorgangs-ID &amp; Zugangscode</li>
+                                <li class="mb-1"><i class="bi bi-arrow-right-short text-primary"></i> <strong>Schritt 1:</strong> Dienststelle &amp; Aktenzeichen (z. B. Kapo / StA)</li>
+                                <li class="mb-1"><i class="bi bi-arrow-right-short text-primary"></i> <strong>Schritt 2:</strong> PDF-Upload Editionsverfügung (Art. 265 StPO)</li>
+                                <li class="mb-1"><i class="bi bi-arrow-right-short text-primary"></i> <strong>Schritt 3:</strong> Spezifikation (CCTV-Video, Mail, Zutritt etc.)</li>
+                                <li><i class="bi bi-arrow-right-short text-primary"></i> Sofortige Vorgangs-ID &amp; persönlicher Zugangscode</li>
                             </ul>
                         </div>
 
@@ -440,21 +440,24 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                 <div class="col-md-8">
                     <h5 class="fw-bold text-dark mb-2">
                         <i class="bi bi-file-earmark-lock text-primary me-2"></i>
-                        Rechtsgrundlagen &amp; Sicherheitsstandards
+                        Rechtsgrundlagen (Schweiz) &amp; Sicherheitsstandards
                     </h5>
                     <p class="small text-muted mb-0">
-                        Das Sicherungsportal erfüllt die Vorgaben der Strafprozessordnung (§§ 94, 95 StPO), des Bundesdatenschutzgesetzes (BDSG)
-                        sowie der DSGVO. Hochgeladene Editionsverfügungen und bereitgestellte Beweismittel werden verschlüsselt gespeichert,
-                        vor unbefugtem Zugriff geschützt und nach Ablauf gesetzlicher Aufbewahrungsfristen automatisch und unwiderruflich gelöscht.
+                        Das Sicherungsportal erfüllt die Vorgaben der Schweizerischen Strafprozessordnung (insbesondere Art. 265 ff. StPO zur Herausgabepflicht und Editionsverfügung)
+                        sowie des Bundesgesetzes über den Datenschutz (DSG, SR 235.1) und des BÜPF (SR 780.1). Hochgeladene Editionsverfügungen und bereitgestellte Beweismittel werden verschlüsselt gespeichert,
+                        vor unbefugtem Zugriff geschützt und nach Ablauf gesetzlicher Aufbewahrungsfristen revisionssicher vernichtet.
                     </p>
                 </div>
                 <div class="col-md-4 text-md-end">
                     <div class="d-inline-flex flex-column gap-1 text-md-end">
                         <span class="badge bg-light text-dark border p-2 text-start">
-                            <i class="bi bi-shield-check text-success me-1"></i> BSI IT-Grundschutz-konform
+                            <i class="bi bi-shield-check text-success me-1"></i> Art. 265 StPO konform
                         </span>
                         <span class="badge bg-light text-dark border p-2 text-start">
-                            <i class="bi bi-hash text-primary me-1"></i> SHA-256 Integritätsprüfung
+                            <i class="bi bi-shield-lock text-primary me-1"></i> Schweizer Datenschutz (DSG)
+                        </span>
+                        <span class="badge bg-light text-dark border p-2 text-start">
+                            <i class="bi bi-hash text-secondary me-1"></i> SHA-256 Integritätsprüfung
                         </span>
                     </div>
                 </div>
@@ -475,7 +478,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                 <a href="?route=admin">Behörden-Login / Verwaltung</a>
             </div>
             <p class="mb-0 text-secondary small">
-                &copy; <?= date('Y') ?> Sicherungsportal &middot; Elektronischer Beweismittel-Workflow für Ermittlungsbehörden
+                &copy; <?= date('Y') ?> Sicherungsportal &middot; Elektronischer Beweismittel-Workflow für Schweizer Ermittlungsbehörden
             </p>
         </div>
     </footer>

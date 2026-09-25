@@ -172,7 +172,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
 
                     <div class="p-3 bg-light rounded border text-muted small mt-4">
                         <i class="bi bi-shield-lock text-primary me-1"></i>
-                        <strong>Sicherheitshinweis:</strong> Dieser Zugang gewährt ausschließlich Lesezugriff auf diesen einen Fall.
+                        <strong>Sicherheitshinweis:</strong> Dieser Zugang gewährt ausschliesslich Lesezugriff auf diesen einen Fall.
                         Es werden keine administrativen oder systemweiten Rechte vergeben.
                     </div>
 
@@ -191,7 +191,7 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
     <footer class="footer">
         <div class="container text-center">
             <p class="mb-0 text-secondary small">
-                &copy; <?= date('Y') ?> Sicherungsportal &middot; Elektronischer Beweismittel-Workflow für Ermittlungsbehörden
+                &copy; <?= date('Y') ?> Sicherungsportal &middot; Elektronischer Beweismittel-Workflow für Schweizer Ermittlungsbehörden
             </p>
         </div>
     </footer>
