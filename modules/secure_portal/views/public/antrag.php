@@ -421,7 +421,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                            id="police_department" name="police_department" 
                                            value="<?= htmlspecialchars((string) ($formData['police_department'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                            placeholder="z. B. Kantonspolizei Zürich, Kriminalpolizei oder StA See/Oberland" required>
-                                    <div class="form-text">Vollständige Bezeichnung der ermittelnden Behörde (Kapo, Stapo, fedpol, StA).</div>
+                                    <div class="form-text">Ermittelnde Behörde (Kapo, Stapo, fedpol, StA).</div>
                                 </div>
 
                                 <div class="col-md-6">
@@ -453,12 +453,11 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                            id="contact_email" name="contact_email" 
                                            value="<?= htmlspecialchars((string) ($formData['contact_email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                            placeholder="vorname.nachname@kapo.zh.ch" required>
-                                    <div class="form-text">Für Statusaktualisierungen &amp; Rückfragen.</div>
                                 </div>
 
                                 <div class="col-md-4">
                                     <label for="contact_phone" class="form-label">
-                                        Telefonnummer (Rückfragen) <span class="text-danger">*</span>
+                                        Telefonnummer <span class="text-danger">*</span>
                                     </label>
                                     <input type="tel" class="form-control <?= isset($errors['contact_phone']) ? 'is-invalid' : '' ?>" 
                                            id="contact_phone" name="contact_phone" 
