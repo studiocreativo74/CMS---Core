@@ -60,10 +60,10 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
         :root {
             --sec-primary: <?= htmlspecialchars($primaryColor, ENT_QUOTES, 'UTF-8') ?>;
             --sec-primary-dark: #0a2f52;
-            --sec-bg: #f4f6f9;
+            --sec-bg: #f1f5f9;
             --sec-card-bg: #ffffff;
-            --sec-text-dark: #1e293b;
-            --sec-border: #e2e8f0;
+            --sec-text-dark: #0f172a;
+            --sec-border: #334155;
         }
 
         body {
@@ -76,10 +76,11 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
         }
 
         .portal-navbar {
-            background: linear-gradient(135deg, #0b1f3a 0%, #1e3a8a 100%);
+            background: linear-gradient(135deg, #071529 0%, #0f2b5c 100%);
             color: #ffffff;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            padding: 1.15rem 0;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         /* Step Progress Bar */
@@ -88,17 +89,17 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
             align-items: center;
             justify-content: space-between;
             position: relative;
-            margin-bottom: 2.5rem;
+            margin-bottom: 2.75rem;
         }
 
         .step-progress::before {
             content: '';
             position: absolute;
-            top: 20px;
+            top: 24px;
             left: 5%;
             right: 5%;
-            height: 3px;
-            background-color: #e2e8f0;
+            height: 5px;
+            background-color: #64748b;
             z-index: 1;
         }
 
@@ -109,103 +110,191 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
             flex-direction: column;
             align-items: center;
             text-decoration: none;
-            color: #64748b;
+            color: #0f172a;
         }
 
         .step-circle {
-            width: 42px;
-            height: 42px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background-color: #ffffff;
-            border: 2px solid #cbd5e1;
+            border: 3px solid #334155;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
-            font-size: 1rem;
-            color: #64748b;
-            margin-bottom: 0.5rem;
+            font-weight: 800;
+            font-size: 1.15rem;
+            color: #0f172a;
+            margin-bottom: 0.6rem;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
             transition: all 0.2s ease;
         }
 
         .step-item.active .step-circle {
-            border-color: #2563eb;
-            background-color: #2563eb;
+            border-color: #047857;
+            background-color: #047857;
             color: #ffffff;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+            box-shadow: 0 0 0 6px rgba(4, 120, 87, 0.3);
         }
 
         .step-item.completed .step-circle {
-            border-color: #059669;
-            background-color: #059669;
+            border-color: #047857;
+            background-color: #047857;
             color: #ffffff;
+            box-shadow: 0 2px 8px rgba(4, 120, 87, 0.25);
         }
 
         .step-label {
-            font-size: 0.85rem;
-            font-weight: 600;
+            font-size: 0.95rem;
+            font-weight: 800;
             text-align: center;
+            color: #1e293b;
+            letter-spacing: -0.2px;
         }
 
         .step-item.active .step-label {
-            color: #1e3a8a;
+            color: #047857;
+            font-weight: 900;
+        }
+
+        .step-item.completed .step-label {
+            color: #065f46;
+            font-weight: 800;
         }
 
         .form-card {
             background-color: #ffffff;
-            border-radius: 0.75rem;
-            border: 1px solid var(--sec-border);
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border-radius: 0.9rem;
+            border: 3px solid #0f172a;
+            border-top: 10px solid #047857;
+            box-shadow: 0 22px 45px -10px rgba(15, 23, 42, 0.22), 0 8px 18px -4px rgba(15, 23, 42, 0.12);
             padding: 2.5rem;
         }
 
+        .form-label {
+            font-weight: 800;
+            color: #0f172a;
+            font-size: 0.95rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control, .form-select {
+            border: 2.5px solid #475569;
+            color: #0f172a;
+            font-weight: 600;
+            background-color: #ffffff;
+            border-radius: 0.55rem;
+            padding: 0.7rem 0.9rem;
+            font-size: 0.95rem;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #047857;
+            box-shadow: 0 0 0 4px rgba(4, 120, 87, 0.25);
+            color: #0f172a;
+            background-color: #ffffff;
+        }
+
+        .form-control::placeholder {
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .form-text {
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-top: 0.35rem;
+        }
+
         .type-selector-card {
-            border: 2px solid #e2e8f0;
-            border-radius: 0.65rem;
-            padding: 1rem;
+            border: 2.5px solid #475569;
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.2s ease;
             height: 100%;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
         }
 
         .type-selector-card:hover {
-            border-color: #93c5fd;
-            background-color: #f8fafc;
+            border-color: #047857;
+            background-color: #f0fdf4;
+            box-shadow: 0 6px 16px rgba(4, 120, 87, 0.2);
+            transform: translateY(-2px);
         }
 
         .type-selector-card.selected {
-            border-color: #2563eb;
-            background-color: #eff6ff;
+            border: 3px solid #047857;
+            background-color: #ecfdf5;
+            box-shadow: 0 6px 20px rgba(4, 120, 87, 0.3);
+        }
+
+        .spec-container {
+            background-color: #f8fafc;
+            border: 2.5px solid #334155;
+            border-radius: 0.75rem;
+            padding: 1.75rem;
+        }
+
+        .alert-high-contrast {
+            background-color: #f0fdf4;
+            border: 2.5px solid #047857;
+            color: #064e3b;
+            border-radius: 0.65rem;
+            font-weight: 600;
         }
 
         .code-display-box {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background: linear-gradient(135deg, #071529 0%, #0f2b5c 100%);
             color: #ffffff;
-            border-radius: 0.75rem;
-            padding: 2rem;
+            border-radius: 0.85rem;
+            padding: 2.25rem;
             text-align: center;
+            border: 3px solid #334155;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
         }
 
         .code-large {
             font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-            font-size: 2rem;
-            font-weight: 700;
+            font-size: 2.15rem;
+            font-weight: 800;
             letter-spacing: 4px;
             color: #38bdf8;
         }
 
+        .btn-portal-submit {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            border: 2px solid #047857;
+            color: #ffffff;
+            font-weight: 800;
+            box-shadow: 0 6px 16px rgba(5, 150, 105, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn-portal-submit:hover {
+            background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+            border-color: #065f46;
+            color: #ffffff;
+            box-shadow: 0 8px 20px rgba(4, 120, 87, 0.4);
+            transform: translateY(-1px);
+        }
+
         .footer {
             margin-top: auto;
-            background-color: #0f172a;
+            background-color: #071529;
             color: #94a3b8;
             padding: 2rem 0;
             font-size: 0.875rem;
-            border-top: 1px solid #1e293b;
+            border-top: 2px solid #1e293b;
         }
 
         .footer a {
             color: #cbd5e1;
             text-decoration: none;
+            font-weight: 600;
         }
 
         .footer a:hover {
@@ -311,12 +400,12 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                     <!-- SCHRITT 1: BASISDATEN & BEHÖRDE                          -->
                     <!-- ========================================================= -->
                     <?php if ($currentStep === 1): ?>
-                        <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom">
+                        <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom" style="border-bottom: 2px solid #cbd5e1 !important;">
                             <div>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 mb-1">Schritt 1 von 3</span>
+                                <span class="badge bg-dark text-white px-2 py-1 mb-1 fw-bold">Schritt 1 von 3</span>
                                 <h2 class="h4 fw-bold text-dark mb-0">Behörden- &amp; Vorgangsdaten erfassen</h2>
                             </div>
-                            <i class="bi bi-building-fill-check fs-2 text-primary opacity-50"></i>
+                            <i class="bi bi-building-fill-check fs-2 text-success"></i>
                         </div>
 
                         <form method="POST" action="?route=sicherung/antrag&step=1">
@@ -325,7 +414,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
 
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
-                                    <label for="police_department" class="form-label fw-semibold">
+                                    <label for="police_department" class="form-label">
                                         Antragstellende Dienststelle / Behörde <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control <?= isset($errors['police_department']) ? 'is-invalid' : '' ?>" 
@@ -336,19 +425,19 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label for="reference_number" class="form-label fw-semibold">
-                                        Behördliches Aktenzeichen / Geschäfts-Nr. <span class="text-danger">*</span>
+                                    <label for="reference_number" class="form-label">
+                                        Fall Nr <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control <?= isset($errors['reference_number']) ? 'is-invalid' : '' ?>" 
                                            id="reference_number" name="reference_number" 
                                            value="<?= htmlspecialchars((string) ($formData['reference_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                           placeholder="z. B. Kapo ZH V-2026-1234 oder StAZH Ref. 2026/5678" required>
+                                           placeholder="z. B. Kapo ZH Fall-Nr. 2026-1234 oder StAZH Ref. 2026/5678" required>
                                     <div class="form-text">Dient der internen Zuordnung Ihrer Dienststelle.</div>
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label for="contact_name" class="form-label fw-semibold">
-                                        Sachbearbeiter (Name, Grad / Funktion) <span class="text-danger">*</span>
+                                    <label for="contact_name" class="form-label">
+                                        Sachbearbeiter <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control <?= isset($errors['contact_name']) ? 'is-invalid' : '' ?>" 
                                            id="contact_name" name="contact_name" 
@@ -357,7 +446,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label for="contact_email" class="form-label fw-semibold">
+                                    <label for="contact_email" class="form-label">
                                         Dienstliche E-Mail-Adresse <span class="text-danger">*</span>
                                     </label>
                                     <input type="email" class="form-control <?= isset($errors['contact_email']) ? 'is-invalid' : '' ?>" 
@@ -368,7 +457,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label for="contact_phone" class="form-label fw-semibold">
+                                    <label for="contact_phone" class="form-label">
                                         Telefonnummer (Rückfragen) <span class="text-danger">*</span>
                                     </label>
                                     <input type="tel" class="form-control <?= isset($errors['contact_phone']) ? 'is-invalid' : '' ?>" 
@@ -379,7 +468,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                             </div>
 
                             <div class="mb-4">
-                                <label for="description" class="form-label fw-semibold">
+                                <label for="description" class="form-label">
                                     Kurzbeschreibung des Sicherungsumfangs &amp; Sachverhalts <span class="text-danger">*</span>
                                 </label>
                                 <textarea class="form-control <?= isset($errors['description']) ? 'is-invalid' : '' ?>" 
@@ -388,32 +477,11 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                 <div class="form-text">Geben Sie hier stichpunktartig den Gegenstand der Sicherung an.</div>
                             </div>
 
-                            <div class="row g-3 mb-4">
-                                <div class="col-md-6">
-                                    <label for="desired_date" class="form-label fw-semibold">
-                                        Gewünschter Bereitstellungstermin (Frist)
-                                    </label>
-                                    <input type="date" class="form-control <?= isset($errors['desired_date']) ? 'is-invalid' : '' ?>" 
-                                           id="desired_date" name="desired_date" 
-                                           value="<?= htmlspecialchars((string) ($formData['desired_date'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                                    <div class="form-text">Optional: Falls behördliche Fristen bestehen.</div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label for="remarks" class="form-label fw-semibold">
-                                        Besondere Hinweise / Bemerkungen
-                                    </label>
-                                    <input type="text" class="form-control" id="remarks" name="remarks" 
-                                           value="<?= htmlspecialchars((string) ($formData['remarks'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                           placeholder="z. B. Eilt sehr, Sicherungsfrist läuft ab">
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                                <a href="?route=sicherung" class="btn btn-outline-secondary">
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top" style="border-top: 2px solid #cbd5e1 !important;">
+                                <a href="?route=sicherung" class="btn btn-outline-dark px-3 py-2 fw-bold">
                                     <i class="bi bi-x-lg me-1"></i> Abbrechen
                                 </a>
-                                <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                                <button type="submit" class="btn btn-portal-submit px-4 py-2">
                                     Weiter zu Schritt 2: Editionsverfügung &rarr;
                                 </button>
                             </div>
@@ -423,21 +491,23 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                     <!-- SCHRITT 2: UPLOAD EDITIONSVERFÜGUNG (PDF)                 -->
                     <!-- ========================================================= -->
                     <?php elseif ($currentStep === 2): ?>
-                        <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom">
+                        <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom" style="border-bottom: 2px solid #cbd5e1 !important;">
                             <div>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 mb-1">Schritt 2 von 3</span>
+                                <span class="badge bg-dark text-white px-2 py-1 mb-1 fw-bold">Schritt 2 von 3</span>
                                 <h2 class="h4 fw-bold text-dark mb-0">Editionsverfügung (Art. 265 StPO) hochladen</h2>
                             </div>
-                            <i class="bi bi-file-earmark-pdf-fill fs-2 text-danger opacity-75"></i>
+                            <i class="bi bi-file-earmark-pdf-fill fs-2 text-danger"></i>
                         </div>
 
-                        <div class="alert alert-info d-flex align-items-start gap-3 mb-4">
-                            <i class="bi bi-shield-check fs-4 flex-shrink-0 mt-1 text-primary"></i>
+                        <div class="alert d-flex align-items-start gap-3 mb-4 p-3" style="background-color: #eff6ff; border: 2.5px solid #2563eb; color: #0f172a; border-radius: 0.65rem;">
+                            <i class="bi bi-shield-check fs-3 flex-shrink-0 text-primary mt-1"></i>
                             <div class="small">
-                                <strong>Rechtlicher Hinweis gemäss Art. 265 ff. Schweizer StPO:</strong><br>
-                                Voraussetzung für jede Beweissicherung und Datenherausgabe ist die Vorlage einer rechtsgültigen
-                                behördlichen Editionsverfügung der Staatsanwaltschaft, des Gerichts oder der zuständigen Untersuchungsbehörde (Art. 265 StPO). Bitte laden Sie das Dokument
-                                als PDF hoch. Das Dokument wird verschlüsselt gespeichert und vor Bereitstellung verifiziert.
+                                <strong class="d-block mb-1 text-dark fs-6">Rechtlicher Hinweis gemäss Art. 265 ff. Schweizer StPO:</strong>
+                                <span class="fw-semibold text-secondary-emphasis">
+                                    Voraussetzung für jede Beweissicherung und Datenherausgabe ist die Vorlage einer rechtsgültigen
+                                    behördlichen Editionsverfügung der Staatsanwaltschaft, des Gerichts oder der zuständigen Untersuchungsbehörde (Art. 265 StPO). Bitte laden Sie das Dokument
+                                    als PDF hoch. Das Dokument wird verschlüsselt gespeichert und vor Bereitstellung verifiziert.
+                                </span>
                             </div>
                         </div>
 
@@ -446,40 +516,40 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                             <input type="hidden" name="step" value="2">
 
                             <?php if (!empty($formData['warrant_file_path'])): ?>
-                                <div class="p-3 bg-light rounded border mb-4 d-flex align-items-center justify-content-between">
+                                <div class="p-3 rounded mb-4 d-flex align-items-center justify-content-between" style="background-color: #f0fdf4; border: 2.5px solid #047857;">
                                     <div class="d-flex align-items-center gap-3">
                                         <i class="bi bi-file-earmark-check-fill fs-2 text-success"></i>
                                         <div>
                                             <div class="fw-bold text-dark">
                                                 <?= htmlspecialchars((string) ($formData['warrant_original_name'] ?? 'Editionsverfuegung.pdf'), ENT_QUOTES, 'UTF-8') ?>
                                             </div>
-                                            <small class="text-muted">
+                                            <small class="text-secondary fw-semibold">
                                                 Bereits in diesem Vorgang hinterlegt (<?= number_format(((int)($formData['warrant_file_size'] ?? 0)) / 1024 / 1024, 2) ?> MB).
                                             </small>
                                         </div>
                                     </div>
-                                    <span class="badge bg-success-subtle text-success border">Bereit zur Einreichung</span>
+                                    <span class="badge bg-success text-white border border-success px-2 py-1 fw-bold">Bereit zur Einreichung</span>
                                 </div>
                             <?php endif; ?>
 
                             <div class="mb-4">
-                                <label for="warrant_file" class="form-label fw-semibold">
+                                <label for="warrant_file" class="form-label">
                                     <?= !empty($formData['warrant_file_path']) ? 'Andere Datei auswählen (ersetzen)' : 'Editionsverfügung als PDF auswählen *' ?>
                                 </label>
                                 <input type="file" class="form-control <?= isset($errors['warrant_file']) ? 'is-invalid' : '' ?>" 
                                        id="warrant_file" name="warrant_file" accept="application/pdf"
                                        <?= empty($formData['warrant_file_path']) ? 'required' : '' ?>>
-                                <div class="form-text d-flex justify-content-between mt-1">
+                                <div class="form-text d-flex justify-content-between mt-2 p-2 rounded" style="background-color: #f1f5f9; border: 1.5px solid #cbd5e1; color: #0f172a; font-weight: 700;">
                                     <span>Zulässiges Format: <strong>Ausschliesslich PDF</strong></span>
                                     <span>Maximalgrösse: <strong>30 MB</strong></span>
                                 </div>
                             </div>
 
-                            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                                <a href="?route=sicherung/antrag&step=1" class="btn btn-outline-secondary">
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top" style="border-top: 2px solid #cbd5e1 !important;">
+                                <a href="?route=sicherung/antrag&step=1" class="btn btn-outline-dark px-3 py-2 fw-bold">
                                     &larr; Zurück zu Schritt 1
                                 </a>
-                                <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                                <button type="submit" class="btn btn-portal-submit px-4 py-2">
                                     Weiter zu Schritt 3: Sicherungsart &rarr;
                                 </button>
                             </div>
@@ -489,12 +559,12 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                     <!-- SCHRITT 3: TYP DER SICHERUNG & SPEZIFIKATION             -->
                     <!-- ========================================================= -->
                     <?php elseif ($currentStep === 3): ?>
-                        <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom">
+                        <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom" style="border-bottom: 2px solid #cbd5e1 !important;">
                             <div>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 mb-1">Schritt 3 von 3</span>
+                                <span class="badge bg-dark text-white px-2 py-1 mb-1 fw-bold">Schritt 3 von 3</span>
                                 <h2 class="h4 fw-bold text-dark mb-0">Art der Sicherung &amp; technische Spezifikation</h2>
                             </div>
-                            <i class="bi bi-hdd-stack-fill fs-2 text-primary opacity-50"></i>
+                            <i class="bi bi-hdd-stack-fill fs-2 text-success"></i>
                         </div>
 
                         <form method="POST" action="?route=sicherung/antrag&step=3">
@@ -502,7 +572,7 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                             <input type="hidden" name="step" value="3">
 
                             <!-- Typ-Auswahl -->
-                            <label class="form-label fw-semibold mb-3">Wählen Sie die Art des digitalen Beweismittels <span class="text-danger">*</span></label>
+                            <label class="form-label mb-3">Wählen Sie die Art des digitalen Beweismittels <span class="text-danger">*</span></label>
                             <div class="row g-3 mb-4">
                                 <?php foreach ($securingTypes as $typeKey => $tInfo): ?>
                                     <div class="col-md-6 col-lg-4">
@@ -512,10 +582,10 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                                        id="type_<?= $typeKey ?>" value="<?= $typeKey ?>" 
                                                        <?= $selectedType === $typeKey ? 'checked' : '' ?>>
                                                 <div class="d-flex align-items-center gap-2 mb-2">
-                                                    <i class="bi <?= $tInfo['icon'] ?> fs-4 text-primary"></i>
-                                                    <span class="fw-bold text-dark"><?= htmlspecialchars($tInfo['short'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <i class="bi <?= $tInfo['icon'] ?> fs-4 text-success"></i>
+                                                    <span class="fw-bold text-dark fs-6"><?= htmlspecialchars($tInfo['short'], ENT_QUOTES, 'UTF-8') ?></span>
                                                 </div>
-                                                <p class="small text-muted mb-0" style="min-height: 40px;">
+                                                <p class="small text-secondary fw-semibold mb-0" style="min-height: 40px;">
                                                     <?= htmlspecialchars($tInfo['desc'], ENT_QUOTES, 'UTF-8') ?>
                                                 </p>
                                             </div>
@@ -525,9 +595,9 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                             </div>
 
                             <!-- Spezifische Felder je Typ -->
-                            <div class="p-4 bg-light rounded border mb-4">
+                            <div class="spec-container mb-4">
                                 <h5 class="fw-bold text-dark mb-3">
-                                    <i class="bi bi-sliders text-primary me-2"></i>
+                                    <i class="bi bi-sliders text-success me-2"></i>
                                     Technische Detailangaben zur Sicherung
                                 </h5>
 
@@ -535,25 +605,25 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                 <div id="fields_VIDEO" class="securing-fields <?= $selectedType === 'VIDEO' ? '' : 'd-none' ?>">
                                     <div class="row g-3 mb-3">
                                         <div class="col-md-6">
-                                            <label for="timeframe_from" class="form-label fw-semibold">Sicherungszeitraum VON <span class="text-danger">*</span></label>
+                                            <label for="timeframe_from" class="form-label">Sicherungszeitraum VON <span class="text-danger">*</span></label>
                                             <input type="datetime-local" class="form-control" id="timeframe_from" name="securing_meta[timeframe_from]" 
                                                    value="<?= htmlspecialchars((string) ($securingMeta['timeframe_from'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                                         </div>
                                         <div class="col-md-6">
-                                            <label for="timeframe_to" class="form-label fw-semibold">Sicherungszeitraum BIS <span class="text-danger">*</span></label>
+                                            <label for="timeframe_to" class="form-label">Sicherungszeitraum BIS <span class="text-danger">*</span></label>
                                             <input type="datetime-local" class="form-control" id="timeframe_to" name="securing_meta[timeframe_to]" 
                                                    value="<?= htmlspecialchars((string) ($securingMeta['timeframe_to'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                                         </div>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="camera_location" class="form-label fw-semibold">Kamera-Standorte / Bereiche <span class="text-danger">*</span></label>
+                                        <label for="camera_location" class="form-label">Kamera-Standorte / Bereiche <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="camera_location" name="securing_meta[camera_location]" 
                                                value="<?= htmlspecialchars((string) ($securingMeta['camera_location'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                                placeholder="z. B. Haupteingang, Parkhaus Ebene -1, Kameras 03 & 04">
                                         <div class="form-text">Präzise Ortsangabe oder betroffene Kameranummern.</div>
                                     </div>
                                     <div>
-                                        <label for="video_notes" class="form-label fw-semibold">Personen- / Fahrzeugmerkmale / Vorfallsbeschreibung</label>
+                                        <label for="video_notes" class="form-label">Personen- / Fahrzeugmerkmale / Vorfallsbeschreibung</label>
                                         <textarea class="form-control" id="video_notes" name="securing_meta[video_notes]" rows="2" 
                                                   placeholder="z. B. Täter trug rote Jacke, Tatzeitpunkt ca. 22:15 Uhr"><?= htmlspecialchars((string) ($securingMeta['video_notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
                                     </div>
@@ -562,25 +632,25 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                 <!-- TYPE: MAIL -->
                                 <div id="fields_MAIL" class="securing-fields <?= $selectedType === 'MAIL' ? '' : 'd-none' ?>">
                                     <div class="mb-3">
-                                        <label for="mailbox_address" class="form-label fw-semibold">Betroffenes Postfach / E-Mail-Adresse <span class="text-danger">*</span></label>
+                                        <label for="mailbox_address" class="form-label">Betroffenes Postfach / E-Mail-Adresse <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="mailbox_address" name="securing_meta[mailbox_address]" 
                                                value="<?= htmlspecialchars((string) ($securingMeta['mailbox_address'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                                placeholder="z. B. benutzer@unternehmen.de">
                                     </div>
                                     <div class="row g-3 mb-3">
                                         <div class="col-md-6">
-                                            <label for="mail_timeframe_from" class="form-label fw-semibold">Zeitraum VON <span class="text-danger">*</span></label>
+                                            <label for="mail_timeframe_from" class="form-label">Zeitraum VON <span class="text-danger">*</span></label>
                                             <input type="date" class="form-control" id="mail_timeframe_from" name="securing_meta[mail_timeframe_from]" 
                                                    value="<?= htmlspecialchars((string) ($securingMeta['mail_timeframe_from'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                                         </div>
                                         <div class="col-md-6">
-                                            <label for="mail_timeframe_to" class="form-label fw-semibold">Zeitraum BIS <span class="text-danger">*</span></label>
+                                            <label for="mail_timeframe_to" class="form-label">Zeitraum BIS <span class="text-danger">*</span></label>
                                             <input type="date" class="form-control" id="mail_timeframe_to" name="securing_meta[mail_timeframe_to]" 
                                                    value="<?= htmlspecialchars((string) ($securingMeta['mail_timeframe_to'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                                         </div>
                                     </div>
                                     <div>
-                                        <label for="mail_scope" class="form-label fw-semibold">Umfang der Mailbox-Sicherung</label>
+                                        <label for="mail_scope" class="form-label">Umfang der Mailbox-Sicherung</label>
                                         <input type="text" class="form-control" id="mail_scope" name="securing_meta[mail_scope]" 
                                                value="<?= htmlspecialchars((string) ($securingMeta['mail_scope'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                                placeholder="z. B. Vollständiges Postfach inkl. Posteingang, Gesendete &amp; Papierkorb">
@@ -590,13 +660,13 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                 <!-- TYPE: CLOUD -->
                                 <div id="fields_CLOUD" class="securing-fields <?= $selectedType === 'CLOUD' ? '' : 'd-none' ?>">
                                     <div class="mb-3">
-                                        <label for="system_name" class="form-label fw-semibold">System-, Server- oder Dienstbezeichnung <span class="text-danger">*</span></label>
+                                        <label for="system_name" class="form-label">System-, Server- oder Dienstbezeichnung <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="system_name" name="securing_meta[system_name]" 
                                                value="<?= htmlspecialchars((string) ($securingMeta['system_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                                placeholder="z. B. Nextcloud, Fileserver 01, Microsoft 365 SharePoint">
                                     </div>
                                     <div class="mb-3">
-                                        <label for="cloud_target_data" class="form-label fw-semibold">Pfade, Dateien oder Benutzerkonten <span class="text-danger">*</span></label>
+                                        <label for="cloud_target_data" class="form-label">Pfade, Dateien oder Benutzerkonten <span class="text-danger">*</span></label>
                                         <textarea class="form-control" id="cloud_target_data" name="securing_meta[cloud_target_data]" rows="2" 
                                                   placeholder="z. B. Verzeichnis /daten/buchhaltung_2026/ oder Benutzerkonto max.mustermann"><?= htmlspecialchars((string) ($securingMeta['cloud_target_data'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
                                     </div>
@@ -605,19 +675,19 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                 <!-- TYPE: ACCESS_LOG -->
                                 <div id="fields_ACCESS_LOG" class="securing-fields <?= $selectedType === 'ACCESS_LOG' ? '' : 'd-none' ?>">
                                     <div class="mb-3">
-                                        <label for="doors_points" class="form-label fw-semibold">Türen, Schliessungen oder Zutrittskontrollpunkte <span class="text-danger">*</span></label>
+                                        <label for="doors_points" class="form-label">Türen, Schliessungen oder Zutrittskontrollpunkte <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="doors_points" name="securing_meta[doors_points]" 
                                                value="<?= htmlspecialchars((string) ($securingMeta['doors_points'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                                placeholder="z. B. Haupteingang Schranke Nord, Serverraum Tür 104">
                                     </div>
                                     <div class="mb-3">
-                                        <label for="log_timeframe" class="form-label fw-semibold">Relevanter Zeitraum <span class="text-danger">*</span></label>
+                                        <label for="log_timeframe" class="form-label">Relevanter Zeitraum <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="log_timeframe" name="securing_meta[log_timeframe]" 
                                                value="<?= htmlspecialchars((string) ($securingMeta['log_timeframe'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                                placeholder="z. B. 01.03.2026 00:00 Uhr bis 03.03.2026 23:59 Uhr">
                                     </div>
                                     <div>
-                                        <label for="card_ids" class="form-label fw-semibold">Transponder-, Chip- oder Kartennummern</label>
+                                        <label for="card_ids" class="form-label">Transponder-, Chip- oder Kartennummern</label>
                                         <input type="text" class="form-control" id="card_ids" name="securing_meta[card_ids]" 
                                                value="<?= htmlspecialchars((string) ($securingMeta['card_ids'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                                placeholder="Optional: z. B. RFID-UID #A4-9F-12-88">
@@ -627,18 +697,18 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                 <!-- TYPE: OTHER -->
                                 <div id="fields_OTHER" class="securing-fields <?= $selectedType === 'OTHER' ? '' : 'd-none' ?>">
                                     <div>
-                                        <label for="other_details" class="form-label fw-semibold">Genaue Beschreibung der Sicherungsanforderung <span class="text-danger">*</span></label>
+                                        <label for="other_details" class="form-label">Genaue Beschreibung der Sicherungsanforderung <span class="text-danger">*</span></label>
                                         <textarea class="form-control" id="other_details" name="securing_meta[other_details]" rows="3" 
                                                   placeholder="Spezifizieren Sie hier die technischen Quellen, Parameter und Besonderheiten..."><?= htmlspecialchars((string) ($securingMeta['other_details'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                                <a href="?route=sicherung/antrag&step=2" class="btn btn-outline-secondary">
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top" style="border-top: 2px solid #cbd5e1 !important;">
+                                <a href="?route=sicherung/antrag&step=2" class="btn btn-outline-dark px-3 py-2 fw-bold">
                                     &larr; Zurück zu Schritt 2
                                 </a>
-                                <button type="submit" class="btn btn-success px-4 fw-bold">
+                                <button type="submit" class="btn btn-portal-submit px-4 py-2">
                                     <i class="bi bi-send-check-fill me-1"></i> Verbindlichen Sicherungsantrag übermitteln
                                 </button>
                             </div>
@@ -650,10 +720,10 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                     <?php elseif ($createdCase !== null): ?>
                         <div class="text-center py-3">
                             <div class="mb-3">
-                                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 4.5rem;"></i>
                             </div>
                             <h2 class="h3 fw-bold text-dark mb-2">Sicherungsantrag erfolgreich übermittelt!</h2>
-                            <p class="text-muted max-w-lg mx-auto mb-4" style="max-width: 620px;">
+                            <p class="text-dark fw-medium max-w-lg mx-auto mb-4" style="max-width: 620px;">
                                 Ihr Antrag wurde verbindlich im Sicherungsportal erfasst und die beigefügte Editionsverfügung
                                 sicher hinterlegt. Bitte notieren Sie sich Ihre persönlichen Fall-Zugangsdaten.
                             </p>
@@ -662,13 +732,13 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                             <div class="code-display-box my-4">
                                 <div class="row align-items-center g-3">
                                     <div class="col-md-6 border-end border-secondary pb-3 pb-md-0">
-                                        <small class="text-white-50 text-uppercase d-block mb-1">Offizielle Vorgangs-ID</small>
+                                        <small class="text-white-50 text-uppercase d-block mb-1 fw-bold tracking-wider">Offizielle Vorgangs-ID</small>
                                         <div class="code-large text-warning">
                                             <?= htmlspecialchars((string) $createdCase['case_number'], ENT_QUOTES, 'UTF-8') ?>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <small class="text-white-50 text-uppercase d-block mb-1">Ihr geheimer Fall-Zugangscode</small>
+                                        <small class="text-white-50 text-uppercase d-block mb-1 fw-bold tracking-wider">Ihr geheimer Fall-Zugangscode</small>
                                         <div class="code-large">
                                             <?= htmlspecialchars((string) $createdCase['access_code'], ENT_QUOTES, 'UTF-8') ?>
                                         </div>
@@ -676,8 +746,8 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                                 </div>
                             </div>
 
-                            <div class="alert alert-warning border text-start small mb-4">
-                                <strong class="d-block mb-1 text-dark">
+                            <div class="alert text-start small mb-4 p-3" style="background-color: #fffbeb; border: 2.5px solid #d97706; color: #78350f; border-radius: 0.65rem;">
+                                <strong class="d-block mb-1 text-dark fs-6">
                                     <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> Wichtiger Aufbewahrungshinweis:
                                 </strong>
                                 Aus Gründen der Datensicherheit und Vertraulichkeit wird dieser Zugangscode
@@ -686,13 +756,13 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                             </div>
 
                             <div class="d-flex flex-wrap justify-content-center gap-3 no-print">
-                                <button type="button" class="btn btn-outline-dark px-4" onclick="window.print()">
+                                <button type="button" class="btn btn-outline-dark px-4 py-2 fw-bold" onclick="window.print()">
                                     <i class="bi bi-printer-fill me-1"></i> Bestätigung drucken
                                 </button>
-                                <a href="?route=sicherung/fall" class="btn btn-success px-4 fw-bold">
+                                <a href="?route=sicherung/fall" class="btn btn-portal-submit px-4 py-2">
                                     <i class="bi bi-folder2-open me-1"></i> Direkt zum Fallzugang &rarr;
                                 </a>
-                                <a href="?route=sicherung" class="btn btn-outline-secondary px-3">
+                                <a href="?route=sicherung" class="btn btn-outline-secondary px-3 py-2 fw-bold">
                                     Zurück zur Startseite
                                 </a>
                             </div>

@@ -32,6 +32,9 @@ ob_start();
         </p>
     </div>
     <div class="d-flex gap-2">
+        <a href="?route=admin/secure/settings" class="btn btn-outline-dark btn-sm">
+            <i class="bi bi-gear me-1"></i> Einstellungen &amp; Vorlagen
+        </a>
         <a href="?route=sicherung/antrag" target="_blank" class="btn btn-outline-primary btn-sm">
             <i class="bi bi-box-arrow-up-right me-1"></i> Öffentliches Antragsformular
         </a>
@@ -160,7 +163,7 @@ ob_start();
                         <tr>
                             <th style="width: 170px;">Vorgangs-ID</th>
                             <th>Dienststelle &amp; Sachbearbeiter</th>
-                            <th>Aktenzeichen</th>
+                            <th>Fall Nr</th>
                             <th style="width: 160px;">Sicherungsart</th>
                             <th style="width: 140px;">Status</th>
                             <th style="width: 130px;">Wunschtermin</th>

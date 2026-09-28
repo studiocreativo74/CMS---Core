@@ -57,6 +57,15 @@ final class Settings
         'admin_brand_color'         => '#0d6efd',
         'admin_accent_color'        => '#0ea5e9',
         'admin_default_theme'       => 'system',
+        'sp_tenant_id'              => '',
+        'sp_client_id'              => '',
+        'sp_client_secret'          => '',
+        'sp_site_id'                => '',
+        'sp_drive_id'               => '',
+        'sp_base_folder'            => 'Vorgaenge',
+        'secure_case_folder_template'           => '{YEAR}/{CITY}/{CASE_NUMBER}',
+        'secure_case_warrant_filename_template' => '{CASE_NUMBER}_Editionsverfuegung_{DATE}_v1.pdf',
+        'secure_notification_email'             => '',
     ];
 
     private function __construct()

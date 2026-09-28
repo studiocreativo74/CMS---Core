@@ -276,7 +276,7 @@ $meta = (array) ($case['securing_meta_decoded'] ?? []);
                         Vorgangs-ID: <?= htmlspecialchars($caseNumber, ENT_QUOTES, 'UTF-8') ?>
                     </span>
                     <h2 class="h3 fw-bold text-dark mb-1">
-                        Aktenzeichen: <?= htmlspecialchars((string) ($case['reference_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>
+                        Fall Nr: <?= htmlspecialchars((string) ($case['reference_number'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>
                     </h2>
                     <div class="text-muted small">
                         Dienststelle: <strong><?= htmlspecialchars((string) ($case['police_department'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong> &middot; 

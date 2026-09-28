@@ -254,7 +254,7 @@ final class SecurePortalService
 
         $ref = trim((string) ($data['reference_number'] ?? ''));
         if ($ref === '' || strlen($ref) < 2 || strlen($ref) > 128) {
-            $errors['reference_number'] = 'Bitte geben Sie das behördliche Aktenzeichen / die Vorgangsnummer an.';
+            $errors['reference_number'] = 'Bitte geben Sie die Fall Nr an.';
         }
 
         $desc = trim((string) ($data['description'] ?? ''));
@@ -308,6 +308,73 @@ final class SecurePortalService
             'file_size'         => $docInfo['file_size'],
             'original_filename' => $docInfo['original_filename'],
         ];
+    }
+
+    /**
+     * Organisiert die Editionsverfügung im dedizierten Fall-Ordner:
+     * Ziel: uploads/secure/cases/{folder}/{filename}
+     *
+     * @param int    $caseId         Vorgangs-ID in DB
+     * @param string $caseNumber     Vorgangsnummer (z. B. POL-2026-000123)
+     * @param string $sourceFilePath Aktueller (temporärer) Dateipfad
+     * @param int    $version        Versionsnummer (Standard: 1)
+     * @param array<string, mixed> $caseData Optionale Vorgangsdaten (reference_number, created_at, etc.)
+     * @return string Neuer relativer Dateipfad (z. B. uploads/secure/cases/POL-2026-000123/POL-2026-000123_Editionsverfuegung_v1.pdf)
+     */
+    public static function finalizeCaseWarrant(int $caseId, string $caseNumber, string $sourceFilePath, int $version = 1, array $caseData = []): string
+    {
+        $cleanSource = trim($sourceFilePath);
+        if ($cleanSource === '' || $caseId <= 0 || trim($caseNumber) === '') {
+            return $cleanSource;
+        }
+
+        if (!class_exists('SecurePortalConfig')) {
+            require_once __DIR__ . '/SecurePortalConfig.php';
+        }
+
+        if (empty($caseData) && class_exists('SecurePortalRepository')) {
+            $caseData = SecurePortalRepository::getCaseById($caseId) ?? [];
+        }
+
+        // Ziel-Ordner sicherstellen
+        $targetDir = SecurePortalConfig::getCaseDir($caseNumber, true, $caseData);
+
+        // Standardisierter Dateiname
+        $targetFileName = SecurePortalConfig::buildWarrantFileName($caseNumber, $version, $caseData);
+        $targetFullPath = $targetDir . '/' . $targetFileName;
+        $targetRelPath  = SecurePortalConfig::buildWarrantRelativePath($caseNumber, $version, $caseData);
+
+        // Lokalen Pfad der Quell-Datei auflösen
+        $resolvedSource = SecurePortalConfig::resolveLocalFilePath($cleanSource);
+
+        if ($resolvedSource !== null && file_exists($resolvedSource) && is_file($resolvedSource)) {
+            // Nur verschieben/kopieren, wenn Ziel noch nicht identisch mit Quelle ist
+            if (realpath($resolvedSource) !== realpath($targetFullPath)) {
+                $copied = @copy($resolvedSource, $targetFullPath);
+                if ($copied) {
+                    // Temporäre Ausgangsdatei nach erfolgreichem Kopieren aufräumen
+                    @unlink($resolvedSource);
+
+                    // Datenbank-Eintrag aktualisieren
+                    SecurePortalRepository::updateWarrantFilePath($caseId, $targetRelPath);
+
+                    // Audit-Log für interne Nachverfolgbarkeit
+                    SecurePortalRepository::addCaseLog(
+                        $caseId,
+                        'warrant_organized',
+                        sprintf('Editionsverfügung im Fallordner abgelegt: %s', $targetRelPath),
+                        'System',
+                        true
+                    );
+
+                    return $targetRelPath;
+                }
+            } else {
+                return $targetRelPath;
+            }
+        }
+
+        return $cleanSource;
     }
 
     /**
@@ -409,5 +476,437 @@ final class SecurePortalService
     private static function clearLoginAttempts(): void
     {
         unset($_SESSION['secure_login_attempts'], $_SESSION['secure_login_last_attempt']);
+    }
+
+    // =========================================================================
+    // E-MAIL-BENACHRICHTIGUNG AN SAMMELADRESSE BEI NEUEM VORGANG
+    // =========================================================================
+
+    /**
+     * Versendet eine neutrale E-Mail-Benachrichtigung an die in Settings konfigurierte
+     * Sammeladresse (`secure_notification_email`), sobald ein neuer Fall erfasst wurde.
+     *
+     * Sicherheitsrichtlinie:
+     * - Es werden KEINE Editionsverfügungen oder Sicherungsdaten angehängt.
+     * - Es werden ausschliesslich Metadaten und Vorgangs-IDs übermittelt.
+     * - Ein Fehler beim Mailversand bricht den Vorgang niemals ab.
+     *
+     * @param array<string, mixed> $case Daten des soeben erstellten Vorgangs
+     * @return bool True bei erfolgreichem Versand, sonst false
+     */
+    public static function sendNewCaseNotification(array $case): bool
+    {
+        if (!class_exists('Settings')) {
+            $settingsPath = dirname(__DIR__, 2) . '/core/Settings.php';
+            if (file_exists($settingsPath)) {
+                require_once $settingsPath;
+            }
+        }
+
+        if (!class_exists('Settings')) {
+            return false;
+        }
+
+        $notificationEmail = trim((string) Settings::get('secure_notification_email', ''));
+        if ($notificationEmail === '' || !filter_var($notificationEmail, FILTER_VALIDATE_EMAIL)) {
+            // Keine Sammeladresse konfiguriert oder ungültig -> stillschweigend überspringen
+            return false;
+        }
+
+        if (!class_exists('Mailer')) {
+            $mailerPath = dirname(__DIR__, 2) . '/core/Mailer.php';
+            if (file_exists($mailerPath)) {
+                require_once $mailerPath;
+            }
+        }
+
+        if (!class_exists('Mailer')) {
+            error_log('SecurePortalService::sendNewCaseNotification: Mailer-Klasse nicht gefunden.');
+            return false;
+        }
+
+        $caseId       = (int) ($case['id'] ?? 0);
+        $caseNumber   = trim((string) ($case['case_number'] ?? ''));
+        $refNumber    = trim((string) ($case['reference_number'] ?? '-'));
+        $dept         = trim((string) ($case['police_department'] ?? '-'));
+        $contactName  = trim((string) ($case['contact_name'] ?? '-'));
+        $contactEmail = trim((string) ($case['contact_email'] ?? '-'));
+        $contactPhone = trim((string) ($case['contact_phone'] ?? '-'));
+        $securingType = (string) ($case['securing_type'] ?? 'VIDEO');
+        $desiredDate  = trim((string) ($case['desired_date'] ?? ''));
+        $createdAt    = (string) ($case['created_at'] ?? date('Y-m-d H:i:s'));
+
+        // Art der Sicherung lesbar formatieren
+        $typeLabel = $securingType;
+        if (class_exists('SecurePortalRepository') && isset(SecurePortalRepository::SECURING_TYPES[$securingType]['label'])) {
+            $typeLabel = SecurePortalRepository::SECURING_TYPES[$securingType]['label'];
+        }
+
+        // Ort ermitteln (falls vorhanden)
+        $city = '';
+        if (class_exists('Naming')) {
+            $city = Naming::extractCity($case);
+        }
+        $cityStr = $city !== '' ? $city : '-';
+
+        // Datum lesbar aufbereiten
+        $ts = strtotime($createdAt) ?: time();
+        $formattedDate = date('d.m.Y H:i', $ts);
+        $desiredDateStr = $desiredDate !== '' ? date('d.m.Y', strtotime($desiredDate)) : 'Nicht vorgegeben';
+
+        // Betreff zusammenbauen
+        $subject = sprintf('[Sicherungsportal] Neuer Antrag eingegangen: %s (%s)', $caseNumber, $refNumber);
+
+        // Host / Deep-Link zum Admin-Vorgang ermitteln
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $viewUrl = $caseId > 0 
+            ? "{$scheme}://{$host}/?route=admin/secure/cases/view&id={$caseId}"
+            : "{$scheme}://{$host}/?route=admin/secure/cases";
+
+        // Neutraler E-Mail-Body (Plaintext)
+        $body = "Guten Tag,\n\n"
+            . "im Sicherungsportal ist ein neuer behördlicher Sicherungsantrag eingegangen.\n\n"
+            . "VORGANGSDETAILS\n"
+            . "------------------------------------------------------------\n"
+            . sprintf("Vorgangs-ID:         %s\n", $caseNumber)
+            . sprintf("Fall Nr / Ref:       %s\n", $refNumber)
+            . sprintf("Eingang am:          %s Uhr\n", $formattedDate)
+            . sprintf("Art der Sicherung:   %s\n", $typeLabel)
+            . sprintf("Gewünschter Termin:  %s\n", $desiredDateStr)
+            . "------------------------------------------------------------\n\n"
+            . "BEHÖRDE & ANTRAGSTELLER\n"
+            . "------------------------------------------------------------\n"
+            . sprintf("Dienststelle:        %s\n", $dept)
+            . sprintf("Ort:                 %s\n", $cityStr)
+            . sprintf("Sachbearbeiter:      %s\n", $contactName)
+            . sprintf("Dienstliche E-Mail:  %s\n", $contactEmail)
+            . sprintf("Telefon:             %s\n", $contactPhone)
+            . "------------------------------------------------------------\n\n"
+            . "BEARBEITUNG IM SYSTEM\n"
+            . "------------------------------------------------------------\n"
+            . "Öffnen Sie den Vorgang zur redaktionellen/technischen Prüfung:\n"
+            . "{$viewUrl}\n\n"
+            . "SICHERHEITSHINWEIS\n"
+            . "------------------------------------------------------------\n"
+            . "Aus Datenschutz- und Sicherheitsgründen sind die behördliche Editionsverfügung\n"
+            . "sowie die Sicherungsdaten nicht per E-Mail beigefügt. Bitte bearbeiten\n"
+            . "Sie den Fall ausschliesslich über den internen Administrationsbereich.\n\n"
+            . "Freundliche Grüsse,\n"
+            . "Sicherungsportal System\n";
+
+        try {
+            $sent = Mailer::send($notificationEmail, $subject, $body, false);
+
+            if ($caseId > 0 && class_exists('SecurePortalRepository')) {
+                if ($sent) {
+                    SecurePortalRepository::addCaseLog(
+                        $caseId,
+                        'notification_sent',
+                        sprintf('Benachrichtigungs-Mail an Sammeladresse (%s) erfolgreich gesendet.', $notificationEmail),
+                        'System',
+                        true
+                    );
+                } else {
+                    SecurePortalRepository::addCaseLog(
+                        $caseId,
+                        'notification_failed',
+                        sprintf('Versand der Benachrichtigungs-Mail an Sammeladresse (%s) fehlgeschlagen.', $notificationEmail),
+                        'System',
+                        true
+                    );
+                }
+            }
+
+            return $sent;
+        } catch (\Throwable $e) {
+            error_log('SecurePortalService::sendNewCaseNotification Fehler: ' . $e->getMessage());
+            if ($caseId > 0 && class_exists('SecurePortalRepository')) {
+                SecurePortalRepository::addCaseLog(
+                    $caseId,
+                    'notification_failed',
+                    sprintf('Fehler beim E-Mail-Versand an Sammeladresse (%s): %s', $notificationEmail, $e->getMessage()),
+                    'System',
+                    true
+                );
+            }
+            return false;
+        }
+    }
+
+    // =========================================================================
+    // SICHERUNGSDATEN: INTERNER UPLOAD & SHA-256 PRÜFUNG (ADMIN)
+    // =========================================================================
+
+    /**
+     * Bereinigt den Dateinamen eines Sicherungsarchivs oder Beweismittels.
+     */
+    public static function sanitizeSecuringFileName(string $originalName, string $caseNumber): string
+    {
+        $base = trim($originalName);
+        if ($base === '') {
+            $base = $caseNumber . '_sicherungsdaten.zip';
+        }
+
+        // Umlaute und Sonderzeichen transliterieren
+        $base = str_replace(
+            ['ä', 'ö', 'ü', 'Ä', 'Ö', 'Ü', 'ß', ' '],
+            ['ae', 'oe', 'ue', 'Ae', 'Oe', 'Ue', 'ss', '_'],
+            $base
+        );
+
+        // Pfadteile entfernen
+        $base = basename(str_replace(['\\', '/'], '/', $base));
+
+        // Unerlaubte Zeichen durch Unterstriche ersetzen
+        $base = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $base) ?? $base;
+        $base = preg_replace('/_+/', '_', $base) ?? $base;
+        $base = trim($base, '._ ');
+
+        if ($base === '' || $base === '.') {
+            $base = $caseNumber . '_sicherungsdaten.zip';
+        }
+
+        return $base;
+    }
+
+    /**
+     * Verarbeitet den internen Upload einer Sicherungsdatei (z.B. ZIP, TAR, 7Z, ISO)
+     * im Admin-Bereich, berechnet die SHA-256 Prüfsumme und speichert den Eintrag in DB.
+     *
+     * @param int $caseId Vorgangs-ID
+     * @param array<string, mixed> $file $_FILES['securing_file']
+     * @param bool $setAvailable Ob der Fallstatus direkt auf „Bereitgestellt“ gesetzt werden soll
+     * @param string $author Name des eingeloggten Admins/Technikers
+     * @param int|null $uploadedBy Optional: User-ID des Admins
+     * @return array{success: bool, error: ?string, file_id: ?int, file_name: ?string, sha256: ?string, file_size: ?int}
+     */
+    public static function processSecuringDataUpload(
+        int $caseId,
+        array $file,
+        bool $setAvailable = false,
+        string $author = 'Admin',
+        ?int $uploadedBy = null
+    ): array {
+        if ($caseId <= 0) {
+            return ['success' => false, 'error' => 'Ungültige Vorgangs-ID.', 'file_id' => null, 'file_name' => null, 'sha256' => null, 'file_size' => null];
+        }
+
+        $case = SecurePortalRepository::getCaseById($caseId);
+        if (!$case) {
+            return ['success' => false, 'error' => 'Sicherungsvorgang nicht gefunden.', 'file_id' => null, 'file_name' => null, 'sha256' => null, 'file_size' => null];
+        }
+
+        if (empty($file) || !isset($file['error'])) {
+            return ['success' => false, 'error' => 'Keine Datei empfangen.', 'file_id' => null, 'file_name' => null, 'sha256' => null, 'file_size' => null];
+        }
+
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $msg = match ($file['error']) {
+                UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'Die Datei überschreitet die maximal erlaubte Upload-Grösse des Webservers.',
+                UPLOAD_ERR_PARTIAL => 'Die Datei wurde nur teilweise übertragen.',
+                UPLOAD_ERR_NO_FILE => 'Es wurde keine Sicherungsdatei ausgewählt.',
+                default => 'Fehler beim Datei-Upload (Code ' . (int) $file['error'] . ').',
+            };
+            return ['success' => false, 'error' => $msg, 'file_id' => null, 'file_name' => null, 'sha256' => null, 'file_size' => null];
+        }
+
+        $tmpPath = (string) ($file['tmp_name'] ?? '');
+        if ($tmpPath === '' || !file_exists($tmpPath) || !is_readable($tmpPath)) {
+            return ['success' => false, 'error' => 'Temporäre Upload-Datei nicht lesbar.', 'file_id' => null, 'file_name' => null, 'sha256' => null, 'file_size' => null];
+        }
+
+        $caseNumber = (string) $case['case_number'];
+        $rawFileName = (string) ($file['name'] ?? 'sicherungsarchiv.zip');
+        $safeFileName = self::sanitizeSecuringFileName($rawFileName, $caseNumber);
+
+        // Ziel-Verzeichnis: uploads/secure/cases/{FALLORDNER}/data/
+        $dataDir = SecurePortalConfig::getCaseDataDir($caseNumber, true, $case);
+
+        // Bei Namenskollision Datei eindeutig nummerieren
+        $targetFileName = $safeFileName;
+        $counter = 1;
+        $ext = pathinfo($safeFileName, PATHINFO_EXTENSION);
+        $nameNoExt = pathinfo($safeFileName, PATHINFO_FILENAME);
+
+        while (file_exists($dataDir . '/' . $targetFileName)) {
+            $targetFileName = sprintf('%s_v%d.%s', $nameNoExt, ++$counter, $ext);
+        }
+
+        $targetFullPath = $dataDir . '/' . $targetFileName;
+
+        // Datei in das geschützte Fallverzeichnis verschieben
+        $moved = false;
+        if (is_uploaded_file($tmpPath)) {
+            $moved = @move_uploaded_file($tmpPath, $targetFullPath);
+        } else {
+            $moved = @copy($tmpPath, $targetFullPath);
+            if ($moved) {
+                @unlink($tmpPath);
+            }
+        }
+
+        if (!$moved || !file_exists($targetFullPath)) {
+            return ['success' => false, 'error' => 'Fehler beim Verschieben der Sicherungsdatei in das Fall-Verzeichnis.', 'file_id' => null, 'file_name' => null, 'sha256' => null, 'file_size' => null];
+        }
+
+        // SHA-256 Prüfsumme auf dem Datenträger berechnen
+        $sha256 = hash_file('sha256', $targetFullPath);
+        if ($sha256 === false || strlen($sha256) !== 64) {
+            @unlink($targetFullPath);
+            return ['success' => false, 'error' => 'Berechnung der SHA-256 Prüfsumme fehlgeschlagen.', 'file_id' => null, 'file_name' => null, 'sha256' => null, 'file_size' => null];
+        }
+        $sha256 = strtolower($sha256);
+
+        // Dateigrösse und MIME-Typ ermitteln
+        $fileSize = (int) filesize($targetFullPath);
+        $mimeType = 'application/octet-stream';
+        if (function_exists('mime_content_type')) {
+            $detected = @mime_content_type($targetFullPath);
+            if ($detected !== false && $detected !== '') {
+                $mimeType = $detected;
+            }
+        }
+
+        // Relativer Pfad im Webspace (z. B. uploads/secure/cases/.../data/archiv.zip)
+        $relPath = SecurePortalConfig::getCaseRelativePath($caseNumber, 'data/' . $targetFileName, $case);
+
+        // In Datenbank eintragen
+        $fileId = SecurePortalRepository::addCaseFile(
+            $caseId,
+            $targetFileName,
+            $relPath,
+            $mimeType,
+            $fileSize,
+            $sha256,
+            $uploadedBy
+        );
+
+        if (!$fileId) {
+            return ['success' => false, 'error' => 'Datenbankfehler beim Speichern des Datei-Eintrags.', 'file_id' => null, 'file_name' => null, 'sha256' => null, 'file_size' => null];
+        }
+
+        // Audit-Logeintrag verfassen
+        $sizeMb = number_format($fileSize / 1024 / 1024, 2);
+        SecurePortalRepository::addCaseLog(
+            $caseId,
+            'securing_file_uploaded',
+            sprintf('Sicherungsdatei „%s“ (%s MB) hochgeladen. SHA-256 Prüfsumme: %s', $targetFileName, $sizeMb, $sha256),
+            $author,
+            true // Internes Log
+        );
+
+        // Fallstatus bei Bedarf direkt auf „Bereitgestellt“ setzen
+        if ($setAvailable) {
+            SecurePortalRepository::setCaseAvailable($caseId, $author);
+        }
+
+        return [
+            'success'   => true,
+            'error'     => null,
+            'file_id'   => $fileId,
+            'file_name' => $targetFileName,
+            'sha256'    => $sha256,
+            'file_size' => $fileSize,
+        ];
+    }
+
+    /**
+     * Führt eine Re-Verifizierung der SHA-256 Prüfsumme einer gespeicherten Sicherungsdatei durch.
+     *
+     * @param int $caseId Vorgangs-ID
+     * @param int $fileId Datei-ID
+     * @param string $author Name des prüfenden Admins
+     * @return array{success: bool, error: ?string, match: bool, stored_sha256: string, actual_sha256: string, file_name: string}
+     */
+    public static function verifyFileHash(int $caseId, int $fileId, string $author = 'Admin'): array
+    {
+        $file = SecurePortalRepository::getCaseFileById($fileId, $caseId);
+        if (!$file) {
+            return ['success' => false, 'error' => 'Sicherungsdatei nicht gefunden.', 'match' => false, 'stored_sha256' => '', 'actual_sha256' => '', 'file_name' => ''];
+        }
+
+        $relPath = (string) $file['file_path'];
+        $fullPath = SecurePortalConfig::resolveLocalFilePath($relPath);
+
+        if ($fullPath === null || !file_exists($fullPath) || !is_readable($fullPath)) {
+            return ['success' => false, 'error' => 'Datei existiert nicht auf dem Server oder ist nicht lesbar (' . $relPath . ').', 'match' => false, 'stored_sha256' => (string)$file['sha256'], 'actual_sha256' => '', 'file_name' => (string)$file['file_name']];
+        }
+
+        $actualHash = hash_file('sha256', $fullPath);
+        if ($actualHash === false) {
+            return ['success' => false, 'error' => 'Berechnung der SHA-256 Prüfsumme fehlgeschlagen.', 'match' => false, 'stored_sha256' => (string)$file['sha256'], 'actual_sha256' => '', 'file_name' => (string)$file['file_name']];
+        }
+
+        $actualHash = strtolower($actualHash);
+        $storedHash = strtolower(trim((string) $file['sha256']));
+        $match = ($actualHash === $storedHash);
+
+        // Ergebnis im Fall-Auditlog dokumentieren
+        $statusText = $match ? 'Erfolgreich bestätigt (Exakt übereinstimmend)' : 'FEHLGESCHLAGEN (Abweichung festgestellt!)';
+        SecurePortalRepository::addCaseLog(
+            $caseId,
+            'sha256_verified',
+            sprintf('SHA-256 Integritätsprüfung für „%s“: %s. Berechneter Hash: %s', $file['file_name'], $statusText, $actualHash),
+            $author,
+            true
+        );
+
+        return [
+            'success'       => true,
+            'error'         => null,
+            'match'         => $match,
+            'stored_sha256' => $storedHash,
+            'actual_sha256' => $actualHash,
+            'file_name'     => (string) $file['file_name'],
+        ];
+    }
+
+    /**
+     * Löscht eine Sicherungsdatei und dokumentiert dies im Log.
+     */
+    public static function deleteSecuringFile(int $caseId, int $fileId, string $author = 'Admin'): bool
+    {
+        $file = SecurePortalRepository::getCaseFileById($fileId, $caseId);
+        if (!$file) {
+            return false;
+        }
+
+        $relPath = (string) $file['file_path'];
+        $fullPath = SecurePortalConfig::resolveLocalFilePath($relPath);
+        if ($fullPath !== null && file_exists($fullPath) && is_file($fullPath)) {
+            @unlink($fullPath);
+        }
+
+        $deleted = SecurePortalRepository::deleteCaseFile($fileId, $caseId, false);
+        if ($deleted) {
+            SecurePortalRepository::addCaseLog(
+                $caseId,
+                'securing_file_deleted',
+                sprintf('Sicherungsdatei „%s“ wurde durch %s entfernt.', $file['file_name'], $author),
+                $author,
+                true
+            );
+        }
+
+        return $deleted;
+    }
+
+    /**
+     * Startet die automatisierte oder manuelle Fristen-Bereinigung:
+     * - T+30: Download-Zugang sperren (download_enabled = 0)
+     * - T+60: Sicherungsdateien löschen und Fallstatus aktualisieren
+     *
+     * @param int|null $daysActive
+     * @param int|null $daysDelete
+     * @param string $author
+     * @return array<string, mixed>
+     */
+    public static function runRetentionCleanup(
+        ?int $daysActive = null,
+        ?int $daysDelete = null,
+        string $author = 'Fristen-Cron'
+    ): array {
+        return SecurePortalRepository::processRetentionDeadlines($daysActive, $daysDelete, $author);
     }
 }

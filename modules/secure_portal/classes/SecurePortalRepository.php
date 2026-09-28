@@ -7,10 +7,33 @@ declare(strict_types=1);
  *
  * Data-Access-Layer für das Sicherungsportal (Polizei / Staatsanwaltschaft).
  * Verwaltet Anträge, Editionsverfügungen, Statusverläufe und Zugriffscodes.
+ *
+ * SQL-Schema für externen Datenraum (Polizei-Download & Fristenverwaltung):
+ * <code>
+ * ALTER TABLE secure_cases
+ *   ADD COLUMN available_at DATETIME NULL AFTER status,
+ *   ADD COLUMN download_token CHAR(40) NULL AFTER access_code,
+ *   ADD COLUMN download_expires_at DATETIME NULL AFTER download_token,
+ *   ADD COLUMN download_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER download_expires_at;
+ *
+ * CREATE TABLE secure_download_logs (
+ *     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ *     case_id INT UNSIGNED NOT NULL,
+ *     file_id INT UNSIGNED NOT NULL,
+ *     download_token CHAR(40) NOT NULL,
+ *     ip_address VARCHAR(45) NOT NULL,
+ *     user_agent VARCHAR(512) NULL,
+ *     downloaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ *     INDEX (case_id),
+ *     INDEX (file_id)
+ * ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+ * </code>
  */
 final class SecurePortalRepository
 {
     private static ?bool $tableExists = null;
+    private static ?bool $caseFilesTableExists = null;
+    private static ?bool $downloadLogsTableExists = null;
 
     public const STATUS_NEW = 'new';
     public const STATUS_IN_REVIEW = 'in_review';
@@ -123,10 +146,125 @@ final class SecurePortalRepository
     }
 
     /**
+     * Prüft, ob die Tabelle `secure_case_files` existiert.
+     */
+    public static function isCaseFilesTableCreated(): bool
+    {
+        if (self::$caseFilesTableExists !== null) {
+            return self::$caseFilesTableExists;
+        }
+
+        try {
+            $stmt = DB::query("SHOW TABLES LIKE 'secure_case_files'");
+            self::$caseFilesTableExists = ($stmt->fetch() !== false);
+        } catch (\Throwable $e) {
+            self::$caseFilesTableExists = false;
+        }
+
+        return self::$caseFilesTableExists;
+    }
+
+    /**
+     * Erstellt die Tabelle `secure_case_files` bei Bedarf automatisch.
+     */
+    public static function ensureCaseFilesTable(): bool
+    {
+        if (self::isCaseFilesTableCreated()) {
+            return true;
+        }
+
+        try {
+            DB::query("
+                CREATE TABLE IF NOT EXISTS `secure_case_files` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `case_id` INT UNSIGNED NOT NULL,
+                    `file_name` VARCHAR(255) NOT NULL,
+                    `file_path` VARCHAR(512) NOT NULL,
+                    `mime_type` VARCHAR(128) NOT NULL,
+                    `file_size` BIGINT UNSIGNED NOT NULL,
+                    `sha256` VARCHAR(64) NOT NULL,
+                    `uploaded_by` INT UNSIGNED NULL,
+                    `uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+                    INDEX `idx_scf_case` (`case_id`),
+                    CONSTRAINT `fk_scf_case` FOREIGN KEY (`case_id`) REFERENCES `secure_cases` (`id`) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+            self::$caseFilesTableExists = true;
+            return true;
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::ensureCaseFilesTable Fehler: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Stellt sicher, dass die Spalten für den externen Datenraum (Download-Token & Fristen) vorhanden sind.
+     */
+    public static function ensureDownloadColumns(): void
+    {
+        try {
+            $stmt = DB::query("SHOW COLUMNS FROM `secure_cases` LIKE 'available_at'");
+            if ($stmt->fetch() === false) {
+                DB::query("ALTER TABLE `secure_cases` ADD COLUMN `available_at` DATETIME NULL AFTER `status`");
+            }
+
+            $stmt2 = DB::query("SHOW COLUMNS FROM `secure_cases` LIKE 'download_token'");
+            if ($stmt2->fetch() === false) {
+                DB::query("
+                    ALTER TABLE `secure_cases`
+                    ADD COLUMN `download_token` CHAR(40) NULL AFTER `access_code`,
+                    ADD COLUMN `download_expires_at` DATETIME NULL AFTER `download_token`,
+                    ADD COLUMN `download_enabled` TINYINT(1) NOT NULL DEFAULT 0 AFTER `download_expires_at`,
+                    ADD INDEX `idx_sc_dl_token` (`download_token`)
+                ");
+            }
+        } catch (\Throwable $e) {
+            // Ignorieren falls Spalten bereits existieren oder DB schreibgeschützt ist
+        }
+    }
+
+    /**
+     * Stellt sicher, dass die Tabelle `secure_download_logs` existiert.
+     */
+    public static function ensureDownloadLogsTable(): bool
+    {
+        if (self::$downloadLogsTableExists !== null) {
+            return self::$downloadLogsTableExists;
+        }
+
+        try {
+            DB::query("
+                CREATE TABLE IF NOT EXISTS `secure_download_logs` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `case_id` INT UNSIGNED NOT NULL,
+                    `file_id` INT UNSIGNED NOT NULL,
+                    `download_token` CHAR(40) NOT NULL,
+                    `ip_address` VARCHAR(45) NOT NULL,
+                    `user_agent` VARCHAR(512) NULL,
+                    `downloaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX `idx_sdl_case` (`case_id`),
+                    INDEX `idx_sdl_file` (`file_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+            self::$downloadLogsTableExists = true;
+            return true;
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::ensureDownloadLogsTable Fehler: ' . $e->getMessage());
+            self::$downloadLogsTableExists = false;
+            return false;
+        }
+    }
+
+    /**
      * Erstellt Tabellen bei Bedarf automatisch (Zero-Friction-Bootstrap).
      */
     public static function ensureTables(): bool
     {
+        self::ensureCaseFilesTable();
+        self::ensureDownloadColumns();
+        self::ensureDownloadLogsTable();
+
         if (self::isTableCreated()) {
             return true;
         }
@@ -137,7 +275,11 @@ final class SecurePortalRepository
                     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     `case_number` VARCHAR(32) NOT NULL UNIQUE,
                     `access_code` CHAR(12) NOT NULL,
+                    `download_token` CHAR(40) NULL,
+                    `download_expires_at` DATETIME NULL,
+                    `download_enabled` TINYINT(1) NOT NULL DEFAULT 0,
                     `status` VARCHAR(32) NOT NULL DEFAULT 'new',
+                    `available_at` DATETIME NULL,
                     `police_department` VARCHAR(255) NOT NULL,
                     `contact_name` VARCHAR(255) NOT NULL,
                     `contact_email` VARCHAR(255) NOT NULL,
@@ -152,6 +294,10 @@ final class SecurePortalRepository
                     `warrant_uploaded_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     `securing_type` VARCHAR(64) NOT NULL,
                     `securing_meta` JSON NULL,
+                    `sharepoint_item_id` VARCHAR(255) NULL,
+                    `sharepoint_web_url` VARCHAR(1024) NULL,
+                    `sharepoint_folder_url` VARCHAR(1024) NULL,
+                    `sharepoint_synced_at` DATETIME NULL,
                     `assigned_user_id` INT UNSIGNED NULL,
                     `internal_notes` TEXT NULL,
                     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -160,7 +306,8 @@ final class SecurePortalRepository
                     INDEX `idx_sc_status` (`status`),
                     INDEX `idx_sc_dept` (`police_department`),
                     INDEX `idx_sc_ref` (`reference_number`),
-                    INDEX `idx_sc_type` (`securing_type`)
+                    INDEX `idx_sc_type` (`securing_type`),
+                    INDEX `idx_sc_dl_token` (`download_token`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
 
@@ -635,6 +782,101 @@ final class SecurePortalRepository
     }
 
     /**
+     * Aktualisiert den relativen Dateipfad der Editionsverfügung im Vorgangsdatensatz.
+     *
+     * @param int $caseId
+     * @param string $filePath
+     * @return bool
+     */
+    public static function updateWarrantFilePath(int $caseId, string $filePath): bool
+    {
+        if (!self::isTableCreated() || $caseId <= 0) {
+            return false;
+        }
+
+        try {
+            DB::query(
+                'UPDATE `secure_cases` SET `warrant_file_path` = :path, `updated_at` = NOW() WHERE `id` = :id',
+                [
+                    'path' => trim($filePath),
+                    'id'   => $caseId,
+                ]
+            );
+            return true;
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::updateWarrantFilePath Fehler: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Speichert die SharePoint-Referenzen zu einem Fall.
+     * Schreibt primär in `securing_meta` (JSON) und versucht zugleich,
+     * die dedizierten SharePoint-Spalten zu aktualisieren (sofern angelegt).
+     *
+     * @param int $caseId
+     * @param array<string, mixed> $spData
+     * @return bool
+     */
+    public static function updateSharePointReference(int $caseId, array $spData): bool
+    {
+        if (!self::isTableCreated() || $caseId <= 0) {
+            return false;
+        }
+
+        try {
+            $case = self::getCaseById($caseId);
+            if (!$case) {
+                return false;
+            }
+
+            $meta = (array) ($case['securing_meta_decoded'] ?? []);
+            $meta['sharepoint'] = [
+                'item_id'    => (string) ($spData['item_id'] ?? ''),
+                'web_url'    => (string) ($spData['web_url'] ?? ''),
+                'folder_url' => (string) ($spData['folder_url'] ?? ''),
+                'synced_at'  => (string) ($spData['synced_at'] ?? date('Y-m-d H:i:s')),
+            ];
+
+            $jsonMeta = json_encode($meta, JSON_UNESCAPED_UNICODE);
+
+            // Versuch 1: Dedizierte Spalten + JSON aktualisieren
+            try {
+                DB::query(
+                    'UPDATE `secure_cases` 
+                     SET `securing_meta` = :meta,
+                         `sharepoint_item_id` = :item_id,
+                         `sharepoint_web_url` = :web_url,
+                         `sharepoint_folder_url` = :folder_url,
+                         `sharepoint_synced_at` = NOW()
+                     WHERE `id` = :id',
+                    [
+                        'meta'       => $jsonMeta,
+                        'item_id'    => (string) ($spData['item_id'] ?? ''),
+                        'web_url'    => (string) ($spData['web_url'] ?? ''),
+                        'folder_url' => (string) ($spData['folder_url'] ?? ''),
+                        'id'         => $caseId,
+                    ]
+                );
+            } catch (\Throwable $colErr) {
+                // Fallback: Falls die Spalten in der DB-Instanz noch fehlen, sichere Speicherung in securing_meta
+                DB::query(
+                    'UPDATE `secure_cases` SET `securing_meta` = :meta WHERE `id` = :id',
+                    [
+                        'meta' => $jsonMeta,
+                        'id'   => $caseId,
+                    ]
+                );
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::updateSharePointReference Fehler: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Ruft das Aktivitätenprotokoll für einen Fall ab.
      *
      * @return array<int, array<string, mixed>>
@@ -677,6 +919,24 @@ final class SecurePortalRepository
         }
         $row['securing_meta_decoded'] = $metaDecoded;
 
+        // SharePoint-Referenzen aus dedizierten Spalten oder JSON-Metadaten auflösen
+        $spMeta = (array) ($metaDecoded['sharepoint'] ?? []);
+        $row['sharepoint_item_id'] = !empty($row['sharepoint_item_id']) 
+            ? (string) $row['sharepoint_item_id'] 
+            : (!empty($spMeta['item_id']) ? (string) $spMeta['item_id'] : null);
+
+        $row['sharepoint_web_url'] = !empty($row['sharepoint_web_url']) 
+            ? (string) $row['sharepoint_web_url'] 
+            : (!empty($spMeta['web_url']) ? (string) $spMeta['web_url'] : null);
+
+        $row['sharepoint_folder_url'] = !empty($row['sharepoint_folder_url']) 
+            ? (string) $row['sharepoint_folder_url'] 
+            : (!empty($spMeta['folder_url']) ? (string) $spMeta['folder_url'] : null);
+
+        $row['sharepoint_synced_at'] = !empty($row['sharepoint_synced_at']) 
+            ? (string) $row['sharepoint_synced_at'] 
+            : (!empty($spMeta['synced_at']) ? (string) $spMeta['synced_at'] : null);
+
         $st = (string) ($row['status'] ?? 'new');
         $statusInfo = self::STATUSES[$st] ?? [
             'label' => ucfirst($st),
@@ -716,5 +976,675 @@ final class SecurePortalRepository
     public static function getSecuringTypeLabel(string $type): string
     {
         return self::SECURING_TYPES[$type]['label'] ?? $type;
+    }
+
+    // =========================================================================
+    // SICHERUNGSDATEIEN (SECURE_CASE_FILES) & STATUS-VERFÜGBARKEIT
+    // =========================================================================
+
+    /**
+     * Speichert einen neuen Eintrag für eine Sicherungsdatei in `secure_case_files`.
+     *
+     * @param int $caseId Vorgangs-ID
+     * @param string $fileName Ursprünglicher oder standardisierter Dateiname
+     * @param string $filePath Relativer Pfad im Webspace (z. B. uploads/secure/cases/.../data/archiv.zip)
+     * @param string $mimeType MIME-Typ (z. B. application/zip)
+     * @param int $fileSize Dateigrösse in Bytes
+     * @param string $sha256 SHA-256 Prüfsumme in Hex
+     * @param int|null $uploadedBy Optional: ID des hochladenden Admins
+     * @return int|null Eingefügte ID oder null bei Fehler
+     */
+    public static function addCaseFile(
+        int $caseId,
+        string $fileName,
+        string $filePath,
+        string $mimeType,
+        int $fileSize,
+        string $sha256,
+        ?int $uploadedBy = null
+    ): ?int {
+        self::ensureCaseFilesTable();
+
+        try {
+            DB::execute(
+                'INSERT INTO `secure_case_files` (
+                    `case_id`, `file_name`, `file_path`, `mime_type`, `file_size`, `sha256`, `uploaded_by`, `uploaded_at`, `is_active`
+                ) VALUES (
+                    :case_id, :file_name, :file_path, :mime_type, :file_size, :sha256, :uploaded_by, NOW(), 1
+                )',
+                [
+                    'case_id'     => $caseId,
+                    'file_name'   => $fileName,
+                    'file_path'   => $filePath,
+                    'mime_type'   => $mimeType,
+                    'file_size'   => $fileSize,
+                    'sha256'      => strtolower(trim($sha256)),
+                    'uploaded_by' => $uploadedBy,
+                ]
+            );
+
+            $id = (int) DB::lastInsertId();
+            return $id > 0 ? $id : null;
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::addCaseFile Fehler: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Lädt alle Sicherungsdateien eines Vorgangs.
+     *
+     * @param int $caseId Vorgangs-ID
+     * @param bool $activeOnly Nur aktive Dateien laden (Standard: true)
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getCaseFiles(int $caseId, bool $activeOnly = true): array
+    {
+        self::ensureCaseFilesTable();
+
+        try {
+            $sql = 'SELECT * FROM `secure_case_files` WHERE `case_id` = :case_id';
+            if ($activeOnly) {
+                $sql .= ' AND `is_active` = 1';
+            }
+            $sql .= ' ORDER BY `uploaded_at` DESC, `id` DESC';
+
+            $rows = DB::fetchAll($sql, ['case_id' => $caseId]);
+            return is_array($rows) ? $rows : [];
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::getCaseFiles Fehler: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Lädt eine einzelne Sicherungsdatei anhand ihrer ID und Fall-ID.
+     *
+     * @param int $fileId Datei-ID
+     * @param int $caseId Vorgangs-ID
+     * @return array<string, mixed>|null
+     */
+    public static function getCaseFileById(int $fileId, int $caseId): ?array
+    {
+        self::ensureCaseFilesTable();
+
+        try {
+            $row = DB::fetchOne(
+                'SELECT * FROM `secure_case_files` WHERE `id` = :id AND `case_id` = :case_id LIMIT 1',
+                ['id' => $fileId, 'case_id' => $caseId]
+            );
+            return $row ?: null;
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::getCaseFileById Fehler: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Deaktiviert oder löscht eine Sicherungsdatei.
+     *
+     * @param int $fileId Datei-ID
+     * @param int $caseId Vorgangs-ID
+     * @param bool $permanent Bei true wird der DB-Eintrag gelöscht, sonst auf is_active=0 gesetzt
+     * @return bool
+     */
+    public static function deleteCaseFile(int $fileId, int $caseId, bool $permanent = false): bool
+    {
+        self::ensureCaseFilesTable();
+
+        try {
+            if ($permanent) {
+                DB::execute(
+                    'DELETE FROM `secure_case_files` WHERE `id` = :id AND `case_id` = :case_id LIMIT 1',
+                    ['id' => $fileId, 'case_id' => $caseId]
+                );
+            } else {
+                DB::execute(
+                    'UPDATE `secure_case_files` SET `is_active` = 0 WHERE `id` = :id AND `case_id` = :case_id LIMIT 1',
+                    ['id' => $fileId, 'case_id' => $caseId]
+                );
+            }
+            return true;
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::deleteCaseFile Fehler: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Zählt die aktiven Sicherungsdateien eines Vorgangs.
+     *
+     * @param int $caseId Vorgangs-ID
+     * @return int
+     */
+    public static function countCaseFiles(int $caseId): int
+    {
+        self::ensureCaseFilesTable();
+
+        try {
+            $row = DB::fetchOne(
+                'SELECT COUNT(*) AS `c` FROM `secure_case_files` WHERE `case_id` = :case_id AND `is_active` = 1',
+                ['case_id' => $caseId]
+            );
+            return (int) ($row['c'] ?? 0);
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::countCaseFiles Fehler: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Setzt den Fallstatus auf „verfügbar“ (STATUS_AVAILABLE) und dokumentiert dies im Fall-Log.
+     *
+     * @param int $caseId Vorgangs-ID
+     * @param string $author Name des Bearbeiters / Admins
+     * @param string|null $customMessage Optionale individuelle Nachricht
+     * @return bool
+     */
+    public static function setCaseAvailable(int $caseId, string $author = 'Admin', ?string $customMessage = null): bool
+    {
+        $case = self::getCaseById($caseId);
+        if (!$case) {
+            return false;
+        }
+
+        $filesCount = self::countCaseFiles($caseId);
+        $defaultMsg = sprintf(
+            'Sicherungsdaten wurden verifiziert und bereitgestellt (%d Datei(en) hinterlegt, SHA-256 Prüfsummen dokumentiert). Status auf „Bereitgestellt“ gesetzt.',
+            $filesCount
+        );
+
+        $msg = ($customMessage !== null && trim($customMessage) !== '') ? trim($customMessage) : $defaultMsg;
+
+        $updated = self::updateCase(
+            $caseId,
+            self::STATUS_AVAILABLE,
+            $case['internal_notes'],
+            $case['assigned_user_id'] ? (int) $case['assigned_user_id'] : null,
+            $msg,
+            $author,
+            false // Öffentlich im Fallzugang für Antragsteller sichtbar
+        );
+
+        if ($updated) {
+            // Automatisch Download-Freigabe aktivieren & Token sicherstellen
+            $dlToken = (string) ($case['download_token'] ?? '');
+            if ($dlToken === '' || strlen($dlToken) !== 40) {
+                $dlToken = self::generateDownloadTokenHex();
+            }
+
+            $daysActive = class_exists('SecurePortalConfig')
+                ? SecurePortalConfig::getDownloadDaysActive()
+                : 30;
+
+            try {
+                DB::execute(
+                    'UPDATE `secure_cases` SET 
+                        `available_at` = COALESCE(`available_at`, NOW()),
+                        `download_token` = :token,
+                        `download_enabled` = 1,
+                        `download_expires_at` = COALESCE(`download_expires_at`, DATE_ADD(NOW(), INTERVAL :days DAY)),
+                        `updated_at` = NOW()
+                     WHERE `id` = :id LIMIT 1',
+                    [
+                        'id'    => $caseId,
+                        'token' => $dlToken,
+                        'days'  => $daysActive,
+                    ]
+                );
+                self::addCaseLog(
+                    $caseId,
+                    'download_enabled_on_available',
+                    sprintf(
+                        'Externer Datenraum für Polizei automatisch freigegeben (Token: %s..., reguläre Frist T+%d Tage). Bereitstellungszeitpunkt dokumentiert.',
+                        substr($dlToken, 0, 10),
+                        $daysActive
+                    ),
+                    $author,
+                    true
+                );
+            } catch (\Throwable $e) {
+                error_log('SecurePortalRepository::setCaseAvailable Download-Aktivierung Fehler: ' . $e->getMessage());
+            }
+        }
+
+        return $updated;
+    }
+
+    // =========================================================================
+    // EXTERNER DATENRAUM (POLIZEI-DOWNLOAD) & TOKEN-MANAGEMENT
+    // =========================================================================
+
+    /**
+     * Erzeugt einen kryptographisch sicheren 40-Zeichen Hex-Token.
+     */
+    public static function generateDownloadTokenHex(): string
+    {
+        return bin2hex(random_bytes(20)); // 40 hex chars
+    }
+
+    /**
+     * Sucht einen Vorgang anhand seines externen Download-Tokens.
+     *
+     * @param string $token 40-stelliger Hex-Token
+     * @return array<string, mixed>|null
+     */
+    public static function findCaseByDownloadToken(string $token): ?array
+    {
+        self::ensureTables();
+        $token = strtolower(trim($token));
+        if ($token === '' || strlen($token) !== 40) {
+            return null;
+        }
+
+        try {
+            $row = DB::fetchOne(
+                'SELECT * FROM `secure_cases` WHERE `download_token` = :token LIMIT 1',
+                ['token' => $token]
+            );
+            return $row ?: null;
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::findCaseByDownloadToken Fehler: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Erzeugt oder regeneriert einen Download-Token für einen Fall und aktiviert/aktualisiert ihn.
+     *
+     * @param int $caseId Vorgangs-ID
+     * @param bool $enabled Freigabestatus
+     * @param string|null $expiresAt Ablaufdatum (JJJJ-MM-TT HH:MM:SS) oder null für unbegrenzt
+     * @param string $author Name des handelnden Benutzers
+     * @return string|null Der neu generierte Token
+     */
+    public static function issueDownloadToken(
+        int $caseId,
+        bool $enabled = true,
+        ?string $expiresAt = null,
+        string $author = 'Admin'
+    ): ?string {
+        self::ensureTables();
+        $token = self::generateDownloadTokenHex();
+
+        try {
+            DB::execute(
+                'UPDATE `secure_cases` SET 
+                    `download_token` = :token,
+                    `download_enabled` = :enabled,
+                    `download_expires_at` = :expires_at,
+                    `updated_at` = NOW()
+                 WHERE `id` = :id LIMIT 1',
+                [
+                    'id'         => $caseId,
+                    'token'      => $token,
+                    'enabled'    => $enabled ? 1 : 0,
+                    'expires_at' => ($expiresAt !== null && trim($expiresAt) !== '') ? trim($expiresAt) : null,
+                ]
+            );
+
+            self::addCaseLog(
+                $caseId,
+                'download_token_issued',
+                sprintf(
+                    'Neuer Download-Token generiert (%s...). Freigabe: %s, Gültig bis: %s',
+                    substr($token, 0, 10),
+                    $enabled ? 'Aktiviert' : 'Deaktiviert',
+                    $expiresAt ?: 'Unbegrenzt'
+                ),
+                $author,
+                true
+            );
+
+            return $token;
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::issueDownloadToken Fehler: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Aktualisiert die Freigabeeinstellungen des externen Datenraums (Aktiv/Inaktiv, Ablaufdatum).
+     *
+     * @param int $caseId Vorgangs-ID
+     * @param bool $enabled Freigabestatus
+     * @param string|null $expiresAt Ablaufdatum oder null
+     * @param string $author Name des Benutzers
+     * @return bool
+     */
+    public static function updateDownloadAccess(
+        int $caseId,
+        bool $enabled,
+        ?string $expiresAt,
+        string $author = 'Admin'
+    ): bool {
+        self::ensureTables();
+        $case = self::getCaseById($caseId);
+        if (!$case) {
+            return false;
+        }
+
+        // Falls noch kein Token existiert, automatisch generieren
+        $token = (string) ($case['download_token'] ?? '');
+        if ($token === '' || strlen($token) !== 40) {
+            $token = self::generateDownloadTokenHex();
+        }
+
+        try {
+            DB::execute(
+                'UPDATE `secure_cases` SET 
+                    `download_token` = :token,
+                    `download_enabled` = :enabled,
+                    `download_expires_at` = :expires_at,
+                    `updated_at` = NOW()
+                 WHERE `id` = :id LIMIT 1',
+                [
+                    'id'         => $caseId,
+                    'token'      => $token,
+                    'enabled'    => $enabled ? 1 : 0,
+                    'expires_at' => ($expiresAt !== null && trim($expiresAt) !== '') ? trim($expiresAt) : null,
+                ]
+            );
+
+            $statusText = $enabled ? 'Aktiviert' : 'Deaktiviert';
+            self::addCaseLog(
+                $caseId,
+                'download_access_updated',
+                sprintf('Externer Datenraum %s. Gültig bis: %s', $statusText, $expiresAt ?: 'Unbegrenzt'),
+                $author,
+                true
+            );
+
+            return true;
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::updateDownloadAccess Fehler: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Prüft, ob ein Fall und dessen Download-Freigabe aktuell gültig sind.
+     *
+     * @param array<string, mixed> $case
+     * @return array{valid: bool, reason: ?string}
+     */
+    public static function checkDownloadValidity(array $case): array
+    {
+        $enabled = !empty($case['download_enabled']);
+        if (!$enabled) {
+            return [
+                'valid'  => false,
+                'reason' => 'Der Download-Bereich für diesen Vorgang ist aktuell deaktiviert oder wurde noch nicht freigegeben.',
+            ];
+        }
+
+        // 1. Manuell gesetztes oder berechnetes Ablaufdatum prüfen
+        $expiresAt = !empty($case['download_expires_at']) ? (string)$case['download_expires_at'] : null;
+        if ($expiresAt !== null) {
+            $expireTs = strtotime($expiresAt);
+            if ($expireTs !== false && $expireTs < time()) {
+                return [
+                    'valid'  => false,
+                    'reason' => sprintf('Der Freigabelink ist am %s Uhr abgelaufen.', date('d.m.Y H:i', $expireTs)),
+                ];
+            }
+        }
+
+        // 2. Reguläre Aufbewahrungsfrist ab Bereitstellung (T+X Tage) prüfen
+        $availableAt = !empty($case['available_at']) ? (string)$case['available_at'] : null;
+        if ($availableAt !== null) {
+            $daysActive = class_exists('SecurePortalConfig')
+                ? SecurePortalConfig::getDownloadDaysActive()
+                : 30;
+            $maxActiveTs = strtotime($availableAt . " +{$daysActive} days");
+            if ($maxActiveTs !== false && $maxActiveTs < time()) {
+                return [
+                    'valid'  => false,
+                    'reason' => sprintf('Die reguläre Download-Frist für diesen Vorgang (T+%d Tage nach Bereitstellung) ist am %s Uhr abgelaufen.', $daysActive, date('d.m.Y H:i', $maxActiveTs)),
+                ];
+            }
+        }
+
+        return ['valid' => true, 'reason' => null];
+    }
+
+    /**
+     * Protokolliert den Download einer Sicherungsdatei in secure_download_logs und im Fall-Log (Audit Trail).
+     */
+    public static function recordFileDownload(
+        int $caseId,
+        int $fileId,
+        string $token,
+        string $fileName,
+        string $ip,
+        string $userAgent
+    ): void {
+        $ip = trim($ip) ?: 'unbekannt';
+        $ua = trim($userAgent) ?: 'unbekannt';
+        $shortUa = strlen($ua) > 150 ? (substr($ua, 0, 147) . '...') : $ua;
+
+        // 1. Eintrag in die dedizierte Tabelle secure_download_logs
+        try {
+            self::ensureDownloadLogsTable();
+            DB::execute(
+                'INSERT INTO `secure_download_logs` (`case_id`, `file_id`, `download_token`, `ip_address`, `user_agent`, `downloaded_at`)
+                 VALUES (:case_id, :file_id, :token, :ip, :ua, NOW())',
+                [
+                    'case_id' => $caseId,
+                    'file_id' => $fileId,
+                    'token'   => $token,
+                    'ip'      => substr($ip, 0, 45),
+                    'ua'      => substr($ua, 0, 512),
+                ]
+            );
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::recordFileDownload DB-Log Fehler: ' . $e->getMessage());
+        }
+
+        // 2. Eintrag im Aktivitäten-Protokoll des Vorgangs
+        self::addCaseLog(
+            $caseId,
+            'police_download',
+            sprintf('Sicherungsdatei „%s“ (ID %d) über externen Datenraum heruntergeladen. [IP: %s, Client: %s]', $fileName, $fileId, $ip, $shortUa),
+            'Polizei (Download-Token)',
+            false
+        );
+    }
+
+    /**
+     * Gibt die Download-Historie (Audit-Logs) für einen Fall zurück.
+     *
+     * @param int $caseId Vorgangs-ID
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getDownloadLogs(int $caseId): array
+    {
+        self::ensureDownloadLogsTable();
+        try {
+            return DB::fetchAll(
+                'SELECT sdl.*, scf.file_name, scf.file_size
+                 FROM `secure_download_logs` sdl
+                 LEFT JOIN `secure_case_files` scf ON scf.id = sdl.file_id
+                 WHERE sdl.case_id = :case_id
+                 ORDER BY sdl.downloaded_at DESC',
+                ['case_id' => $caseId]
+            );
+        } catch (\Throwable $e) {
+            error_log('SecurePortalRepository::getDownloadLogs Fehler: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Führt die automatische Fristenprüfung und Bereinigung für den externen Datenraum durch:
+     * - Phase 1 (T+30 / days_active): Externen Download-Zugang sperren (download_enabled = 0)
+     * - Phase 2 (T+60 / days_delete): Sicherungsdateien löschen und Fallstatus aktualisieren
+     *
+     * @param int|null $daysActive Anzahl Tage bis Zugangssperre (Standard aus Settings oder 30)
+     * @param int|null $daysDelete Anzahl Tage bis Dateilöschung (Standard aus Settings oder 60)
+     * @param string $author Ausführender Benutzer/System
+     * @return array{
+     *     days_active: int,
+     *     days_delete: int,
+     *     locked_cases: array<int, string>,
+     *     locked_count: int,
+     *     purged_cases: array<int, string>,
+     *     purged_files_count: int,
+     *     purged_cases_count: int,
+     *     errors: array<int, string>
+     * }
+     */
+    public static function processRetentionDeadlines(
+        ?int $daysActive = null,
+        ?int $daysDelete = null,
+        string $author = 'Fristen-Cron'
+    ): array {
+        self::ensureTables();
+
+        if ($daysActive === null || $daysActive <= 0) {
+            $daysActive = class_exists('SecurePortalConfig')
+                ? SecurePortalConfig::getDownloadDaysActive()
+                : 30;
+        }
+
+        if ($daysDelete === null || $daysDelete <= 0) {
+            $daysDelete = class_exists('SecurePortalConfig')
+                ? SecurePortalConfig::getDownloadDaysDelete()
+                : 60;
+        }
+
+        $result = [
+            'days_active'        => $daysActive,
+            'days_delete'        => $daysDelete,
+            'locked_cases'       => [],
+            'locked_count'       => 0,
+            'purged_cases'       => [],
+            'purged_files_count' => 0,
+            'purged_cases_count' => 0,
+            'errors'             => [],
+        ];
+
+        // ---------------------------------------------------------------------
+        // PHASE 1: T+daysActive - Download-Zugang sperren (download_enabled = 0)
+        // ---------------------------------------------------------------------
+        try {
+            $casesToLock = DB::fetchAll(
+                'SELECT id, case_number, available_at, download_expires_at 
+                 FROM `secure_cases` 
+                 WHERE `download_enabled` = 1 
+                   AND (
+                     (`available_at` IS NOT NULL AND `available_at` <= DATE_SUB(NOW(), INTERVAL :days DAY))
+                     OR (`download_expires_at` IS NOT NULL AND `download_expires_at` <= NOW())
+                   )',
+                ['days' => $daysActive]
+            );
+
+            foreach ($casesToLock as $c) {
+                $cid = (int) $c['id'];
+                $cnum = (string) $c['case_number'];
+
+                DB::execute(
+                    'UPDATE `secure_cases` SET `download_enabled` = 0, `updated_at` = NOW() WHERE `id` = :id LIMIT 1',
+                    ['id' => $cid]
+                );
+
+                self::addCaseLog(
+                    $cid,
+                    'retention_access_locked',
+                    sprintf(
+                        'Externer Download-Zugang nach Fristablauf (T+%d Tage nach Bereitstellung) automatisch gesperrt.',
+                        $daysActive
+                    ),
+                    $author,
+                    true
+                );
+
+                $result['locked_cases'][] = $cnum;
+            }
+            $result['locked_count'] = count($result['locked_cases']);
+        } catch (\Throwable $e) {
+            $err = 'Fehler bei Fristprüfung Phase 1 (Zugangssperre): ' . $e->getMessage();
+            error_log('SecurePortalRepository::processRetentionDeadlines: ' . $err);
+            $result['errors'][] = $err;
+        }
+
+        // ---------------------------------------------------------------------
+        // PHASE 2: T+daysDelete - Sicherungsdateien löschen & Fallstatus aktualisieren
+        // ---------------------------------------------------------------------
+        try {
+            $casesToPurge = DB::fetchAll(
+                'SELECT sc.id, sc.case_number, sc.status, sc.available_at 
+                 FROM `secure_cases` sc
+                 JOIN `secure_case_files` scf ON scf.case_id = sc.id AND scf.is_active = 1
+                 WHERE sc.available_at IS NOT NULL 
+                   AND sc.available_at <= DATE_SUB(NOW(), INTERVAL :days DAY)
+                 GROUP BY sc.id, sc.case_number, sc.status, sc.available_at',
+                ['days' => $daysDelete]
+            );
+
+            foreach ($casesToPurge as $cp) {
+                $cid = (int) $cp['id'];
+                $cnum = (string) $cp['case_number'];
+                $files = self::getCaseFiles($cid, true);
+                $deletedForCase = 0;
+
+                foreach ($files as $file) {
+                    $relPath = (string) $file['file_path'];
+                    $fullPath = class_exists('SecurePortalConfig')
+                        ? SecurePortalConfig::resolveLocalFilePath($relPath)
+                        : (dirname(__DIR__, 2) . '/' . ltrim($relPath, '/'));
+
+                    if ($fullPath !== null && file_exists($fullPath) && is_file($fullPath)) {
+                        @unlink($fullPath);
+                    }
+
+                    DB::execute(
+                        'UPDATE `secure_case_files` SET `is_active` = 0 WHERE `id` = :id LIMIT 1',
+                        ['id' => (int) $file['id']]
+                    );
+                    $deletedForCase++;
+                }
+
+                // Fallstatus aktualisieren (von "available" auf "closed")
+                $currentStatus = (string) $cp['status'];
+                $newStatus = ($currentStatus === self::STATUS_AVAILABLE) ? self::STATUS_CLOSED : $currentStatus;
+
+                DB::execute(
+                    'UPDATE `secure_cases` SET 
+                        `status` = :new_status,
+                        `download_enabled` = 0,
+                        `updated_at` = NOW()
+                     WHERE `id` = :id LIMIT 1',
+                    [
+                        'id'         => $cid,
+                        'new_status' => $newStatus,
+                    ]
+                );
+
+                self::addCaseLog(
+                    $cid,
+                    'retention_files_purged',
+                    sprintf(
+                        'Sicherungsdateien wurden nach Ablauf der Aufbewahrungsfrist (T+%d Tage nach Bereitstellung) automatisch vom Server gelöscht (%d Datei(en) bereinigt). Fallstatus: %s.',
+                        $daysDelete,
+                        $deletedForCase,
+                        self::STATUSES[$newStatus]['label'] ?? $newStatus
+                    ),
+                    $author,
+                    true
+                );
+
+                $result['purged_cases'][] = $cnum;
+                $result['purged_files_count'] += $deletedForCase;
+            }
+
+            $result['purged_cases_count'] = count($result['purged_cases']);
+        } catch (\Throwable $e) {
+            $err = 'Fehler bei Fristprüfung Phase 2 (Dateilöschung): ' . $e->getMessage();
+            error_log('SecurePortalRepository::processRetentionDeadlines: ' . $err);
+            $result['errors'][] = $err;
+        }
+
+        return $result;
     }
 }

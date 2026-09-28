@@ -745,8 +745,8 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                         <div class="col-md-4">
                             <div class="p-3 step-card-contrast h-100">
                                 <div class="badge bg-success text-white mb-2 fw-bold">Schritt 1</div>
-                                <h6 class="fw-bold text-dark mb-1">Dienststelle &amp; Aktenzeichen</h6>
-                                <p class="text-muted small mb-0">Erfassung von Behörde, Aktenzeichen, Sachbearbeiter und eventuellen Fristen.</p>
+                                <h6 class="fw-bold text-dark mb-1">Dienststelle &amp; Fall Nr</h6>
+                                <p class="text-muted small mb-0">Erfassung von Behörde, Fall Nr und Sachbearbeiter.</p>
                             </div>
                         </div>
                         <div class="col-md-4">

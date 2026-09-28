@@ -15,10 +15,13 @@ require_once __DIR__ . '/core/ModuleManager.php';
 require_once __DIR__ . '/core/User.php';
 require_once __DIR__ . '/core/Rbac.php';
 require_once __DIR__ . '/core/Settings.php';
+require_once __DIR__ . '/core/SharePointConfig.php';
+require_once __DIR__ . '/core/SecurePortalConfig.php';
 require_once __DIR__ . '/core/HomepageBlock.php';
 require_once __DIR__ . '/core/Version.php';
 require_once __DIR__ . '/core/MigrationManager.php';
 require_once __DIR__ . '/core/Upload.php';
+require_once __DIR__ . '/core/HealthCheck.php';
 
 // 1. Globales Error- & Exception-Handling initialisieren
 ErrorHandler::register();
@@ -1244,6 +1247,73 @@ $router->post('/admin/system/unmark-migration', function () use ($requireAdminAu
     }
 
     header('Location: ?route=admin/system');
+    exit;
+});
+
+// --- 7b. SYSTEMSTATUS & HEALTH-CHECK (/admin/system/health) ---
+$router->get('/admin/system/health', function (): void {
+    if (!Auth::checkMagic() && !Auth::check()) {
+        header('Location: ?route=/');
+        exit;
+    }
+
+    if (class_exists('Rbac') && !Rbac::can('admin.system.view') && !Rbac::can('admin.system.manage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Sie haben keine Berechtigung für Systemstatus & Health-Check.';
+        header('Location: ?route=admin');
+        exit;
+    }
+
+    $healthResult = HealthCheck::runAll();
+    $testMailResult = null;
+    $tokenTestResult = null;
+
+    $user = Auth::user();
+    $currentRoute = 'admin/system/health';
+    require __DIR__ . '/views/admin/system_health.php';
+});
+
+// POST /admin/system/health/test-mail - Test-E-Mail manuell versenden
+$router->post('/admin/system/health/test-mail', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/system/health');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.system.manage') && !Rbac::can('admin.system.view')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Keine Berechtigung für E-Mail-Tests.';
+        header('Location: ?route=admin/system/health');
+        exit;
+    }
+
+    $targetEmail = trim((string) ($_POST['test_email'] ?? ''));
+    $res = HealthCheck::checkMailConfig(true, $targetEmail);
+
+    if ($res['status'] === HealthCheck::STATUS_OK) {
+        $_SESSION['flash_success'] = $res['message'];
+    } else {
+        $_SESSION['flash_error'] = $res['message'];
+    }
+
+    header('Location: ?route=admin/system/health');
+    exit;
+});
+
+// POST /admin/system/health/test-sharepoint - Microsoft Graph OAuth-Token live testen
+$router->post('/admin/system/health/test-sharepoint', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/system/health');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.system.manage') && !Rbac::can('admin.system.view')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Keine Berechtigung für Token-Tests.';
+        header('Location: ?route=admin/system/health');
+        exit;
+    }
+
+    $res = HealthCheck::checkSharePointConfig(true);
+
+    if ($res['status'] === HealthCheck::STATUS_OK) {
+        $_SESSION['flash_success'] = $res['message'];
+    } else {
+        $_SESSION['flash_error'] = $res['message'];
+    }
+
+    header('Location: ?route=admin/system/health');
     exit;
 });
 

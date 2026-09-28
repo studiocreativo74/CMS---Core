@@ -84,6 +84,12 @@ ob_start();
             <p class="text-muted mb-0">Zentrale Übersicht über Core-Version, Modul-Kompatibilität und Datenbank-Migrationen.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
+            <a href="?route=admin/system/health" class="btn btn-primary d-inline-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart-pulse-fill me-2" viewBox="0 0 16 16">
+                    <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053.918 3.995.78 5.323 1.508 7H.43c-2.128 0-2.483 3.013-.414 3.486L4 11.414l1.293 1.293a1 1 0 0 0 1.414 0L8 11.414l1.293 1.293a1 1 0 0 0 1.414 0L12 11.414l2.984-.828c2.069-.473 1.714-3.486-.414-3.486h-1.078c.728-1.677.59-3.005.108-3.947C12.486.878 9.4.28 7.717 2.01zM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0"/>
+                </svg>
+                Systemstatus &amp; Health-Check
+            </a>
             <a href="?route=admin/modules" class="btn btn-outline-secondary d-inline-flex align-items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-grid-fill me-2" viewBox="0 0 16 16">
                     <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5z"/>

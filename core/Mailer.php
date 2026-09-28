@@ -27,6 +27,17 @@ final class Mailer
         $fromName  = self::DEFAULT_FROM_NAME;
         $replyTo   = self::OFFICE_COPY_EMAIL;
 
+        if (class_exists('Settings')) {
+            $cfgFrom = Settings::get('system_email_from');
+            if ($cfgFrom !== null && filter_var($cfgFrom, FILTER_VALIDATE_EMAIL)) {
+                $fromEmail = trim((string) $cfgFrom);
+            }
+            $cfgName = Settings::get('system_email_from_name');
+            if ($cfgName !== null && trim((string) $cfgName) !== '') {
+                $fromName = trim((string) $cfgName);
+            }
+        }
+
         // UTF-8 Subject-Encoding nach RFC 2047
         $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
 
