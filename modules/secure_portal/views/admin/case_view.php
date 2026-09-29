@@ -209,6 +209,67 @@ ob_start();
             </div>
             <div class="card-body p-4">
                 <?php if ($secType === 'VIDEO'): ?>
+                    <!-- Örtlichkeit & Bereich -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3 col-6">
+                            <label class="text-muted small fw-bold d-block text-uppercase">Objekt</label>
+                            <div class="p-2 bg-light rounded border fw-bold text-dark">
+                                <i class="bi bi-building text-primary me-1"></i>
+                                <?= !empty($meta['object']) ? htmlspecialchars((string) $meta['object'], ENT_QUOTES, 'UTF-8') : '-' ?>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <label class="text-muted small fw-bold d-block text-uppercase">Stockwerk</label>
+                            <div class="p-2 bg-light rounded border fw-bold text-dark">
+                                <i class="bi bi-layers text-primary me-1"></i>
+                                <?= !empty($meta['floor']) ? htmlspecialchars((string) $meta['floor'], ENT_QUOTES, 'UTF-8') : '-' ?>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <label class="text-muted small fw-bold d-block text-uppercase">Farbe / Sektor</label>
+                            <div class="p-2 bg-light rounded border fw-semibold text-dark">
+                                <i class="bi bi-palette text-primary me-1"></i>
+                                <?= !empty($meta['color']) ? htmlspecialchars((string) $meta['color'], ENT_QUOTES, 'UTF-8') : '-' ?>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <label class="text-muted small fw-bold d-block text-uppercase">Parkplatz Nummer</label>
+                            <div class="p-2 bg-light rounded border fw-semibold text-dark">
+                                <i class="bi bi-p-square text-primary me-1"></i>
+                                <?= !empty($meta['parking_space']) ? htmlspecialchars((string) $meta['parking_space'], ENT_QUOTES, 'UTF-8') : '-' ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fahrzeugdaten (Auto), falls angegeben -->
+                    <?php if (!empty($meta['has_vehicle']) || !empty($meta['car_brand']) || !empty($meta['car_plate'])): ?>
+                        <div class="p-3 bg-light rounded border mb-3 border-primary-subtle">
+                            <label class="text-primary small fw-bold d-block text-uppercase mb-2">
+                                <i class="bi bi-car-front-fill me-1"></i> Fahrzeugdaten (Auto)
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-md-3 col-6">
+                                    <span class="text-muted small d-block">Marke:</span>
+                                    <strong class="text-dark"><?= htmlspecialchars((string) ($meta['car_brand'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <span class="text-muted small d-block">Typ:</span>
+                                    <strong class="text-dark"><?= htmlspecialchars((string) ($meta['car_model'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <span class="text-muted small d-block">Farbe:</span>
+                                    <strong class="text-dark"><?= htmlspecialchars((string) ($meta['car_color'] ?? '-'), ENT_QUOTES, 'UTF-8') ?></strong>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <span class="text-muted small d-block">Kennzeichen:</span>
+                                    <span class="badge bg-dark font-monospace text-uppercase fs-6">
+                                        <?= htmlspecialchars((string) ($meta['car_plate'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="text-muted small fw-bold d-block text-uppercase">Sicherungszeitraum VON</label>
@@ -230,7 +291,7 @@ ob_start();
                         </div>
                         <?php if (!empty($meta['video_notes'])): ?>
                             <div class="col-12">
-                                <label class="text-muted small fw-bold d-block text-uppercase">Personen- / Fahrzeugmerkmale</label>
+                                <label class="text-muted small fw-bold d-block text-uppercase">Personen- / Vorfallsmerkmale</label>
                                 <div class="p-2 bg-light rounded text-muted small border">
                                     <?= nl2br(htmlspecialchars((string) $meta['video_notes'], ENT_QUOTES, 'UTF-8')) ?>
                                 </div>

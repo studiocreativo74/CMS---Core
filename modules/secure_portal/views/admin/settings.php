@@ -20,6 +20,11 @@ $notificationEmail = (string) Settings::get('secure_notification_email', '');
 $daysActive = class_exists('SecurePortalConfig') ? SecurePortalConfig::getDownloadDaysActive() : 30;
 $daysDelete = class_exists('SecurePortalConfig') ? SecurePortalConfig::getDownloadDaysDelete() : 60;
 
+$videoObjectsText = class_exists('SecurePortalConfig') ? SecurePortalConfig::formatLines(SecurePortalConfig::getVideoObjects()) : '';
+$videoFloorsText = class_exists('SecurePortalConfig') ? SecurePortalConfig::formatLines(SecurePortalConfig::getVideoFloors()) : '';
+$videoColorsText = class_exists('SecurePortalConfig') ? SecurePortalConfig::formatLines(SecurePortalConfig::getVideoColors()) : '';
+$videoParkingSpacesText = class_exists('SecurePortalConfig') ? SecurePortalConfig::formatLines(SecurePortalConfig::getVideoParkingSpaces()) : '';
+
 // Beispiel-Auflösung für die Vorschau
 $sampleCase = [
     'case_number'       => 'POL-2026-000123',
@@ -361,6 +366,90 @@ ob_start();
                             </small>
                         </div>
 
+                    </div>
+                </div>
+
+                <!-- Video-Antrag Dropdown-Auswahllisten (Objekt, Stockwerk, Farbe, Parkplatz) -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-primary-subtle text-primary p-2 rounded">
+                                    <i class="bi bi-camera-video fs-5"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 fw-bold text-dark">Video-Antragsoptionen (Dropdown-Auswahllisten)</h5>
+                                    <small class="text-muted">Inhalte für Objekt, Stockwerk, Farbe und Parkplatz im öffentlichen Antragsformular</small>
+                                </div>
+                            </div>
+                            <span class="badge bg-secondary-subtle text-secondary border">
+                                <i class="bi bi-ui-checks me-1"></i> Formular-Konfiguration
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="text-muted small mb-4">
+                            Konfigurieren Sie hier die Auswahllisten, die Polizeibeamten im Schritt 3 des Sicherungsantrags zur Verfügung stehen. 
+                            <strong>Tragen Sie pro Zeile eine Option ein.</strong> Leerzeilen werden automatisch ignoriert.
+                        </p>
+
+                        <div class="row g-4">
+                            <!-- 1. Objekte -->
+                            <div class="col-md-6">
+                                <label for="secure_video_objects" class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
+                                    <span><i class="bi bi-building me-1 text-primary"></i> 1. Objekte / Liegenschaften</span>
+                                    <span class="badge bg-light text-muted border">1 pro Zeile</span>
+                                </label>
+                                <textarea class="form-control font-monospace small" 
+                                          id="secure_video_objects" 
+                                          name="secure_video_objects" 
+                                          rows="6" 
+                                          placeholder="Hauptgebäude / Areal Nord&#10;Parkhaus Zentrum&#10;Gewerbepark Ost"><?= htmlspecialchars($videoObjectsText, ENT_QUOTES, 'UTF-8') ?></textarea>
+                                <div class="form-text small text-muted">Dropdown für das betroffene Gebäude bzw. Areal.</div>
+                            </div>
+
+                            <!-- 2. Stockwerke -->
+                            <div class="col-md-6">
+                                <label for="secure_video_floors" class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
+                                    <span><i class="bi bi-layers me-1 text-primary"></i> 2. Stockwerke / Ebenen</span>
+                                    <span class="badge bg-light text-muted border">1 pro Zeile</span>
+                                </label>
+                                <textarea class="form-control font-monospace small" 
+                                          id="secure_video_floors" 
+                                          name="secure_video_floors" 
+                                          rows="6" 
+                                          placeholder="3. Untergeschoss (-3)&#10;2. Untergeschoss (-2)&#10;1. Untergeschoss (-1)&#10;Erdgeschoss (EG)&#10;1. Obergeschoss (+1)"><?= htmlspecialchars($videoFloorsText, ENT_QUOTES, 'UTF-8') ?></textarea>
+                                <div class="form-text small text-muted">Dropdown für das Geschoss / die Etage.</div>
+                            </div>
+
+                            <!-- 3. Farben -->
+                            <div class="col-md-6">
+                                <label for="secure_video_colors" class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
+                                    <span><i class="bi bi-palette me-1 text-primary"></i> 3. Farben / Sektoren</span>
+                                    <span class="badge bg-light text-muted border">1 pro Zeile</span>
+                                </label>
+                                <textarea class="form-control font-monospace small" 
+                                          id="secure_video_colors" 
+                                          name="secure_video_colors" 
+                                          rows="6" 
+                                          placeholder="Blau (Sektor A)&#10;Gelb (Sektor B)&#10;Rot (Sektor C)&#10;Grün (Sektor D)"><?= htmlspecialchars($videoColorsText, ENT_QUOTES, 'UTF-8') ?></textarea>
+                                <div class="form-text small text-muted">Dropdown für die Sektoren- oder Parkebenenfarbe.</div>
+                            </div>
+
+                            <!-- 4. Parkplatz Nummern -->
+                            <div class="col-md-6">
+                                <label for="secure_video_parking_spaces" class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
+                                    <span><i class="bi bi-p-square me-1 text-primary"></i> 4. Parkplatz-Nummern</span>
+                                    <span class="badge bg-light text-muted border">1 pro Zeile</span>
+                                </label>
+                                <textarea class="form-control font-monospace small" 
+                                          id="secure_video_parking_spaces" 
+                                          name="secure_video_parking_spaces" 
+                                          rows="6" 
+                                          placeholder="Kein Parkplatz / Fahrbahn&#10;Parkplatz 01&#10;Parkplatz 02&#10;Parkplatz 03"><?= htmlspecialchars($videoParkingSpacesText, ENT_QUOTES, 'UTF-8') ?></textarea>
+                                <div class="form-text small text-muted">Dropdown für spezifische Stellplätze / Parkfeldnummern.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

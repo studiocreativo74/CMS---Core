@@ -19,6 +19,157 @@ final class SecurePortalConfig
     public const DEFAULT_DOWNLOAD_DAYS_ACTIVE = 30;
     public const DEFAULT_DOWNLOAD_DAYS_DELETE = 60;
 
+    public const DEFAULT_VIDEO_OBJECTS = [
+        'Hauptgebäude / Areal Nord',
+        'Parkhaus Zentrum',
+        'Gewerbepark Ost',
+        'Wohnüberbauung Süd',
+    ];
+
+    public const DEFAULT_VIDEO_FLOORS = [
+        '3. Untergeschoss (-3)',
+        '2. Untergeschoss (-2)',
+        '1. Untergeschoss (-1)',
+        'Erdgeschoss (EG)',
+        '1. Obergeschoss (+1)',
+        '2. Obergeschoss (+2)',
+        'Aussenbereich / Vorplatz',
+    ];
+
+    public const DEFAULT_VIDEO_COLORS = [
+        'Blau (Sektor A)',
+        'Gelb (Sektor B)',
+        'Rot (Sektor C)',
+        'Grün (Sektor D)',
+        'Orange (Sektor E)',
+        'Weiss',
+        'Keine Farbzuordnung',
+    ];
+
+    public const DEFAULT_VIDEO_PARKING_SPACES = [
+        'Kein Parkplatz / Fahrbahn / Gang',
+        'Parkplatz 01',
+        'Parkplatz 02',
+        'Parkplatz 03',
+        'Parkplatz 04',
+        'Parkplatz 05',
+        'Parkplatz 06',
+        'Parkplatz 07',
+        'Parkplatz 08',
+        'Parkplatz 09',
+        'Parkplatz 10',
+        'Besucherparkplatz',
+        'Behindertenparkplatz',
+        'Ladezone / E-Ladestation',
+    ];
+
+    /**
+     * Zerlegt einen zeilenweisen Text in ein bereinigtes Array.
+     *
+     * @return array<string>
+     */
+    public static function parseLines(string $input): array
+    {
+        $lines = preg_split('/\r\n|\r|\n/', trim($input));
+        if ($lines === false) {
+            return [];
+        }
+        $result = [];
+        foreach ($lines as $line) {
+            $t = trim($line);
+            if ($t !== '') {
+                $result[] = $t;
+            }
+        }
+        return array_values(array_unique($result));
+    }
+
+    /**
+     * Formatiert ein Array in zeilenweisen Text für Textareas.
+     *
+     * @param array<string> $items
+     */
+    public static function formatLines(array $items): string
+    {
+        return implode("\n", array_filter(array_map('trim', $items)));
+    }
+
+    /**
+     * Liefert die konfigurierten Objekte / Liegenschaften.
+     *
+     * @return array<string>
+     */
+    public static function getVideoObjects(): array
+    {
+        if (class_exists('Settings')) {
+            $val = Settings::get('secure_video_objects');
+            if ($val !== null && trim((string)$val) !== '') {
+                $parsed = self::parseLines((string)$val);
+                if (!empty($parsed)) {
+                    return $parsed;
+                }
+            }
+        }
+        return self::DEFAULT_VIDEO_OBJECTS;
+    }
+
+    /**
+     * Liefert die konfigurierten Stockwerke / Etagen.
+     *
+     * @return array<string>
+     */
+    public static function getVideoFloors(): array
+    {
+        if (class_exists('Settings')) {
+            $val = Settings::get('secure_video_floors');
+            if ($val !== null && trim((string)$val) !== '') {
+                $parsed = self::parseLines((string)$val);
+                if (!empty($parsed)) {
+                    return $parsed;
+                }
+            }
+        }
+        return self::DEFAULT_VIDEO_FLOORS;
+    }
+
+    /**
+     * Liefert die konfigurierten Farben / Farbcodierungen.
+     *
+     * @return array<string>
+     */
+    public static function getVideoColors(): array
+    {
+        if (class_exists('Settings')) {
+            $val = Settings::get('secure_video_colors');
+            if ($val !== null && trim((string)$val) !== '') {
+                $parsed = self::parseLines((string)$val);
+                if (!empty($parsed)) {
+                    return $parsed;
+                }
+            }
+        }
+        return self::DEFAULT_VIDEO_COLORS;
+    }
+
+    /**
+     * Liefert die konfigurierten Parkplatz-Nummern.
+     *
+     * @return array<string>
+     */
+    public static function getVideoParkingSpaces(): array
+    {
+        if (class_exists('Settings')) {
+            $val = Settings::get('secure_video_parking_spaces');
+            if ($val !== null && trim((string)$val) !== '') {
+                $parsed = self::parseLines((string)$val);
+                if (!empty($parsed)) {
+                    return $parsed;
+                }
+            }
+        }
+        return self::DEFAULT_VIDEO_PARKING_SPACES;
+    }
+
     /**
      * Liefert die Anzahl Tage nach Bereitstellung, bis der externe Download-Zugang gesperrt wird.
      * Standard: 30 Tage (T+30)

@@ -921,6 +921,20 @@ if (isset($router) && $router !== null) {
                 Settings::set('secure_download_days_delete', (string) $rawDaysDelete);
             }
 
+            // Videoüberwachungs-Optionen für Antragsformular (Objekt, Stockwerk, Farbe, Parkplatz)
+            if (isset($_POST['secure_video_objects'])) {
+                Settings::set('secure_video_objects', trim((string) $_POST['secure_video_objects']));
+            }
+            if (isset($_POST['secure_video_floors'])) {
+                Settings::set('secure_video_floors', trim((string) $_POST['secure_video_floors']));
+            }
+            if (isset($_POST['secure_video_colors'])) {
+                Settings::set('secure_video_colors', trim((string) $_POST['secure_video_colors']));
+            }
+            if (isset($_POST['secure_video_parking_spaces'])) {
+                Settings::set('secure_video_parking_spaces', trim((string) $_POST['secure_video_parking_spaces']));
+            }
+
             // Optionale SharePoint-Settings aktualisieren
             if (isset($_POST['sp_tenant_id'])) {
                 Settings::set('sp_tenant_id', trim((string) $_POST['sp_tenant_id']));

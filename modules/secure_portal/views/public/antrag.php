@@ -40,12 +40,13 @@ if (empty(trim($customerName))) {
 }
 
 $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
-$securingTypes = SecurePortalRepository::SECURING_TYPES;
-$selectedType = (string) ($formData['securing_type'] ?? 'VIDEO');
-if (!array_key_exists($selectedType, $securingTypes)) {
-    $selectedType = 'VIDEO';
-}
+$selectedType = 'VIDEO';
 $securingMeta = (array) ($formData['securing_meta'] ?? []);
+
+$videoObjects = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoObjects() : [];
+$videoFloors = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoFloors() : [];
+$videoColors = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoColors() : [];
+$videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoParkingSpaces() : [];
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -561,146 +562,209 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
                         <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom" style="border-bottom: 2px solid #cbd5e1 !important;">
                             <div>
                                 <span class="badge bg-dark text-white px-2 py-1 mb-1 fw-bold">Schritt 3 von 3</span>
-                                <h2 class="h4 fw-bold text-dark mb-0">Art der Sicherung &amp; technische Spezifikation</h2>
+                                <h2 class="h4 fw-bold text-dark mb-0">Videoaufzeichnung &amp; technische Spezifikation</h2>
                             </div>
-                            <i class="bi bi-hdd-stack-fill fs-2 text-success"></i>
+                            <i class="bi bi-camera-video-fill fs-2 text-success"></i>
                         </div>
 
                         <form method="POST" action="?route=sicherung/antrag&step=3">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                             <input type="hidden" name="step" value="3">
+                            <input type="hidden" name="securing_type" value="VIDEO">
 
-                            <!-- Typ-Auswahl -->
-                            <label class="form-label mb-3">Wählen Sie die Art des digitalen Beweismittels <span class="text-danger">*</span></label>
-                            <div class="row g-3 mb-4">
-                                <?php foreach ($securingTypes as $typeKey => $tInfo): ?>
-                                    <div class="col-md-6 col-lg-4">
-                                        <label class="type-selector-card d-block <?= $selectedType === $typeKey ? 'selected' : '' ?>" id="card_type_<?= $typeKey ?>" onclick="selectSecuringType('<?= $typeKey ?>')">
-                                            <div class="form-check p-0">
-                                                <input class="form-check-input visually-hidden" type="radio" name="securing_type" 
-                                                       id="type_<?= $typeKey ?>" value="<?= $typeKey ?>" 
-                                                       <?= $selectedType === $typeKey ? 'checked' : '' ?>>
-                                                <div class="d-flex align-items-center gap-2 mb-2">
-                                                    <i class="bi <?= $tInfo['icon'] ?> fs-4 text-success"></i>
-                                                    <span class="fw-bold text-dark fs-6"><?= htmlspecialchars($tInfo['short'], ENT_QUOTES, 'UTF-8') ?></span>
-                                                </div>
-                                                <p class="small text-secondary fw-semibold mb-0" style="min-height: 40px;">
-                                                    <?= htmlspecialchars($tInfo['desc'], ENT_QUOTES, 'UTF-8') ?>
-                                                </p>
-                                            </div>
-                                        </label>
-                                    </div>
-                                <?php endforeach; ?>
+                            <!-- Info-Banner Videoüberwachung -->
+                            <div class="alert d-flex align-items-center gap-3 mb-4 p-3" style="background-color: #f0fdf4; border: 2.5px solid #059669; color: #064e3b; border-radius: 0.65rem;">
+                                <i class="bi bi-camera-video-fill fs-3 flex-shrink-0 text-success"></i>
+                                <div>
+                                    <strong class="d-block text-dark fs-6">Sicherungsgegenstand: Videoaufzeichnung (CCTV)</strong>
+                                    <span class="small fw-semibold text-secondary-emphasis">
+                                        Die Beweissicherung umfasst ausschliesslich Videoaufzeichnungen. Bitte spezifizieren Sie nachfolgend das betroffene Objekt, das Stockwerk, den Parkplatz sowie den genauen Zeitraum.
+                                    </span>
+                                </div>
                             </div>
 
-                            <!-- Spezifische Felder je Typ -->
-                            <div class="spec-container mb-4">
-                                <h5 class="fw-bold text-dark mb-3">
-                                    <i class="bi bi-sliders text-success me-2"></i>
-                                    Technische Detailangaben zur Sicherung
-                                </h5>
+                            <!-- 1. Dropdowns: Objekt, Stockwerk, Farbe, Parkplatz Nummer -->
+                            <h5 class="fw-bold text-dark mb-3">
+                                <i class="bi bi-geo-alt-fill text-primary me-2"></i>
+                                Örtlichkeit &amp; Bereich (Objekt &middot; Stockwerk &middot; Farbe &middot; Parkplatz)
+                            </h5>
 
-                                <!-- TYPE: VIDEO -->
-                                <div id="fields_VIDEO" class="securing-fields <?= $selectedType === 'VIDEO' ? '' : 'd-none' ?>">
-                                    <div class="row g-3 mb-3">
-                                        <div class="col-md-6">
-                                            <label for="timeframe_from" class="form-label">Sicherungszeitraum VON <span class="text-danger">*</span></label>
-                                            <input type="datetime-local" class="form-control" id="timeframe_from" name="securing_meta[timeframe_from]" 
-                                                   value="<?= htmlspecialchars((string) ($securingMeta['timeframe_from'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                            <div class="row g-3 mb-4">
+                                <!-- Objekt -->
+                                <div class="col-md-6 col-lg-3">
+                                    <label for="meta_object" class="form-label fw-bold text-dark">
+                                        Objekt <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select <?= isset($errors['object']) ? 'is-invalid' : '' ?>" 
+                                            id="meta_object" name="securing_meta[object]" required>
+                                        <option value="">-- Objekt wählen --</option>
+                                        <?php foreach ($videoObjects as $opt): ?>
+                                            <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" 
+                                                <?= ($securingMeta['object'] ?? '') === $opt ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <?php if (isset($errors['object'])): ?>
+                                        <div class="invalid-feedback"><?= htmlspecialchars($errors['object'], ENT_QUOTES, 'UTF-8') ?></div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <!-- Stockwerk -->
+                                <div class="col-md-6 col-lg-3">
+                                    <label for="meta_floor" class="form-label fw-bold text-dark">
+                                        Stockwerk <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select <?= isset($errors['floor']) ? 'is-invalid' : '' ?>" 
+                                            id="meta_floor" name="securing_meta[floor]" required>
+                                        <option value="">-- Stockwerk wählen --</option>
+                                        <?php foreach ($videoFloors as $opt): ?>
+                                            <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" 
+                                                <?= ($securingMeta['floor'] ?? '') === $opt ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <?php if (isset($errors['floor'])): ?>
+                                        <div class="invalid-feedback"><?= htmlspecialchars($errors['floor'], ENT_QUOTES, 'UTF-8') ?></div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <!-- Farbe -->
+                                <div class="col-md-6 col-lg-3">
+                                    <label for="meta_color" class="form-label fw-bold text-dark">
+                                        Farbe
+                                    </label>
+                                    <select class="form-select" id="meta_color" name="securing_meta[color]">
+                                        <option value="">-- Farbe wählen --</option>
+                                        <?php foreach ($videoColors as $opt): ?>
+                                            <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" 
+                                                <?= ($securingMeta['color'] ?? '') === $opt ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <!-- Parkplatz Nummer -->
+                                <div class="col-md-6 col-lg-3">
+                                    <label for="meta_parking_space" class="form-label fw-bold text-dark">
+                                        Parkplatz Nummer
+                                    </label>
+                                    <select class="form-select" id="meta_parking_space" name="securing_meta[parking_space]">
+                                        <option value="">-- Parkplatz wählen --</option>
+                                        <?php foreach ($videoParkingSpaces as $opt): ?>
+                                            <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" 
+                                                <?= ($securingMeta['parking_space'] ?? '') === $opt ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 2. Fahrzeug-Details: Wenn Fahrzeug => Auto (dann mehr details: Marke, Typ, Farbe, Kennzeichen) -->
+                            <div class="p-3 mb-4 rounded border" style="background-color: #f8fafc; border-color: #cbd5e1 !important;">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                                    <label class="form-label fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                                        <i class="bi bi-car-front-fill text-primary fs-5"></i>
+                                        Fahrzeugbezug (Auto):
+                                    </label>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <input type="radio" class="btn-check" name="securing_meta[has_vehicle]" id="veh_no" value="0" 
+                                               <?= empty($securingMeta['has_vehicle']) ? 'checked' : '' ?> onchange="toggleVehicleDetails(false)">
+                                        <label class="btn btn-outline-secondary px-3" for="veh_no">Kein Fahrzeug</label>
+
+                                        <input type="radio" class="btn-check" name="securing_meta[has_vehicle]" id="veh_yes" value="1" 
+                                               <?= !empty($securingMeta['has_vehicle']) ? 'checked' : '' ?> onchange="toggleVehicleDetails(true)">
+                                        <label class="btn btn-outline-primary fw-bold px-3" for="veh_yes">
+                                            <i class="bi bi-car-front me-1"></i> Auto / Fahrzeug involviert
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="small text-muted mb-3">
+                                    Aktivieren Sie diese Option, falls ein bestimmtes Kraftfahrzeug (Auto) im Fokus der Video-Aufzeichnung steht.
+                                </div>
+
+                                <!-- Dynamische Fahrzeugdetails (Marke, Typ, Farbe, Kennzeichen) -->
+                                <div id="vehicleDetailsBlock" class="<?= !empty($securingMeta['has_vehicle']) ? '' : 'd-none' ?>">
+                                    <div class="p-3 bg-white rounded border border-primary-subtle shadow-xs">
+                                        <div class="fw-bold text-primary small text-uppercase mb-3 d-flex align-items-center gap-2">
+                                            <i class="bi bi-card-checklist"></i> Fahrzeugdetails (Auto)
                                         </div>
-                                        <div class="col-md-6">
-                                            <label for="timeframe_to" class="form-label">Sicherungszeitraum BIS <span class="text-danger">*</span></label>
-                                            <input type="datetime-local" class="form-control" id="timeframe_to" name="securing_meta[timeframe_to]" 
-                                                   value="<?= htmlspecialchars((string) ($securingMeta['timeframe_to'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                        <div class="row g-3">
+                                            <div class="col-md-3 col-sm-6">
+                                                <label for="car_brand" class="form-label small fw-bold text-dark">Marke</label>
+                                                <input type="text" class="form-control" id="car_brand" name="securing_meta[car_brand]" 
+                                                       value="<?= htmlspecialchars((string) ($securingMeta['car_brand'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                                       placeholder="z. B. VW, BMW, Audi">
+                                            </div>
+                                            <div class="col-md-3 col-sm-6">
+                                                <label for="car_model" class="form-label small fw-bold text-dark">Typ</label>
+                                                <input type="text" class="form-control" id="car_model" name="securing_meta[car_model]" 
+                                                       value="<?= htmlspecialchars((string) ($securingMeta['car_model'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                                       placeholder="z. B. Golf, 3er, A4">
+                                            </div>
+                                            <div class="col-md-3 col-sm-6">
+                                                <label for="car_color" class="form-label small fw-bold text-dark">Farbe</label>
+                                                <input type="text" class="form-control" id="car_color" name="securing_meta[car_color]" 
+                                                       value="<?= htmlspecialchars((string) ($securingMeta['car_color'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                                       placeholder="z. B. Schwarz, Silber, Blau">
+                                            </div>
+                                            <div class="col-md-3 col-sm-6">
+                                                <label for="car_plate" class="form-label small fw-bold text-dark">Kennzeichen</label>
+                                                <input type="text" class="form-control font-monospace text-uppercase" id="car_plate" name="securing_meta[car_plate]" 
+                                                       value="<?= htmlspecialchars((string) ($securingMeta['car_plate'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                                       placeholder="z. B. ZH 123 456">
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="mb-3">
-                                        <label for="camera_location" class="form-label">Kamera-Standorte / Bereiche <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="camera_location" name="securing_meta[camera_location]" 
-                                               value="<?= htmlspecialchars((string) ($securingMeta['camera_location'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                               placeholder="z. B. Haupteingang, Parkhaus Ebene -1, Kameras 03 & 04">
-                                        <div class="form-text">Präzise Ortsangabe oder betroffene Kameranummern.</div>
-                                    </div>
-                                    <div>
-                                        <label for="video_notes" class="form-label">Personen- / Fahrzeugmerkmale / Vorfallsbeschreibung</label>
-                                        <textarea class="form-control" id="video_notes" name="securing_meta[video_notes]" rows="2" 
-                                                  placeholder="z. B. Täter trug rote Jacke, Tatzeitpunkt ca. 22:15 Uhr"><?= htmlspecialchars((string) ($securingMeta['video_notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
-                                    </div>
                                 </div>
+                            </div>
 
-                                <!-- TYPE: MAIL -->
-                                <div id="fields_MAIL" class="securing-fields <?= $selectedType === 'MAIL' ? '' : 'd-none' ?>">
-                                    <div class="mb-3">
-                                        <label for="mailbox_address" class="form-label">Betroffenes Postfach / E-Mail-Adresse <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="mailbox_address" name="securing_meta[mailbox_address]" 
-                                               value="<?= htmlspecialchars((string) ($securingMeta['mailbox_address'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                               placeholder="z. B. benutzer@unternehmen.de">
-                                    </div>
-                                    <div class="row g-3 mb-3">
-                                        <div class="col-md-6">
-                                            <label for="mail_timeframe_from" class="form-label">Zeitraum VON <span class="text-danger">*</span></label>
-                                            <input type="date" class="form-control" id="mail_timeframe_from" name="securing_meta[mail_timeframe_from]" 
-                                                   value="<?= htmlspecialchars((string) ($securingMeta['mail_timeframe_from'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="mail_timeframe_to" class="form-label">Zeitraum BIS <span class="text-danger">*</span></label>
-                                            <input type="date" class="form-control" id="mail_timeframe_to" name="securing_meta[mail_timeframe_to]" 
-                                                   value="<?= htmlspecialchars((string) ($securingMeta['mail_timeframe_to'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label for="mail_scope" class="form-label">Umfang der Mailbox-Sicherung</label>
-                                        <input type="text" class="form-control" id="mail_scope" name="securing_meta[mail_scope]" 
-                                               value="<?= htmlspecialchars((string) ($securingMeta['mail_scope'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                               placeholder="z. B. Vollständiges Postfach inkl. Posteingang, Gesendete &amp; Papierkorb">
-                                    </div>
-                                </div>
+                            <!-- 3. Zeitrahmen & Kameraangaben -->
+                            <h5 class="fw-bold text-dark mb-3">
+                                <i class="bi bi-clock-history text-primary me-2"></i>
+                                Sicherungszeitraum &amp; Kamera-Standorte
+                            </h5>
 
-                                <!-- TYPE: CLOUD -->
-                                <div id="fields_CLOUD" class="securing-fields <?= $selectedType === 'CLOUD' ? '' : 'd-none' ?>">
-                                    <div class="mb-3">
-                                        <label for="system_name" class="form-label">System-, Server- oder Dienstbezeichnung <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="system_name" name="securing_meta[system_name]" 
-                                               value="<?= htmlspecialchars((string) ($securingMeta['system_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                               placeholder="z. B. Nextcloud, Fileserver 01, Microsoft 365 SharePoint">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="cloud_target_data" class="form-label">Pfade, Dateien oder Benutzerkonten <span class="text-danger">*</span></label>
-                                        <textarea class="form-control" id="cloud_target_data" name="securing_meta[cloud_target_data]" rows="2" 
-                                                  placeholder="z. B. Verzeichnis /daten/buchhaltung_2026/ oder Benutzerkonto max.mustermann"><?= htmlspecialchars((string) ($securingMeta['cloud_target_data'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
-                                    </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label for="timeframe_from" class="form-label fw-bold text-dark">Sicherungszeitraum VON <span class="text-danger">*</span></label>
+                                    <input type="datetime-local" class="form-control <?= isset($errors['timeframe_from']) ? 'is-invalid' : '' ?>" 
+                                           id="timeframe_from" name="securing_meta[timeframe_from]" 
+                                           value="<?= htmlspecialchars((string) ($securingMeta['timeframe_from'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+                                    <?php if (isset($errors['timeframe_from'])): ?>
+                                        <div class="invalid-feedback"><?= htmlspecialchars($errors['timeframe_from'], ENT_QUOTES, 'UTF-8') ?></div>
+                                    <?php endif; ?>
                                 </div>
+                                <div class="col-md-6">
+                                    <label for="timeframe_to" class="form-label fw-bold text-dark">Sicherungszeitraum BIS <span class="text-danger">*</span></label>
+                                    <input type="datetime-local" class="form-control <?= isset($errors['timeframe_to']) ? 'is-invalid' : '' ?>" 
+                                           id="timeframe_to" name="securing_meta[timeframe_to]" 
+                                           value="<?= htmlspecialchars((string) ($securingMeta['timeframe_to'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
+                                    <?php if (isset($errors['timeframe_to'])): ?>
+                                        <div class="invalid-feedback"><?= htmlspecialchars($errors['timeframe_to'], ENT_QUOTES, 'UTF-8') ?></div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
 
-                                <!-- TYPE: ACCESS_LOG -->
-                                <div id="fields_ACCESS_LOG" class="securing-fields <?= $selectedType === 'ACCESS_LOG' ? '' : 'd-none' ?>">
-                                    <div class="mb-3">
-                                        <label for="doors_points" class="form-label">Türen, Schliessungen oder Zutrittskontrollpunkte <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="doors_points" name="securing_meta[doors_points]" 
-                                               value="<?= htmlspecialchars((string) ($securingMeta['doors_points'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                               placeholder="z. B. Haupteingang Schranke Nord, Serverraum Tür 104">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="log_timeframe" class="form-label">Relevanter Zeitraum <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="log_timeframe" name="securing_meta[log_timeframe]" 
-                                               value="<?= htmlspecialchars((string) ($securingMeta['log_timeframe'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                               placeholder="z. B. 01.03.2026 00:00 Uhr bis 03.03.2026 23:59 Uhr">
-                                    </div>
-                                    <div>
-                                        <label for="card_ids" class="form-label">Transponder-, Chip- oder Kartennummern</label>
-                                        <input type="text" class="form-control" id="card_ids" name="securing_meta[card_ids]" 
-                                               value="<?= htmlspecialchars((string) ($securingMeta['card_ids'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                               placeholder="Optional: z. B. RFID-UID #A4-9F-12-88">
-                                    </div>
-                                </div>
+                            <div class="mb-3">
+                                <label for="camera_location" class="form-label fw-bold text-dark">Kamera-Standorte / Bereiche <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control <?= isset($errors['camera_location']) ? 'is-invalid' : '' ?>" 
+                                       id="camera_location" name="securing_meta[camera_location]" 
+                                       value="<?= htmlspecialchars((string) ($securingMeta['camera_location'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                       placeholder="z. B. Haupteingang, Parkhaus Ebene -1, Kameras 03 &amp; 04" required>
+                                <div class="form-text small text-muted">Präzise Ortsangabe oder betroffene Kameranummern.</div>
+                                <?php if (isset($errors['camera_location'])): ?>
+                                    <div class="invalid-feedback"><?= htmlspecialchars($errors['camera_location'], ENT_QUOTES, 'UTF-8') ?></div>
+                                <?php endif; ?>
+                            </div>
 
-                                <!-- TYPE: OTHER -->
-                                <div id="fields_OTHER" class="securing-fields <?= $selectedType === 'OTHER' ? '' : 'd-none' ?>">
-                                    <div>
-                                        <label for="other_details" class="form-label">Genaue Beschreibung der Sicherungsanforderung <span class="text-danger">*</span></label>
-                                        <textarea class="form-control" id="other_details" name="securing_meta[other_details]" rows="3" 
-                                                  placeholder="Spezifizieren Sie hier die technischen Quellen, Parameter und Besonderheiten..."><?= htmlspecialchars((string) ($securingMeta['other_details'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
-                                    </div>
-                                </div>
+                            <div class="mb-4">
+                                <label for="video_notes" class="form-label fw-bold text-dark">Personen- / Fahrzeugmerkmale / Vorfallsbeschreibung</label>
+                                <textarea class="form-control" id="video_notes" name="securing_meta[video_notes]" rows="2" 
+                                          placeholder="z. B. Tatzeitpunkt ca. 22:15 Uhr, beteiligte Personen, Bewegungsrichtung..."><?= htmlspecialchars((string) ($securingMeta['video_notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
                             </div>
 
                             <div class="d-flex justify-content-between align-items-center pt-3 border-top" style="border-top: 2px solid #cbd5e1 !important;">
@@ -785,20 +849,16 @@ $securingMeta = (array) ($formData['securing_meta'] ?? []);
     <!-- Bootstrap 5 Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function selectSecuringType(typeKey) {
-            // Radio button selektieren
-            const radio = document.getElementById('type_' + typeKey);
-            if (radio) radio.checked = true;
-
-            // Karten visuell umschalten
-            document.querySelectorAll('.type-selector-card').forEach(el => el.classList.remove('selected'));
-            const activeCard = document.getElementById('card_type_' + typeKey);
-            if (activeCard) activeCard.classList.add('selected');
-
-            // Formularblöcke ein-/ausblenden
-            document.querySelectorAll('.securing-fields').forEach(el => el.classList.add('d-none'));
-            const targetFields = document.getElementById('fields_' + typeKey);
-            if (targetFields) targetFields.classList.remove('d-none');
+        function toggleVehicleDetails(show) {
+            const el = document.getElementById('vehicleDetailsBlock');
+            if (!el) return;
+            if (show) {
+                el.classList.remove('d-none');
+                const firstInput = el.querySelector('input');
+                if (firstInput) firstInput.focus();
+            } else {
+                el.classList.add('d-none');
+            }
         }
     </script>
 </body>

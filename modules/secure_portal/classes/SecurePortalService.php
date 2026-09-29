@@ -401,6 +401,12 @@ final class SecurePortalService
                 if (empty($meta['timeframe_to'])) {
                     $errors['timeframe_to'] = 'Bitte Ende des Sicherungszeitraums angeben.';
                 }
+                if (empty($meta['object'])) {
+                    $errors['object'] = 'Bitte wählen Sie das betroffene Objekt / Liegenschaft aus.';
+                }
+                if (empty($meta['floor'])) {
+                    $errors['floor'] = 'Bitte wählen Sie das Stockwerk / die Ebene aus.';
+                }
                 if (empty($meta['camera_location'])) {
                     $errors['camera_location'] = 'Bitte Standort bzw. relevante Kameras/Bereiche angeben.';
                 }
