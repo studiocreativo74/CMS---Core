@@ -19,6 +19,115 @@ final class SecurePortalConfig
     public const DEFAULT_DOWNLOAD_DAYS_ACTIVE = 30;
     public const DEFAULT_DOWNLOAD_DAYS_DELETE = 60;
 
+    public const DEFAULT_OBJECTS_CONFIG = [
+        [
+            'id' => 'obj_1',
+            'name' => 'Hauptgebäude / Areal Nord',
+            'floors' => [
+                'Erdgeschoss (EG)',
+                '1. Obergeschoss (+1)',
+                '2. Obergeschoss (+2)',
+                '3. Obergeschoss (+3)',
+                'Aussenbereich / Haupteingang',
+            ],
+            'colors' => [
+                'Keine Farbzuordnung',
+                'Blau (Trakt Nord)',
+                'Grün (Trakt Ost)',
+                'Rot (Trakt Süd)',
+            ],
+            'parking_spaces' => [
+                'Kein Parkplatz / Eingangsbereich',
+                'Besucherparkplatz P1',
+                'Besucherparkplatz P2',
+                'Behindertenparkplatz',
+                'Direktionsparkplatz',
+                'Lieferantenzone',
+            ],
+        ],
+        [
+            'id' => 'obj_2',
+            'name' => 'Parkhaus Zentrum',
+            'floors' => [
+                '3. Untergeschoss (-3)',
+                '2. Untergeschoss (-2)',
+                '1. Untergeschoss (-1)',
+                'Erdgeschoss (EG / Einfahrt)',
+                '1. Obergeschoss (+1)',
+                '2. Obergeschoss (+2)',
+            ],
+            'colors' => [
+                'Blau (Sektor A)',
+                'Gelb (Sektor B)',
+                'Rot (Sektor C)',
+                'Grün (Sektor D)',
+                'Orange (Sektor E)',
+            ],
+            'parking_spaces' => [
+                'Parkplatz 01',
+                'Parkplatz 02',
+                'Parkplatz 03',
+                'Parkplatz 04',
+                'Parkplatz 05',
+                'Parkplatz 06',
+                'Parkplatz 07',
+                'Parkplatz 08',
+                'Parkplatz 09',
+                'Parkplatz 10',
+                'Besucherparkplatz',
+                'Behindertenparkplatz',
+                'Ladezone / E-Ladestation',
+            ],
+        ],
+        [
+            'id' => 'obj_3',
+            'name' => 'Gewerbepark Ost',
+            'floors' => [
+                'Untergeschoss (UG)',
+                'Erdgeschoss / Werkhalle',
+                '1. Obergeschoss (Büros)',
+                'Laderampe / Hof',
+            ],
+            'colors' => [
+                'Halle 1 (Gelb)',
+                'Halle 2 (Blau)',
+                'Halle 3 (Rot)',
+                'Verwaltung (Weiss)',
+            ],
+            'parking_spaces' => [
+                'Kundenparkplatz 01-05',
+                'Mitarbeiter P1-P20',
+                'LKW-Wendeplatz',
+                'Laderampe 1',
+                'Laderampe 2',
+            ],
+        ],
+        [
+            'id' => 'obj_4',
+            'name' => 'Wohnüberbauung Süd',
+            'floors' => [
+                'Einstellhalle (-1)',
+                'Erdgeschoss (EG)',
+                '1. Obergeschoss (+1)',
+                '2. Obergeschoss (+2)',
+                '3. Obergeschoss (+3)',
+                'Areal / Spielplatz',
+            ],
+            'colors' => [
+                'Haus A (Blau)',
+                'Haus B (Grün)',
+                'Haus C (Gelb)',
+                'Keine Farbzuordnung',
+            ],
+            'parking_spaces' => [
+                'Tiefgaragenplatz 01-15',
+                'Tiefgaragenplatz 16-30',
+                'Besucherparkplatz 01-06',
+                'Veloraum / Veloabstellplatz',
+            ],
+        ],
+    ];
+
     public const DEFAULT_VIDEO_OBJECTS = [
         'Hauptgebäude / Areal Nord',
         'Parkhaus Zentrum',
@@ -95,76 +204,133 @@ final class SecurePortalConfig
     }
 
     /**
-     * Liefert die konfigurierten Objekte / Liegenschaften.
+     * Liefert die vollständige Konfiguration aller Objekte inklusive ihrer spezifischen
+     * Stockwerke, Farben und Parkplatz-Nummern.
+     *
+     * @return array<int, array{id: string, name: string, floors: array<string>, colors: array<string>, parking_spaces: array<string>}>
+     */
+    public static function getVideoObjectsConfig(): array
+    {
+        if (class_exists('Settings')) {
+            $val = Settings::get('secure_video_objects_config');
+            if ($val !== null && trim((string)$val) !== '') {
+                $decoded = json_decode((string)$val, true);
+                if (is_array($decoded) && !empty($decoded)) {
+                    $cleaned = [];
+                    foreach ($decoded as $idx => $item) {
+                        if (!is_array($item)) {
+                            continue;
+                        }
+                        $name = trim((string)($item['name'] ?? ''));
+                        if ($name === '') {
+                            continue;
+                        }
+                        $floors = is_array($item['floors'] ?? null)
+                            ? array_values(array_filter(array_map('trim', $item['floors']), static fn($v) => $v !== ''))
+                            : self::parseLines((string)($item['floors'] ?? ''));
+                        $colors = is_array($item['colors'] ?? null)
+                            ? array_values(array_filter(array_map('trim', $item['colors']), static fn($v) => $v !== ''))
+                            : self::parseLines((string)($item['colors'] ?? ''));
+                        $spaces = is_array($item['parking_spaces'] ?? null)
+                            ? array_values(array_filter(array_map('trim', $item['parking_spaces']), static fn($v) => $v !== ''))
+                            : self::parseLines((string)($item['parking_spaces'] ?? ''));
+
+                        $cleaned[] = [
+                            'id' => (string)($item['id'] ?? ('obj_' . ($idx + 1))),
+                            'name' => $name,
+                            'floors' => !empty($floors) ? $floors : self::DEFAULT_VIDEO_FLOORS,
+                            'colors' => !empty($colors) ? $colors : self::DEFAULT_VIDEO_COLORS,
+                            'parking_spaces' => !empty($spaces) ? $spaces : self::DEFAULT_VIDEO_PARKING_SPACES,
+                        ];
+                    }
+                    if (!empty($cleaned)) {
+                        return $cleaned;
+                    }
+                }
+            }
+        }
+        return self::DEFAULT_OBJECTS_CONFIG;
+    }
+
+    /**
+     * Sucht die Konfiguration für ein bestimmtes Objekt anhand des Namens.
+     *
+     * @return array{id: string, name: string, floors: array<string>, colors: array<string>, parking_spaces: array<string>}|null
+     */
+    public static function getObjectConfigByName(string $objectName): ?array
+    {
+        $nameTrim = trim($objectName);
+        if ($nameTrim === '') {
+            return null;
+        }
+        foreach (self::getVideoObjectsConfig() as $c) {
+            if (strcasecmp($c['name'], $nameTrim) === 0) {
+                return $c;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Liefert die Namen aller konfigurierten Objekte / Liegenschaften.
      *
      * @return array<string>
      */
     public static function getVideoObjects(): array
     {
-        if (class_exists('Settings')) {
-            $val = Settings::get('secure_video_objects');
-            if ($val !== null && trim((string)$val) !== '') {
-                $parsed = self::parseLines((string)$val);
-                if (!empty($parsed)) {
-                    return $parsed;
-                }
+        $config = self::getVideoObjectsConfig();
+        $names = [];
+        foreach ($config as $c) {
+            if (!empty($c['name']) && !in_array($c['name'], $names, true)) {
+                $names[] = $c['name'];
             }
         }
-        return self::DEFAULT_VIDEO_OBJECTS;
+        return !empty($names) ? $names : self::DEFAULT_VIDEO_OBJECTS;
     }
 
     /**
-     * Liefert die konfigurierten Stockwerke / Etagen.
+     * Liefert die konfigurierten Stockwerke / Etagen (optional spezifisch für ein Objekt).
      *
      * @return array<string>
      */
-    public static function getVideoFloors(): array
+    public static function getVideoFloors(?string $objectName = null): array
     {
-        if (class_exists('Settings')) {
-            $val = Settings::get('secure_video_floors');
-            if ($val !== null && trim((string)$val) !== '') {
-                $parsed = self::parseLines((string)$val);
-                if (!empty($parsed)) {
-                    return $parsed;
-                }
+        if ($objectName !== null && $objectName !== '') {
+            $obj = self::getObjectConfigByName($objectName);
+            if ($obj !== null && !empty($obj['floors'])) {
+                return $obj['floors'];
             }
         }
         return self::DEFAULT_VIDEO_FLOORS;
     }
 
     /**
-     * Liefert die konfigurierten Farben / Farbcodierungen.
+     * Liefert die konfigurierten Farben / Farbcodierungen (optional spezifisch für ein Objekt).
      *
      * @return array<string>
      */
-    public static function getVideoColors(): array
+    public static function getVideoColors(?string $objectName = null): array
     {
-        if (class_exists('Settings')) {
-            $val = Settings::get('secure_video_colors');
-            if ($val !== null && trim((string)$val) !== '') {
-                $parsed = self::parseLines((string)$val);
-                if (!empty($parsed)) {
-                    return $parsed;
-                }
+        if ($objectName !== null && $objectName !== '') {
+            $obj = self::getObjectConfigByName($objectName);
+            if ($obj !== null && !empty($obj['colors'])) {
+                return $obj['colors'];
             }
         }
         return self::DEFAULT_VIDEO_COLORS;
     }
 
     /**
-     * Liefert die konfigurierten Parkplatz-Nummern.
+     * Liefert die konfigurierten Parkplatz-Nummern (optional spezifisch für ein Objekt).
      *
      * @return array<string>
      */
-    public static function getVideoParkingSpaces(): array
+    public static function getVideoParkingSpaces(?string $objectName = null): array
     {
-        if (class_exists('Settings')) {
-            $val = Settings::get('secure_video_parking_spaces');
-            if ($val !== null && trim((string)$val) !== '') {
-                $parsed = self::parseLines((string)$val);
-                if (!empty($parsed)) {
-                    return $parsed;
-                }
+        if ($objectName !== null && $objectName !== '') {
+            $obj = self::getObjectConfigByName($objectName);
+            if ($obj !== null && !empty($obj['parking_spaces'])) {
+                return $obj['parking_spaces'];
             }
         }
         return self::DEFAULT_VIDEO_PARKING_SPACES;

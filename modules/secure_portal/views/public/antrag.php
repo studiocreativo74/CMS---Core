@@ -43,10 +43,13 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
 $selectedType = 'VIDEO';
 $securingMeta = (array) ($formData['securing_meta'] ?? []);
 
+$videoObjectsConfig = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoObjectsConfig() : [];
 $videoObjects = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoObjects() : [];
-$videoFloors = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoFloors() : [];
-$videoColors = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoColors() : [];
-$videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoParkingSpaces() : [];
+
+$selectedObject = (string) ($securingMeta['object'] ?? '');
+$videoFloors = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoFloors($selectedObject ?: null) : [];
+$videoColors = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoColors($selectedObject ?: null) : [];
+$videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoParkingSpaces($selectedObject ?: null) : [];
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -596,7 +599,8 @@ $videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::g
                                         Objekt <span class="text-danger">*</span>
                                     </label>
                                     <select class="form-select <?= isset($errors['object']) ? 'is-invalid' : '' ?>" 
-                                            id="meta_object" name="securing_meta[object]" required>
+                                            id="meta_object" name="securing_meta[object]" 
+                                            onchange="updateObjectDependentDropdowns(this.value)" required>
                                         <option value="">-- Objekt wählen --</option>
                                         <?php foreach ($videoObjects as $opt): ?>
                                             <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" 
@@ -617,13 +621,17 @@ $videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::g
                                     </label>
                                     <select class="form-select <?= isset($errors['floor']) ? 'is-invalid' : '' ?>" 
                                             id="meta_floor" name="securing_meta[floor]" required>
-                                        <option value="">-- Stockwerk wählen --</option>
-                                        <?php foreach ($videoFloors as $opt): ?>
-                                            <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" 
-                                                <?= ($securingMeta['floor'] ?? '') === $opt ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>
-                                            </option>
-                                        <?php endforeach; ?>
+                                        <?php if (empty($selectedObject)): ?>
+                                            <option value="">-- Zuerst Objekt wählen --</option>
+                                        <?php else: ?>
+                                            <option value="">-- Stockwerk wählen --</option>
+                                            <?php foreach ($videoFloors as $opt): ?>
+                                                <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" 
+                                                    <?= ($securingMeta['floor'] ?? '') === $opt ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                     </select>
                                     <?php if (isset($errors['floor'])): ?>
                                         <div class="invalid-feedback"><?= htmlspecialchars($errors['floor'], ENT_QUOTES, 'UTF-8') ?></div>
@@ -633,33 +641,39 @@ $videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::g
                                 <!-- Farbe -->
                                 <div class="col-md-6 col-lg-3">
                                     <label for="meta_color" class="form-label fw-bold text-dark">
-                                        Farbe
+                                        Farbe / Sektor <span class="text-muted fw-normal small">(optional)</span>
                                     </label>
                                     <select class="form-select" id="meta_color" name="securing_meta[color]">
-                                        <option value="">-- Farbe wählen --</option>
-                                        <?php foreach ($videoColors as $opt): ?>
-                                            <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" 
-                                                <?= ($securingMeta['color'] ?? '') === $opt ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>
-                                            </option>
-                                        <?php endforeach; ?>
+                                        <option value="">-- Keine Angabe (optional) --</option>
+                                        <?php if (!empty($selectedObject)): ?>
+                                            <?php foreach ($videoColors as $opt): ?>
+                                                <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" 
+                                                    <?= ($securingMeta['color'] ?? '') === $opt ? 'selected' : '' ?>>
+                                                    <?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                     </select>
                                 </div>
 
                                 <!-- Parkplatz Nummer -->
                                 <div class="col-md-6 col-lg-3">
                                     <label for="meta_parking_space" class="form-label fw-bold text-dark">
-                                        Parkplatz Nummer
+                                        Parkplatz Nummer <span class="text-muted fw-normal small">(optional)</span>
                                     </label>
-                                    <select class="form-select" id="meta_parking_space" name="securing_meta[parking_space]">
-                                        <option value="">-- Parkplatz wählen --</option>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="meta_parking_space" 
+                                           name="securing_meta[parking_space]" 
+                                           value="<?= htmlspecialchars((string) ($securingMeta['parking_space'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                           placeholder="z. B. 42 oder Besucher"
+                                           list="parking_suggestions">
+                                    <datalist id="parking_suggestions">
                                         <?php foreach ($videoParkingSpaces as $opt): ?>
-                                            <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>" 
-                                                <?= ($securingMeta['parking_space'] ?? '') === $opt ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>
-                                            </option>
+                                            <option value="<?= htmlspecialchars($opt, ENT_QUOTES, 'UTF-8') ?>">
                                         <?php endforeach; ?>
-                                    </select>
+                                    </datalist>
+                                    <div class="form-text small text-muted">Freie Eingabe (z. B. Stellplatz-Nr. oder Bereich).</div>
                                 </div>
                             </div>
 
@@ -849,6 +863,73 @@ $videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::g
     <!-- Bootstrap 5 Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const videoObjectsConfig = <?= json_encode($videoObjectsConfig, JSON_UNESCAPED_UNICODE) ?>;
+
+        function updateObjectDependentDropdowns(objectName, keepValues = false) {
+            const floorSelect = document.getElementById('meta_floor');
+            const colorSelect = document.getElementById('meta_color');
+            const parkingDatalist = document.getElementById('parking_suggestions');
+
+            if (!floorSelect || !colorSelect) return;
+
+            const currentFloor = keepValues ? floorSelect.value : '';
+            const currentColor = keepValues ? colorSelect.value : '';
+
+            const obj = videoObjectsConfig.find(o => o.name === objectName);
+
+            if (!obj || !objectName) {
+                floorSelect.innerHTML = '<option value="">-- Zuerst Objekt wählen --</option>';
+                colorSelect.innerHTML = '<option value="">-- Keine Angabe (optional) --</option>';
+                floorSelect.disabled = true;
+                if (parkingDatalist) parkingDatalist.innerHTML = '';
+                return;
+            }
+
+            floorSelect.disabled = false;
+
+            // 1. Stockwerke (Pflichtfeld)
+            let floorHtml = '<option value="">-- Stockwerk wählen --</option>';
+            (obj.floors || []).forEach(f => {
+                const sel = f === currentFloor ? ' selected' : '';
+                floorHtml += `<option value="${escapeHtml(f)}"${sel}>${escapeHtml(f)}</option>`;
+            });
+            floorSelect.innerHTML = floorHtml;
+
+            // 2. Farben (Kein Pflichtfeld / optional)
+            let colorHtml = '<option value="">-- Keine Angabe (optional) --</option>';
+            (obj.colors || []).forEach(c => {
+                const sel = c === currentColor ? ' selected' : '';
+                colorHtml += `<option value="${escapeHtml(c)}"${sel}>${escapeHtml(c)}</option>`;
+            });
+            colorSelect.innerHTML = colorHtml;
+
+            // 3. Parkplätze (Freie Eingabe, Datalist für optionale Vorschläge)
+            if (parkingDatalist) {
+                let parkingHtml = '';
+                (obj.parking_spaces || []).forEach(p => {
+                    parkingHtml += `<option value="${escapeHtml(p)}">`;
+                });
+                parkingDatalist.innerHTML = parkingHtml;
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, function(s) {
+                return ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'})[s];
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const objectSelect = document.getElementById('meta_object');
+            if (objectSelect) {
+                if (objectSelect.value) {
+                    updateObjectDependentDropdowns(objectSelect.value, true);
+                } else {
+                    updateObjectDependentDropdowns('', false);
+                }
+            }
+        });
+
         function toggleVehicleDetails(show) {
             const el = document.getElementById('vehicleDetailsBlock');
             if (!el) return;

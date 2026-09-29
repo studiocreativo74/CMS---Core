@@ -20,10 +20,7 @@ $notificationEmail = (string) Settings::get('secure_notification_email', '');
 $daysActive = class_exists('SecurePortalConfig') ? SecurePortalConfig::getDownloadDaysActive() : 30;
 $daysDelete = class_exists('SecurePortalConfig') ? SecurePortalConfig::getDownloadDaysDelete() : 60;
 
-$videoObjectsText = class_exists('SecurePortalConfig') ? SecurePortalConfig::formatLines(SecurePortalConfig::getVideoObjects()) : '';
-$videoFloorsText = class_exists('SecurePortalConfig') ? SecurePortalConfig::formatLines(SecurePortalConfig::getVideoFloors()) : '';
-$videoColorsText = class_exists('SecurePortalConfig') ? SecurePortalConfig::formatLines(SecurePortalConfig::getVideoColors()) : '';
-$videoParkingSpacesText = class_exists('SecurePortalConfig') ? SecurePortalConfig::formatLines(SecurePortalConfig::getVideoParkingSpaces()) : '';
+$videoObjectsConfig = class_exists('SecurePortalConfig') ? SecurePortalConfig::getVideoObjectsConfig() : [];
 
 // Beispiel-Auflösung für die Vorschau
 $sampleCase = [
@@ -369,86 +366,122 @@ ob_start();
                     </div>
                 </div>
 
-                <!-- Video-Antrag Dropdown-Auswahllisten (Objekt, Stockwerk, Farbe, Parkplatz) -->
+                <!-- Video-Antrag Dropdown-Auswahllisten (PRO OBJEKT konfigurierbar) -->
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white border-bottom py-3">
-                        <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2">
                                 <div class="bg-primary-subtle text-primary p-2 rounded">
                                     <i class="bi bi-camera-video fs-5"></i>
                                 </div>
                                 <div>
-                                    <h5 class="mb-0 fw-bold text-dark">Video-Antragsoptionen (Dropdown-Auswahllisten)</h5>
-                                    <small class="text-muted">Inhalte für Objekt, Stockwerk, Farbe und Parkplatz im öffentlichen Antragsformular</small>
+                                    <h5 class="mb-0 fw-bold text-dark">Video-Antragsoptionen (Pro Objekt konfigurierbar)</h5>
+                                    <small class="text-muted">Stockwerke, Farben und Parkplätze individuell pro Liegenschaft/Objekt festlegen</small>
                                 </div>
                             </div>
-                            <span class="badge bg-secondary-subtle text-secondary border">
-                                <i class="bi bi-ui-checks me-1"></i> Formular-Konfiguration
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <i class="bi bi-layers-half me-1"></i> Pro Objekt aktiv
                             </span>
                         </div>
                     </div>
                     <div class="card-body p-4">
-                        <p class="text-muted small mb-4">
-                            Konfigurieren Sie hier die Auswahllisten, die Polizeibeamten im Schritt 3 des Sicherungsantrags zur Verfügung stehen. 
-                            <strong>Tragen Sie pro Zeile eine Option ein.</strong> Leerzeilen werden automatisch ignoriert.
+                        <p class="text-muted small mb-3">
+                            Hier konfigurieren Sie für jedes <strong>Objekt / Gebäude</strong> die spezifischen Stockwerke, Farben (Sektoren) und Parkplatz-Nummern. 
+                            Wählt der Antragsteller im öffentlichen Formular ein Objekt aus, passen sich die Stockwerk-, Farb- und Parkplatz-Dropdowns dynamisch an das jeweilige Objekt an.
                         </p>
 
-                        <div class="row g-4">
-                            <!-- 1. Objekte -->
-                            <div class="col-md-6">
-                                <label for="secure_video_objects" class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
-                                    <span><i class="bi bi-building me-1 text-primary"></i> 1. Objekte / Liegenschaften</span>
-                                    <span class="badge bg-light text-muted border">1 pro Zeile</span>
-                                </label>
-                                <textarea class="form-control font-monospace small" 
-                                          id="secure_video_objects" 
-                                          name="secure_video_objects" 
-                                          rows="6" 
-                                          placeholder="Hauptgebäude / Areal Nord&#10;Parkhaus Zentrum&#10;Gewerbepark Ost"><?= htmlspecialchars($videoObjectsText, ENT_QUOTES, 'UTF-8') ?></textarea>
-                                <div class="form-text small text-muted">Dropdown für das betroffene Gebäude bzw. Areal.</div>
-                            </div>
+                        <!-- Objekt Nav-Pills -->
+                        <ul class="nav nav-pills gap-2 p-2 bg-light rounded border mb-4 flex-wrap align-items-center" id="objectConfigTabs" role="tablist">
+                            <?php foreach ($videoObjectsConfig as $idx => $obj): ?>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link <?= $idx === 0 ? 'active' : '' ?> fw-bold" 
+                                            id="tab-btn-<?= $idx ?>" 
+                                            data-bs-toggle="pill" 
+                                            data-bs-target="#tab-pane-<?= $idx ?>" 
+                                            type="button" 
+                                            role="tab">
+                                        <i class="bi bi-building me-1"></i>
+                                        <span class="tab-label"><?= htmlspecialchars($obj['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    </button>
+                                </li>
+                            <?php endforeach; ?>
+                            <li class="nav-item ms-auto">
+                                <button type="button" class="btn btn-sm btn-outline-success fw-bold px-3 py-2" onclick="addNewObjectTab()">
+                                    <i class="bi bi-plus-circle-fill me-1"></i> Neues Objekt hinzufügen
+                                </button>
+                            </li>
+                        </ul>
 
-                            <!-- 2. Stockwerke -->
-                            <div class="col-md-6">
-                                <label for="secure_video_floors" class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
-                                    <span><i class="bi bi-layers me-1 text-primary"></i> 2. Stockwerke / Ebenen</span>
-                                    <span class="badge bg-light text-muted border">1 pro Zeile</span>
-                                </label>
-                                <textarea class="form-control font-monospace small" 
-                                          id="secure_video_floors" 
-                                          name="secure_video_floors" 
-                                          rows="6" 
-                                          placeholder="3. Untergeschoss (-3)&#10;2. Untergeschoss (-2)&#10;1. Untergeschoss (-1)&#10;Erdgeschoss (EG)&#10;1. Obergeschoss (+1)"><?= htmlspecialchars($videoFloorsText, ENT_QUOTES, 'UTF-8') ?></textarea>
-                                <div class="form-text small text-muted">Dropdown für das Geschoss / die Etage.</div>
-                            </div>
+                        <!-- Tab Panes für jedes Objekt -->
+                        <div class="tab-content" id="objectConfigTabContent">
+                            <?php foreach ($videoObjectsConfig as $idx => $obj): ?>
+                                <div class="tab-pane fade <?= $idx === 0 ? 'show active' : '' ?> object-pane" id="tab-pane-<?= $idx ?>" role="tabpanel">
+                                    <div class="p-3 bg-white rounded border mb-4">
+                                        <div class="row align-items-end g-3">
+                                            <div class="col-md-8">
+                                                <label class="form-label fw-bold text-dark small text-uppercase mb-1">
+                                                    <i class="bi bi-building text-primary me-1"></i> Objekt-Bezeichnung (Liegenschaft / Areal)
+                                                </label>
+                                                <input type="hidden" name="video_objects[<?= $idx ?>][id]" value="<?= htmlspecialchars($obj['id'], ENT_QUOTES, 'UTF-8') ?>">
+                                                <input type="text" 
+                                                       class="form-control form-control-lg fw-bold" 
+                                                       id="obj_name_<?= $idx ?>"
+                                                       name="video_objects[<?= $idx ?>][name]" 
+                                                       value="<?= htmlspecialchars($obj['name'], ENT_QUOTES, 'UTF-8') ?>" 
+                                                       required
+                                                       oninput="updateTabLabel(<?= $idx ?>, this.value)"
+                                                       placeholder="z. B. Hauptgebäude / Areal Nord">
+                                            </div>
+                                            <div class="col-md-4 text-md-end">
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeObjectTab(<?= $idx ?>)">
+                                                    <i class="bi bi-trash3-fill me-1"></i> Dieses Objekt löschen
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            <!-- 3. Farben -->
-                            <div class="col-md-6">
-                                <label for="secure_video_colors" class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
-                                    <span><i class="bi bi-palette me-1 text-primary"></i> 3. Farben / Sektoren</span>
-                                    <span class="badge bg-light text-muted border">1 pro Zeile</span>
-                                </label>
-                                <textarea class="form-control font-monospace small" 
-                                          id="secure_video_colors" 
-                                          name="secure_video_colors" 
-                                          rows="6" 
-                                          placeholder="Blau (Sektor A)&#10;Gelb (Sektor B)&#10;Rot (Sektor C)&#10;Grün (Sektor D)"><?= htmlspecialchars($videoColorsText, ENT_QUOTES, 'UTF-8') ?></textarea>
-                                <div class="form-text small text-muted">Dropdown für die Sektoren- oder Parkebenenfarbe.</div>
-                            </div>
+                                    <div class="row g-4">
+                                        <!-- Stockwerke -->
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
+                                                <span><i class="bi bi-layers text-primary me-1"></i> Stockwerke / Ebenen</span>
+                                                <span class="badge bg-light text-muted border">1 pro Zeile</span>
+                                            </label>
+                                            <textarea class="form-control font-monospace small" 
+                                                      name="video_objects[<?= $idx ?>][floors]" 
+                                                      rows="8" 
+                                                      placeholder="Erdgeschoss (EG)&#10;1. Obergeschoss (+1)&#10;2. Obergeschoss (+2)"><?= htmlspecialchars(SecurePortalConfig::formatLines($obj['floors']), ENT_QUOTES, 'UTF-8') ?></textarea>
+                                            <div class="form-text small text-muted">Etagen speziell für dieses Gebäude.</div>
+                                        </div>
 
-                            <!-- 4. Parkplatz Nummern -->
-                            <div class="col-md-6">
-                                <label for="secure_video_parking_spaces" class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
-                                    <span><i class="bi bi-p-square me-1 text-primary"></i> 4. Parkplatz-Nummern</span>
-                                    <span class="badge bg-light text-muted border">1 pro Zeile</span>
-                                </label>
-                                <textarea class="form-control font-monospace small" 
-                                          id="secure_video_parking_spaces" 
-                                          name="secure_video_parking_spaces" 
-                                          rows="6" 
-                                          placeholder="Kein Parkplatz / Fahrbahn&#10;Parkplatz 01&#10;Parkplatz 02&#10;Parkplatz 03"><?= htmlspecialchars($videoParkingSpacesText, ENT_QUOTES, 'UTF-8') ?></textarea>
-                                <div class="form-text small text-muted">Dropdown für spezifische Stellplätze / Parkfeldnummern.</div>
-                            </div>
+                                        <!-- Farben -->
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
+                                                <span><i class="bi bi-palette text-primary me-1"></i> Farben / Sektoren</span>
+                                                <span class="badge bg-light text-muted border">1 pro Zeile</span>
+                                            </label>
+                                            <textarea class="form-control font-monospace small" 
+                                                      name="video_objects[<?= $idx ?>][colors]" 
+                                                      rows="8" 
+                                                      placeholder="Blau (Sektor A)&#10;Gelb (Sektor B)&#10;Rot (Sektor C)"><?= htmlspecialchars(SecurePortalConfig::formatLines($obj['colors']), ENT_QUOTES, 'UTF-8') ?></textarea>
+                                            <div class="form-text small text-muted">Sektorenfarben für dieses Gebäude.</div>
+                                        </div>
+
+                                        <!-- Parkplatz Nummern -->
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
+                                                <span><i class="bi bi-p-square text-primary me-1"></i> Parkplatz-Nummern</span>
+                                                <span class="badge bg-light text-muted border">1 pro Zeile</span>
+                                            </label>
+                                            <textarea class="form-control font-monospace small" 
+                                                      name="video_objects[<?= $idx ?>][parking_spaces]" 
+                                                      rows="8" 
+                                                      placeholder="Parkplatz 01&#10;Parkplatz 02&#10;Besucherparkplatz"><?= htmlspecialchars(SecurePortalConfig::formatLines($obj['parking_spaces']), ENT_QUOTES, 'UTF-8') ?></textarea>
+                                            <div class="form-text small text-muted">Vorschläge für die freie Eingabe im Formular (kein Zwang).</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
                     </div>
                 </div>
@@ -700,6 +733,122 @@ function appendPlaceholder(tag) {
         input.value = val + '_' + tag;
     }
     input.focus();
+}
+
+var objectIndexCounter = <?= count($videoObjectsConfig) ?>;
+
+function updateTabLabel(idx, val) {
+    var btn = document.getElementById('tab-btn-' + idx);
+    if (btn) {
+        var span = btn.querySelector('.tab-label');
+        if (span) {
+            span.textContent = val.trim() !== '' ? val.trim() : 'Unbenanntes Objekt';
+        }
+    }
+}
+
+function removeObjectTab(idx) {
+    var allPanes = document.querySelectorAll('.object-pane');
+    if (allPanes.length <= 1) {
+        alert('Mindestens ein Objekt muss in der Konfiguration verbleiben.');
+        return;
+    }
+    if (!confirm('Möchten Sie dieses Objekt samt allen spezifischen Stockwerken, Farben und Parkplätzen wirklich entfernen?')) {
+        return;
+    }
+    var btn = document.getElementById('tab-btn-' + idx);
+    var li = btn ? btn.closest('li') : null;
+    var pane = document.getElementById('tab-pane-' + idx);
+
+    var wasActive = btn && btn.classList.contains('active');
+    if (li) li.remove();
+    if (pane) pane.remove();
+
+    if (wasActive) {
+        var firstRemainingBtn = document.querySelector('#objectConfigTabs .nav-link:not(.ms-auto button)');
+        if (firstRemainingBtn && typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+            var trigger = new bootstrap.Tab(firstRemainingBtn);
+            trigger.show();
+        }
+    }
+}
+
+function addNewObjectTab() {
+    var idx = objectIndexCounter++;
+    var defaultName = 'Neues Objekt ' + (idx + 1);
+
+    // Tab Button
+    var tabsList = document.getElementById('objectConfigTabs');
+    var addBtnLi = tabsList.querySelector('li.ms-auto');
+
+    var newLi = document.createElement('li');
+    newLi.className = 'nav-item';
+    newLi.setAttribute('role', 'presentation');
+    newLi.innerHTML = '<button class="nav-link fw-bold" id="tab-btn-' + idx + '" data-bs-toggle="pill" data-bs-target="#tab-pane-' + idx + '" type="button" role="tab">' +
+        '<i class="bi bi-building me-1"></i> <span class="tab-label">' + defaultName + '</span>' +
+        '</button>';
+    tabsList.insertBefore(newLi, addBtnLi);
+
+    // Tab Pane
+    var content = document.getElementById('objectConfigTabContent');
+    var newPane = document.createElement('div');
+    newPane.className = 'tab-pane fade object-pane';
+    newPane.id = 'tab-pane-' + idx;
+    newPane.setAttribute('role', 'tabpanel');
+    newPane.innerHTML = 
+        '<div class="p-3 bg-white rounded border mb-4">' +
+            '<div class="row align-items-end g-3">' +
+                '<div class="col-md-8">' +
+                    '<label class="form-label fw-bold text-dark small text-uppercase mb-1">' +
+                        '<i class="bi bi-building text-primary me-1"></i> Objekt-Bezeichnung (Liegenschaft / Areal)' +
+                    '</label>' +
+                    '<input type="hidden" name="video_objects[' + idx + '][id]" value="obj_' + (idx + 1) + '">' +
+                    '<input type="text" class="form-control form-control-lg fw-bold" id="obj_name_' + idx + '" name="video_objects[' + idx + '][name]" value="' + defaultName + '" required oninput="updateTabLabel(' + idx + ', this.value)" placeholder="z. B. Filiale West">' +
+                '</div>' +
+                '<div class="col-md-4 text-md-end">' +
+                    '<button type="button" class="btn btn-outline-danger btn-sm" onclick="removeObjectTab(' + idx + ')">' +
+                        '<i class="bi bi-trash3-fill me-1"></i> Dieses Objekt löschen' +
+                    '</button>' +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+        '<div class="row g-4">' +
+            '<div class="col-md-4">' +
+                '<label class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">' +
+                    '<span><i class="bi bi-layers text-primary me-1"></i> Stockwerke / Ebenen</span>' +
+                    '<span class="badge bg-light text-muted border">1 pro Zeile</span>' +
+                '</label>' +
+                '<textarea class="form-control font-monospace small" name="video_objects[' + idx + '][floors]" rows="8" placeholder="Erdgeschoss (EG)&#10;1. Obergeschoss (+1)">Erdgeschoss (EG)\n1. Obergeschoss (+1)\n2. Obergeschoss (+2)</textarea>' +
+                '<div class="form-text small text-muted">Etagen speziell für dieses Gebäude.</div>' +
+            '</div>' +
+            '<div class="col-md-4">' +
+                '<label class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">' +
+                    '<span><i class="bi bi-palette text-primary me-1"></i> Farben / Sektoren</span>' +
+                    '<span class="badge bg-light text-muted border">1 pro Zeile</span>' +
+                '</label>' +
+                '<textarea class="form-control font-monospace small" name="video_objects[' + idx + '][colors]" rows="8" placeholder="Blau&#10;Gelb&#10;Rot">Blau\nGelb\nRot\nKeine Farbzuordnung</textarea>' +
+                '<div class="form-text small text-muted">Sektorenfarben für dieses Gebäude.</div>' +
+            '</div>' +
+            '<div class="col-md-4">' +
+                '<label class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">' +
+                    '<span><i class="bi bi-p-square text-primary me-1"></i> Parkplatz-Nummern</span>' +
+                    '<span class="badge bg-light text-muted border">1 pro Zeile</span>' +
+                '</label>' +
+                '<textarea class="form-control font-monospace small" name="video_objects[' + idx + '][parking_spaces]" rows="8" placeholder="Parkplatz 01&#10;Parkplatz 02">Parkplatz 01\nParkplatz 02\nParkplatz 03\nBesucherparkplatz</textarea>' +
+                '<div class="form-text small text-muted">Parkplätze speziell für diese Liegenschaft.</div>' +
+            '</div>' +
+        '</div>';
+    content.appendChild(newPane);
+
+    if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+        var trigger = new bootstrap.Tab(document.getElementById('tab-btn-' + idx));
+        trigger.show();
+    }
+    var inp = document.getElementById('obj_name_' + idx);
+    if (inp) {
+        inp.focus();
+        inp.select();
+    }
 }
 </script>
 

@@ -921,18 +921,56 @@ if (isset($router) && $router !== null) {
                 Settings::set('secure_download_days_delete', (string) $rawDaysDelete);
             }
 
-            // Videoüberwachungs-Optionen für Antragsformular (Objekt, Stockwerk, Farbe, Parkplatz)
-            if (isset($_POST['secure_video_objects'])) {
+            // Videoüberwachungs-Optionen für Antragsformular pro Objekt
+            if (isset($_POST['video_objects']) && is_array($_POST['video_objects'])) {
+                $objectsConfig = [];
+                foreach ($_POST['video_objects'] as $idx => $rawObj) {
+                    if (!is_array($rawObj)) {
+                        continue;
+                    }
+                    $name = trim((string) ($rawObj['name'] ?? ''));
+                    if ($name === '') {
+                        continue;
+                    }
+                    $floorsText = (string) ($rawObj['floors'] ?? '');
+                    $colorsText = (string) ($rawObj['colors'] ?? '');
+                    $spacesText = (string) ($rawObj['parking_spaces'] ?? '');
+
+                    $floors = class_exists('SecurePortalConfig') 
+                        ? SecurePortalConfig::parseLines($floorsText) 
+                        : array_values(array_filter(array_map('trim', explode("\n", $floorsText)), static fn($v) => $v !== ''));
+                    $colors = class_exists('SecurePortalConfig') 
+                        ? SecurePortalConfig::parseLines($colorsText) 
+                        : array_values(array_filter(array_map('trim', explode("\n", $colorsText)), static fn($v) => $v !== ''));
+                    $spaces = class_exists('SecurePortalConfig') 
+                        ? SecurePortalConfig::parseLines($spacesText) 
+                        : array_values(array_filter(array_map('trim', explode("\n", $spacesText)), static fn($v) => $v !== ''));
+
+                    $objectsConfig[] = [
+                        'id' => !empty($rawObj['id']) ? trim((string) $rawObj['id']) : ('obj_' . ($idx + 1)),
+                        'name' => $name,
+                        'floors' => !empty($floors) ? $floors : (class_exists('SecurePortalConfig') ? SecurePortalConfig::DEFAULT_VIDEO_FLOORS : []),
+                        'colors' => !empty($colors) ? $colors : (class_exists('SecurePortalConfig') ? SecurePortalConfig::DEFAULT_VIDEO_COLORS : []),
+                        'parking_spaces' => !empty($spaces) ? $spaces : (class_exists('SecurePortalConfig') ? SecurePortalConfig::DEFAULT_VIDEO_PARKING_SPACES : []),
+                    ];
+                }
+
+                if (!empty($objectsConfig)) {
+                    Settings::set('secure_video_objects_config', json_encode($objectsConfig, JSON_UNESCAPED_UNICODE));
+                    Settings::set('secure_video_objects', implode("\n", array_column($objectsConfig, 'name')));
+                }
+            } elseif (isset($_POST['secure_video_objects'])) {
+                // Fallback für einfache Listen
                 Settings::set('secure_video_objects', trim((string) $_POST['secure_video_objects']));
-            }
-            if (isset($_POST['secure_video_floors'])) {
-                Settings::set('secure_video_floors', trim((string) $_POST['secure_video_floors']));
-            }
-            if (isset($_POST['secure_video_colors'])) {
-                Settings::set('secure_video_colors', trim((string) $_POST['secure_video_colors']));
-            }
-            if (isset($_POST['secure_video_parking_spaces'])) {
-                Settings::set('secure_video_parking_spaces', trim((string) $_POST['secure_video_parking_spaces']));
+                if (isset($_POST['secure_video_floors'])) {
+                    Settings::set('secure_video_floors', trim((string) $_POST['secure_video_floors']));
+                }
+                if (isset($_POST['secure_video_colors'])) {
+                    Settings::set('secure_video_colors', trim((string) $_POST['secure_video_colors']));
+                }
+                if (isset($_POST['secure_video_parking_spaces'])) {
+                    Settings::set('secure_video_parking_spaces', trim((string) $_POST['secure_video_parking_spaces']));
+                }
             }
 
             // Optionale SharePoint-Settings aktualisieren
