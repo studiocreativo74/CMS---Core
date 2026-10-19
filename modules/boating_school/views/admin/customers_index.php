@@ -570,4 +570,4 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-require dirname(__DIR__, 3) . '/views/layouts/admin.php';
+require __DIR__ . '/../../../../views/layouts/admin.php';

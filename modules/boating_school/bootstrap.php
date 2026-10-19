@@ -27,6 +27,15 @@ require_once __DIR__ . '/classes/BoatingNotificationService.php';
 require_once __DIR__ . '/classes/InstructorPayoutService.php';
 require_once __DIR__ . '/classes/BoatingCustomerMagicLinkService.php';
 require_once __DIR__ . '/classes/BoatingMagicLinkService.php';
+require_once __DIR__ . '/classes/BoatingPermissions.php';
+require_once __DIR__ . '/classes/CoachService.php';
+require_once __DIR__ . '/classes/CoachAvailabilityService.php';
+require_once __DIR__ . '/classes/BoatingMigrationManager.php';
+
+// Idempotente Schema- & Berechtigungsinitialisierung
+if (class_exists('BoatingMigrationManager')) {
+    BoatingMigrationManager::run();
+}
 
 // Menüpunkte im Admin-Bereich registrieren (gemäß Anforderung 4)
 if (class_exists('ModuleManager')) {

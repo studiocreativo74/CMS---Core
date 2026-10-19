@@ -683,6 +683,21 @@ final class BoatingSchoolRepository
     // =========================================================================
 
     /**
+     * Stellt sicher, dass eine Tabellenspalte existiert – 100% kompatibel mit allen MySQL- und MariaDB-Versionen.
+     */
+    public static function ensureColumn(string $table, string $column, string $definition): void
+    {
+        try {
+            $cols = DB::fetchAll("SHOW COLUMNS FROM `{$table}` LIKE '{$column}'");
+            if (empty($cols)) {
+                DB::execute("ALTER TABLE `{$table}` ADD COLUMN `{$column}` {$definition}");
+            }
+        } catch (\Throwable $e) {
+            error_log("BoatingSchoolRepository::ensureColumn ({$table}.{$column}) Fehler: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Stellt sicher, dass Tabellen & Spalten für CRM & Abos bereitstehen.
      */
     public static function ensureCrmSchema(): void
@@ -699,18 +714,17 @@ final class BoatingSchoolRepository
 
         try {
             // 1. CRM-Spalten in bs_customers idempotent ergänzen
-            DB::execute("ALTER TABLE `bs_customers`
-                ADD COLUMN IF NOT EXISTS `licenses_held` VARCHAR(255) NULL AFTER `target_license`,
-                ADD COLUMN IF NOT EXISTS `license_number` VARCHAR(128) NULL AFTER `licenses_held`,
-                ADD COLUMN IF NOT EXISTS `experience_level` VARCHAR(64) NULL DEFAULT 'beginner' AFTER `license_number`,
-                ADD COLUMN IF NOT EXISTS `notify_email` TINYINT(1) NOT NULL DEFAULT 1 AFTER `experience_level`,
-                ADD COLUMN IF NOT EXISTS `notify_whatsapp` TINYINT(1) NOT NULL DEFAULT 0 AFTER `notify_email`,
-                ADD COLUMN IF NOT EXISTS `company` VARCHAR(191) NULL AFTER `last_name`,
-                ADD COLUMN IF NOT EXISTS `preferred_contact` VARCHAR(32) NULL DEFAULT 'email' AFTER `phone`,
-                ADD COLUMN IF NOT EXISTS `lead_source` VARCHAR(64) NULL AFTER `preferred_contact`,
-                ADD COLUMN IF NOT EXISTS `crm_stage` VARCHAR(32) NOT NULL DEFAULT 'student' AFTER `lead_source`,
-                ADD COLUMN IF NOT EXISTS `tags` VARCHAR(255) NULL AFTER `crm_stage`,
-                ADD COLUMN IF NOT EXISTS `internal_notes` TEXT NULL AFTER `notes`");
+            self::ensureColumn('bs_customers', 'licenses_held', 'VARCHAR(255) NULL AFTER `target_license`');
+            self::ensureColumn('bs_customers', 'license_number', 'VARCHAR(128) NULL AFTER `licenses_held`');
+            self::ensureColumn('bs_customers', 'experience_level', "VARCHAR(64) NULL DEFAULT 'beginner' AFTER `license_number`");
+            self::ensureColumn('bs_customers', 'notify_email', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER `experience_level`');
+            self::ensureColumn('bs_customers', 'notify_whatsapp', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `notify_email`');
+            self::ensureColumn('bs_customers', 'company', 'VARCHAR(191) NULL AFTER `last_name`');
+            self::ensureColumn('bs_customers', 'preferred_contact', "VARCHAR(32) NULL DEFAULT 'email' AFTER `phone`");
+            self::ensureColumn('bs_customers', 'lead_source', 'VARCHAR(64) NULL AFTER `preferred_contact`');
+            self::ensureColumn('bs_customers', 'crm_stage', "VARCHAR(32) NOT NULL DEFAULT 'student' AFTER `lead_source`");
+            self::ensureColumn('bs_customers', 'tags', 'VARCHAR(255) NULL AFTER `crm_stage`');
+            self::ensureColumn('bs_customers', 'internal_notes', 'TEXT NULL AFTER `notes`');
 
             // 2. Tabelle bs_subscriptions anlegen
             DB::execute("CREATE TABLE IF NOT EXISTS `bs_subscriptions` (
@@ -751,25 +765,27 @@ final class BoatingSchoolRepository
 
             // 4. subscription_id und reminder_sent_at in bs_appointments
             if (self::isTableCreated('bs_appointments')) {
-                DB::execute("ALTER TABLE `bs_appointments`
-                    ADD COLUMN IF NOT EXISTS `subscription_id` INT UNSIGNED NULL AFTER `price`,
-                    ADD COLUMN IF NOT EXISTS `reminder_sent_at` DATETIME NULL AFTER `updated_at`");
+                self::ensureColumn('bs_appointments', 'subscription_id', 'INT UNSIGNED NULL AFTER `price`');
+                self::ensureColumn('bs_appointments', 'reminder_sent_at', 'DATETIME NULL AFTER `updated_at`');
             }
 
             // 5. Payroll-Felder in bs_instructors idempotent ergänzen
             if (self::isTableCreated('bs_instructors')) {
-                DB::execute("ALTER TABLE `bs_instructors`
-                    ADD COLUMN IF NOT EXISTS `pay_rate_type` ENUM('per_hour','per_appointment') NOT NULL DEFAULT 'per_hour' AFTER `license_number`,
-                    ADD COLUMN IF NOT EXISTS `pay_rate_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `pay_rate_type`,
-                    ADD COLUMN IF NOT EXISTS `payroll_external_code` VARCHAR(64) NULL AFTER `pay_rate_amount`");
+                self::ensureColumn('bs_instructors', 'pay_rate_type', "ENUM('per_hour','per_appointment') NOT NULL DEFAULT 'per_hour' AFTER `license_number`");
+                self::ensureColumn('bs_instructors', 'pay_rate_amount', 'DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `pay_rate_type`');
+                self::ensureColumn('bs_instructors', 'payroll_external_code', 'VARCHAR(64) NULL AFTER `pay_rate_amount`');
+                self::ensureColumn('bs_instructors', 'title', "VARCHAR(100) NOT NULL DEFAULT 'Fahrcoach' AFTER `last_name`");
+                self::ensureColumn('bs_instructors', 'description', 'TEXT NULL AFTER `qualifications`');
+                self::ensureColumn('bs_instructors', 'image_url', 'VARCHAR(255) NULL AFTER `image_path`');
+                self::ensureColumn('bs_instructors', 'public_mobile', 'VARCHAR(50) NULL AFTER `phone`');
+                self::ensureColumn('bs_instructors', 'is_mobile_public', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `public_mobile`');
             }
 
             // 6. Payroll-Abrechnungsstatus & Betrag in bs_appointments idempotent ergänzen
             if (self::isTableCreated('bs_appointments')) {
-                DB::execute("ALTER TABLE `bs_appointments`
-                    ADD COLUMN IF NOT EXISTS `instructor_payout_status` ENUM('open','exported','paid') NOT NULL DEFAULT 'open' AFTER `price`,
-                    ADD COLUMN IF NOT EXISTS `instructor_payout_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `instructor_payout_status`,
-                    ADD COLUMN IF NOT EXISTS `instructor_payout_note` VARCHAR(255) NULL AFTER `instructor_payout_amount`");
+                self::ensureColumn('bs_appointments', 'instructor_payout_status', "ENUM('open','exported','paid') NOT NULL DEFAULT 'open' AFTER `price`");
+                self::ensureColumn('bs_appointments', 'instructor_payout_amount', 'DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `instructor_payout_status`');
+                self::ensureColumn('bs_appointments', 'instructor_payout_note', 'VARCHAR(255) NULL AFTER `instructor_payout_amount`');
             }
 
             // 7. Schüler Magic-Links Tabelle anlegen
@@ -1558,6 +1574,8 @@ final class BoatingSchoolRepository
         if (!self::isTableCreated('bs_appointments')) {
             return [];
         }
+
+        self::ensureCrmSchema();
 
         try {
             $where = [];

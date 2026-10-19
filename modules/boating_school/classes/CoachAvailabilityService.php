@@ -25,9 +25,8 @@ final class CoachAvailabilityService
         try {
             // 1. bs_coach_availabilities Spalten nachrüsten (location_id, is_holiday_active)
             if (BoatingSchoolRepository::isTableCreated('bs_coach_availabilities')) {
-                DB::execute("ALTER TABLE `bs_coach_availabilities`
-                    ADD COLUMN IF NOT EXISTS `location_id` INT UNSIGNED NULL AFTER `end_time`,
-                    ADD COLUMN IF NOT EXISTS `is_holiday_active` TINYINT(1) NOT NULL DEFAULT 0 AFTER `type`");
+                BoatingSchoolRepository::ensureColumn('bs_coach_availabilities', 'location_id', 'INT UNSIGNED NULL AFTER `end_time`');
+                BoatingSchoolRepository::ensureColumn('bs_coach_availabilities', 'is_holiday_active', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `type`');
             }
 
             // 2. bs_coach_weekly_templates anlegen

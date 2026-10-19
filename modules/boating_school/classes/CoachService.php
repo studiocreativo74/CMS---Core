@@ -53,12 +53,11 @@ final class CoachService
         try {
             // 1. bs_instructors Felder
             if (BoatingSchoolRepository::isTableCreated('bs_instructors')) {
-                DB::execute("ALTER TABLE `bs_instructors`
-                    ADD COLUMN IF NOT EXISTS `title` VARCHAR(100) NOT NULL DEFAULT 'Fahrcoach' AFTER `last_name`,
-                    ADD COLUMN IF NOT EXISTS `description` TEXT NULL AFTER `qualifications`,
-                    ADD COLUMN IF NOT EXISTS `image_url` VARCHAR(255) NULL AFTER `image_path`,
-                    ADD COLUMN IF NOT EXISTS `public_mobile` VARCHAR(50) NULL AFTER `phone`,
-                    ADD COLUMN IF NOT EXISTS `is_mobile_public` TINYINT(1) NOT NULL DEFAULT 0 AFTER `public_mobile`");
+                BoatingSchoolRepository::ensureColumn('bs_instructors', 'title', "VARCHAR(100) NOT NULL DEFAULT 'Fahrcoach' AFTER `last_name`");
+                BoatingSchoolRepository::ensureColumn('bs_instructors', 'description', 'TEXT NULL AFTER `qualifications`');
+                BoatingSchoolRepository::ensureColumn('bs_instructors', 'image_url', 'VARCHAR(255) NULL AFTER `image_path`');
+                BoatingSchoolRepository::ensureColumn('bs_instructors', 'public_mobile', 'VARCHAR(50) NULL AFTER `phone`');
+                BoatingSchoolRepository::ensureColumn('bs_instructors', 'is_mobile_public', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `public_mobile`');
             }
 
             // 2. bs_instructor_details (HR-Daten inkl. individueller Abzugs-Overrides)
@@ -144,8 +143,9 @@ final class CoachService
             // Initialisiere Standardwerte falls leer
             self::seedDefaultPayrollSettings();
 
-            // 7. bs_coach_timesheets (Monatsrapporte mit Versionierung & Snapshots)
-            DB::execute("CREATE TABLE IF NOT EXISTS `bs_coach_timesheets` (
+            // 7. bs_coach_timesheets / bs_coach_timesheet_closures
+            $tbl = self::getTimesheetTable();
+            DB::execute("CREATE TABLE IF NOT EXISTS `{$tbl}` (
                 `id`               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 `instructor_id`    INT UNSIGNED NOT NULL,
                 `year_month`       VARCHAR(7) NOT NULL COMMENT 'YYYY-MM',
@@ -838,7 +838,24 @@ final class CoachService
     // =========================================================================
 
     /**
-     * Lädt den Monats-Kopfdatensatz eines Timesheets (bs_coach_timesheets).
+     * Ermittelt den Tabellennamen für Monatsabschlüsse (unterstützt bs_coach_timesheet_closures und bs_coach_timesheets).
+     */
+    public static function getTimesheetTable(): string
+    {
+        static $tableName = null;
+        if ($tableName !== null) {
+            return $tableName;
+        }
+        if (class_exists('BoatingSchoolRepository') && BoatingSchoolRepository::isTableCreated('bs_coach_timesheet_closures')) {
+            $tableName = 'bs_coach_timesheet_closures';
+        } else {
+            $tableName = 'bs_coach_timesheets';
+        }
+        return $tableName;
+    }
+
+    /**
+     * Lädt den Monats-Kopfdatensatz eines Timesheets.
      *
      * @return array<string, mixed>|null
      */
@@ -850,8 +867,9 @@ final class CoachService
         }
 
         try {
+            $tbl = self::getTimesheetTable();
             $row = DB::fetchOne(
-                'SELECT * FROM `bs_coach_timesheets` WHERE `instructor_id` = :id AND `year_month` = :ym LIMIT 1',
+                "SELECT * FROM `{$tbl}` WHERE `instructor_id` = :id AND `year_month` = :ym LIMIT 1",
                 ['id' => $instructorId, 'ym' => $yearMonth]
             );
             return $row ?: null;
@@ -939,9 +957,10 @@ final class CoachService
             $history['v' . $newVersion] = $currentSnapshot;
 
             // 5. Timesheet-Kopfdatensatz upserten
+            $tbl = self::getTimesheetTable();
             if ($timesheet) {
                 DB::execute(
-                    "UPDATE `bs_coach_timesheets` SET
+                    "UPDATE `{$tbl}` SET
                         `status`          = 'submitted',
                         `pdf_version`     = :version,
                         `total_hours`     = :hours,
@@ -969,7 +988,7 @@ final class CoachService
                 );
             } else {
                 DB::execute(
-                    "INSERT INTO `bs_coach_timesheets` (
+                    "INSERT INTO `{$tbl}` (
                         `instructor_id`, `year_month`, `status`, `pdf_version`, `total_hours`,
                         `gross_amount`, `net_amount`, `deductions_json`, `snapshot_json`,
                         `submitted_at`, `submitted_by`, `created_at`, `updated_at`
@@ -1052,8 +1071,9 @@ final class CoachService
             );
 
             // Timesheet Kopf aktualisieren
+            $tbl = self::getTimesheetTable();
             DB::execute(
-                "UPDATE `bs_coach_timesheets` SET
+                "UPDATE `{$tbl}` SET
                     `status` = 'approved', `approved_at` = :now, `approved_by` = :by, `updated_at` = :now2
                  WHERE `instructor_id` = :id AND `year_month` = :ym",
                 ['id' => $instructorId, 'ym' => $yearMonth, 'now' => $now, 'by' => $approvedBy, 'now2' => $now]
@@ -1118,8 +1138,9 @@ final class CoachService
             );
 
             // Timesheet Kopf aktualisieren
+            $tbl = self::getTimesheetTable();
             DB::execute(
-                "UPDATE `bs_coach_timesheets` SET
+                "UPDATE `{$tbl}` SET
                     `status` = 'rejected', `rejection_reason` = :reason, `updated_at` = :now
                  WHERE `instructor_id` = :id AND `year_month` = :ym",
                 ['id' => $instructorId, 'ym' => $yearMonth, 'reason' => $reason, 'now' => $now]
@@ -1181,8 +1202,9 @@ final class CoachService
             );
 
             // 2. Timesheet Kopf auf reopened setzen (bestehender snapshot_json bleibt unverändert erhalten!)
+            $tbl = self::getTimesheetTable();
             DB::execute(
-                "UPDATE `bs_coach_timesheets` SET
+                "UPDATE `{$tbl}` SET
                     `status`      = 'reopened',
                     `reopened_at` = :now,
                     `reopened_by` = :by,
@@ -1306,8 +1328,9 @@ final class CoachService
     {
         self::ensureTables();
 
+        $tbl = self::getTimesheetTable();
         $sql = "SELECT ts.*, i.first_name, i.last_name, i.email, i.payroll_external_code, i.color_code
-                FROM `bs_coach_timesheets` ts
+                FROM `{$tbl}` ts
                 JOIN `bs_instructors` i ON ts.`instructor_id` = i.`id`
                 WHERE 1=1";
         $params = [];
