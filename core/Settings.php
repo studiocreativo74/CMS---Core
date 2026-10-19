@@ -65,6 +65,8 @@ final class Settings
         'sp_base_folder'            => 'Vorgaenge',
         'secure_case_folder_template'           => '{YEAR}/{CITY}/{CASE_NUMBER}',
         'secure_case_warrant_filename_template' => '{CASE_NUMBER}_Editionsverfuegung_{DATE}_v1.pdf',
+        'secure_primary_doc_label_long'         => 'Editionsverfügung',
+        'secure_primary_doc_label_short'        => 'Editionsverfuegung',
         'secure_notification_email'             => '',
     ];
 

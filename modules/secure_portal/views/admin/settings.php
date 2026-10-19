@@ -17,6 +17,8 @@ $activeNav = 'admin/secure/cases';
 $folderTemplate = (string) Settings::get('secure_case_folder_template', Naming::DEFAULT_FOLDER_TEMPLATE);
 $filenameTemplate = (string) Settings::get('secure_case_warrant_filename_template', Naming::DEFAULT_FILENAME_TEMPLATE);
 $notificationEmail = (string) Settings::get('secure_notification_email', '');
+$primaryDocLabelLong = (string) Settings::get('secure_primary_doc_label_long', 'Editionsverfügung');
+$primaryDocLabelShort = (string) Settings::get('secure_primary_doc_label_short', 'Editionsverfuegung');
 $daysActive = class_exists('SecurePortalConfig') ? SecurePortalConfig::getDownloadDaysActive() : 30;
 $daysDelete = class_exists('SecurePortalConfig') ? SecurePortalConfig::getDownloadDaysDelete() : 60;
 
@@ -101,6 +103,91 @@ ob_start();
             <!-- Linke Spalte: Namens- und Ordner-Templates -->
             <div class="col-lg-8">
 
+                <!-- ABSCHNITT: Bezeichnung des Primärdokuments -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-primary-subtle text-primary p-2 rounded">
+                                    <i class="bi bi-file-earmark-text fs-5"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 fw-bold text-dark">Bezeichnung des Primärdokuments</h5>
+                                    <small class="text-muted">Konfiguration der Bezeichnungen für Benutzeroberfläche und Dateinamen</small>
+                                </div>
+                            </div>
+                            <span class="badge bg-light text-dark border">Dokument-Typ</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="text-muted small mb-4">
+                            Konfigurieren Sie hier die Bezeichnung des verpflichtenden Primärdokuments zum Fall. In Standardfällen handelt es sich um eine <em>Editionsverfügung</em>, in anderen Verfahren um alternative Formulare wie z.&nbsp;B. <em>„Übergabe von Bild- / Videoaufzeichnungen für polizeiliches Ermittlungsverfahren“</em>.
+                        </p>
+
+                        <!-- Langform -->
+                        <div class="mb-4">
+                            <label for="secure_primary_doc_label_long" class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
+                                <span>
+                                    Bezeichnung des Primärdokuments (Langform)
+                                    <span class="text-danger">*</span>
+                                </span>
+                                <span class="badge bg-light text-muted border">Standard: Editionsverfügung</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted">
+                                    <i class="bi bi-fonts"></i>
+                                </span>
+                                <input type="text"
+                                       class="form-control"
+                                       id="secure_primary_doc_label_long"
+                                       name="secure_primary_doc_label_long"
+                                       value="<?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?>"
+                                       placeholder="z. B. Editionsverfügung oder Übergabe von Bild- / Videoaufzeichnungen..."
+                                       maxlength="255"
+                                       required>
+                                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('secure_primary_doc_label_long').value='Editionsverfügung';" title="Auf Standard zurücksetzen">
+                                    Standard
+                                </button>
+                            </div>
+                            <div class="form-text mt-1 text-muted small">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Wird in der gesamten Benutzeroberfläche (Antragsformular, Schrittbeschriftung, Hinweistexte, Fallanzeige und E-Mail-Metadaten) verwendet.
+                            </div>
+                        </div>
+
+                        <!-- Kurzform -->
+                        <div class="mb-2">
+                            <label for="secure_primary_doc_label_short" class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
+                                <span>
+                                    Bezeichnung des Primärdokuments (Kurzform für Dateinamen)
+                                    <span class="text-danger">*</span>
+                                </span>
+                                <span class="badge bg-light text-muted border font-monospace">Standard: Editionsverfuegung</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted font-monospace">
+                                    <i class="bi bi-file-earmark-lock"></i>
+                                </span>
+                                <input type="text"
+                                       class="form-control font-monospace"
+                                       id="secure_primary_doc_label_short"
+                                       name="secure_primary_doc_label_short"
+                                       value="<?= htmlspecialchars($primaryDocLabelShort, ENT_QUOTES, 'UTF-8') ?>"
+                                       placeholder="z. B. Editionsverfuegung oder Uebergabeformular"
+                                       maxlength="255"
+                                       required>
+                                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('secure_primary_doc_label_short').value='Editionsverfuegung';" title="Auf Standard zurücksetzen">
+                                    Standard
+                                </button>
+                            </div>
+                            <div class="form-text mt-1 text-muted small">
+                                <i class="bi bi-shield-check me-1 text-primary"></i>
+                                Kompakte, lesbare Bezeichnung für Dateinamen (ohne Umlaute/Sonderzeichen). Wird für lokale Ablage, SharePoint-Archivierung und Downloads genutzt (verfügbar als Platzhalter <code>{DOC_TYPE}</code>).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- HAUPT-ABSCHNITT: Dateinamen & Ordnerstruktur -->
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white border-bottom py-3">
@@ -153,7 +240,7 @@ ob_start();
                         <div class="mb-4">
                             <label for="secure_case_warrant_filename_template" class="form-label fw-bold text-dark d-flex align-items-center justify-content-between">
                                 <span>
-                                    Dateinamen-Template für Editionsverfügung
+                                    Dateinamen-Template für Primärdokument (Editionsverfügung)
                                     <span class="text-danger">*</span>
                                 </span>
                                 <span class="badge bg-light text-muted border font-monospace">Standard: {CASE_NUMBER}_Editionsverfuegung_{DATE}_v1.pdf</span>
@@ -167,14 +254,14 @@ ob_start();
                                        placeholder="{CASE_NUMBER}_Editionsverfuegung_{DATE}_v1.pdf"
                                        maxlength="255"
                                        required
-                                       title="Erlaubte Platzhalter: {CASE_NUMBER}, {YEAR}, {CITY}, {ORT}, {DATE}, {DATE_Y}, {DATE_YMD}, {AKTENZEICHEN}, {DEPARTMENT}. Keine Schrägstriche / oder \ erlaubt.">
+                                       title="Erlaubte Platzhalter: {CASE_NUMBER}, {YEAR}, {CITY}, {ORT}, {DATE}, {DATE_Y}, {DATE_YMD}, {AKTENZEICHEN}, {DEPARTMENT}, {DOC_TYPE}. Keine Schrägstriche / oder \ erlaubt.">
                                 <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('secure_case_warrant_filename_template').value='{CASE_NUMBER}_Editionsverfuegung_{DATE}_v1.pdf';" title="Auf Standard zurücksetzen">
                                     Standard
                                 </button>
                             </div>
                             <div class="form-text mt-1 text-muted small">
                                 <i class="bi bi-shield-exclamation me-1 text-warning"></i>
-                                <strong>Sicherheitsregel:</strong> Innerhalb des Dateinamens sind Schrägstriche (<code>/</code>, <code>\</code>) unzulässig. Die Endung <code>.pdf</code> wird automatisch gesichert.
+                                <strong>Sicherheitsregel:</strong> Innerhalb des Dateinamens sind Schrägstriche (<code>/</code>, <code>\</code>) unzulässig. Die Endung <code>.pdf</code> wird automatisch gesichert. Unterstützt <code>{DOC_TYPE}</code> für das konfigurierte Kurzlabel.
                             </div>
                         </div>
 

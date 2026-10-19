@@ -13,6 +13,9 @@ declare(strict_types=1);
 $title = 'Vorgang ' . htmlspecialchars((string) ($case['case_number'] ?? ''), ENT_QUOTES, 'UTF-8');
 $activeNav = 'admin/secure/cases';
 
+$primaryDocLabelLong = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_long', 'Editionsverfügung') : 'Editionsverfügung';
+$primaryDocLabelShort = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_short', 'Editionsverfuegung') : 'Editionsverfuegung';
+
 $caseId = (int) ($case['id'] ?? 0);
 $caseNumber = (string) ($case['case_number'] ?? '');
 $status = (string) ($case['status'] ?? 'new');
@@ -123,8 +126,8 @@ ob_start();
                 <i class="bi bi-folder-symlink-fill me-1 text-primary"></i> SharePoint-Ordner
             </a>
         <?php endif; ?>
-        <a href="?route=admin/secure/cases/download-warrant&id=<?= $caseId ?>" class="btn btn-outline-danger btn-sm" target="_blank">
-            <i class="bi bi-file-earmark-pdf-fill me-1"></i> Editionsverfügung herunterladen
+        <a href="?route=admin/secure/cases/download-warrant&id=<?= $caseId ?>" class="btn btn-outline-danger btn-sm" target="_blank" title="<?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?> herunterladen">
+            <i class="bi bi-file-earmark-pdf-fill me-1"></i> <?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?> herunterladen
         </a>
     </div>
 </div>
@@ -774,20 +777,28 @@ ob_start();
     <!-- Rechte Spalte: Status ändern, Notizen & Audit-Log -->
     <div class="col-lg-5">
 
-        <!-- Editionsverfügung & Fall-Zugangscode -->
+        <!-- Primärdokument & Fall-Zugangscode -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white py-3 border-bottom">
                 <h5 class="card-title mb-0 fw-semibold text-dark">
-                    <i class="bi bi-shield-lock text-primary me-2"></i> Dokumente &amp; Zugangsdaten
+                    <i class="bi bi-shield-lock text-primary me-2"></i> Primärdokument &amp; Zugangsdaten
                 </h5>
             </div>
             <div class="card-body p-4">
-                <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded border mb-3">
+                <div class="p-3 bg-light rounded border mb-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle small fw-bold">
+                            Primärdokument: <?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?>
+                        </span>
+                        <a href="?route=admin/secure/cases/download-warrant&id=<?= $caseId ?>" class="btn btn-sm btn-outline-danger" target="_blank" title="<?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?> herunterladen">
+                            <i class="bi bi-download me-1"></i> Download
+                        </a>
+                    </div>
                     <div class="d-flex align-items-center gap-3">
                         <i class="bi bi-file-earmark-pdf-fill fs-1 text-danger"></i>
                         <div>
                             <div class="fw-bold text-dark font-monospace">
-                                <?= htmlspecialchars(class_exists('SecurePortalConfig') ? SecurePortalConfig::buildWarrantFileName((string) $case['case_number'], 1) : 'Editionsverfuegung.pdf', ENT_QUOTES, 'UTF-8') ?>
+                                <?= htmlspecialchars(class_exists('Naming') ? Naming::buildWarrantFileName((string) $case['case_number'], $case) : (class_exists('SecurePortalConfig') ? SecurePortalConfig::buildWarrantFileName((string) $case['case_number'], 1, $case) : ($primaryDocLabelShort . '.pdf')), ENT_QUOTES, 'UTF-8') ?>
                             </div>
                             <small class="text-muted d-block">
                                 <i class="bi bi-folder me-1"></i> <?= htmlspecialchars((string) ($case['warrant_file_path'] ?? '-'), ENT_QUOTES, 'UTF-8') ?>
@@ -798,9 +809,6 @@ ob_start();
                             </small>
                         </div>
                     </div>
-                    <a href="?route=admin/secure/cases/download-warrant&id=<?= $caseId ?>" class="btn btn-sm btn-outline-danger" target="_blank">
-                        <i class="bi bi-download me-1"></i> Download
-                    </a>
                 </div>
 
                 <!-- SharePoint-Archivierungsstatus -->
@@ -848,7 +856,7 @@ ob_start();
                         </div>
                     <?php elseif (class_exists('SharePointConfig') && SharePointConfig::isConfigured()): ?>
                         <p class="small text-muted mb-2">
-                            Die Editionsverfügung wurde noch nicht in SharePoint archiviert oder die letzte Verbindung ist fehlgeschlagen.
+                            Das Primärdokument (<?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?>) wurde noch nicht in SharePoint archiviert oder die letzte Verbindung ist fehlgeschlagen.
                         </p>
                         <form method="POST" action="?route=admin/secure/cases/sync-sharepoint" class="d-inline">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
@@ -927,7 +935,7 @@ ob_start();
         </div>
 
         <!-- Verlaufsprotokoll (Audit Trail) -->
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
                 <h5 class="card-title mb-0 fw-semibold text-dark">
                     <i class="bi bi-clock-history text-primary me-2"></i> Aktivitäten- &amp; Statusprotokoll
@@ -953,6 +961,82 @@ ob_start();
                                 <div class="text-muted" style="font-size: 0.75rem;">
                                     Von: <?= htmlspecialchars((string)$log['author'], ENT_QUOTES, 'UTF-8') ?>
                                 </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <?php
+        $systemActivityLogs = class_exists('ActivityLogRepository') 
+            ? ActivityLogRepository::listForCase($caseId, 50) 
+            : [];
+        ?>
+        <!-- Globales Audit-Log für diesen Sicherungsfall -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="card-title mb-0 fw-semibold text-dark">
+                        <i class="bi bi-shield-check text-success me-1"></i> System-Auditlog
+                    </h5>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill"><?= count($systemActivityLogs) ?></span>
+                </div>
+                <a href="?route=admin/activity&case_id=<?= $caseId ?>" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size: 0.8rem;" title="Alle Audit-Logs für diesen Fall im Admin-Log ansehen">
+                    Im globalen Log öffnen <i class="bi bi-box-arrow-up-right ms-1"></i>
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <?php if (empty($systemActivityLogs)): ?>
+                    <div class="text-center text-muted small py-3">
+                        <i class="bi bi-journal-x d-block fs-3 mb-1 text-secondary"></i>
+                        Keine System-Audit-Logs für diesen Sicherungsvorgang erfasst.
+                    </div>
+                <?php else: ?>
+                    <div class="list-group list-group-flush">
+                        <?php foreach ($systemActivityLogs as $sLog): 
+                            $sMeta = $sLog['meta'] ?? ActivityLogRepository::getEventMeta($sLog['event_type']);
+                            $sDetails = $sLog['details_data'] ?? [];
+                        ?>
+                            <div class="list-group-item px-0 py-3 border-bottom">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                                    <span class="badge <?= htmlspecialchars($sMeta['badge_class'], ENT_QUOTES, 'UTF-8') ?> d-inline-flex align-items-center gap-1">
+                                        <i class="bi <?= htmlspecialchars($sMeta['icon_class'], ENT_QUOTES, 'UTF-8') ?>"></i>
+                                        <?= htmlspecialchars($sMeta['title'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                    <small class="text-muted font-monospace" style="font-size: 0.75rem;">
+                                        <?= date('d.m.Y H:i:s', strtotime((string)$sLog['created_at'])) ?>
+                                    </small>
+                                </div>
+                                <div class="text-muted small mb-1 font-monospace" style="font-size: 0.75rem;">
+                                    <?= htmlspecialchars($sLog['event_type'], ENT_QUOTES, 'UTF-8') ?>
+                                </div>
+                                <div class="d-flex align-items-center gap-3 text-muted small mb-2" style="font-size: 0.8rem;">
+                                    <span>
+                                        <i class="bi bi-person me-1"></i>
+                                        <strong><?= !empty($sLog['email']) ? htmlspecialchars($sLog['email'], ENT_QUOTES, 'UTF-8') : 'System / Gast' ?></strong>
+                                    </span>
+                                    <?php if (!empty($sLog['ip_address'])): ?>
+                                        <span>
+                                            <i class="bi bi-globe me-1"></i>
+                                            <?= htmlspecialchars($sLog['ip_address'], ENT_QUOTES, 'UTF-8') ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if (!empty($sDetails)): ?>
+                                    <div class="bg-light p-2 rounded border small">
+                                        <div class="d-flex flex-wrap gap-1">
+                                            <?php foreach ($sDetails as $dk => $dv): 
+                                                if (is_array($dv) || is_object($dv)) continue;
+                                            ?>
+                                                <span class="badge bg-white text-dark border">
+                                                    <span class="text-muted"><?= htmlspecialchars((string)$dk, ENT_QUOTES, 'UTF-8') ?>:</span>
+                                                    <?= htmlspecialchars((string)$dv, ENT_QUOTES, 'UTF-8') ?>
+                                                </span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
                     </div>

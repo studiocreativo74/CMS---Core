@@ -40,7 +40,22 @@ class Router
     {
         $method = strtoupper($method);
         $normalized = $this->normalizePath($path);
-        return isset($this->routes[$method][$normalized]);
+        if (isset($this->routes[$method][$normalized])) {
+            return true;
+        }
+
+        if (!empty($this->routes[$method])) {
+            foreach (array_keys($this->routes[$method]) as $routePattern) {
+                if (str_contains($routePattern, '{')) {
+                    $regex = '#^' . preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<$1>[^/]+)', $routePattern) . '$#';
+                    if (preg_match($regex, $normalized)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     public function get(string $path, callable $handler): void
@@ -58,9 +73,27 @@ class Router
         $method = strtoupper($method);
         $normalized = $this->normalizePath($path);
 
+        // 1. Exakter Match
         if (isset($this->routes[$method][$normalized]) && is_callable($this->routes[$method][$normalized])) {
             call_user_func($this->routes[$method][$normalized]);
             return;
+        }
+
+        // 2. Parametrisierte Routen wie /bootschule/me/appointments/{id}/cancel
+        if (!empty($this->routes[$method])) {
+            foreach ($this->routes[$method] as $routePattern => $handler) {
+                if (str_contains($routePattern, '{') && is_callable($handler)) {
+                    $regex = '#^' . preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<$1>[^/]+)', $routePattern) . '$#';
+                    if (preg_match($regex, $normalized, $matches)) {
+                        $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+                        foreach ($params as $k => $v) {
+                            $_GET[$k] = $v;
+                        }
+                        call_user_func_array($handler, array_values($params));
+                        return;
+                    }
+                }
+            }
         }
 
         http_response_code(404);

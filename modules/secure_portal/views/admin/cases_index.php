@@ -28,7 +28,7 @@ ob_start();
     <div>
         <h1 class="h3 mb-1 fw-bold text-dark">Sicherungsvorgänge</h1>
         <p class="text-muted small mb-0">
-            Übersicht aller eingereichten Sicherungsanträge, Editionsverfügungen und technischer Bereitstellungen.
+            Übersicht aller eingereichten Sicherungsanträge, Primärdokumente und technischer Bereitstellungen.
         </p>
     </div>
     <div class="d-flex gap-2">

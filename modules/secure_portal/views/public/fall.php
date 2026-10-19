@@ -13,6 +13,7 @@ declare(strict_types=1);
  */
 
 $settings = class_exists('Settings') ? Settings::all() : [];
+$primaryDocLabelLong = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_long', 'Editionsverfügung') : 'Editionsverfügung';
 $siteTitle = 'Polizei- & Justiz-Sicherungsportal';
 $adminBrandColor = (string) ($settings['admin_brand_color'] ?? '#0f4c81');
 $primaryColor = !empty($settings['homepage_primary_color']) ? (string) $settings['homepage_primary_color'] : $adminBrandColor;
@@ -547,19 +548,19 @@ $meta = (array) ($case['securing_meta_decoded'] ?? []);
 
             </div>
 
-            <!-- Rechte Spalte: Editionsverfügung & Verlauf -->
+            <!-- Rechte Spalte: Primärdokument & Verlauf -->
             <div class="col-lg-4">
 
-                <!-- Editionsverfügung Status -->
+                <!-- Primärdokument Status -->
                 <div class="detail-card">
                     <div class="detail-card-header">
-                        <span><i class="bi bi-file-earmark-lock-fill text-danger me-2"></i> Editionsverfügung (Art. 265 StPO)</span>
+                        <span><i class="bi bi-file-earmark-lock-fill text-danger me-2"></i> <?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?></span>
                     </div>
                     <div class="detail-card-body">
                         <div class="d-flex align-items-center gap-3 mb-3">
                             <i class="bi bi-file-earmark-pdf-fill fs-1 text-danger"></i>
                             <div>
-                                <div class="fw-bold text-dark">Editionsverfügung (PDF)</div>
+                                <div class="fw-bold text-dark"><?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?> (PDF)</div>
                                 <small class="text-muted">
                                     Grösse: <?= number_format(((int)($case['warrant_file_size'] ?? 0)) / 1024 / 1024, 2) ?> MB
                                 </small>

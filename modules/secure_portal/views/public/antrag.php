@@ -23,6 +23,8 @@ $errors = $errors ?? [];
 $createdCase = $createdCase ?? null;
 
 $settings = class_exists('Settings') ? Settings::all() : [];
+$primaryDocLabelLong = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_long', 'Editionsverfügung') : 'Editionsverfügung';
+$primaryDocLabelShort = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_short', 'Editionsverfuegung') : 'Editionsverfuegung';
 $siteTitle = 'Polizei- & Justiz-Sicherungsportal';
 $adminBrandColor = (string) ($settings['admin_brand_color'] ?? '#0f4c81');
 $primaryColor = !empty($settings['homepage_primary_color']) ? (string) $settings['homepage_primary_color'] : $adminBrandColor;
@@ -368,7 +370,7 @@ $videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::g
                             <div class="step-circle">
                                 <?= $currentStep > 2 ? '<i class="bi bi-check-lg"></i>' : '2' ?>
                             </div>
-                            <span class="step-label">Editionsverfügung (PDF)</span>
+                            <span class="step-label"><?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?> (PDF)</span>
                         </div>
 
                         <div class="step-item <?= $currentStep === 3 ? 'active' : '' ?>">
@@ -485,19 +487,19 @@ $videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::g
                                     <i class="bi bi-x-lg me-1"></i> Abbrechen
                                 </a>
                                 <button type="submit" class="btn btn-portal-submit px-4 py-2">
-                                    Weiter zu Schritt 2: Editionsverfügung &rarr;
+                                    Weiter zu Schritt 2: <?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?> &rarr;
                                 </button>
                             </div>
                         </form>
 
                     <!-- ========================================================= -->
-                    <!-- SCHRITT 2: UPLOAD EDITIONSVERFÜGUNG (PDF)                 -->
+                    <!-- SCHRITT 2: UPLOAD PRIMÄRDOKUMENT (PDF)                    -->
                     <!-- ========================================================= -->
                     <?php elseif ($currentStep === 2): ?>
                         <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom" style="border-bottom: 2px solid #cbd5e1 !important;">
                             <div>
                                 <span class="badge bg-dark text-white px-2 py-1 mb-1 fw-bold">Schritt 2 von 3</span>
-                                <h2 class="h4 fw-bold text-dark mb-0">Editionsverfügung (Art. 265 StPO) hochladen</h2>
+                                <h2 class="h4 fw-bold text-dark mb-0"><?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?> hochladen</h2>
                             </div>
                             <i class="bi bi-file-earmark-pdf-fill fs-2 text-danger"></i>
                         </div>
@@ -505,10 +507,10 @@ $videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::g
                         <div class="alert d-flex align-items-start gap-3 mb-4 p-3" style="background-color: #eff6ff; border: 2.5px solid #2563eb; color: #0f172a; border-radius: 0.65rem;">
                             <i class="bi bi-shield-check fs-3 flex-shrink-0 text-primary mt-1"></i>
                             <div class="small">
-                                <strong class="d-block mb-1 text-dark fs-6">Rechtlicher Hinweis gemäss Art. 265 ff. Schweizer StPO:</strong>
+                                <strong class="d-block mb-1 text-dark fs-6">Rechtlicher Hinweis / Primärdokument (Pflicht):</strong>
                                 <span class="fw-semibold text-secondary-emphasis">
-                                    Voraussetzung für jede Beweissicherung und Datenherausgabe ist die Vorlage einer rechtsgültigen
-                                    behördlichen Editionsverfügung der Staatsanwaltschaft, des Gerichts oder der zuständigen Untersuchungsbehörde (Art. 265 StPO). Bitte laden Sie das Dokument
+                                    Voraussetzung für jede Beweissicherung und Datenherausgabe ist die Vorlage des erforderlichen rechtsgültigen
+                                    Primärdokuments (<?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?>). Bitte laden Sie das Dokument
                                     als PDF hoch. Das Dokument wird verschlüsselt gespeichert und vor Bereitstellung verifiziert.
                                 </span>
                             </div>
@@ -524,7 +526,7 @@ $videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::g
                                         <i class="bi bi-file-earmark-check-fill fs-2 text-success"></i>
                                         <div>
                                             <div class="fw-bold text-dark">
-                                                <?= htmlspecialchars((string) ($formData['warrant_original_name'] ?? 'Editionsverfuegung.pdf'), ENT_QUOTES, 'UTF-8') ?>
+                                                <?= htmlspecialchars((string) ($formData['warrant_original_name'] ?? ($primaryDocLabelShort . '.pdf')), ENT_QUOTES, 'UTF-8') ?>
                                             </div>
                                             <small class="text-secondary fw-semibold">
                                                 Bereits in diesem Vorgang hinterlegt (<?= number_format(((int)($formData['warrant_file_size'] ?? 0)) / 1024 / 1024, 2) ?> MB).
@@ -537,7 +539,7 @@ $videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::g
 
                             <div class="mb-4">
                                 <label for="warrant_file" class="form-label">
-                                    <?= !empty($formData['warrant_file_path']) ? 'Andere Datei auswählen (ersetzen)' : 'Editionsverfügung als PDF auswählen *' ?>
+                                    <?= !empty($formData['warrant_file_path']) ? 'Andere Datei auswählen (ersetzen)' : (htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') . ' als PDF auswählen *') ?>
                                 </label>
                                 <input type="file" class="form-control <?= isset($errors['warrant_file']) ? 'is-invalid' : '' ?>" 
                                        id="warrant_file" name="warrant_file" accept="application/pdf"
@@ -801,7 +803,7 @@ $videoParkingSpaces = class_exists('SecurePortalConfig') ? SecurePortalConfig::g
                             </div>
                             <h2 class="h3 fw-bold text-dark mb-2">Sicherungsantrag erfolgreich übermittelt!</h2>
                             <p class="text-dark fw-medium max-w-lg mx-auto mb-4" style="max-width: 620px;">
-                                Ihr Antrag wurde verbindlich im Sicherungsportal erfasst und die beigefügte Editionsverfügung
+                                Ihr Antrag wurde verbindlich im Sicherungsportal erfasst und das beigefügte Primärdokument (<?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?>)
                                 sicher hinterlegt. Bitte notieren Sie sich Ihre persönlichen Fall-Zugangsdaten.
                             </p>
 

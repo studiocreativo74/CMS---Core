@@ -465,6 +465,13 @@ final class HealthCheck
                     ];
                 }
 
+                if (class_exists('ActivityLog')) {
+                    ActivityLog::log('healthcheck.mail_failed', $target, [
+                        'target' => $target,
+                        'error'  => 'Die mail()-Funktion hat false zurückgegeben (Prüfen Sie sendmail/MTA).',
+                    ]);
+                }
+
                 $testResult = [
                     'success' => false,
                     'target'  => $target,
@@ -479,6 +486,13 @@ final class HealthCheck
                     'test_result' => $testResult,
                 ];
             } catch (\Throwable $e) {
+                if (class_exists('ActivityLog')) {
+                    ActivityLog::log('healthcheck.mail_failed', $target, [
+                        'target' => $target,
+                        'error'  => $e->getMessage(),
+                    ]);
+                }
+
                 $testResult = [
                     'success' => false,
                     'target'  => $target,

@@ -99,11 +99,13 @@ if (isset($router) && $router !== null) {
         }
 
         if ($step === 2) {
-            // Schritt 2 verarbeiten: PDF-Upload Editionsverfügung
+            $primaryDocLabelLong = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_long', 'Editionsverfügung') : 'Editionsverfügung';
+
+            // Schritt 2 verarbeiten: PDF-Upload Primärdokument
             if (empty($_FILES['warrant_file']) || ($_FILES['warrant_file']['error'] === UPLOAD_ERR_NO_FILE)) {
                 // Prüfen, ob bereits eine Datei im Draft vorhanden ist
                 if (empty($draft['warrant_file_path'])) {
-                    $_SESSION['secure_antrag_errors'] = ['warrant_file' => 'Bitte wählen Sie eine Editionsverfügung als PDF-Datei aus.'];
+                    $_SESSION['secure_antrag_errors'] = ['warrant_file' => 'Bitte wählen Sie das Primärdokument (' . $primaryDocLabelLong . ') als PDF-Datei aus.'];
                     header('Location: ?route=sicherung/antrag&step=2');
                     exit;
                 }
@@ -463,7 +465,8 @@ if (isset($router) && $router !== null) {
 
         if (!$case || empty($case['warrant_file_path'])) {
             http_response_code(404);
-            die('Editionsverfügung nicht gefunden.');
+            $primaryDocLong = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_long', 'Editionsverfügung') : 'Editionsverfügung';
+            die($primaryDocLong . ' nicht gefunden.');
         }
 
         $relPath = (string) $case['warrant_file_path'];
@@ -476,11 +479,12 @@ if (isset($router) && $router !== null) {
             die('Datei existiert nicht im Dateisystem.');
         }
 
+        $shortDoc = class_exists('Naming') ? Naming::getShortDocLabel() : (class_exists('SecurePortalConfig') ? SecurePortalConfig::getPrimaryDocLabelShort() : 'Editionsverfuegung');
         $filename = class_exists('Naming')
             ? Naming::buildWarrantFileName((string) $case['case_number'], $case)
             : (class_exists('SecurePortalConfig')
                 ? SecurePortalConfig::buildWarrantFileName((string) $case['case_number'], 1, $case)
-                : ('Editionsverfuegung_' . preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) $case['case_number']) . '.pdf'));
+                : ($shortDoc . '_' . preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string) $case['case_number']) . '.pdf'));
 
         header('Content-Type: application/pdf');
         header('Content-Disposition: inline; filename="' . $filename . '"');
@@ -858,14 +862,29 @@ if (isset($router) && $router !== null) {
             exit;
         }
 
-        $folderTemplate   = trim((string) ($_POST['secure_case_folder_template'] ?? ''));
-        $filenameTemplate = trim((string) ($_POST['secure_case_warrant_filename_template'] ?? ''));
+        $folderTemplate       = trim((string) ($_POST['secure_case_folder_template'] ?? ''));
+        $filenameTemplate     = trim((string) ($_POST['secure_case_warrant_filename_template'] ?? ''));
+        $primaryDocLabelLong  = trim((string) ($_POST['secure_primary_doc_label_long'] ?? ''));
+        $primaryDocLabelShort = trim((string) ($_POST['secure_primary_doc_label_short'] ?? ''));
 
         // 1. Längenprüfung (max 255 Zeichen)
-        if (mb_strlen($folderTemplate) > 255 || mb_strlen($filenameTemplate) > 255) {
-            $_SESSION['flash_error'] = 'Die Namens-Templates dürfen jeweils maximal 255 Zeichen lang sein.';
+        if (
+            mb_strlen($folderTemplate) > 255 ||
+            mb_strlen($filenameTemplate) > 255 ||
+            mb_strlen($primaryDocLabelLong) > 255 ||
+            mb_strlen($primaryDocLabelShort) > 255
+        ) {
+            $_SESSION['flash_error'] = 'Die Namens-Templates und Bezeichnungen des Primärdokuments dürfen jeweils maximal 255 Zeichen lang sein.';
             header('Location: ?route=admin/secure/settings');
             exit;
+        }
+
+        // Standard-Werte bei leerer Eingabe
+        if ($primaryDocLabelLong === '') {
+            $primaryDocLabelLong = 'Editionsverfügung';
+        }
+        if ($primaryDocLabelShort === '') {
+            $primaryDocLabelShort = 'Editionsverfuegung';
         }
 
         // 2. Sicherheitsprüfung: Dateinamen-Template darf KEINE Slashes (/ oder \) enthalten
@@ -888,6 +907,8 @@ if (isset($router) && $router !== null) {
         if (class_exists('Settings')) {
             Settings::set('secure_case_folder_template', $folderTemplate);
             Settings::set('secure_case_warrant_filename_template', $filenameTemplate);
+            Settings::set('secure_primary_doc_label_long', $primaryDocLabelLong);
+            Settings::set('secure_primary_doc_label_short', $primaryDocLabelShort);
 
             // Sammel-E-Mail für neue Sicherungsfälle
             if (isset($_POST['secure_notification_email'])) {

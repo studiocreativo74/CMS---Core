@@ -54,7 +54,7 @@ final class SecurePortalRepository
             'label' => 'In Prüfung',
             'badge' => 'bg-warning text-dark',
             'icon'  => 'bi-hourglass-split',
-            'description' => 'Die Editionsverfügung und Zuständigkeiten werden formal und rechtlich geprüft.'
+            'description' => 'Das Primärdokument und die Zuständigkeiten werden formal und rechtlich geprüft.'
         ],
         self::STATUS_IN_PROGRESS => [
             'label' => 'In Bearbeitung',
@@ -117,7 +117,7 @@ final class SecurePortalRepository
             'label' => 'Sonstige elektronische Beweismittel',
             'short' => 'Sonstiges',
             'icon'  => 'bi-hdd-network',
-            'desc'  => 'Individuelle Sicherungsanforderungen gemäss Editionsverfügung'
+            'desc'  => 'Individuelle Sicherungsanforderungen gemäss Primärdokument'
         ],
     ];
 
@@ -467,19 +467,32 @@ final class SecurePortalRepository
         DB::query($sql, $params);
         $caseId = (int) DB::getConnection()->lastInsertId();
 
+        $primaryDocLabelLong = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_long', 'Editionsverfügung') : 'Editionsverfügung';
         // Initialer Log-Eintrag
         self::addCaseLog(
             $caseId,
             'created',
             sprintf(
-                'Antrag erfolgreich eingereicht durch %s (%s). Aktenzeichen: %s. Editionsverfügung hinterlegt.',
+                'Antrag erfolgreich eingereicht durch %s (%s). Aktenzeichen: %s. %s hinterlegt.',
                 $params['police_department'],
                 $params['contact_name'],
-                $params['reference_number']
+                $params['reference_number'],
+                $primaryDocLabelLong
             ),
             'System / Antragsteller',
             false
         );
+
+        if (class_exists('ActivityLog')) {
+            ActivityLog::log('secure_case.created', $params['contact_email'], [
+                'case_id'           => $caseId,
+                'case_number'       => $caseNumber,
+                'police_department' => $params['police_department'],
+                'contact_name'      => $params['contact_name'],
+                'reference_number'  => $params['reference_number'],
+                'securing_type'     => $params['securing_type'],
+            ]);
+        }
 
         return [
             'id'          => $caseId,
@@ -1449,6 +1462,17 @@ final class SecurePortalRepository
             'Polizei (Download-Token)',
             false
         );
+
+        if (class_exists('ActivityLog')) {
+            ActivityLog::log('secure_case.file_downloaded', null, [
+                'case_id'    => $caseId,
+                'file_id'    => $fileId,
+                'file_name'  => $fileName,
+                'token'      => $token,
+                'ip_address' => $ip,
+                'user_agent' => $ua,
+            ]);
+        }
     }
 
     /**

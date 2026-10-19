@@ -22,6 +22,9 @@ require_once __DIR__ . '/core/Version.php';
 require_once __DIR__ . '/core/MigrationManager.php';
 require_once __DIR__ . '/core/Upload.php';
 require_once __DIR__ . '/core/HealthCheck.php';
+require_once __DIR__ . '/core/ActivityLog.php';
+require_once __DIR__ . '/core/ActivityLogRepository.php';
+require_once __DIR__ . '/core/RateLimiter.php';
 
 // 1. Globales Error- & Exception-Handling initialisieren
 ErrorHandler::register();
@@ -1165,7 +1168,7 @@ $router->get('/admin/activity', function (): void {
         exit;
     }
 
-    if (class_exists('Rbac') && !Rbac::can('admin.activity.view')) {
+    if (class_exists('Rbac') && !Rbac::can('admin.activity.view') && !Rbac::can('admin.activity')) {
         $_SESSION['flash_error'] = 'Zugriff verweigert: Sie haben keine Berechtigung für Protokolle.';
         header('Location: ?route=admin');
         exit;
@@ -1173,6 +1176,108 @@ $router->get('/admin/activity', function (): void {
 
     $user = Auth::user();
     $currentRoute = 'admin/activity';
+
+    // Filter-Parameter auslesen und bereinigen
+    $filters = [];
+    $search = trim((string) ($_GET['search'] ?? ''));
+    if ($search !== '') {
+        $filters['search'] = $search;
+    }
+
+    $eventType = trim((string) ($_GET['event_type'] ?? ''));
+    if ($eventType !== '') {
+        $filters['event_type'] = $eventType;
+    }
+
+    $category = trim((string) ($_GET['category'] ?? ''));
+    if ($category !== '') {
+        $filters['category'] = $category;
+    }
+
+    $email = trim((string) ($_GET['email'] ?? ''));
+    if ($email !== '') {
+        $filters['email'] = $email;
+    }
+
+    $dateFrom = trim((string) ($_GET['date_from'] ?? ''));
+    if ($dateFrom !== '') {
+        $filters['date_from'] = $dateFrom;
+    }
+
+    $dateTo = trim((string) ($_GET['date_to'] ?? ''));
+    if ($dateTo !== '') {
+        $filters['date_to'] = $dateTo;
+    }
+
+    $caseId = isset($_GET['case_id']) && (int) $_GET['case_id'] > 0 ? (int) $_GET['case_id'] : 0;
+    if ($caseId > 0) {
+        $filters['case_id'] = $caseId;
+    }
+
+    $userId = isset($_GET['user_id']) && (int) $_GET['user_id'] > 0 ? (int) $_GET['user_id'] : 0;
+    if ($userId > 0) {
+        $filters['user_id'] = $userId;
+    }
+
+    // CSV-Export unterstützen
+    if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+        $exportLogs = class_exists('ActivityLogRepository')
+            ? ActivityLogRepository::list($filters, 2000, 0)
+            : [];
+
+        $filename = 'audit_log_' . date('Y-m-d_His') . '.csv';
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        $out = fopen('php://output', 'w');
+        // UTF-8 BOM für Excel-Kompatibilität
+        fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+        fputcsv($out, ['ID', 'Zeitstempel', 'Event-Typ', 'Kategorie', 'Benutzer / E-Mail', 'IP-Adresse', 'User-Agent', 'Details (JSON)'], ';');
+
+        foreach ($exportLogs as $l) {
+            fputcsv($out, [
+                $l['id'] ?? '',
+                $l['created_at'] ?? '',
+                $l['event_type'] ?? '',
+                $l['meta']['category'] ?? '',
+                $l['email'] ?? '',
+                $l['ip_address'] ?? '',
+                $l['user_agent'] ?? '',
+                $l['details'] ?? '',
+            ], ';');
+        }
+
+        fclose($out);
+        exit;
+    }
+
+    // Paginierung berechnen
+    $page = max(1, (int) ($_GET['page'] ?? 1));
+    $limit = max(10, min(200, (int) ($_GET['limit'] ?? 25)));
+    $offset = ($page - 1) * $limit;
+
+    $logs = [];
+    $totalCount = 0;
+    $totalPages = 1;
+    $eventTypes = [];
+    $stats = [
+        'total_count'       => 0,
+        'today_count'       => 0,
+        'case_events_count' => 0,
+        'latest_timestamp'  => '—',
+    ];
+
+    if (class_exists('ActivityLogRepository')) {
+        $logs = ActivityLogRepository::list($filters, $limit, $offset);
+        $totalCount = ActivityLogRepository::count($filters);
+        $totalPages = max(1, (int) ceil($totalCount / $limit));
+        $eventTypes = ActivityLogRepository::getDistinctEventTypes();
+        $stats = ActivityLogRepository::getStatistics();
+    }
+
     require __DIR__ . '/views/admin/activity.php';
 });
 

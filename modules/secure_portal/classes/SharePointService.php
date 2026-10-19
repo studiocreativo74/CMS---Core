@@ -51,8 +51,11 @@ final class SharePointService
             ? SecurePortalConfig::resolveLocalFilePath($relPath) 
             : self::resolveLocalFilePath($relPath);
 
+        $primaryDocLabelLong = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_long', 'Editionsverfügung') : 'Editionsverfügung';
+        $primaryDocLabelShort = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_short', 'Editionsverfuegung') : 'Editionsverfuegung';
+
         if ($localFilePath === null || !file_exists($localFilePath) || !is_readable($localFilePath)) {
-            $msg = 'Lokale Editionsverfügung nicht im Dateisystem auffindbar (' . htmlspecialchars($relPath, ENT_QUOTES, 'UTF-8') . ').';
+            $msg = 'Lokales Primärdokument (' . $primaryDocLabelLong . ') nicht im Dateisystem auffindbar (' . htmlspecialchars($relPath, ENT_QUOTES, 'UTF-8') . ').';
             error_log('SharePointService::archiveCaseWarrant: ' . $msg);
             self::logInternalCaseError($caseId, $msg);
             return ['success' => false, 'error' => $msg];
@@ -76,7 +79,7 @@ final class SharePointService
                 $remoteFileName = SecurePortalConfig::buildWarrantFileName($caseNumber, 1, $caseCombined);
             } else {
                 $safeCaseFolder = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $caseNumber) ?: 'CASE';
-                $remoteFileName = $safeCaseFolder . '_Editionsverfuegung_v1.pdf';
+                $remoteFileName = $safeCaseFolder . '_' . preg_replace('/[^a-zA-Z0-9_\-]/', '_', $primaryDocLabelShort) . '_v1.pdf';
             }
 
             $targetFolderPath = $baseFolder !== '' ? "{$baseFolder}/{$safeCaseFolder}" : $safeCaseFolder;
@@ -107,13 +110,24 @@ final class SharePointService
                     $caseId,
                     'sharepoint_archived',
                     sprintf(
-                        'Editionsverfügung erfolgreich in SharePoint archiviert (Ordner: %s, Item-ID: %s).',
+                        '%s erfolgreich in SharePoint archiviert (Ordner: %s, Item-ID: %s).',
+                        $primaryDocLabelLong,
                         $targetFolderPath,
                         $itemId
                     ),
                     'System / SharePoint',
                     true // nur intern sichtbar
                 );
+
+                if (class_exists('ActivityLog')) {
+                    ActivityLog::log('secure_case.warrant_sp_uploaded', null, [
+                        'case_id'       => $caseId,
+                        'case_number'   => $caseNumber,
+                        'target_folder' => $targetFolderPath,
+                        'item_id'       => $itemId,
+                        'file_url'      => $fileUrl,
+                    ]);
+                }
             }
 
             return array_merge(['success' => true], $syncData);

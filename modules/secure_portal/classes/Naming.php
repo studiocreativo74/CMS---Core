@@ -19,6 +19,8 @@ declare(strict_types=1);
  * - {AKTENZEICHEN}  -> Behörden-Aktenzeichen / Fall Nr bereinigt (z. B. 2026_5678)
  * - {FALL_NR}       -> Alias für {AKTENZEICHEN}
  * - {DEPARTMENT}    -> Dienststelle bereinigt (z. B. Kantonspolizei_Zuerich)
+ * - {DOC_TYPE}      -> Kurzform des Primärdokuments für Dateinamen (z. B. Editionsverfuegung oder Uebergabeformular)
+ * - {DOC_SHORT}     -> Alias für {DOC_TYPE}
  */
 final class Naming
 {
@@ -58,6 +60,23 @@ final class Naming
     }
 
     /**
+     * Ermittelt die bereinigte Kurzform des Primärdokuments für Dateinamen.
+     * Standard: 'Editionsverfuegung'
+     */
+    public static function getShortDocLabel(): string
+    {
+        $short = 'Editionsverfuegung';
+        if (class_exists('Settings')) {
+            $configured = (string) Settings::get('secure_primary_doc_label_short', 'Editionsverfuegung');
+            if (trim($configured) !== '') {
+                $short = trim($configured);
+            }
+        }
+        $clean = self::sanitizeName($short, false);
+        return $clean !== '' ? $clean : 'Editionsverfuegung';
+    }
+
+    /**
      * Erzeugt den Dateinamen der Editionsverfügung auf Basis des Templates und der Case-Daten.
      * Template aus Settings: secure_case_warrant_filename_template (Standard: '{CASE_NUMBER}_Editionsverfuegung_{DATE}_v1.pdf')
      *
@@ -88,7 +107,7 @@ final class Naming
         // Falls das Ergebnis rein ".pdf" oder leer ist, sicheren Fallback anwenden
         if ($clean === '.pdf' || $clean === '') {
             $safeNum = self::sanitizeName($caseNumber, false);
-            $clean = ($safeNum !== '' ? $safeNum : 'CASE') . '_Editionsverfuegung_v1.pdf';
+            $clean = ($safeNum !== '' ? $safeNum : 'CASE') . '_' . self::getShortDocLabel() . '_v1.pdf';
         }
 
         return $clean;
@@ -196,6 +215,7 @@ final class Naming
         $cleanCity       = self::sanitizeName($rawCity, false);
 
         // 4. Platzhalter-Ersetzungen durchführen
+        $shortDoc = self::getShortDocLabel();
         $replacements = [
             '{CASE_NUMBER}'  => $cleanCaseNumber,
             '{YEAR}'         => $dateY,
@@ -207,7 +227,15 @@ final class Naming
             '{AKTENZEICHEN}' => $cleanRef !== '' ? $cleanRef : 'REF_UNKNOWN',
             '{FALL_NR}'      => $cleanRef !== '' ? $cleanRef : 'REF_UNKNOWN',
             '{DEPARTMENT}'   => $cleanDept !== '' ? $cleanDept : 'BEHOERDE',
+            '{DOC_TYPE}'     => $shortDoc,
+            '{DOC_SHORT}'    => $shortDoc,
+            '{DOKUMENT}'     => $shortDoc,
         ];
+
+        // Falls das Template hartkodiert 'Editionsverfuegung' enthält und ein abweichendes Kurzlabel konfiguriert ist
+        if ($shortDoc !== 'Editionsverfuegung' && str_contains($template, 'Editionsverfuegung') && !str_contains($template, '{DOC_TYPE}')) {
+            $template = str_replace('Editionsverfuegung', $shortDoc, $template);
+        }
 
         return str_replace(array_keys($replacements), array_values($replacements), $template);
     }

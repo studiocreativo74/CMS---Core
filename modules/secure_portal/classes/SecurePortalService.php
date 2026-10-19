@@ -359,10 +359,11 @@ final class SecurePortalService
                     SecurePortalRepository::updateWarrantFilePath($caseId, $targetRelPath);
 
                     // Audit-Log für interne Nachverfolgbarkeit
+                    $primaryDocLong = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_long', 'Editionsverfügung') : 'Editionsverfügung';
                     SecurePortalRepository::addCaseLog(
                         $caseId,
                         'warrant_organized',
-                        sprintf('Editionsverfügung im Fallordner abgelegt: %s', $targetRelPath),
+                        sprintf('%s im Fallordner abgelegt: %s', $primaryDocLong, $targetRelPath),
                         'System',
                         true
                     );
@@ -549,6 +550,7 @@ final class SecurePortalService
         }
 
         // Ort ermitteln (falls vorhanden)
+        $primaryDocLabelLong = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_long', 'Editionsverfügung') : 'Editionsverfügung';
         $city = '';
         if (class_exists('Naming')) {
             $city = Naming::extractCity($case);
@@ -595,7 +597,7 @@ final class SecurePortalService
             . "{$viewUrl}\n\n"
             . "SICHERHEITSHINWEIS\n"
             . "------------------------------------------------------------\n"
-            . "Aus Datenschutz- und Sicherheitsgründen sind die behördliche Editionsverfügung\n"
+            . "Aus Datenschutz- und Sicherheitsgründen sind das Primärdokument ({$primaryDocLabelLong})\n"
             . "sowie die Sicherungsdaten nicht per E-Mail beigefügt. Bitte bearbeiten\n"
             . "Sie den Fall ausschliesslich über den internen Administrationsbereich.\n\n"
             . "Freundliche Grüsse,\n"

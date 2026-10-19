@@ -435,9 +435,43 @@ final class SecurePortalConfig
     }
 
     /**
-     * Erzeugt den standardisierten Dateinamen der Editionsverfügung aus der Vorgangs-ID.
+     * Gibt die konfigurierte Langbezeichnung für das Primärdokument zurück.
+     * Standard: 'Editionsverfügung'
+     */
+    public static function getPrimaryDocLabelLong(): string
+    {
+        if (class_exists('Settings')) {
+            $label = (string) Settings::get('secure_primary_doc_label_long', 'Editionsverfügung');
+            if (trim($label) !== '') {
+                return trim($label);
+            }
+        }
+        return 'Editionsverfügung';
+    }
+
+    /**
+     * Gibt die konfigurierte Kurzbezeichnung für das Primärdokument (Dateinamen) zurück.
+     * Standard: 'Editionsverfuegung'
+     */
+    public static function getPrimaryDocLabelShort(): string
+    {
+        if (class_exists('Settings')) {
+            $label = (string) Settings::get('secure_primary_doc_label_short', 'Editionsverfuegung');
+            if (trim($label) !== '') {
+                $sanitized = preg_replace('/[^a-zA-Z0-9_\-]/', '_', trim($label));
+                $sanitized = trim($sanitized ?? '', '_-');
+                if ($sanitized !== '') {
+                    return $sanitized;
+                }
+            }
+        }
+        return 'Editionsverfuegung';
+    }
+
+    /**
+     * Erzeugt den standardisierten Dateinamen der Editionsverfügung / des Primärdokuments aus der Vorgangs-ID.
      * Schema: Standardmäßig über Naming::buildWarrantFileName oder Fallback:
-     * {case_number}_Editionsverfuegung_v{version}.pdf
+     * {case_number}_{short_doc}_v{version}.pdf
      *
      * @param string $caseNumber Vorgangs-ID (z. B. 'POL-2026-000123')
      * @param int    $version    Versionsnummer (Fallback)
@@ -451,7 +485,8 @@ final class SecurePortalConfig
 
         $safeNumber = self::sanitizeCaseNumber($caseNumber);
         $v = max(1, $version);
-        return "{$safeNumber}_Editionsverfuegung_v{$v}.pdf";
+        $short = self::getPrimaryDocLabelShort();
+        return "{$safeNumber}_{$short}_v{$v}.pdf";
     }
 
     /**

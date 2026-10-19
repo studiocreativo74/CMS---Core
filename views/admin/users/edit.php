@@ -196,6 +196,71 @@ ob_start();
                 </ul>
             </div>
         </div>
+
+        <?php
+        $userActivityLogs = class_exists('ActivityLogRepository') 
+            ? ActivityLogRepository::listForUser($userId, 15) 
+            : [];
+        ?>
+        <!-- Benutzer-Aktivitätsprotokoll -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <h6 class="card-title mb-0 fw-semibold text-dark">
+                        <i class="bi bi-clock-history text-primary me-1"></i> Aktivitätsprotokoll
+                    </h6>
+                    <span class="badge bg-secondary-subtle text-secondary rounded-pill"><?= count($userActivityLogs) ?></span>
+                </div>
+                <?php if (!empty($userEmail)): ?>
+                    <a href="?route=admin/activity&email=<?= urlencode($userEmail) ?>" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size: 0.75rem;">
+                        Alle Logs <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+            <div class="card-body p-3">
+                <?php if (empty($userActivityLogs)): ?>
+                    <p class="text-muted small mb-0 text-center py-2">Keine Aktivitäten für dieses Benutzerkonto verzeichnet.</p>
+                <?php else: ?>
+                    <div class="list-group list-group-flush">
+                        <?php foreach ($userActivityLogs as $uLog): 
+                            $uMeta = $uLog['meta'] ?? ActivityLogRepository::getEventMeta($uLog['event_type']);
+                            $uDetails = $uLog['details_data'] ?? [];
+                        ?>
+                            <div class="list-group-item px-0 py-2 border-bottom">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <span class="badge <?= htmlspecialchars($uMeta['badge_class'], ENT_QUOTES, 'UTF-8') ?>" style="font-size: 0.7rem;">
+                                        <i class="bi <?= htmlspecialchars($uMeta['icon_class'], ENT_QUOTES, 'UTF-8') ?> me-1"></i>
+                                        <?= htmlspecialchars($uMeta['title'], ENT_QUOTES, 'UTF-8') ?>
+                                    </span>
+                                    <span class="text-muted font-monospace" style="font-size: 0.7rem;">
+                                        <?= date('d.m.Y H:i', strtotime((string)$uLog['created_at'])) ?>
+                                    </span>
+                                </div>
+                                <div class="font-monospace text-muted" style="font-size: 0.7rem;">
+                                    <?= htmlspecialchars($uLog['event_type'], ENT_QUOTES, 'UTF-8') ?>
+                                </div>
+                                <?php if (!empty($uLog['ip_address'])): ?>
+                                    <div class="text-secondary small font-monospace" style="font-size: 0.7rem;">
+                                        IP: <?= htmlspecialchars($uLog['ip_address'], ENT_QUOTES, 'UTF-8') ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if (!empty($uDetails)): ?>
+                                    <div class="mt-1 d-flex flex-wrap gap-1">
+                                        <?php foreach ($uDetails as $dk => $dv): 
+                                            if (is_array($dv) || is_object($dv)) continue;
+                                        ?>
+                                            <span class="badge bg-light text-secondary border" style="font-size: 0.65rem;">
+                                                <?= htmlspecialchars((string)$dk, ENT_QUOTES, 'UTF-8') ?>: <?= htmlspecialchars((string)$dv, ENT_QUOTES, 'UTF-8') ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 </div>
 

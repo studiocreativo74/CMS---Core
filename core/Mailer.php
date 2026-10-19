@@ -16,7 +16,11 @@ final class Mailer
         string $to,
         string $subject,
         string $body,
-        bool $sendCopyToOffice = false
+        bool $sendCopyToOffice = false,
+        ?string $customFromEmail = null,
+        ?string $customFromName = null,
+        ?string $customReplyTo = null,
+        ?string $customBcc = null
     ): bool {
         $to = trim($to);
         if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
@@ -27,15 +31,26 @@ final class Mailer
         $fromName  = self::DEFAULT_FROM_NAME;
         $replyTo   = self::OFFICE_COPY_EMAIL;
 
-        if (class_exists('Settings')) {
+        if ($customFromEmail !== null && filter_var($customFromEmail, FILTER_VALIDATE_EMAIL)) {
+            $fromEmail = trim($customFromEmail);
+        } elseif (class_exists('Settings')) {
             $cfgFrom = Settings::get('system_email_from');
             if ($cfgFrom !== null && filter_var($cfgFrom, FILTER_VALIDATE_EMAIL)) {
                 $fromEmail = trim((string) $cfgFrom);
             }
+        }
+
+        if ($customFromName !== null && trim($customFromName) !== '') {
+            $fromName = trim($customFromName);
+        } elseif (class_exists('Settings')) {
             $cfgName = Settings::get('system_email_from_name');
             if ($cfgName !== null && trim((string) $cfgName) !== '') {
                 $fromName = trim((string) $cfgName);
             }
+        }
+
+        if ($customReplyTo !== null && filter_var($customReplyTo, FILTER_VALIDATE_EMAIL)) {
+            $replyTo = trim($customReplyTo);
         }
 
         // UTF-8 Subject-Encoding nach RFC 2047
@@ -50,6 +65,10 @@ final class Mailer
             'X-Mailer: PHP/' . phpversion(),
         ];
 
+        if ($customBcc !== null && filter_var($customBcc, FILTER_VALIDATE_EMAIL)) {
+            $headers[] = 'Bcc: ' . trim($customBcc);
+        }
+
         $headersStr = implode("\r\n", $headers) . "\r\n";
         $extraParam = '-f' . escapeshellarg($fromEmail);
 
@@ -62,7 +81,7 @@ final class Mailer
             @mail(self::OFFICE_COPY_EMAIL, $officeSubject, $body, $headersStr, $extraParam);
         }
 
-        return $mailSent;
+        return (bool) $mailSent;
     }
 
     /**

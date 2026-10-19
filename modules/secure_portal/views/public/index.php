@@ -17,6 +17,7 @@ $flashInfo = $flashInfo ?? ($_SESSION['flash_secure_info'] ?? null);
 unset($_SESSION['flash_secure_error'], $_SESSION['flash_secure_success'], $_SESSION['flash_secure_info']);
 
 $settings = class_exists('Settings') ? Settings::all() : [];
+$primaryDocLabelLong = class_exists('Settings') ? (string) Settings::get('secure_primary_doc_label_long', 'Editionsverfügung') : 'Editionsverfügung';
 $siteTitle = 'Polizei- & Justiz-Sicherungsportal';
 $adminBrandColor = (string) ($settings['admin_brand_color'] ?? '#0f4c81');
 $primaryColor = !empty($settings['homepage_primary_color']) ? (string) $settings['homepage_primary_color'] : $adminBrandColor;
@@ -752,8 +753,8 @@ $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
                         <div class="col-md-4">
                             <div class="p-3 step-card-contrast h-100">
                                 <div class="badge bg-success text-white mb-2 fw-bold">Schritt 2</div>
-                                <h6 class="fw-bold text-dark mb-1">Upload Editionsverfügung</h6>
-                                <p class="text-muted small mb-0">Rechtsgültige Editionsverfügung (Art. 265 StPO) als PDF hochladen (bis 30 MB).</p>
+                                <h6 class="fw-bold text-dark mb-1">Upload <?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?></h6>
+                                <p class="text-muted small mb-0">Rechtsgültiges Dokument (<?= htmlspecialchars($primaryDocLabelLong, ENT_QUOTES, 'UTF-8') ?>) als PDF hochladen (bis 30 MB).</p>
                             </div>
                         </div>
                         <div class="col-md-4">
