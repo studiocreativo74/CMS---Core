@@ -93,13 +93,14 @@ final class BoatingPermissions
                 return;
             }
 
-            foreach (self::getAll() as $name => $desc) {
+            foreach (self::getAll() as $key => $desc) {
                 DB::execute(
-                    "INSERT INTO `permissions` (`name`, `description`, `module`) 
-                     VALUES (:name, :desc, 'boating_school')
+                    "INSERT INTO `permissions` (`key`, `name`, `description`, `created_at`) 
+                     VALUES (:key, :name, :desc, NOW())
                      ON DUPLICATE KEY UPDATE `description` = :desc_up",
                     [
-                        'name'    => $name,
+                        'key'     => $key,
+                        'name'    => $desc,
                         'desc'    => $desc,
                         'desc_up' => $desc,
                     ]

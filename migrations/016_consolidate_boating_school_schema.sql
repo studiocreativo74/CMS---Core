@@ -103,22 +103,22 @@ UPDATE `bs_coach_availabilities` SET `location_id` = NULL WHERE `location_id` = 
 UPDATE `bs_coach_weekly_templates` SET `location_id` = NULL WHERE `location_id` = 0;
 
 -- 4. Berechtigungen registrieren
-INSERT IGNORE INTO `permissions` (`name`, `description`, `module`) VALUES
-('boating.bookings.view', 'Buchungen und Termine einsehen', 'boating_school'),
-('boating.bookings.manage', 'Buchungen erstellen, bearbeiten und stornieren', 'boating_school'),
-('boating.calendar.view', 'Ausbildungs- und Belegungskalender einsehen', 'boating_school'),
-('boating.calendar.manage', 'Kalendertermine verwalten und verschieben', 'boating_school'),
-('boating.customers.view', 'Kunden- und Schülerkartei einsehen', 'boating_school'),
-('boating.customers.manage', 'Kunden verwalten und anlegen', 'boating_school'),
-('boating.subscriptions.manage', 'Abonnemente und Mehrfachkarten verwalten', 'boating_school'),
-('boating.reports.view', 'Auswertungen und Berichte einsehen', 'boating_school'),
-('boating.payroll.view', 'Fahrlehrer-Monatsrapporte und Timesheets einsehen', 'boating_school'),
-('boating.payroll.manage', 'Payroll und Lohnabrechnungen verwalten und freigeben', 'boating_school'),
-('boating.coaches.view', 'Fahrlehrer-Stammdaten einsehen', 'boating_school'),
-('boating.coaches.manage', 'Fahrlehrer-Stammdaten verwalten', 'boating_school'),
-('boating.coaches.hr_details', 'Sensible Personaldaten (AHV-Nr., IBAN) einsehen/bearbeiten', 'boating_school'),
-('boating.coach.portal', 'Zugang zum persönlichen Fahrlehrer-Portal', 'boating_school'),
-('boating.coach.availability', 'Eigene Arbeitszeiten und Absenzen erfassen', 'boating_school'),
-('boating.timesheets.submit', 'Eigenen Monatsrapport/Timesheet einreichen', 'boating_school'),
-('boating.timesheets.approve', 'Fahrlehrer-Monatsrapporte prüfen und genehmigen', 'boating_school'),
-('boating.settings.manage', 'Bootsfahrschul-Einstellungen verwalten', 'boating_school');
+INSERT IGNORE INTO `permissions` (`key`, `name`, `description`, `created_at`) VALUES
+('boating.bookings.view', 'Buchungen ansehen', 'Buchungen und Termine einsehen', NOW()),
+('boating.bookings.manage', 'Buchungen verwalten', 'Buchungen erstellen, bearbeiten und stornieren', NOW()),
+('boating.calendar.view', 'Kalender ansehen', 'Ausbildungs- und Belegungskalender einsehen', NOW()),
+('boating.calendar.manage', 'Kalender verwalten', 'Kalendertermine verwalten und verschieben', NOW()),
+('boating.customers.view', 'Kunden ansehen', 'Kunden- und Schülerkartei einsehen', NOW()),
+('boating.customers.manage', 'Kunden verwalten', 'Kunden verwalten und anlegen', NOW()),
+('boating.subscriptions.manage', 'Abonnemente verwalten', 'Abonnemente und Mehrfachkarten verwalten', NOW()),
+('boating.reports.view', 'Berichte ansehen', 'Auswertungen und Berichte einsehen', NOW()),
+('boating.payroll.view', 'Payroll einsehen', 'Fahrlehrer-Monatsrapporte und Timesheets einsehen', NOW()),
+('boating.payroll.manage', 'Payroll verwalten', 'Payroll und Lohnabrechnungen verwalten und freigeben', NOW()),
+('boating.coaches.view', 'Fahrlehrer ansehen', 'Fahrlehrer-Stammdaten einsehen', NOW()),
+('boating.coaches.manage', 'Fahrlehrer verwalten', 'Fahrlehrer-Stammdaten verwalten', NOW()),
+('boating.coaches.hr_details', 'HR-Daten einsehen/bearbeiten', 'Sensible Personaldaten (AHV-Nr., IBAN) einsehen/bearbeiten', NOW()),
+('boating.coach.portal', 'Fahrlehrer-Portal', 'Zugang zum persönlichen Fahrlehrer-Portal', NOW()),
+('boating.coach.availability', 'Arbeitszeiten/Absenzen', 'Eigene Arbeitszeiten und Absenzen erfassen', NOW()),
+('boating.timesheets.submit', 'Timesheet einreichen', 'Eigenen Monatsrapport/Timesheet einreichen', NOW()),
+('boating.timesheets.approve', 'Timesheet freigeben', 'Fahrlehrer-Monatsrapporte prüfen und genehmigen', NOW()),
+('boating.settings.manage', 'Bootsfahrschule Einstellungen', 'Bootsfahrschul-Einstellungen verwalten', NOW());

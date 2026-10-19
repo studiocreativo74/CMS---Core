@@ -28,6 +28,6 @@ ALTER TABLE `bs_appointments`
     ADD INDEX IF NOT EXISTS `idx_bs_app_inst_payout` (`instructor_id`, `date`, `instructor_payout_status`);
 
 -- 3. Standard-Berechtigungen (falls RBAC-Tabellen existieren)
-INSERT IGNORE INTO `permissions` (`name`, `description`, `module`) VALUES
-('boating.reports.view', 'Berichte, Auswertungen & Kennzahlen der Bootsfahrschule einsehen', 'boating_school'),
-('boating.payroll.manage', 'Fahrlehrer-Payroll verwalten, Beträge anpassen und Lohn-Exporte durchführen', 'boating_school');
+INSERT IGNORE INTO `permissions` (`key`, `name`, `description`, `created_at`) VALUES
+('boating.reports.view', 'Berichte & Auswertungen', 'Berichte, Auswertungen & Kennzahlen der Bootsfahrschule einsehen', NOW()),
+('boating.payroll.manage', 'Fahrlehrer-Payroll verwalten', 'Fahrlehrer-Payroll verwalten, Beträge anpassen und Lohn-Exporte durchführen', NOW());
