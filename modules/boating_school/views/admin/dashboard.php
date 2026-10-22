@@ -305,7 +305,7 @@ ob_start();
                                         </td>
                                         <td>
                                             <div class="text-truncate" style="max-width: 180px;">
-                                                <?= htmlspecialchars((string) ($inst['qualifications'] ?: ($inst['license_number'] ?: 'Standard')), ENT_QUOTES, 'UTF-8') ?>
+                                                <?= htmlspecialchars((string) (!empty($inst['title']) ? $inst['title'] : (!empty($inst['qualifications']) ? $inst['qualifications'] : 'Fahrcoach')), ENT_QUOTES, 'UTF-8') ?>
                                             </div>
                                         </td>
                                         <td>

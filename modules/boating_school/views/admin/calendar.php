@@ -516,7 +516,7 @@ ob_start();
                                         <?= htmlspecialchars($inst['first_name'] . ' ' . $inst['last_name']) ?>
                                     </div>
                                     <span class="badge" style="background-color: <?= htmlspecialchars((string) ($inst['color_code'] ?? '#0d6efd')) ?>; color: #fff; font-size: 0.7rem;">
-                                        <?= htmlspecialchars((string) ($inst['license_number'] ?? 'Fahrlehrer')) ?>
+                                        <?= htmlspecialchars((string) ($inst['title'] ?? 'Fahrcoach')) ?>
                                     </span>
                                 </th>
                             <?php endforeach; ?>

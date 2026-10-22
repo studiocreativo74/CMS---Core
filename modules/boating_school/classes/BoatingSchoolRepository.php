@@ -408,17 +408,21 @@ final class BoatingSchoolRepository
 
     public static function createInstructor(array $data): int
     {
+        self::ensureCrmSchema();
         $sql = 'INSERT INTO `bs_instructors` 
-                (`user_id`, `first_name`, `last_name`, `email`, `phone`, `license_number`, `pay_rate_type`, `pay_rate_amount`, `payroll_external_code`, `qualifications`, `color_code`, `image_path`, `notes`, `is_active`, `created_at`, `updated_at`) 
+                (`user_id`, `first_name`, `last_name`, `title`, `email`, `phone`, `public_mobile`, `is_mobile_public`, `license_number`, `pay_rate_type`, `pay_rate_amount`, `payroll_external_code`, `qualifications`, `color_code`, `image_path`, `image_url`, `notes`, `is_active`, `created_at`, `updated_at`) 
                 VALUES 
-                (:user_id, :first_name, :last_name, :email, :phone, :license_number, :pay_rate_type, :pay_rate_amount, :payroll_external_code, :qualifications, :color_code, :image_path, :notes, :is_active, NOW(), NOW())';
+                (:user_id, :first_name, :last_name, :title, :email, :phone, :public_mobile, :is_mobile_public, :license_number, :pay_rate_type, :pay_rate_amount, :payroll_external_code, :qualifications, :color_code, :image_path, :image_url, :notes, :is_active, NOW(), NOW())';
 
         DB::execute($sql, [
             'user_id'               => !empty($data['user_id']) ? (int) $data['user_id'] : null,
             'first_name'            => trim((string) ($data['first_name'] ?? '')),
             'last_name'             => trim((string) ($data['last_name'] ?? '')),
+            'title'                 => !empty($data['title']) ? trim((string) $data['title']) : 'Fahrcoach',
             'email'                 => !empty($data['email']) ? trim((string) $data['email']) : null,
             'phone'                 => !empty($data['phone']) ? trim((string) $data['phone']) : null,
+            'public_mobile'         => !empty($data['public_mobile']) ? trim((string) $data['public_mobile']) : null,
+            'is_mobile_public'      => !empty($data['is_mobile_public']) ? 1 : 0,
             'license_number'        => !empty($data['license_number']) ? trim((string) $data['license_number']) : null,
             'pay_rate_type'         => !empty($data['pay_rate_type']) ? (string) $data['pay_rate_type'] : 'per_hour',
             'pay_rate_amount'       => isset($data['pay_rate_amount']) ? (float) $data['pay_rate_amount'] : 0.00,
@@ -426,6 +430,7 @@ final class BoatingSchoolRepository
             'qualifications'        => !empty($data['qualifications']) ? trim((string) $data['qualifications']) : null,
             'color_code'            => !empty($data['color_code']) ? trim((string) $data['color_code']) : '#0d6efd',
             'image_path'            => !empty($data['image_path']) ? trim((string) $data['image_path']) : null,
+            'image_url'             => !empty($data['image_url']) ? trim((string) $data['image_url']) : null,
             'notes'                 => !empty($data['notes']) ? trim((string) $data['notes']) : null,
             'is_active'             => isset($data['is_active']) ? (int) (bool) $data['is_active'] : 1,
         ]);
@@ -439,12 +444,16 @@ final class BoatingSchoolRepository
             return false;
         }
 
+        self::ensureCrmSchema();
         $fields = [
             'user_id'               => !empty($data['user_id']) ? (int) $data['user_id'] : null,
             'first_name'            => trim((string) ($data['first_name'] ?? '')),
             'last_name'             => trim((string) ($data['last_name'] ?? '')),
+            'title'                 => !empty($data['title']) ? trim((string) $data['title']) : 'Fahrcoach',
             'email'                 => !empty($data['email']) ? trim((string) $data['email']) : null,
             'phone'                 => !empty($data['phone']) ? trim((string) $data['phone']) : null,
+            'public_mobile'         => !empty($data['public_mobile']) ? trim((string) $data['public_mobile']) : null,
+            'is_mobile_public'      => !empty($data['is_mobile_public']) ? 1 : 0,
             'license_number'        => !empty($data['license_number']) ? trim((string) $data['license_number']) : null,
             'pay_rate_type'         => !empty($data['pay_rate_type']) ? (string) $data['pay_rate_type'] : 'per_hour',
             'pay_rate_amount'       => isset($data['pay_rate_amount']) ? (float) $data['pay_rate_amount'] : 0.00,
@@ -458,16 +467,23 @@ final class BoatingSchoolRepository
 
         $imageSql = '';
         if (array_key_exists('image_path', $data)) {
-            $imageSql = ', `image_path` = :image_path';
+            $imageSql .= ', `image_path` = :image_path';
             $fields['image_path'] = !empty($data['image_path']) ? trim((string) $data['image_path']) : null;
+        }
+        if (array_key_exists('image_url', $data)) {
+            $imageSql .= ', `image_url` = :image_url';
+            $fields['image_url'] = !empty($data['image_url']) ? trim((string) $data['image_url']) : null;
         }
 
         $sql = "UPDATE `bs_instructors` 
                 SET `user_id` = :user_id,
                     `first_name` = :first_name, 
                     `last_name` = :last_name, 
+                    `title` = :title,
                     `email` = :email, 
                     `phone` = :phone, 
+                    `public_mobile` = :public_mobile,
+                    `is_mobile_public` = :is_mobile_public,
                     `license_number` = :license_number,
                     `pay_rate_type` = :pay_rate_type,
                     `pay_rate_amount` = :pay_rate_amount,

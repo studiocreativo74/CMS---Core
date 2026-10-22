@@ -360,6 +360,16 @@ if (isset($router) && $router !== null) {
         $totalInstructors = InstructorService::count($filters);
         $tablesCreated = BoatingSchoolRepository::isTableCreated('bs_instructors');
         $users = class_exists('User') ? User::all() : [];
+        $hrDetailsMap = [];
+        if (class_exists('CoachService')) {
+            foreach ($instructors as $inst) {
+                $iId = (int) $inst['id'];
+                $hr = CoachService::getHrDetails($iId);
+                if ($hr) {
+                    $hrDetailsMap[$iId] = $hr;
+                }
+            }
+        }
 
         require __DIR__ . '/views/admin/instructors_index.php';
     });
@@ -391,23 +401,30 @@ if (isset($router) && $router !== null) {
             'user_id'               => !empty($_POST['user_id']) ? (int) $_POST['user_id'] : null,
             'first_name'            => $firstName,
             'last_name'             => $lastName,
+            'title'                 => !empty($_POST['title']) ? trim((string) $_POST['title']) : 'Fahrcoach',
             'email'                 => trim((string) ($_POST['email'] ?? '')),
             'phone'                 => trim((string) ($_POST['phone'] ?? '')),
-            'license_number'        => trim((string) ($_POST['license_number'] ?? '')),
+            'public_mobile'         => !empty($_POST['public_mobile']) ? trim((string) $_POST['public_mobile']) : null,
+            'is_mobile_public'      => !empty($_POST['is_mobile_public']) ? 1 : 0,
+            'license_number'        => '',
             'pay_rate_type'         => !empty($_POST['pay_rate_type']) ? (string) $_POST['pay_rate_type'] : 'per_hour',
-            'pay_rate_amount'       => isset($_POST['pay_rate_amount']) ? (float) $_POST['pay_rate_amount'] : 0.00,
+            'pay_rate_amount'       => isset($_POST['pay_rate_amount']) ? (float) $_POST['pay_rate_amount'] : (isset($_POST['hourly_rate']) ? (float) $_POST['hourly_rate'] : 0.00),
             'payroll_external_code' => !empty($_POST['payroll_external_code']) ? trim((string) $_POST['payroll_external_code']) : null,
-            'qualifications'        => trim((string) ($_POST['qualifications'] ?? '')),
+            'qualifications'        => trim((string) ($_POST['qualifications'] ?? ($_POST['bio'] ?? ''))),
             'color_code'            => trim((string) ($_POST['color_code'] ?? '#0d6efd')),
             'image_path'            => $imagePath,
+            'image_url'             => !empty($_POST['image_url']) ? trim((string) $_POST['image_url']) : null,
             'notes'                 => trim((string) ($_POST['notes'] ?? '')),
             'is_active'             => !empty($_POST['is_active']) ? 1 : 0,
         ];
 
         try {
             $instId = InstructorService::create($data);
+            if (class_exists('CoachService')) {
+                CoachService::saveHrDetails($instId, $_POST);
+            }
             BoatingSchoolService::log('instructor_created', ['instructor_id' => $instId, 'name' => $firstName . ' ' . $lastName]);
-            $_SESSION['flash_success'] = 'Fahrlehrer ' . $firstName . ' ' . $lastName . ' wurde erfolgreich angelegt.';
+            $_SESSION['flash_success'] = 'Coach ' . $firstName . ' ' . $lastName . ' wurde erfolgreich angelegt.';
         } catch (\Throwable $e) {
             $_SESSION['flash_error'] = 'Fehler beim Erstellen des Fahrlehrers: ' . $e->getMessage();
         }
@@ -487,6 +504,7 @@ if (isset($router) && $router !== null) {
             'qualifications'        => trim((string) ($_POST['qualifications'] ?? '')),
             'color_code'            => trim((string) ($_POST['color_code'] ?? '#0d6efd')),
             'image_path'            => $imagePath,
+            'image_url'             => !empty($_POST['image_url']) ? trim((string) $_POST['image_url']) : null,
             'notes'                 => trim((string) ($_POST['notes'] ?? '')),
             'is_active'             => !empty($_POST['is_active']) ? 1 : 0,
         ];
@@ -500,12 +518,13 @@ if (isset($router) && $router !== null) {
             }
 
             BoatingSchoolService::log('instructor_updated', ['instructor_id' => $id, 'name' => $firstName . ' ' . $lastName]);
-            $_SESSION['flash_success'] = 'Fahrlehrer ' . $firstName . ' ' . $lastName . ' wurde erfolgreich aktualisiert.';
+            $_SESSION['flash_success'] = 'Coach ' . $firstName . ' ' . $lastName . ' wurde erfolgreich aktualisiert.';
         } catch (\Throwable $e) {
             $_SESSION['flash_error'] = 'Fehler beim Speichern: ' . $e->getMessage();
         }
 
-        header('Location: ?route=admin/boating/instructors/edit&id=' . $id);
+        $redirectTo = !empty($_POST['redirect_to']) ? trim((string) $_POST['redirect_to']) : ('?route=admin/boating/instructors/edit&id=' . $id);
+        header('Location: ' . $redirectTo);
         exit;
     });
 
