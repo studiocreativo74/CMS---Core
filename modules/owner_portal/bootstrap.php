@@ -169,6 +169,31 @@ if (isset($router) && $router !== null) {
     });
 
     // =========================================================================
+    // ADMIN: LIEGENSCHAFT LÖSCHEN
+    // =========================================================================
+    $router->post('/admin/portal/property/delete', static function (): void {
+        if (!PortalService::canManageProperties()) {
+            $_SESSION['flash_error'] = 'Zugriff verweigert.';
+            header('Location: ?route=admin/portal/properties');
+            exit;
+        }
+
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_error'] = 'Ungültiges Sicherheitstoken (CSRF).';
+            header('Location: ?route=admin/portal/properties');
+            exit;
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id > 0) {
+            PortalRepository::deleteProperty($id);
+            $_SESSION['flash_success'] = 'Liegenschaft wurde gelöscht.';
+        }
+        header('Location: ?route=admin/portal/properties');
+        exit;
+    });
+
+    // =========================================================================
     // ADMIN: EINHEIT ERSTELLEN
     // =========================================================================
     $router->post('/admin/portal/unit/create', static function (): void {
@@ -253,6 +278,37 @@ if (isset($router) && $router !== null) {
             header('Location: ?route=admin/portal/unit&id=' . $id);
             exit;
         }
+    });
+
+    // =========================================================================
+    // ADMIN: EINHEIT LÖSCHEN
+    // =========================================================================
+    $router->post('/admin/portal/unit/delete', static function (): void {
+        if (!PortalService::canManageProperties()) {
+            $_SESSION['flash_error'] = 'Zugriff verweigert.';
+            header('Location: ?route=admin/portal/properties');
+            exit;
+        }
+
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_error'] = 'Ungültiges Sicherheitstoken (CSRF).';
+            header('Location: ?route=admin/portal/properties');
+            exit;
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+        $propertyId = (int) ($_POST['property_id'] ?? 0);
+        if ($id > 0) {
+            PortalRepository::deleteUnit($id);
+            $_SESSION['flash_success'] = 'Einheit wurde gelöscht.';
+        }
+
+        if ($propertyId > 0) {
+            header('Location: ?route=admin/portal/property&id=' . $propertyId);
+        } else {
+            header('Location: ?route=admin/portal/properties');
+        }
+        exit;
     });
 
     // =========================================================================

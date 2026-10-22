@@ -397,7 +397,7 @@ final class CoachAvailabilityService
         }
 
         $id        = (int) ($data['id'] ?? 0);
-        $weekday   = max(1, min(7, (int) ($data['weekday'] ?? 1)));
+        $weekday   = max(1, min(7, (int) ($data['weekday'] ?? $data['day_of_week'] ?? 1)));
         $startTime = substr(trim((string) ($data['start_time'] ?? '08:00')), 0, 5);
         $endTime   = substr(trim((string) ($data['end_time'] ?? '18:00')), 0, 5);
         $locId     = !empty($data['location_id']) ? (int) $data['location_id'] : null;

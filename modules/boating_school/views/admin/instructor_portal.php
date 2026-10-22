@@ -873,7 +873,7 @@ ob_start();
                                 ?>
                                 <?php foreach ($weeklyTemplates as $tpl): ?>
                                     <?php
-                                    $dayNum = (int) ($tpl['day_of_week'] ?? 1);
+                                    $dayNum = (int) ($tpl['weekday'] ?? $tpl['day_of_week'] ?? 1);
                                     $locName = !empty($tpl['location_id']) ? ($locationsMap[(int) $tpl['location_id']] ?? ('Hafen #' . $tpl['location_id'])) : null;
                                     ?>
                                     <tr>
@@ -1020,7 +1020,7 @@ ob_start();
                     <div class="modal-body p-4">
                         <div class="mb-3">
                             <label class="form-label small fw-semibold">Wochentag <span class="text-danger">*</span></label>
-                            <select name="day_of_week" class="form-select" required>
+                            <select name="weekday" id="day_of_week" class="form-select" required>
                                 <option value="1">Montag</option>
                                 <option value="2">Dienstag</option>
                                 <option value="3">Mittwoch</option>

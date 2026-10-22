@@ -1507,16 +1507,24 @@ final class BoatingSchoolRepository
     // =========================================================================
 
     /**
+     * @param bool|array<string, mixed> $onlyActive
      * @return array<int, array<string, mixed>>
      */
-    public static function getLocations(bool $onlyActive = true): array
+    public static function getLocations($onlyActive = true): array
     {
         if (!self::isTableCreated('bs_locations')) {
             return [];
         }
 
+        $activeOnly = true;
+        if (is_bool($onlyActive)) {
+            $activeOnly = $onlyActive;
+        } elseif (is_array($onlyActive)) {
+            $activeOnly = !empty($onlyActive['is_active']);
+        }
+
         try {
-            $sql = 'SELECT * FROM `bs_locations` ' . ($onlyActive ? 'WHERE `is_active` = 1 ' : '') . 'ORDER BY `name` ASC';
+            $sql = 'SELECT * FROM `bs_locations` ' . ($activeOnly ? 'WHERE `is_active` = 1 ' : '') . 'ORDER BY `name` ASC';
             return DB::fetchAll($sql);
         } catch (\Throwable $e) {
             error_log('BoatingSchoolRepository::getLocations Fehler: ' . $e->getMessage());

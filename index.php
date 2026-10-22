@@ -294,8 +294,8 @@ $router->get('/logout', function (): void {
     exit;
 });
 
-// GET /admin - Admin Dashboard
-$router->get('/admin', function () use ($getLoginRedirect): void {
+// GET /admin & /admin/dashboard - Admin Dashboard
+$adminDashboardHandler = function () use ($getLoginRedirect): void {
     if (!Auth::checkMagic()) {
         header('Location: ' . $getLoginRedirect(true));
         exit;
@@ -305,6 +305,14 @@ $router->get('/admin', function () use ($getLoginRedirect): void {
     $magicCodes = MagicCode::getAll();
     $currentRoute = 'admin';
     require __DIR__ . '/views/admin/dashboard.php';
+};
+$router->get('/admin', $adminDashboardHandler);
+$router->get('/admin/dashboard', $adminDashboardHandler);
+
+// GET /contact - Alias für /kontakt
+$router->get('/contact', function (): void {
+    header('Location: ?route=kontakt');
+    exit;
 });
 
 // GET /admin/magic-codes - Vollständige Magic-Code-Verwaltung mit Filtern

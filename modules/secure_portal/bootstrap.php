@@ -1020,7 +1020,12 @@ if (isset($router) && $router !== null) {
         exit;
     });
 
-    // POST /admin/secure/retention/run - Manuelle Ausführung der Fristenprüfung & Bereinigung
+    // GET & POST /admin/secure/retention/run - Manuelle Ausführung der Fristenprüfung & Bereinigung
+    $router->get('/admin/secure/retention/run', static function (): void {
+        header('Location: ?route=admin/secure/settings');
+        exit;
+    });
+
     $router->post('/admin/secure/retention/run', static function (): void {
         if (!SecurePortalService::canManageCases()) {
             $_SESSION['flash_error'] = 'Zugriff verweigert: Keine Berechtigung zur Fristen-Bereinigung.';

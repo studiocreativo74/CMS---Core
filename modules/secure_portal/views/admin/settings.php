@@ -793,6 +793,7 @@ ob_start();
                         </p>
                         <button type="submit"
                                 formaction="?route=admin/secure/retention/run"
+                                formmethod="post"
                                 class="btn btn-outline-danger btn-sm w-100 fw-semibold"
                                 onclick="return confirm('Möchten Sie die Fristenprüfung und Dateibereinigung jetzt sofort ausführen?');">
                             <i class="bi bi-play-circle me-1"></i> Fristen-Bereinigung jetzt ausführen

@@ -254,7 +254,7 @@ unset($_SESSION['flash_portal_success'], $_SESSION['flash_portal_error'], $_SESS
                         <li><a href="?route=bootschule/book">Termin &amp; Slot buchen</a></li>
                         <li><a href="?route=bootschule/services&category=rental">Bootsmiete anfragen</a></li>
                         <li><a href="?route=bootschule/me/appointments">Meine Termine verwalten</a></li>
-                        <li><a href="?route=contact">Kontakt &amp; Standort</a></li>
+                        <li><a href="?route=kontakt">Kontakt &amp; Standort</a></li>
                     </ul>
                 </div>
 

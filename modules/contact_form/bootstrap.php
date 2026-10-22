@@ -21,9 +21,53 @@ if (class_exists('ModuleManager')) {
     ]);
 }
 
-// Frontend-Route registrieren, falls Router vorhanden
+// Routen registrieren, falls Router vorhanden
 if (isset($router) && $router !== null) {
-    $router->get('/kontakt', function (): void {
-        echo '<h1>Kontaktformular</h1><p>Modul aktiv.</p>';
-    });
+    // Frontend-Route
+    $contactFrontendHandler = static function (): void {
+        require_once __DIR__ . '/../../views/home.php';
+    };
+    $router->get('/kontakt', $contactFrontendHandler);
+    $router->get('/contact', $contactFrontendHandler);
+
+    // Admin-Routen
+    $contactAdminHandler = static function (): void {
+        if (!class_exists('Auth') || !Auth::check()) {
+            header('Location: ?route=login');
+            exit;
+        }
+
+        $title = 'Kontaktformular-Verwaltung';
+        $currentRoute = 'admin/contact-form';
+        ob_start();
+        ?>
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h1 class="h3 fw-bold mb-1">Kontaktformular-Verwaltung</h1>
+                <p class="text-muted small mb-0">Eingegangene Anfragen und E-Mail-Einstellungen des Kontaktmoduls.</p>
+            </div>
+            <a href="?route=kontakt" target="_blank" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Formular ansehen
+            </a>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white">
+            <i class="bi bi-envelope-check text-primary fs-1 mb-3"></i>
+            <h5 class="fw-bold mb-2">Kontaktformular aktiv</h5>
+            <p class="text-muted max-w-600 mx-auto mb-3" style="max-width: 500px;">
+                Eingehende Kontaktanfragen werden automatisch per Mailer an die hinterlegte Kontakt-E-Mail weitergeleitet.
+            </p>
+            <div class="small text-muted">
+                Status: <span class="badge bg-success-subtle text-success">Aktiv</span>
+            </div>
+        </div>
+        <?php
+        $content = ob_get_clean();
+        $adminLayout = realpath(__DIR__ . '/../../views/layouts/admin.php') ?: (__DIR__ . '/../../views/layouts/admin.php');
+        require $adminLayout;
+    };
+
+    $router->get('/admin/contact-form', $contactAdminHandler);
+    $router->get('/admin/contact', $contactAdminHandler);
 }
+

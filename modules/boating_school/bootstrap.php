@@ -1830,6 +1830,10 @@ if (isset($router) && $router !== null) {
 
         $allInstructors = $canSwitchInstructor ? BoatingSchoolRepository::getInstructors(['is_active' => 1], 100, 0) : ($instructor ? [$instructor] : []);
 
+        if ($canSwitchInstructor && empty($allInstructors)) {
+            $allInstructors = BoatingSchoolRepository::getInstructors(null, 100, 0);
+        }
+
         if (!$instructor && $canSwitchInstructor && !empty($allInstructors[0])) {
             $instructor = $allInstructors[0];
         }
@@ -1935,7 +1939,7 @@ if (isset($router) && $router !== null) {
             }
         }
 
-        $locations = BoatingSchoolRepository::getLocations(['is_active' => 1]);
+        $locations = class_exists('LocationService') ? LocationService::getAll(true) : BoatingSchoolRepository::getLocations(true);
         $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         require __DIR__ . '/views/admin/instructor_portal.php';
     };
