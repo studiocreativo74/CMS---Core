@@ -284,7 +284,13 @@ final class BoatingSchoolRepository
                     `updated_at` = NOW() 
                 WHERE `id` = :id";
 
-        return DB::execute($sql, $fields);
+        try {
+            DB::execute($sql, $fields);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::updateBoat Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function toggleBoatStatus(int $id): bool
@@ -294,10 +300,16 @@ final class BoatingSchoolRepository
             return false;
         }
         $newStatus = empty($boat['is_active']) ? 1 : 0;
-        return DB::execute('UPDATE `bs_boats` SET `is_active` = :status, `updated_at` = NOW() WHERE `id` = :id', [
-            'status' => $newStatus,
-            'id'     => $id,
-        ]);
+        try {
+            DB::execute('UPDATE `bs_boats` SET `is_active` = :status, `updated_at` = NOW() WHERE `id` = :id', [
+                'status' => $newStatus,
+                'id'     => $id,
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::toggleBoatStatus Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function deleteBoat(int $id): bool
@@ -305,7 +317,13 @@ final class BoatingSchoolRepository
         if ($id <= 0) {
             return false;
         }
-        return DB::execute('DELETE FROM `bs_boats` WHERE `id` = :id', ['id' => $id]);
+        try {
+            DB::execute('DELETE FROM `bs_boats` WHERE `id` = :id', ['id' => $id]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::deleteBoat Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     // =========================================================================
@@ -496,7 +514,13 @@ final class BoatingSchoolRepository
                     `updated_at` = NOW() 
                 WHERE `id` = :id";
 
-        return DB::execute($sql, $fields);
+        try {
+            DB::execute($sql, $fields);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::updateInstructor Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function toggleInstructorStatus(int $id): bool
@@ -506,10 +530,16 @@ final class BoatingSchoolRepository
             return false;
         }
         $newStatus = empty($instructor['is_active']) ? 1 : 0;
-        return DB::execute('UPDATE `bs_instructors` SET `is_active` = :status, `updated_at` = NOW() WHERE `id` = :id', [
-            'status' => $newStatus,
-            'id'     => $id,
-        ]);
+        try {
+            DB::execute('UPDATE `bs_instructors` SET `is_active` = :status, `updated_at` = NOW() WHERE `id` = :id', [
+                'status' => $newStatus,
+                'id'     => $id,
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::toggleInstructorStatus Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function deleteInstructor(int $id): bool
@@ -517,7 +547,13 @@ final class BoatingSchoolRepository
         if ($id <= 0) {
             return false;
         }
-        return DB::execute('DELETE FROM `bs_instructors` WHERE `id` = :id', ['id' => $id]);
+        try {
+            DB::execute('DELETE FROM `bs_instructors` WHERE `id` = :id', ['id' => $id]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::deleteInstructor Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     // =========================================================================
@@ -659,18 +695,24 @@ final class BoatingSchoolRepository
                     `updated_at` = NOW() 
                 WHERE `id` = :id';
 
-        return DB::execute($sql, [
-            'name'             => trim((string) ($data['name'] ?? '')),
-            'code'             => !empty($data['code']) ? trim((string) $data['code']) : null,
-            'category'         => !empty($data['category']) ? trim((string) $data['category']) : 'practical',
-            'boat_type'        => !empty($data['boat_type']) ? trim((string) $data['boat_type']) : null,
-            'duration_minutes' => isset($data['duration_minutes']) && $data['duration_minutes'] !== '' ? (int) $data['duration_minutes'] : 60,
-            'price'            => isset($data['price']) ? (float) $data['price'] : 0.00,
-            'tax_rate'         => isset($data['tax_rate']) ? (float) $data['tax_rate'] : 0.00,
-            'description'      => !empty($data['description']) ? trim((string) $data['description']) : null,
-            'is_active'        => isset($data['is_active']) ? (int) (bool) $data['is_active'] : 1,
-            'id'               => $id,
-        ]);
+        try {
+            DB::execute($sql, [
+                'name'             => trim((string) ($data['name'] ?? '')),
+                'code'             => !empty($data['code']) ? trim((string) $data['code']) : null,
+                'category'         => !empty($data['category']) ? trim((string) $data['category']) : 'practical',
+                'boat_type'        => !empty($data['boat_type']) ? trim((string) $data['boat_type']) : null,
+                'duration_minutes' => isset($data['duration_minutes']) && $data['duration_minutes'] !== '' ? (int) $data['duration_minutes'] : 60,
+                'price'            => isset($data['price']) ? (float) $data['price'] : 0.00,
+                'tax_rate'         => isset($data['tax_rate']) ? (float) $data['tax_rate'] : 0.00,
+                'description'      => !empty($data['description']) ? trim((string) $data['description']) : null,
+                'is_active'        => isset($data['is_active']) ? (int) (bool) $data['is_active'] : 1,
+                'id'               => $id,
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::updateService Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function toggleServiceStatus(int $id): bool
@@ -680,10 +722,16 @@ final class BoatingSchoolRepository
             return false;
         }
         $newStatus = empty($srv['is_active']) ? 1 : 0;
-        return DB::execute('UPDATE `bs_services` SET `is_active` = :status, `updated_at` = NOW() WHERE `id` = :id', [
-            'status' => $newStatus,
-            'id'     => $id,
-        ]);
+        try {
+            DB::execute('UPDATE `bs_services` SET `is_active` = :status, `updated_at` = NOW() WHERE `id` = :id', [
+                'status' => $newStatus,
+                'id'     => $id,
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::toggleServiceStatus Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function deleteService(int $id): bool
@@ -691,7 +739,13 @@ final class BoatingSchoolRepository
         if ($id <= 0) {
             return false;
         }
-        return DB::execute('DELETE FROM `bs_services` WHERE `id` = :id', ['id' => $id]);
+        try {
+            DB::execute('DELETE FROM `bs_services` WHERE `id` = :id', ['id' => $id]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::deleteService Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     // =========================================================================
@@ -1046,39 +1100,45 @@ final class BoatingSchoolRepository
                     `updated_at` = NOW() 
                 WHERE `id` = :id';
 
-        return DB::execute($sql, [
-            'customer_number'     => !empty($data['customer_number']) ? trim((string) $data['customer_number']) : null,
-            'type'                => !empty($data['type']) ? trim((string) $data['type']) : 'student',
-            'user_id'             => !empty($data['user_id']) ? (int) $data['user_id'] : null,
-            'first_name'          => trim((string) ($data['first_name'] ?? '')),
-            'last_name'           => trim((string) ($data['last_name'] ?? '')),
-            'company'             => !empty($data['company']) ? trim((string) $data['company']) : null,
-            'email'               => !empty($data['email']) ? trim((string) $data['email']) : null,
-            'phone'               => !empty($data['phone']) ? trim((string) $data['phone']) : null,
-            'preferred_contact'   => !empty($data['preferred_contact']) ? trim((string) $data['preferred_contact']) : 'email',
-            'lead_source'         => !empty($data['lead_source']) ? trim((string) $data['lead_source']) : null,
-            'crm_stage'           => !empty($data['crm_stage']) ? trim((string) $data['crm_stage']) : 'student',
-            'tags'                => !empty($data['tags']) ? trim((string) $data['tags']) : null,
-            'street'              => !empty($data['street']) ? trim((string) $data['street']) : null,
-            'zip'                 => !empty($data['zip']) ? trim((string) $data['zip']) : null,
-            'city'                => !empty($data['city']) ? trim((string) $data['city']) : null,
-            'birthdate'           => !empty($data['birthdate']) ? trim((string) $data['birthdate']) : null,
-            'target_license'      => !empty($data['target_license']) ? trim((string) $data['target_license']) : null,
-            'licenses_held'       => !empty($data['licenses_held']) ? trim((string) $data['licenses_held']) : null,
-            'license_number'      => !empty($data['license_number']) ? trim((string) $data['license_number']) : null,
-            'experience_level'    => !empty($data['experience_level']) ? trim((string) $data['experience_level']) : 'beginner',
-            'notify_email'        => isset($data['notify_email']) ? (int) (bool) $data['notify_email'] : 1,
-            'notify_whatsapp'     => !empty($data['notify_whatsapp']) ? 1 : 0,
-            'theory_passed'       => !empty($data['theory_passed']) ? 1 : 0,
-            'theory_passed_at'    => !empty($data['theory_passed_at']) ? trim((string) $data['theory_passed_at']) : null,
-            'practical_passed'    => !empty($data['practical_passed']) ? 1 : 0,
-            'practical_passed_at' => !empty($data['practical_passed_at']) ? trim((string) $data['practical_passed_at']) : null,
-            'emergency_contact'   => !empty($data['emergency_contact']) ? trim((string) $data['emergency_contact']) : null,
-            'notes'               => !empty($data['notes']) ? trim((string) $data['notes']) : null,
-            'internal_notes'      => !empty($data['internal_notes']) ? trim((string) $data['internal_notes']) : null,
-            'is_active'           => isset($data['is_active']) ? (int) (bool) $data['is_active'] : 1,
-            'id'                  => $id,
-        ]);
+        try {
+            DB::execute($sql, [
+                'customer_number'     => !empty($data['customer_number']) ? trim((string) $data['customer_number']) : null,
+                'type'                => !empty($data['type']) ? trim((string) $data['type']) : 'student',
+                'user_id'             => !empty($data['user_id']) ? (int) $data['user_id'] : null,
+                'first_name'          => trim((string) ($data['first_name'] ?? '')),
+                'last_name'           => trim((string) ($data['last_name'] ?? '')),
+                'company'             => !empty($data['company']) ? trim((string) $data['company']) : null,
+                'email'               => !empty($data['email']) ? trim((string) $data['email']) : null,
+                'phone'               => !empty($data['phone']) ? trim((string) $data['phone']) : null,
+                'preferred_contact'   => !empty($data['preferred_contact']) ? trim((string) $data['preferred_contact']) : 'email',
+                'lead_source'         => !empty($data['lead_source']) ? trim((string) $data['lead_source']) : null,
+                'crm_stage'           => !empty($data['crm_stage']) ? trim((string) $data['crm_stage']) : 'student',
+                'tags'                => !empty($data['tags']) ? trim((string) $data['tags']) : null,
+                'street'              => !empty($data['street']) ? trim((string) $data['street']) : null,
+                'zip'                 => !empty($data['zip']) ? trim((string) $data['zip']) : null,
+                'city'                => !empty($data['city']) ? trim((string) $data['city']) : null,
+                'birthdate'           => !empty($data['birthdate']) ? trim((string) $data['birthdate']) : null,
+                'target_license'      => !empty($data['target_license']) ? trim((string) $data['target_license']) : null,
+                'licenses_held'       => !empty($data['licenses_held']) ? trim((string) $data['licenses_held']) : null,
+                'license_number'      => !empty($data['license_number']) ? trim((string) $data['license_number']) : null,
+                'experience_level'    => !empty($data['experience_level']) ? trim((string) $data['experience_level']) : 'beginner',
+                'notify_email'        => isset($data['notify_email']) ? (int) (bool) $data['notify_email'] : 1,
+                'notify_whatsapp'     => !empty($data['notify_whatsapp']) ? 1 : 0,
+                'theory_passed'       => !empty($data['theory_passed']) ? 1 : 0,
+                'theory_passed_at'    => !empty($data['theory_passed_at']) ? trim((string) $data['theory_passed_at']) : null,
+                'practical_passed'    => !empty($data['practical_passed']) ? 1 : 0,
+                'practical_passed_at' => !empty($data['practical_passed_at']) ? trim((string) $data['practical_passed_at']) : null,
+                'emergency_contact'   => !empty($data['emergency_contact']) ? trim((string) $data['emergency_contact']) : null,
+                'notes'               => !empty($data['notes']) ? trim((string) $data['notes']) : null,
+                'internal_notes'      => !empty($data['internal_notes']) ? trim((string) $data['internal_notes']) : null,
+                'is_active'           => isset($data['is_active']) ? (int) (bool) $data['is_active'] : 1,
+                'id'                  => $id,
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::updateCustomer Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function toggleCustomerStatus(int $id): bool
@@ -1088,10 +1148,16 @@ final class BoatingSchoolRepository
             return false;
         }
         $newStatus = empty($cust['is_active']) ? 1 : 0;
-        return DB::execute('UPDATE `bs_customers` SET `is_active` = :status, `updated_at` = NOW() WHERE `id` = :id', [
-            'status' => $newStatus,
-            'id'     => $id,
-        ]);
+        try {
+            DB::execute('UPDATE `bs_customers` SET `is_active` = :status, `updated_at` = NOW() WHERE `id` = :id', [
+                'status' => $newStatus,
+                'id'     => $id,
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::toggleCustomerStatus Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function getCustomerByEmail(string $email): ?array
@@ -1135,7 +1201,13 @@ final class BoatingSchoolRepository
         if ($id <= 0) {
             return false;
         }
-        return DB::execute('DELETE FROM `bs_customers` WHERE `id` = :id', ['id' => $id]);
+        try {
+            DB::execute('DELETE FROM `bs_customers` WHERE `id` = :id', ['id' => $id]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::deleteCustomer Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     // =========================================================================
@@ -1287,20 +1359,26 @@ final class BoatingSchoolRepository
                     `updated_at` = NOW()
                 WHERE `id` = :id';
 
-        return DB::execute($sql, [
-            'service_id'  => !empty($data['service_id']) ? (int) $data['service_id'] : null,
-            'title'       => trim((string) ($data['title'] ?? 'Abonnement')),
-            'code'        => !empty($data['code']) ? trim((string) $data['code']) : null,
-            'type'        => !empty($data['type']) ? trim((string) $data['type']) : 'units',
-            'total_units' => isset($data['total_units']) ? max(1, (int) $data['total_units']) : 10,
-            'used_units'  => isset($data['used_units']) ? max(0, (int) $data['used_units']) : 0,
-            'price'       => isset($data['price']) ? (float) $data['price'] : 0.00,
-            'valid_from'  => !empty($data['valid_from']) ? trim((string) $data['valid_from']) : null,
-            'valid_until' => !empty($data['valid_until']) ? trim((string) $data['valid_until']) : null,
-            'status'      => !empty($data['status']) ? trim((string) $data['status']) : 'active',
-            'notes'       => !empty($data['notes']) ? trim((string) $data['notes']) : null,
-            'id'          => $id,
-        ]);
+        try {
+            DB::execute($sql, [
+                'service_id'  => !empty($data['service_id']) ? (int) $data['service_id'] : null,
+                'title'       => trim((string) ($data['title'] ?? 'Abonnement')),
+                'code'        => !empty($data['code']) ? trim((string) $data['code']) : null,
+                'type'        => !empty($data['type']) ? trim((string) $data['type']) : 'units',
+                'total_units' => isset($data['total_units']) ? max(1, (int) $data['total_units']) : 10,
+                'used_units'  => isset($data['used_units']) ? max(0, (int) $data['used_units']) : 0,
+                'price'       => isset($data['price']) ? (float) $data['price'] : 0.00,
+                'valid_from'  => !empty($data['valid_from']) ? trim((string) $data['valid_from']) : null,
+                'valid_until' => !empty($data['valid_until']) ? trim((string) $data['valid_until']) : null,
+                'status'      => !empty($data['status']) ? trim((string) $data['status']) : 'active',
+                'notes'       => !empty($data['notes']) ? trim((string) $data['notes']) : null,
+                'id'          => $id,
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::updateSubscription Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function deleteSubscription(int $id): bool
@@ -1309,8 +1387,14 @@ final class BoatingSchoolRepository
             return false;
         }
         self::ensureCrmSchema();
-        DB::execute('DELETE FROM `bs_subscription_usages` WHERE `subscription_id` = :id', ['id' => $id]);
-        return DB::execute('DELETE FROM `bs_subscriptions` WHERE `id` = :id', ['id' => $id]);
+        try {
+            DB::execute('DELETE FROM `bs_subscription_usages` WHERE `subscription_id` = :id', ['id' => $id]);
+            DB::execute('DELETE FROM `bs_subscriptions` WHERE `id` = :id', ['id' => $id]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::deleteSubscription Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
@@ -1903,7 +1987,13 @@ final class BoatingSchoolRepository
                     `updated_at` = NOW()
                 WHERE `id` = :id";
 
-        return DB::execute($sql, $params);
+        try {
+            DB::execute($sql, $params);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::updateAppointment Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function updateAppointmentPayout(
@@ -1934,7 +2024,13 @@ final class BoatingSchoolRepository
 
         $sets[] = '`updated_at` = NOW()';
         $sql = 'UPDATE `bs_appointments` SET ' . implode(', ', $sets) . ' WHERE `id` = :id';
-        return DB::execute($sql, $params);
+        try {
+            DB::execute($sql, $params);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::updateAppointmentPayout Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function bulkUpdateAppointmentPayoutStatus(array $ids, string $status): int
@@ -1961,10 +2057,16 @@ final class BoatingSchoolRepository
             return false;
         }
 
-        return DB::execute(
-            'UPDATE `bs_appointments` SET `status` = :status, `updated_at` = NOW() WHERE `id` = :id',
-            ['status' => $status, 'id' => $id]
-        );
+        try {
+            DB::execute(
+                'UPDATE `bs_appointments` SET `status` = :status, `updated_at` = NOW() WHERE `id` = :id',
+                ['status' => $status, 'id' => $id]
+            );
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::updateAppointmentStatus Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function deleteAppointment(int $id): bool
@@ -1972,7 +2074,13 @@ final class BoatingSchoolRepository
         if ($id <= 0) {
             return false;
         }
-        return DB::execute('DELETE FROM `bs_appointments` WHERE `id` = :id', ['id' => $id]);
+        try {
+            DB::execute('DELETE FROM `bs_appointments` WHERE `id` = :id', ['id' => $id]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::deleteAppointment Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**

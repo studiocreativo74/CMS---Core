@@ -48,7 +48,7 @@ ob_start();
     <div>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-1 small">
-                <li class="breadcrumb-item"><a href="?route=admin/boating">Bootsfahrschule</a></li>
+                <li class="breadcrumb-item"><a href="?route=admin/boating">Nautic</a></li>
                 <li class="breadcrumb-item"><a href="?route=admin/boating/boats">Boote</a></li>
                 <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars((string) $boat['name'], ENT_QUOTES, 'UTF-8') ?></li>
             </ol>

@@ -150,7 +150,7 @@ ob_start();
     <div>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-1 small">
-                <li class="breadcrumb-item"><a href="?route=admin/boating">Bootsfahrschule</a></li>
+                <li class="breadcrumb-item"><a href="?route=admin/boating">Nautic</a></li>
                 <li class="breadcrumb-item"><a href="?route=admin/boating/instructors">Coaches</a></li>
                 <li class="breadcrumb-item active" aria-current="page"><?= $fullName ?></li>
             </ol>

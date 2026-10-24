@@ -49,7 +49,7 @@ ob_start();
     <div>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-1 small">
-                <li class="breadcrumb-item"><a href="?route=admin/boating">Bootsfahrschule</a></li>
+                <li class="breadcrumb-item"><a href="?route=admin/boating">Nautic</a></li>
                 <li class="breadcrumb-item"><a href="?route=admin/boating/services">Leistungen</a></li>
                 <li class="breadcrumb-item active" aria-current="page"><?= $serviceName ?></li>
             </ol>

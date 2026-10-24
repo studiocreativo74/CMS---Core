@@ -27,7 +27,7 @@ declare(strict_types=1);
  * @var string $csrfToken
  */
 
-$title = 'Mein Fahrlehrer-Portal & Monatsabschluss';
+$title = 'Mein Fahrlehrer-Portal - Nautic';
 $currentRoute = 'admin/boating/instructor-portal';
 
 $flashSuccess = $_SESSION['flash_success'] ?? null;
@@ -138,7 +138,7 @@ ob_start();
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1 small">
-                    <li class="breadcrumb-item"><a href="?route=admin/boating">Bootsfahrschule</a></li>
+                    <li class="breadcrumb-item"><a href="?route=admin/boating">Nautic</a></li>
                     <li class="breadcrumb-item active" aria-current="page">Fahrlehrer-Portal</li>
                 </ol>
             </nav>
@@ -148,6 +148,22 @@ ob_start();
         </div>
 
         <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="dropdown">
+                <button class="btn btn-outline-dark btn-sm dropdown-toggle d-flex align-items-center gap-1 rounded-3 px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-list fs-6"></i> Nautic Menü
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 p-2" style="min-width: 240px; z-index: 1060;">
+                    <li><a class="dropdown-item rounded-2 py-2" href="?route=admin/boating"><i class="bi bi-compass me-2 text-primary"></i>Übersicht &amp; Flotte</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="?route=admin/boating/calendar"><i class="bi bi-calendar3 me-2 text-info"></i>Kalender &amp; Disposition</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="?route=admin/boating/boats"><i class="bi bi-tsunami me-2"></i>Boote &amp; Vermietung</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="?route=admin/boating/instructors"><i class="bi bi-person-badge me-2 text-warning"></i>Fahrlehrer &amp; Skipper</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="?route=admin/boating/services"><i class="bi bi-tag me-2 text-danger"></i>Leistungen &amp; Tarife</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="?route=admin/boating/customers"><i class="bi bi-people me-2 text-success"></i>Kunden &amp; Schüler CRM</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="?route=admin/boating/reports"><i class="bi bi-graph-up-arrow me-2 text-secondary"></i>Auswertungen &amp; Payroll</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2 active" href="?route=admin/boating/instructor-portal"><i class="bi bi-person-workspace me-2 text-primary"></i>Fahrlehrer-Portal</a></li>
+                    <li><a class="dropdown-item rounded-2 py-2" href="?route=admin/boating/settings"><i class="bi bi-gear me-2"></i>Einstellungen</a></li>
+                </ul>
+            </div>
             <?php if ($canSwitchInstructor && count($allInstructors) > 1): ?>
                 <!-- Admin-Wechsler -->
                 <form method="get" action="" class="d-flex align-items-center gap-2">

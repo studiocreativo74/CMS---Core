@@ -176,7 +176,13 @@ class InstructorPayoutService
         $sets[] = '`updated_at` = NOW()';
         $sql = 'UPDATE `bs_appointments` SET ' . implode(', ', $sets) . ' WHERE `id` = :id';
 
-        return DB::execute($sql, $params);
+        try {
+            DB::execute($sql, $params);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('InstructorPayoutService::updateAppointmentPayout Fehler: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**

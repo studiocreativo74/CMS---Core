@@ -39,12 +39,13 @@ if (class_exists('BoatingMigrationManager')) {
 
 // Menüpunkte im Admin-Bereich registrieren (gemäß Anforderung 4)
 if (class_exists('ModuleManager')) {
-    // 1. Dashboard Bootsfahrschule
+    // 1. Dashboard Nautic
     ModuleManager::addAdminMenuItem([
-        'label' => 'Bootsfahrschule',
+        'group' => 'nautic',
+        'label' => 'Übersicht & Flotte',
         'route' => 'admin/boating',
         'url'   => '?route=admin/boating',
-        'icon'  => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-water me-2" viewBox="0 0 16 16"><path d="M.036 12.252a2.5 2.5 0 0 1 .465-.583l.053-.053.018-.017.008-.008.002-.003.001-.001a.5.5 0 0 1 .707.708l-.003.002-.01.01-.035.035a1.5 1.5 0 0 0-.279.35 1.5 1.5 0 0 0 2.072 2.071 1.5 1.5 0 0 0 .35-.279l.035-.035.01-.01.002-.003a.5.5 0 0 1 .708.707l-.001.002-.008.008-.017.018-.053.053a2.5 2.5 0 0 1-3.536-3.536zm4.242-4.243a2.5 2.5 0 0 1 .465-.583l.053-.053.018-.017.008-.008.002-.003.001-.001a.5.5 0 0 1 .707.708l-.003.002-.01.01-.035.035a1.5 1.5 0 0 0-.279.35 1.5 1.5 0 0 0 2.072 2.071 1.5 1.5 0 0 0 .35-.279l.035-.035.01-.01.002-.003a.5.5 0 0 1 .708.707l-.001.002-.008.008-.017.018-.053.053a2.5 2.5 0 0 1-3.536-3.536zm4.243-4.242a2.5 2.5 0 0 1 .465-.583l.053-.053.018-.017.008-.008.002-.003.001-.001a.5.5 0 0 1 .707.708l-.003.002-.01.01-.035.035a1.5 1.5 0 0 0-.279.35 1.5 1.5 0 0 0 2.072 2.071 1.5 1.5 0 0 0 .35-.279l.035-.035.01-.01.002-.003a.5.5 0 0 1 .708.707l-.001.002-.008.008-.017.018-.053.053a2.5 2.5 0 0 1-3.536-3.536z"/></svg>',
+        'icon'  => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-compass-fill me-2" viewBox="0 0 16 16"><path d="M15.5 8.516a7.5 7.5 0 1 1-9.462-7.24A1 1 0 0 1 7 0h2a1 1 0 0 1 .962 1.276 7.5 7.5 0 0 1 5.538 7.24m-3.61-3.905L6.94 7.439 4.11 12.39l4.95-2.828 2.83-4.95z"/></svg>',
     ]);
 
     // 2. Kalender & Termine -> ?route=admin/boating/calendar

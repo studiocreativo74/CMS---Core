@@ -9,9 +9,9 @@ declare(strict_types=1);
  */
 return [
     'key'           => 'boating_school',
-    'name'          => 'Bootsfahrschule',
-    'description'   => 'Verwaltung von Booten, Fahrlehrern, Leistungen (Fahrstunden, Kurse, Bootsmiete) und Kunden/Fahrschülern.',
-    'version'       => '1.0.0',
+    'name'          => 'Nautic',
+    'description'   => 'Ganzheitliches Management für Bootsfahrschule, Bootsvermietung & Charter, Flotte, Fahrlehrer/Skipper und Kunden.',
+    'version'       => '1.1.0',
     'requires_core' => '>=1.0.0',
     'author'        => 'StudioCreativo',
     'is_enabled'    => 1,

@@ -988,18 +988,93 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
                     </ul>
                 </div>
 
-                <!-- 8. Verschachteltes Untermenü: Weitere Module (Dokumente, Liegenschaften, Vorgänge & Akten, Eigentümerportal) -->
+                <!-- 8. Modul-Bereich: Nautic (Fahrschule & Vermietung) & Weitere Module -->
                 <?php if (class_exists('ModuleManager') && !empty(ModuleManager::getAdminMenuItems())): ?>
                     <?php 
-                    $customMenuItems = array_filter(ModuleManager::getAdminMenuItems(), function ($item) {
+                    $rawMenuItems = array_filter(ModuleManager::getAdminMenuItems(), function ($item) {
                         $route = ltrim((string) ($item['route'] ?? ''), '/');
                         return $route !== 'admin/contact-form' && $route !== 'admin/contact';
                     });
+
+                    $nauticMenuItems = [];
+                    $otherMenuItems  = [];
+
+                    foreach ($rawMenuItems as $item) {
+                        $route = ltrim((string) ($item['route'] ?? ''), '/');
+                        $group = (string) ($item['group'] ?? '');
+                        if ($group === 'nautic' || str_starts_with($route, 'admin/boating') || str_starts_with($route, 'admin/nautic')) {
+                            $nauticMenuItems[] = $item;
+                        } else {
+                            $otherMenuItems[] = $item;
+                        }
+                    }
                     ?>
-                    <?php if (!empty($customMenuItems)): ?>
+
+                    <!-- Nautic (Fahrschule, Vermietung & Flotte) -->
+                    <?php if (!empty($nauticMenuItems)): ?>
+                        <?php 
+                        $hasActiveNauticChild = false;
+                        foreach ($nauticMenuItems as $item) {
+                            $itemRouteClean = ltrim((string) ($item['route'] ?? ''), '/');
+                            if (($currentRouteNormalized === $itemRouteClean) || ($itemRouteClean !== 'admin/boating' && str_starts_with($currentRouteNormalized, $itemRouteClean . '/')) || ($itemRouteClean === 'admin/boating' && $currentRouteNormalized === 'admin/boating')) {
+                                $hasActiveNauticChild = true;
+                                break;
+                            }
+                        }
+                        if (str_starts_with($currentRouteNormalized, 'admin/boating')) {
+                            $hasActiveNauticChild = true;
+                        }
+                        ?>
+                        <div class="admin-sidebar-section mb-2">
+                            <button class="admin-nav-parent <?= $hasActiveNauticChild ? 'active' : '' ?>" 
+                                    type="button" 
+                                    data-nav-toggle="nautic" 
+                                    aria-expanded="<?= $hasActiveNauticChild ? 'true' : 'false' ?>" 
+                                    aria-controls="admin-nav-children-nautic"
+                                    title="Nautic (Bootsfahrschule & Bootsvermietung) aufklappen / zuklappen">
+                                <span class="nav-icon text-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-compass-fill" viewBox="0 0 16 16">
+                                        <path d="M15.5 8.516a7.5 7.5 0 1 1-9.462-7.24A1 1 0 0 1 7 0h2a1 1 0 0 1 .962 1.276 7.5 7.5 0 0 1 5.538 7.24m-3.61-3.905L6.94 7.439 4.11 12.39l4.95-2.828 2.83-4.95z"/>
+                                    </svg>
+                                </span>
+                                <span class="nav-text fw-bold">Nautic</span>
+                                <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 rounded-pill ms-auto me-1 px-2 py-0 small" style="font-size: 0.65rem;">Flotte</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-chevron-right nav-chevron" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
+                                </svg>
+                            </button>
+
+                            <div class="admin-nav-children" id="admin-nav-children-nautic" data-nav-section="nautic" <?= $hasActiveNauticChild ? '' : 'hidden' ?>>
+                                <?php foreach ($nauticMenuItems as $item): 
+                                    $itemRouteClean = ltrim((string) ($item['route'] ?? ''), '/');
+                                    $isItemActive = ($currentRouteNormalized === $itemRouteClean) || ($itemRouteClean !== 'admin/boating' && str_starts_with($currentRouteNormalized, $itemRouteClean . '/'));
+                                    if ($itemRouteClean === 'admin/boating' && $currentRouteNormalized === 'admin/boating') {
+                                        $isItemActive = true;
+                                    }
+                                    $itemLabel = (string) ($item['label'] ?? 'Modul');
+                                ?>
+                                <a class="admin-nav-link child <?= $isItemActive ? 'active' : '' ?>" 
+                                   href="<?= htmlspecialchars((string) ($item['url'] ?? '#'), ENT_QUOTES, 'UTF-8') ?>"
+                                   title="<?= htmlspecialchars($itemLabel, ENT_QUOTES, 'UTF-8') ?>">
+                                    <?php if (!empty($item['icon'])): ?>
+                                        <span class="nav-icon me-2 d-inline-flex align-items-center"><?= $item['icon'] ?></span>
+                                    <?php else: ?>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-water me-2" viewBox="0 0 16 16">
+                                            <path d="M.036 12.252a2.5 2.5 0 0 1 .465-.583l.053-.053.018-.017.008-.008.002-.003.001-.001a.5.5 0 0 1 .707.708l-.003.002-.01.01-.035.035a1.5 1.5 0 0 0-.279.35 1.5 1.5 0 0 0 2.072 2.071 1.5 1.5 0 0 0 .35-.279l.035-.035.01-.01.002-.003a.5.5 0 0 1 .708.707l-.001.002-.008.008-.017.018-.053.053a2.5 2.5 0 0 1-3.536-3.536z"/>
+                                        </svg>
+                                    <?php endif; ?>
+                                    <span class="nav-text"><?= htmlspecialchars($itemLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Weitere Module (Dokumente, Liegenschaften, Vorgänge & Akten, Eigentümerportal) -->
+                    <?php if (!empty($otherMenuItems)): ?>
                         <?php 
                         $hasActiveModuleChild = false;
-                        foreach ($customMenuItems as $item) {
+                        foreach ($otherMenuItems as $item) {
                             $itemRouteClean = ltrim((string) ($item['route'] ?? ''), '/');
                             if (($currentRouteNormalized === $itemRouteClean) || ($itemRouteClean !== '' && str_starts_with($currentRouteNormalized, $itemRouteClean . '/'))) {
                                 $hasActiveModuleChild = true;
@@ -1026,7 +1101,7 @@ $hasActivityRoute = (class_exists('Router') && Router::hasRoute('/admin/activity
                             </button>
 
                             <div class="admin-nav-children" id="admin-nav-children-more-modules" data-nav-section="more-modules" <?= $hasActiveModuleChild ? '' : 'hidden' ?>>
-                                <?php foreach ($customMenuItems as $item): 
+                                <?php foreach ($otherMenuItems as $item): 
                                     $itemRouteClean = ltrim((string) ($item['route'] ?? ''), '/');
                                     $isItemActive = ($currentRouteNormalized === $itemRouteClean) || ($itemRouteClean !== '' && str_starts_with($currentRouteNormalized, $itemRouteClean . '/'));
                                     $itemLabel = (string) ($item['label'] ?? 'Modul');

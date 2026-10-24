@@ -16,7 +16,7 @@ $flashSuccess = $_SESSION['flash_success'] ?? null;
 $flashError = $_SESSION['flash_error'] ?? null;
 unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 
-$title = 'Bootsfahrschule - Stammdaten';
+$title = 'Nautic - Übersicht & Flotte';
 $currentRoute = 'admin/boating';
 
 $canManage = BoatingSchoolService::canManage();
@@ -24,93 +24,12 @@ $canManage = BoatingSchoolService::canManage();
 ob_start();
 ?>
 
-<?php if ($flashSuccess): ?>
-    <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
-        <div class="d-flex align-items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-check-circle-fill text-success me-2" viewBox="0 0 16 16">
-                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-            </svg>
-            <div><?= htmlspecialchars($flashSuccess, ENT_QUOTES, 'UTF-8') ?></div>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schließen"></button>
-    </div>
-<?php endif; ?>
-
-<?php if ($flashError): ?>
-    <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
-        <div class="d-flex align-items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-exclamation-triangle-fill text-danger me-2" viewBox="0 0 16 16">
-                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
-            </svg>
-            <div><?= htmlspecialchars($flashError, ENT_QUOTES, 'UTF-8') ?></div>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schließen"></button>
-    </div>
-<?php endif; ?>
-
-<?php if (!$tablesCreated): ?>
-    <div class="card border-warning border-start border-4 shadow-sm mb-4">
-        <div class="card-body p-4">
-            <div class="d-flex align-items-start gap-3">
-                <div class="p-2 bg-warning bg-opacity-10 text-warning rounded flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-database-exclamation" viewBox="0 0 16 16">
-                        <path d="M8 1c-1.573 0-3.022.289-4.096.777C2.823 2.269 2 2.99 2 4s.823 1.731 1.904 2.223C4.978 6.711 6.427 7 8 7s3.022-.289 4.096-.777C13.177 5.731 14 5.01 14 4s-.823-1.731-1.904-2.223C11.022 1.289 9.573 1 8 1"/>
-                        <path d="M1.904 6.223C2.823 6.731 4.978 7 8 7s5.177-.269 6.096-.777C13.177 5.731 14 5.01 14 4M14 6v4c0 1.01-.823 1.731-1.904 2.223C11.177 12.731 9.022 13 8 13s-5.177-.269-6.096-.777C2.823 11.731 2 11.01 2 10V6"/>
-                    </svg>
-                </div>
-                <div class="flex-grow-1">
-                    <h5 class="fw-bold text-dark mb-1">Datenbanktabellen noch nicht initialisiert</h5>
-                    <p class="text-muted small mb-2">
-                        Die Tabellen <code>bs_boats</code>, <code>bs_instructors</code>, <code>bs_services</code> und <code>bs_customers</code>
-                        wurden in der MySQL-Datenbank noch nicht angelegt. Gemäß CMS-Architektur werden DDL-Statements nicht automatisch ausgeführt,
-                        sondern stehen als Migrations-Datei bereit.
-                    </p>
-                    <div class="d-flex align-items-center gap-2">
-                        <a href="?route=admin/system" class="btn btn-sm btn-outline-warning">
-                            <i class="bi bi-gear-fill me-1"></i> Migrationen ansehen
-                        </a>
-                        <span class="small text-muted">Datei: <code>migrations/008_create_boating_school_schema.sql</code></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-<?php endif; ?>
-
-<!-- Header mit Titel und Navigation -->
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-        <h1 class="h3 fw-bold text-dark mb-1">
-            <i class="bi bi-water text-primary me-2"></i>Bootsfahrschule &amp; Bootsflotte
-        </h1>
-        <p class="text-muted small mb-0">
-            Phase 1: Stammdatenverwaltung für Boote, Fahrlehrer, Dienstleistungen und Kunden/Fahrschüler.
-        </p>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-        <a href="?route=bootschule" target="_blank" class="btn btn-outline-info btn-sm">
-            <i class="bi bi-box-arrow-up-right me-1"></i> Kundenportal
-        </a>
-        <a href="?route=admin/boating/calendar" class="btn btn-primary btn-sm">
-            <i class="bi bi-calendar3 me-1"></i> Kalender &amp; Termine
-        </a>
-        <a href="?route=admin/boating/boats" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-tsunami me-1"></i> Boote
-        </a>
-        <a href="?route=admin/boating/instructors" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-person-badge me-1"></i> Fahrlehrer
-        </a>
-        <a href="?route=admin/boating/services" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-tag-fill me-1"></i> Leistungen
-        </a>
-        <a href="?route=admin/boating/customers" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-people-fill me-1"></i> Schüler &amp; Kunden
-        </a>
-        <a href="?route=admin/boating/settings" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-envelope-paper-fill me-1"></i> E-Mail &amp; Benachrichtigungen
-        </a>
-    </div>
-</div>
+<?php 
+$breadcrumbCurrent = 'Übersicht & Flotte';
+$navTitle = 'Nautic – Fahrschule, Vermietung & Flotte';
+$navSubtitle = 'Ganzheitliche Verwaltung für Bootsfahrschule, Bootsvermietung & Charter, Flotte und Fahrlehrer/Skipper.';
+require __DIR__ . '/_nautic_nav.php'; 
+?>
 
 <!-- 4 KPI-Karten -->
 <div class="row g-3 mb-4">
