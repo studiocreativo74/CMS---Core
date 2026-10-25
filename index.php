@@ -287,9 +287,26 @@ $router->post('/login', function (): void {
     require __DIR__ . '/views/auth/login.php';
 });
 
+// GET & POST /nautic/login & /nautic/logon (Eigene Nautic Logonseite)
+$nauticCoreLoginHandler = function (): void {
+    $loginFile = __DIR__ . '/modules/boating_school/views/portal/login.php';
+    if (file_exists($loginFile)) {
+        require $loginFile;
+    } else {
+        header('Location: ?route=login');
+    }
+};
+$router->get('/nautic/login', $nauticCoreLoginHandler);
+$router->get('/nautic/logon', $nauticCoreLoginHandler);
+
 // GET /logout
 $router->get('/logout', function (): void {
     Auth::logout();
+    $redirect = trim((string) ($_GET['redirect'] ?? ''));
+    if ($redirect === 'nautic/login' || $redirect === 'nautic/logon') {
+        header('Location: ?route=nautic/login');
+        exit;
+    }
     header('Location: ?route=/');
     exit;
 });
@@ -1331,7 +1348,12 @@ $router->post('/admin/system/mark-migration', function () use ($requireAdminAuth
         }
     }
 
-    header('Location: ?route=admin/system');
+    $redirectTo = trim((string) ($_POST['redirect_to'] ?? ''));
+    if ($redirectTo === '' || !str_starts_with($redirectTo, '?route=admin/system')) {
+        $redirectTo = '?route=admin/system';
+    }
+
+    header('Location: ' . $redirectTo);
     exit;
 });
 
@@ -1359,7 +1381,12 @@ $router->post('/admin/system/unmark-migration', function () use ($requireAdminAu
         }
     }
 
-    header('Location: ?route=admin/system');
+    $redirectTo = trim((string) ($_POST['redirect_to'] ?? ''));
+    if ($redirectTo === '' || !str_starts_with($redirectTo, '?route=admin/system')) {
+        $redirectTo = '?route=admin/system';
+    }
+
+    header('Location: ' . $redirectTo);
     exit;
 });
 

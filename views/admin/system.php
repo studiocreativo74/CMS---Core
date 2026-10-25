@@ -7,6 +7,7 @@ declare(strict_types=1);
  *
  * Zeigt die Core-Version, installierte Modul-Versionen, Kompatibilitätsstatus
  * und eine Übersicht aller DB-Migrationen inklusive copy-fähiger SQL-Statements für phpMyAdmin.
+ * Standardmäßig werden nur die MySQL-Migrationen für den Core und die aktuell aktivierten Module angezeigt.
  */
 
 $user = $user ?? Auth::user();
@@ -22,12 +23,7 @@ $coreVersion = class_exists('CoreVersion') ? CoreVersion::VERSION : '1.0.0';
 $coreFull = class_exists('CoreVersion') ? CoreVersion::getFull() : 'StudioCreativo CMS v1.0.0';
 $releaseDate = class_exists('CoreVersion') ? CoreVersion::RELEASE_DATE : '2026-09-20';
 
-$migrations = class_exists('MigrationManager') ? MigrationManager::getAll() : [];
-$isMigrationTableCreated = class_exists('MigrationManager') && MigrationManager::isTableCreated();
-$pendingMigrationCount = class_exists('MigrationManager') ? MigrationManager::getPendingCount() : 0;
-$createTableSql = class_exists('MigrationManager') ? MigrationManager::getCreateTableSql() : '';
-
-$modules = class_exists('ModuleManager') ? ModuleManager::all() : [];
+$modules = class_exists('ModuleManager') ? ModuleManager::all(false) : [];
 $activeModuleCount = 0;
 $incompatibleModuleCount = 0;
 foreach ($modules as $m) {
@@ -36,6 +32,75 @@ foreach ($modules as $m) {
     }
     if (class_exists('ModuleManager') && !ModuleManager::isCompatible($m)) {
         $incompatibleModuleCount++;
+    }
+}
+
+// Filterung der Migrationen: Standard = nur aktive Module & Core
+$filter = trim((string) ($_GET['filter'] ?? 'active'));
+if ($filter === '') {
+    $filter = 'active';
+}
+
+$allMigrations = class_exists('MigrationManager') ? MigrationManager::getAll(null, false) : [];
+$activeMigrations = array_values(array_filter($allMigrations, static fn($m) => !empty($m['is_module_active'])));
+
+// Migrationen entsprechend dem gewählten Filter bereitstellen
+if ($filter === 'all') {
+    $migrations = $allMigrations;
+    $filterMode = 'all';
+} elseif ($filter === 'active') {
+    $migrations = $activeMigrations;
+    $filterMode = 'active';
+} else {
+    // Spezifischer Modulfilter (z.B. 'core', 'boating_school', 'documents', etc.)
+    $migrations = array_values(array_filter($allMigrations, static fn($m) => ($m['module_key'] ?? '') === $filter));
+    $filterMode = $filter;
+}
+
+// Ausstehende Zähler berechnen
+$pendingMigrationCount = 0;
+foreach ($migrations as $m) {
+    if (!$m['is_applied']) {
+        $pendingMigrationCount++;
+    }
+}
+
+// Zähler speziell für aktive Module
+$activePendingCount = 0;
+foreach ($activeMigrations as $m) {
+    if (!$m['is_applied']) {
+        $activePendingCount++;
+    }
+}
+
+$isMigrationTableCreated = class_exists('MigrationManager') && MigrationManager::isTableCreated();
+$createTableSql = class_exists('MigrationManager') ? MigrationManager::getCreateTableSql() : '';
+
+// Kombiniertes SQL aller ausstehenden Migrationen für die aktuelle Ansicht
+$combinedPendingSql = class_exists('MigrationManager') 
+    ? MigrationManager::getCombinedPendingSql(null, $filter === 'active', ($filter !== 'all' && $filter !== 'active') ? $filter : null)
+    : '';
+
+// Modul-Liste mit Migrations-Counts für Filterleiste vorbereiten
+$modulesWithMigrations = [];
+foreach ($allMigrations as $mig) {
+    $mKey = (string) $mig['module_key'];
+    if (!isset($modulesWithMigrations[$mKey])) {
+        $modulesWithMigrations[$mKey] = [
+            'key'       => $mKey,
+            'name'      => $mig['module_name'],
+            'is_core'   => $mig['is_core'],
+            'is_active' => $mig['is_module_active'],
+            'total'     => 0,
+            'applied'   => 0,
+            'pending'   => 0,
+        ];
+    }
+    $modulesWithMigrations[$mKey]['total']++;
+    if ($mig['is_applied']) {
+        $modulesWithMigrations[$mKey]['applied']++;
+    } else {
+        $modulesWithMigrations[$mKey]['pending']++;
     }
 }
 
@@ -81,7 +146,7 @@ ob_start();
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
         <div>
             <h1 class="h3 mb-1 fw-bold text-dark">System &amp; Migrationen</h1>
-            <p class="text-muted mb-0">Zentrale Übersicht über Core-Version, Modul-Kompatibilität und Datenbank-Migrationen.</p>
+            <p class="text-muted mb-0">Zentrale Übersicht über Core-Version, Modul-Kompatibilität und bedarfsgerechte MySQL-Migrationen.</p>
         </div>
         <div class="d-flex align-items-center gap-2">
             <a href="?route=admin/system/health" class="btn btn-primary d-inline-flex align-items-center">
@@ -120,26 +185,35 @@ ob_start();
             </div>
         </div>
 
-        <!-- Karte 2: Datenbank-Migrationen -->
+        <!-- Karte 2: Datenbank-Migrationen (Angepasst an aktive Module) -->
         <div class="col-sm-6 col-lg-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body p-3">
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <span class="text-muted small fw-semibold">DB-Migrationen</span>
-                        <?php if ($pendingMigrationCount === 0): ?>
-                            <span class="badge bg-success-subtle text-success border border-success-subtle">Aktuell</span>
+                        <?php if ($filter === 'active'): ?>
+                            <?php if ($activePendingCount === 0): ?>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">Aktuell</span>
+                            <?php else: ?>
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle"><?= $activePendingCount ?> offen</span>
+                            <?php endif; ?>
                         <?php else: ?>
-                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Ausstehend</span>
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><?= htmlspecialchars($filter) ?></span>
                         <?php endif; ?>
                     </div>
                     <div class="h3 fw-bold text-dark mb-1">
                         <?= count($migrations) - $pendingMigrationCount ?> / <?= count($migrations) ?>
                     </div>
                     <div class="small text-muted">
-                        <?php if ($pendingMigrationCount === 0): ?>
-                            <span class="text-success">✓ Alle Migrationen eingespielt</span>
+                        <?php if ($filter === 'active'): ?>
+                            <?php if ($activePendingCount === 0): ?>
+                                <span class="text-success"><i class="bi bi-check-circle me-1"></i>Für alle aktiven Module aktuell</span>
+                            <?php else: ?>
+                                <span class="text-warning fw-semibold">⚠ <?= $activePendingCount ?> Migration(en) ausstehend</span>
+                            <?php endif; ?>
+                            <div class="text-muted small" style="font-size: 0.72rem;">Basis: Core &amp; <?= $activeModuleCount ?> aktive Module</div>
                         <?php else: ?>
-                            <span class="text-warning fw-semibold">⚠ <?= $pendingMigrationCount ?> Migration(en) ausstehend</span>
+                            <span>Filter: <?= htmlspecialchars($filter === 'all' ? 'Alle Module (inkl. inaktiv)' : $filter) ?></span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -152,7 +226,7 @@ ob_start();
                 <div class="card-body p-3">
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <span class="text-muted small fw-semibold">Installierte Module</span>
-                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle"><?= $activeModuleCount ?> aktiv</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle"><?= $activeModuleCount ?> aktiv</span>
                     </div>
                     <div class="h3 fw-bold text-dark mb-1"><?= count($modules) ?></div>
                     <div class="small text-muted">
@@ -185,52 +259,104 @@ ob_start();
         </div>
     </div>
 
-    <!-- HINWEISBOX ZUR SQL-AUSFÜHRUNG -->
+    <!-- HINWEISBOX ZUR BEDARFSGERECHTEN SQL-AUSFÜHRUNG -->
     <div class="alert alert-info border-info-subtle shadow-sm mb-4 d-flex align-items-start gap-3">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-shield-check text-info flex-shrink-0 mt-1" viewBox="0 0 16 16">
             <path d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .101.025 1 1 0 0 0 .1-.025q.114-.034.294-.118c.24-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
             <path d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
         </svg>
-        <div>
-            <h6 class="fw-bold mb-1">Manuelle Ausführung über phpMyAdmin</h6>
+        <div class="flex-grow-1">
+            <h6 class="fw-bold mb-1">Bedarfsgerechte Migrationen für Ihre System-Version</h6>
             <p class="small mb-0">
-                DDL-Strukturänderungen und Datenbank-Migrationen werden aus Sicherheitsgründen nicht automatisch im laufenden PHP-Prozess ausgeführt. 
-                Kopieren Sie das gewünschte SQL-Statement mit einem Klick und führen Sie es in <strong>phpMyAdmin</strong> aus. 
-                Klicken Sie anschließend auf <em>„Als ausgeführt markieren“</em>, um den Status in der Migrations-Tabelle zu protokollieren.
+                Strukturänderungen (DDL) werden aus Sicherheitsgründen nicht automatisch im PHP-Hintergrund ausgeführt. 
+                Es werden standardmäßig <strong>nur die MySQL-Migrationen für den CMS-Core und Ihre aktuell aktivierten Module</strong> angezeigt, damit keine Tabellen für nicht benötigte Funktionen erzeugt werden. 
+                Führen Sie die benötigten SQL-Statements bei Bedarf in <strong>phpMyAdmin</strong> aus und markieren Sie diese anschließend als ausgeführt.
             </p>
         </div>
     </div>
 
     <!-- TABELLE: MIGRATIONS -->
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <div>
-                <h5 class="card-title mb-0 fw-bold text-dark d-flex align-items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-database-gear text-primary me-2" viewBox="0 0 16 16">
-                        <path d="M12.096 6.223A5 5 0 0 0 13 5.698V7c0 .083-.042.22-.178.375-.246.282-.676.549-1.282.773-.807.297-1.892.482-3.04.53-.195.008-.39.012-.584.012s-.389-.004-.584-.012c-1.148-.048-2.233-.233-3.04-.53-.606-.224-1.036-.49-1.282-.772C3.043 7.22 3 7.083 3 7V5.698c.384.238.857.44 1.384.598A8 8 0 0 0 8 6.5c.712 0 1.393-.058 2.022-.167.075.127.165.25.268.368.163.187.352.348.558.479l.525-.791.723.334z"/>
-                        <path d="M8 0c-4.418 0-8 1.79-8 4v5c0 2.21 3.582 4 8 4a12 12 0 0 0 1.05-.046c.11.23.25.446.417.643l.525-.791.723.334A8 8 0 0 1 8 13c-4.418 0-8-1.79-8-4V7c0 2.21 3.582 4 8 4a12 12 0 0 0 1.05-.046c.11.23.25.446.417.643l.525-.791.723.334A8 8 0 0 1 8 11c-4.418 0-8-1.79-8-4V4c0-2.21 3.582-4 8-4s8 1.79 8 4v1.5a5 5 0 0 0-1-.284V4c0-2.21-3.582-4-8-4"/>
-                    </svg>
-                    Core Datenbank-Migrationen
-                </h5>
-                <span class="text-muted small">Verfolgt Schemaänderungen und Erweiterungen des CMS-Kerns.</span>
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div>
+                    <h5 class="card-title mb-0 fw-bold text-dark d-flex align-items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-database-gear text-primary me-2" viewBox="0 0 16 16">
+                            <path d="M12.096 6.223A5 5 0 0 0 13 5.698V7c0 .083-.042.22-.178.375-.246.282-.676.549-1.282.773-.807.297-1.892.482-3.04.53-.195.008-.39.012-.584.012s-.389-.004-.584-.012c-1.148-.048-2.233-.233-3.04-.53-.606-.224-1.036-.49-1.282-.772C3.043 7.22 3 7.083 3 7V5.698c.384.238.857.44 1.384.598A8 8 0 0 0 8 6.5c.712 0 1.393-.058 2.022-.167.075.127.165.25.268.368.163.187.352.348.558.479l.525-.791.723.334z"/>
+                            <path d="M8 0c-4.418 0-8 1.79-8 4v5c0 2.21 3.582 4 8 4a12 12 0 0 0 1.05-.046c.11.23.25.446.417.643l.525-.791.723.334A8 8 0 0 1 8 13c-4.418 0-8-1.79-8-4V7c0 2.21 3.582 4 8 4a12 12 0 0 0 1.05-.046c.11.23.25.446.417.643l.525-.791.723.334A8 8 0 0 1 8 11c-4.418 0-8-1.79-8-4V4c0-2.21 3.582-4 8-4s8 1.79 8 4v1.5a5 5 0 0 0-1-.284V4c0-2.21-3.582-4-8-4"/>
+                        </svg>
+                        MySQL Datenbank-Migrationen
+                    </h5>
+                    <span class="text-muted small">
+                        <?php if ($filter === 'active'): ?>
+                            Zeigt ausschließlich Migrationen für den CMS-Kern und <strong>aktivierte Module (<?= $activeModuleCount ?> aktiv)</strong>.
+                        <?php elseif ($filter === 'all'): ?>
+                            Zeigt <strong>alle verfügbaren Migrationen</strong> des Repositories (inklusive nicht aktiver Module).
+                        <?php else: ?>
+                            Gefiltert nach Modul: <strong><?= htmlspecialchars($filter) ?></strong>.
+                        <?php endif; ?>
+                    </span>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <?php if (!$isMigrationTableCreated): ?>
+                        <span class="badge bg-warning text-dark px-3 py-2">
+                            Tabelle `migrations` fehlt noch
+                        </span>
+                    <?php else: ?>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                            Tracking aktiv
+                        </span>
+                    <?php endif; ?>
+
+                    <?php if (!empty($combinedPendingSql) && $pendingMigrationCount > 0): ?>
+                        <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 shadow-sm" onclick="copySql('combined-pending-sql', this)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
+                            </svg>
+                            <span>Alle ausstehenden SQL kopieren (<?= $pendingMigrationCount ?>)</span>
+                        </button>
+                        <textarea id="combined-pending-sql" style="display: none;"><?= htmlspecialchars($combinedPendingSql, ENT_QUOTES, 'UTF-8') ?></textarea>
+                    <?php endif; ?>
+
+                    <?php if (!empty($migrations)): ?>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAllAppliedMigrations()" title="Alle eingespielten Migrationen ein- oder ausklappen">
+                            <span id="toggleAllAppliedText">Eingespielte ausklappen</span>
+                        </button>
+                    <?php endif; ?>
+                </div>
             </div>
 
-            <div class="d-flex align-items-center gap-2">
-                <?php if (!$isMigrationTableCreated): ?>
-                    <span class="badge bg-warning text-dark px-3 py-2">
-                        Tabelle `migrations` fehlt noch
-                    </span>
-                <?php else: ?>
-                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
-                        Migrations-Tracking aktiv
-                    </span>
-                <?php endif; ?>
+            <!-- Filter-Leiste: Nur aktive Module vs. Alle Module & Modulauswahl -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top">
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                    <span class="text-muted small fw-semibold me-2">Ansicht:</span>
+                    <a href="?route=admin/system&filter=active" class="btn btn-sm <?= $filter === 'active' ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill px-3 py-1">
+                        <i class="bi bi-check-circle me-1"></i>Nur aktive Module &amp; Core
+                        <span class="badge <?= $filter === 'active' ? 'bg-white text-primary' : 'bg-secondary text-white' ?> ms-1"><?= count($activeMigrations) ?></span>
+                    </a>
+                    <a href="?route=admin/system&filter=all" class="btn btn-sm <?= $filter === 'all' ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill px-3 py-1">
+                        Alle Module anzeigen
+                        <span class="badge <?= $filter === 'all' ? 'bg-white text-primary' : 'bg-secondary text-white' ?> ms-1"><?= count($allMigrations) ?></span>
+                    </a>
+                </div>
 
-                <?php if (!empty($migrations)): ?>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleAllAppliedMigrations()" title="Alle eingespielten Migrationen ein- oder ausklappen">
-                        <span id="toggleAllAppliedText">Alle Eingespielten ausklappen</span>
-                    </button>
-                <?php endif; ?>
+                <!-- Modul-Direktschalter -->
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                    <span class="text-muted small me-1">Nach Modul filtern:</span>
+                    <?php foreach ($modulesWithMigrations as $mKey => $mInfo): 
+                        $isSelected = ($filter === $mKey);
+                        $btnClass = $isSelected ? 'btn-dark' : 'btn-light border';
+                    ?>
+                        <a href="?route=admin/system&filter=<?= urlencode($mKey) ?>" class="btn btn-sm <?= $btnClass ?> py-0 px-2 rounded-2" style="font-size: 0.78rem;" title="<?= htmlspecialchars($mInfo['name']) ?> (<?= $mInfo['total'] ?> Migrationen)">
+                            <?= htmlspecialchars($mInfo['name']) ?>
+                            <?php if (!$mInfo['is_active'] && !$mInfo['is_core']): ?>
+                                <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;">inaktiv</span>
+                            <?php endif; ?>
+                            <span class="text-muted ms-1">(<?= $mInfo['total'] ?>)</span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
 
@@ -254,7 +380,14 @@ ob_start();
 
             <?php if (empty($migrations)): ?>
                 <div class="text-center py-5 text-muted">
-                    Keine Migrationen im Verzeichnis <code>/migrations</code> gefunden.
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor" class="bi bi-folder-check text-muted mb-2" viewBox="0 0 16 16">
+                        <path d="m.5 3 .04.87a2 2 0 0 0-.342 1.311l.637 7A2 2 0 0 0 2.826 14H9v-1H2.826a1 1 0 0 1-.995-.91l-.637-7A1 1 0 0 1 2.19 4h11.62a1 1 0 0 1 .996 1.09l-.637 7a1 1 0 0 1-.995.91H11v1h2.174a2 2 0 0 0 1.995-1.819l.637-7a2 2 0 0 0-.342-1.31L15.5 3z"/>
+                        <path d="M15.854 10.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 .708-.708l1.146 1.147 2.646-2.647a.5.5 0 0 1 .708 0"/>
+                        <path d="M13.5 1a.5.5 0 0 1 .5.5v1h1.5a.5.5 0 0 1 0 1H14v1.5a.5.5 0 0 1-1 0V3.5h-1.5a.5.5 0 0 1 0-1H13V1.5a.5.5 0 0 1 .5-.5"/>
+                    </svg>
+                    <h6>Keine Migrationen für diesen Filter gefunden</h6>
+                    <p class="small mb-3">Für die gewählte Auswahl sind aktuell keine SQL-Migrationen hinterlegt.</p>
+                    <a href="?route=admin/system&filter=active" class="btn btn-sm btn-outline-primary">Zu den aktiven Modulen zurückkehren</a>
                 </div>
             <?php else: ?>
                 <div class="list-group list-group-flush" id="migrations-accordion">
@@ -263,6 +396,10 @@ ob_start();
                         $sqlId = 'mig-sql-' . $idx;
                         $trackingSqlId = 'mig-track-' . $idx;
                         $collapseId = 'mig-collapse-' . $idx;
+                        $isCore = (bool) ($mig['is_core'] ?? false);
+                        $isModActive = (bool) ($mig['is_module_active'] ?? true);
+                        $moduleKey = (string) ($mig['module_key'] ?? 'core');
+                        $moduleName = (string) ($mig['module_name'] ?? 'Core');
                     ?>
                         <div class="list-group-item p-3 p-md-4 <?= $isApplied ? 'bg-light-subtle migration-applied' : 'migration-pending' ?>">
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -283,11 +420,28 @@ ob_start();
                                     <?php endif; ?>
 
                                     <h6 class="fw-bold mb-0 text-dark"><?= htmlspecialchars($mig['title'], ENT_QUOTES, 'UTF-8') ?></h6>
+
+                                    <!-- Modul-Badge -->
+                                    <?php if ($isCore): ?>
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle font-monospace small">
+                                            <i class="bi bi-cpu me-1"></i>Core System
+                                        </span>
+                                    <?php elseif ($moduleKey === 'boating_school'): ?>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace small">
+                                            <i class="bi bi-compass me-1"></i>Nautic
+                                        </span>
+                                    <?php elseif ($isModActive): ?>
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle font-monospace small">
+                                            <i class="bi bi-box me-1"></i><?= htmlspecialchars($moduleName, ENT_QUOTES, 'UTF-8') ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-warning-subtle text-dark border border-warning-subtle font-monospace small" title="Dieses Modul ist aktuell inaktiv">
+                                            <i class="bi bi-pause-circle me-1"></i><?= htmlspecialchars($moduleName, ENT_QUOTES, 'UTF-8') ?> (inaktiv)
+                                        </span>
+                                    <?php endif; ?>
+
                                     <span class="badge bg-light text-secondary border font-monospace small">
                                         <?= htmlspecialchars($mig['filename'], ENT_QUOTES, 'UTF-8') ?>
-                                    </span>
-                                    <span class="badge bg-light text-dark border small">
-                                        Core v<?= htmlspecialchars($mig['version'], ENT_QUOTES, 'UTF-8') ?>
                                     </span>
                                 </div>
 
@@ -302,6 +456,7 @@ ob_start();
                                         <form method="POST" action="?route=admin/system/unmark-migration" class="d-inline" onsubmit="return confirm('Möchten Sie den Status dieser Migration wirklich auf unerledigt zurücksetzen?');">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(class_exists('Csrf') ? Csrf::getToken() : '', ENT_QUOTES, 'UTF-8') ?>">
                                             <input type="hidden" name="key" value="<?= htmlspecialchars($mig['key'], ENT_QUOTES, 'UTF-8') ?>">
+                                            <input type="hidden" name="redirect_to" value="?route=admin/system&filter=<?= urlencode($filter) ?>">
                                             <button type="submit" class="btn btn-sm btn-link text-muted p-0 text-decoration-none small" title="Status auf unerledigt zurücksetzen">
                                                 Zurücksetzen
                                             </button>
@@ -313,6 +468,7 @@ ob_start();
                                         <form method="POST" action="?route=admin/system/mark-migration" class="d-inline">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(class_exists('Csrf') ? Csrf::getToken() : '', ENT_QUOTES, 'UTF-8') ?>">
                                             <input type="hidden" name="key" value="<?= htmlspecialchars($mig['key'], ENT_QUOTES, 'UTF-8') ?>">
+                                            <input type="hidden" name="redirect_to" value="?route=admin/system&filter=<?= urlencode($filter) ?>">
                                             <button type="submit" class="btn btn-sm btn-outline-success">
                                                 Als ausgeführt markieren
                                             </button>
@@ -333,15 +489,28 @@ ob_start();
                                     <p class="small text-muted mb-2"><?= htmlspecialchars($mig['description'], ENT_QUOTES, 'UTF-8') ?></p>
                                 <?php endif; ?>
 
+                                <?php if (!$isCore && !$isModActive): ?>
+                                    <div class="alert alert-warning py-2 px-3 small mb-2 d-flex align-items-center gap-2">
+                                        <i class="bi bi-info-circle-fill text-warning"></i>
+                                        <span>Das Modul <strong><?= htmlspecialchars($moduleName) ?></strong> ist in dieser System-Installation derzeit deaktiviert. Diese Migration wird nicht zwingend benötigt.</span>
+                                    </div>
+                                <?php endif; ?>
+
                                 <!-- SQL Box zum Kopieren -->
                                 <div class="mt-2">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <small class="text-muted fw-semibold">SQL für phpMyAdmin:</small>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="copySql('<?= $sqlId ?>', this)">
-                                            SQL kopieren
-                                        </button>
+                                        <div class="d-flex gap-1">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="copySql('<?= $sqlId ?>', this)">
+                                                DDL kopieren
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="copySql('<?= $trackingSqlId ?>', this)" title="Tracking-SQL zum Eintragen in migrations-Tabelle">
+                                                Tracking-SQL
+                                            </button>
+                                        </div>
                                     </div>
-                                    <pre class="bg-dark text-light p-3 rounded small mb-0" style="max-height: 180px; overflow-y: auto;"><code id="<?= $sqlId ?>"><?= htmlspecialchars($mig['sql'], ENT_QUOTES, 'UTF-8') ?></code></pre>
+                                    <pre class="bg-dark text-light p-3 rounded small mb-2" style="max-height: 180px; overflow-y: auto;"><code id="<?= $sqlId ?>"><?= htmlspecialchars($mig['sql'], ENT_QUOTES, 'UTF-8') ?></code></pre>
+                                    <pre class="bg-dark text-secondary p-2 rounded small mb-0" style="display: none;"><code id="<?= $trackingSqlId ?>"><?= htmlspecialchars($mig['tracking_sql'], ENT_QUOTES, 'UTF-8') ?></code></pre>
                                 </div>
                             </div>
                         </div>
@@ -378,6 +547,7 @@ ob_start();
                                 <th>Benötigt Core</th>
                                 <th>Kompatibilität</th>
                                 <th>Status</th>
+                                <th class="text-end pe-3">MySQL Migrationen</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -388,6 +558,7 @@ ob_start();
                                 $requiresCore = (string) ($mod['requires_core'] ?? '');
                                 $isEnabled = (int) ($mod['is_enabled'] ?? 0) === 1;
                                 $compat = class_exists('ModuleManager') ? ModuleManager::getCompatibilityInfo($mod) : ['is_compatible' => true, 'message' => 'OK'];
+                                $modMigInfo = $modulesWithMigrations[$key] ?? null;
                             ?>
                                 <tr>
                                     <td class="ps-3 fw-semibold text-dark"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></td>
@@ -415,9 +586,21 @@ ob_start();
                                     </td>
                                     <td>
                                         <?php if ($isEnabled): ?>
-                                            <span class="badge bg-success">Aktiv</span>
+                                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Aktiv</span>
                                         <?php else: ?>
-                                            <span class="badge bg-secondary">Deaktiviert</span>
+                                            <span class="badge bg-secondary"><i class="bi bi-pause-circle me-1"></i>Deaktiviert</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <?php if ($modMigInfo): ?>
+                                            <a href="?route=admin/system&filter=<?= urlencode($key) ?>" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;">
+                                                <?= $modMigInfo['applied'] ?> / <?= $modMigInfo['total'] ?> SQL
+                                                <?php if ($modMigInfo['pending'] > 0 && $isEnabled): ?>
+                                                    <span class="badge bg-warning text-dark ms-1"><?= $modMigInfo['pending'] ?> offen</span>
+                                                <?php endif; ?>
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="text-muted small">-</span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -434,7 +617,7 @@ ob_start();
         <div class="card-header bg-white py-3">
             <h5 class="card-title mb-0 fw-bold text-dark d-flex align-items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-info-circle-fill text-primary me-2" viewBox="0 0 16 16">
-                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/>
+                    <path d="M8 16A8 8 0 1 1 0 8a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/>
                 </svg>
                 Systemumgebung &amp; Parameter
             </h5>
@@ -490,7 +673,7 @@ ob_start();
 function copySql(elementId, btn) {
     var codeElem = document.getElementById(elementId);
     if (!codeElem) return;
-    var text = codeElem.innerText || codeElem.textContent;
+    var text = codeElem.innerText || codeElem.value || codeElem.textContent;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(function() {
@@ -522,12 +705,12 @@ function fallbackCopy(text, btn) {
 }
 
 function showCopiedFeedback(btn) {
-    var originalText = btn.innerText;
+    var originalText = btn.innerHTML;
     btn.innerText = "✓ Kopiert!";
     btn.classList.add("btn-success");
-    btn.classList.remove("btn-outline-primary", "btn-outline-secondary");
+    btn.classList.remove("btn-primary", "btn-outline-primary", "btn-outline-secondary");
     setTimeout(function() {
-        btn.innerText = originalText;
+        btn.innerHTML = originalText;
         btn.classList.remove("btn-success");
         btn.classList.add("btn-outline-secondary");
     }, 2000);
@@ -551,7 +734,7 @@ function toggleAllAppliedMigrations() {
     });
     var btnText = document.getElementById('toggleAllAppliedText');
     if (btnText) {
-        btnText.innerText = allAppliedExpanded ? 'Alle Eingespielten einklappen' : 'Alle Eingespielten ausklappen';
+        btnText.innerText = allAppliedExpanded ? 'Eingespielte einklappen' : 'Eingespielte ausklappen';
     }
 }
 

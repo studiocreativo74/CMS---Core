@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" width="280" height="64" role="img" aria-label="Nautic Logo">
+  <defs>
+    <linearGradient id="nauticBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="50%" stop-color="#0369a1" />
+      <stop offset="100%" stop-color="#072a45" />
+    </linearGradient>
+    <linearGradient id="nauticCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+    <linearGradient id="nauticGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#fbbf24" />
+    </linearGradient>
+    <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0284c7" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Emblem Icon (Left, 56x56) -->
+  <g transform="translate(4, 4)">
+    <!-- Base Disc / Circle -->
+    <circle cx="28" cy="28" r="27" fill="url(#nauticBlue)" filter="url(#subtleGlow)" />
+    
+    <!-- Outer Helm / Compass Ring -->
+    <circle cx="28" cy="28" r="23" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.3" stroke-dasharray="3 3" />
+    
+    <!-- Cardinal Compass Rays -->
+    <path d="M 28 8 L 30 20 L 28 17 L 26 20 Z" fill="url(#nauticCyan)" />
+    <path d="M 28 48 L 30 36 L 28 39 L 26 36 Z" fill="url(#nauticCyan)" opacity="0.7" />
+    <path d="M 8 28 L 20 26 L 17 28 L 20 30 Z" fill="url(#nauticCyan)" opacity="0.7" />
+    <path d="M 48 28 L 36 26 L 39 28 L 36 30 Z" fill="url(#nauticCyan)" opacity="0.7" />
+
+    <!-- Stylized Speedboat Prow / Hull -->
+    <path d="M 28 15 L 40 37 C 36 40, 20 40, 16 37 Z" fill="#ffffff" />
+    <path d="M 28 15 L 36 36 L 28 34 Z" fill="url(#nauticCyan)" opacity="0.85" />
+    <path d="M 28 15 L 20 36 L 28 34 Z" fill="#e0f2fe" opacity="0.95" />
+    
+    <!-- Wave Curves Under Hull -->
+    <path d="M 12 41 C 18 38, 22 43, 28 40 C 34 37, 38 42, 44 39" fill="none" stroke="url(#nauticCyan)" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M 16 46 C 21 44, 24 47, 28 45 C 32 43, 35 46, 40 44" fill="none" stroke="url(#nauticGold)" stroke-width="1.8" stroke-linecap="round" />
+
+    <!-- Center Compass Star Point -->
+    <circle cx="28" cy="27" r="2.2" fill="url(#nauticGold)" />
+  </g>
+
+  <!-- Typography (Right) -->
+  <g transform="translate(72, 0)">
+    <!-- Brand Title: NAUTIC -->
+    <text x="0" y="35" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="900" letter-spacing="3" fill="#0c4a6e">
+      NAUTIC
+    </text>
+    
+    <!-- Accent Line -->
+    <rect x="1" y="42" width="180" height="2" rx="1" fill="url(#nauticCyan)" />
+
+    <!-- Subtitle: FAHRSCHULE & VERMIETUNG -->
+    <text x="2" y="55" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="2.2" fill="#0284c7" text-transform="uppercase">
+      FAHRSCHULE &amp; VERMIETUNG
+    </text>
+  </g>
+</svg>

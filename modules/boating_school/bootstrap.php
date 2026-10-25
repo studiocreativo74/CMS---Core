@@ -31,10 +31,14 @@ require_once __DIR__ . '/classes/BoatingPermissions.php';
 require_once __DIR__ . '/classes/CoachService.php';
 require_once __DIR__ . '/classes/CoachAvailabilityService.php';
 require_once __DIR__ . '/classes/BoatingMigrationManager.php';
+require_once __DIR__ . '/classes/NauticAccountRequestService.php';
 
 // Idempotente Schema- & Berechtigungsinitialisierung
 if (class_exists('BoatingMigrationManager')) {
     BoatingMigrationManager::run();
+}
+if (class_exists('NauticAccountRequestService')) {
+    NauticAccountRequestService::ensureTable();
 }
 
 // Menüpunkte im Admin-Bereich registrieren (gemäß Anforderung 4)
@@ -110,6 +114,14 @@ if (class_exists('ModuleManager')) {
         'route' => 'admin/boating/instructor-portal',
         'url'   => '?route=admin/boating/instructor-portal',
         'icon'  => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-workspace me-2" viewBox="0 0 16 16"><path d="M4 16s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM2 1a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/></svg>',
+    ]);
+
+    // 10. Account-Anfragen & Freischaltungen -> ?route=admin/boating/account-requests
+    ModuleManager::addAdminMenuItem([
+        'label' => 'Account-Anfragen',
+        'route' => 'admin/boating/account-requests',
+        'url'   => '?route=admin/boating/account-requests',
+        'icon'  => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-check-fill me-2" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M15.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 .708-.708L12.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z"/><path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>',
     ]);
 }
 
@@ -887,7 +899,8 @@ if (isset($router) && $router !== null) {
             $custId = CustomerService::create($data);
             BoatingSchoolService::log('customer_created', ['customer_id' => $custId, 'name' => $firstName . ' ' . $lastName]);
             $_SESSION['flash_success'] = 'Kunde / Fahrschüler ' . $firstName . ' ' . $lastName . ' wurde erfolgreich angelegt.';
-            header('Location: ?route=admin/boating/customers/edit&id=' . $custId);
+            $redir = !empty($_POST['redirect_to']) ? (string) $_POST['redirect_to'] : ('?route=admin/boating/customers/edit&id=' . $custId);
+            header('Location: ' . $redir);
             exit;
         } catch (\Throwable $e) {
             $_SESSION['flash_error'] = 'Fehler beim Anlegen: ' . $e->getMessage();
@@ -982,7 +995,8 @@ if (isset($router) && $router !== null) {
             $_SESSION['flash_error'] = 'Fehler beim Speichern: ' . $e->getMessage();
         }
 
-        header('Location: ?route=admin/boating/customers/edit&id=' . $id . $tab);
+        $redir = !empty($_POST['redirect_to']) ? (string) $_POST['redirect_to'] : ('?route=admin/boating/customers/edit&id=' . $id . $tab);
+        header('Location: ' . $redir);
         exit;
     });
 
@@ -2736,5 +2750,246 @@ if (isset($router) && $router !== null) {
     $router->get('bootschule/me/logout', $portalLogoutHandler);
     $router->post('/bootschule/me/logout', $portalLogoutHandler);
     $router->post('bootschule/me/logout', $portalLogoutHandler);
+
+    // =========================================================================
+    // 12. NAUTIC DEDICATED LOGONSEITE & ACCOUNT-REGISTRIERUNG
+    // =========================================================================
+    $nauticLoginGetHandler = static function (): void {
+        $error = $_SESSION['flash_nautic_error'] ?? null;
+        $success = $_SESSION['flash_nautic_success'] ?? null;
+        $info = $_SESSION['flash_nautic_info'] ?? null;
+        require __DIR__ . '/views/portal/login.php';
+    };
+
+    // Einheitlicher Magic-Link Login für alle (Fahrlehrer, Flottenleitung, Schüler)
+    $nauticLoginPostHandler = static function (): void {
+        $email = trim(strtolower((string) ($_POST['email'] ?? '')));
+        $code = trim(strtoupper((string) ($_POST['code'] ?? '')));
+        $remember = !empty($_POST['remember']);
+
+        if ($email === '') {
+            $_SESSION['flash_nautic_error'] = 'Bitte gib deine E-Mail-Adresse ein.';
+            header('Location: ?route=nautic/login');
+            exit;
+        }
+
+        if ($remember) {
+            setcookie('nautic_remember_email', $email, time() + (86400 * 30), '/');
+        } else {
+            setcookie('nautic_remember_email', '', time() - 3600, '/');
+        }
+
+        // Profil des Nutzers erkennen (für automatische Ziel-Weiterleitung)
+        $isCoach = false;
+        $isAdmin = false;
+        $isStudent = false;
+
+        if (class_exists('BoatingSchoolRepository')) {
+            $coachList = BoatingSchoolRepository::getInstructors(['email' => $email, 'is_active' => 1], 1, 0);
+            if (!empty($coachList)) {
+                $isCoach = true;
+            }
+            $customerList = BoatingSchoolRepository::getCustomers(['email' => $email, 'is_active' => 1], 1, 0);
+            if (!empty($customerList)) {
+                $isStudent = true;
+            }
+        }
+        try {
+            $user = DB::fetchOne('SELECT * FROM users WHERE email = :email AND is_active = 1 LIMIT 1', ['email' => $email]);
+            if ($user && ($user['role'] === 'admin' || $user['role'] === 'super_admin')) {
+                $isAdmin = true;
+            }
+        } catch (\Throwable $e) {}
+
+        $targetUrl = '?route=bootschule/me/appointments';
+        if ($isCoach) {
+            $targetUrl = '?route=admin/boating/instructor-portal';
+        } elseif ($isAdmin) {
+            $targetUrl = '?route=admin/boating';
+        }
+
+        // 1. Fall: Code wurde direkt eingegeben
+        if ($code !== '') {
+            if (class_exists('MagicCode') && MagicCode::isDevMagicCodeValid($email, $code)) {
+                Auth::loginWithMagicCodeForEmail($email, $code);
+                $_SESSION['flash_success'] = 'Erfolgreich via Magic-Code angemeldet!';
+                header('Location: ' . $targetUrl);
+                exit;
+            }
+
+            if (class_exists('Auth') && Auth::loginWithMagicCodeForEmail($email, $code)) {
+                $_SESSION['flash_success'] = 'Erfolgreich via Magic-Code angemeldet!';
+                header('Location: ' . $targetUrl);
+                exit;
+            }
+
+            $_SESSION['flash_nautic_error'] = 'Der eingegebene Magic-Code ist ungültig oder abgelaufen.';
+            header('Location: ?route=nautic/login');
+            exit;
+        }
+
+        // 2. Fall: Schnell-Login im Entwicklermodus für Standard-Konten
+        if (class_exists('MagicCode') && MagicCode::isDevMagicCodeEnabled()) {
+            if ($email === MagicCode::getDevMagicCodeEmail() || $email === 'beat@bootschule-see.ch' || $email === 'corinne@bootschule-see.ch' || $email === 'office@studiocreativo.ch') {
+                Auth::startSession();
+                $_SESSION['magic_authenticated'] = true;
+                $_SESSION['magic_email'] = $email;
+                $_SESSION['user_email'] = $email;
+                $_SESSION['flash_success'] = 'Erfolgreich via Magic-Link angemeldet.';
+                header('Location: ' . $targetUrl);
+                exit;
+            }
+        }
+
+        // 3. Fall: Magic-Code erstellen und per E-Mail versenden
+        if (class_exists('MagicCode')) {
+            try {
+                $created = MagicCode::createCodeForEmail($email, 'nautic_login', 1, 24);
+                MagicCode::sendEmailNotification($created['code'], $email, 'nautic_login', 1, 'office@studiocreativo.ch');
+                $_SESSION['flash_nautic_success'] = "Ein persönlicher Magic-Code ({$created['code']}) wurde an {$email} gesendet! Gib ihn einfach oben ein.";
+            } catch (\Throwable $e) {
+                $_SESSION['flash_nautic_error'] = 'Fehler beim Erstellen des Magic-Codes: ' . $e->getMessage();
+            }
+        } elseif (class_exists('BoatingCustomerMagicLinkService')) {
+            $res = BoatingCustomerMagicLinkService::requestLinkByEmail($email);
+            $_SESSION['flash_nautic_success'] = $res['message'] ?? 'Magic-Link wurde gesendet.';
+        }
+
+        header('Location: ?route=nautic/login');
+        exit;
+    };
+
+    // Account anfordern (Registrierungs-POST)
+    $nauticRequestAccountPostHandler = static function (): void {
+        $firstName = trim((string) ($_POST['first_name'] ?? ''));
+        $lastName = trim((string) ($_POST['last_name'] ?? ''));
+        $email = trim(strtolower((string) ($_POST['email'] ?? '')));
+        $phone = trim((string) ($_POST['phone'] ?? ''));
+        $desiredRole = trim((string) ($_POST['desired_role'] ?? 'student'));
+        $notes = trim((string) ($_POST['notes'] ?? ''));
+
+        if ($firstName === '' || $lastName === '' || $email === '') {
+            $_SESSION['flash_nautic_error'] = 'Bitte Vorname, Nachname und E-Mail-Adresse ausfüllen.';
+            header('Location: ?route=nautic/login&action=register');
+            exit;
+        }
+
+        if (class_exists('NauticAccountRequestService')) {
+            try {
+                NauticAccountRequestService::createRequest([
+                    'first_name'   => $firstName,
+                    'last_name'    => $lastName,
+                    'email'        => $email,
+                    'phone'        => $phone,
+                    'desired_role' => $desiredRole,
+                    'notes'        => $notes,
+                ]);
+
+                $_SESSION['flash_nautic_success'] = "Vielen Dank, {$firstName}! Deine Registrierung wurde eingereicht. Die Flottenleitung prüft deine Anfrage und weist dein Profil zu. Sobald du freigeschaltet wurdest, kannst du dich direkt mit deiner E-Mail per Magic-Link einloggen.";
+                header('Location: ?route=nautic/login');
+                exit;
+            } catch (\Throwable $e) {
+                $_SESSION['flash_nautic_error'] = 'Fehler bei der Registrierungsanfrage: ' . $e->getMessage();
+                header('Location: ?route=nautic/login&action=register');
+                exit;
+            }
+        }
+
+        header('Location: ?route=nautic/login');
+        exit;
+    };
+
+    $router->get('/nautic/login', $nauticLoginGetHandler);
+    $router->get('nautic/login', $nauticLoginGetHandler);
+    $router->get('/nautic/logon', $nauticLoginGetHandler);
+    $router->get('nautic/logon', $nauticLoginGetHandler);
+    $router->get('/bootschule/login', $nauticLoginGetHandler);
+    $router->get('bootschule/login', $nauticLoginGetHandler);
+    $router->get('/bootschule/logon', $nauticLoginGetHandler);
+    $router->get('bootschule/logon', $nauticLoginGetHandler);
+    $router->get('/admin/boating/login', $nauticLoginGetHandler);
+    $router->get('admin/boating/login', $nauticLoginGetHandler);
+
+    $router->post('/nautic/login', $nauticLoginPostHandler);
+    $router->post('nautic/login', $nauticLoginPostHandler);
+    $router->post('/nautic/logon', $nauticLoginPostHandler);
+    $router->post('nautic/logon', $nauticLoginPostHandler);
+    $router->post('/bootschule/login', $nauticLoginPostHandler);
+    $router->post('bootschule/login', $nauticLoginPostHandler);
+    $router->post('/bootschule/logon', $nauticLoginPostHandler);
+    $router->post('bootschule/logon', $nauticLoginPostHandler);
+    $router->post('/admin/boating/login', $nauticLoginPostHandler);
+    $router->post('admin/boating/login', $nauticLoginPostHandler);
+
+    // POST /nautic/request-account (Öffentliche Registrierung)
+    $router->post('/nautic/request-account', $nauticRequestAccountPostHandler);
+    $router->post('nautic/request-account', $nauticRequestAccountPostHandler);
+    $router->post('/bootschule/request-account', $nauticRequestAccountPostHandler);
+    $router->post('bootschule/request-account', $nauticRequestAccountPostHandler);
+
+    // =========================================================================
+    // 13. ADMIN: ACCOUNT-ANFRAGEN & FREISCHALTUNGEN
+    // =========================================================================
+    $registerGet('account-requests', static function () use ($checkPermission): void {
+        $checkPermission(false);
+        $statusFilter = trim((string) ($_GET['status'] ?? 'pending'));
+        if (!in_array($statusFilter, ['pending', 'approved', 'rejected', 'all'], true)) {
+            $statusFilter = 'pending';
+        }
+
+        $requests = class_exists('NauticAccountRequestService') 
+            ? NauticAccountRequestService::getAll($statusFilter === 'all' ? null : $statusFilter)
+            : [];
+        $pendingCount = class_exists('NauticAccountRequestService')
+            ? NauticAccountRequestService::getPendingCount()
+            : 0;
+
+        require __DIR__ . '/views/admin/account_requests.php';
+    });
+
+    $registerPost('account-requests/approve', static function () use ($checkPermission): void {
+        $checkPermission(true);
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_error'] = 'Ungültiges Sicherheitstoken (CSRF).';
+            header('Location: ?route=admin/boating/account-requests');
+            exit;
+        }
+
+        $requestId = (int) ($_POST['request_id'] ?? 0);
+        $profileType = trim((string) ($_POST['profile_type'] ?? 'student'));
+        $adminUser = class_exists('Auth') && Auth::user() ? (string) (Auth::user()['name'] ?? Auth::user()['email']) : 'Administrator';
+
+        if (class_exists('NauticAccountRequestService')) {
+            $res = NauticAccountRequestService::approveAndAssignProfile($requestId, $profileType, $adminUser);
+            if ($res['success']) {
+                $_SESSION['flash_success'] = $res['message'];
+            } else {
+                $_SESSION['flash_error'] = $res['message'];
+            }
+        }
+
+        header('Location: ?route=admin/boating/account-requests');
+        exit;
+    });
+
+    $registerPost('account-requests/reject', static function () use ($checkPermission): void {
+        $checkPermission(true);
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_error'] = 'Ungültiges Sicherheitstoken (CSRF).';
+            header('Location: ?route=admin/boating/account-requests');
+            exit;
+        }
+
+        $requestId = (int) ($_POST['request_id'] ?? 0);
+        $adminUser = class_exists('Auth') && Auth::user() ? (string) (Auth::user()['name'] ?? Auth::user()['email']) : 'Administrator';
+
+        if (class_exists('NauticAccountRequestService')) {
+            NauticAccountRequestService::rejectRequest($requestId, $adminUser);
+            $_SESSION['flash_success'] = 'Registrierungsanfrage wurde abgelehnt.';
+        }
+
+        header('Location: ?route=admin/boating/account-requests');
+        exit;
+    });
 }
 

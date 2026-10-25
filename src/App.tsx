@@ -25,11 +25,16 @@ import {
   Award,
   Plus,
   Eye,
+  EyeOff,
   Lock,
   Phone,
   Mail,
   MapPin,
-  FileText
+  FileText,
+  LogIn,
+  UserPlus,
+  UserCheck,
+  Key
 } from 'lucide-react';
 
 // --- Datentypen & Mock-Daten der Bootsfahrschule ---
@@ -102,6 +107,46 @@ interface CoachWorkingHour {
   status: 'draft' | 'submitted' | 'approved' | 'exported';
   note: string;
 }
+
+interface AccountRequest {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  desired_role: 'instructor' | 'student' | 'renter' | 'admin';
+  assigned_profile?: 'instructor' | 'student' | 'renter' | 'admin';
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  approved_at?: string;
+  admin_notes?: string;
+  notes: string;
+}
+
+const INITIAL_ACCOUNT_REQUESTS: AccountRequest[] = [
+  {
+    id: 1,
+    first_name: 'Stefan',
+    last_name: 'Brunner',
+    email: 'stefan.brunner@see-experience.ch',
+    phone: '+41 79 555 12 34',
+    desired_role: 'instructor',
+    status: 'pending',
+    created_at: '2026-03-24 14:15',
+    notes: 'Inhaber Motorboot Kat. A & Segelpatent Kat. D seit 2018. Bewerbung als Wochenend-Fahrcoach.'
+  },
+  {
+    id: 2,
+    first_name: 'Elena',
+    last_name: 'Moser',
+    email: 'elena.moser@bluewin.ch',
+    phone: '+41 78 444 88 99',
+    desired_role: 'student',
+    status: 'pending',
+    created_at: '2026-03-24 16:30',
+    notes: 'Möchte Motorbootprüfung Kat. A absolvieren. Theorieprüfung Schifffahrtsamt bereits bestanden.'
+  }
+];
 
 const INITIAL_INSTRUCTORS: Instructor[] = [
   {
@@ -357,7 +402,25 @@ const INITIAL_WORKING_HOURS: CoachWorkingHour[] = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'payroll' | 'student' | 'instructor' | 'architecture'>('payroll');
+  const [activeTab, setActiveTab] = useState<'payroll' | 'student' | 'instructor' | 'login' | 'architecture'>('login');
+
+  // State für Nautic Logon & Account-Anforderung
+  const [authViewMode, setAuthViewMode] = useState<'login' | 'register'>('login');
+  const [loginEmail, setLoginEmail] = useState<string>('beat@bootschule-see.ch');
+  const [loginCode, setLoginCode] = useState<string>('ROLAND1234');
+  const [loginSuccessMsg, setLoginSuccessMsg] = useState<string | null>(null);
+  const [loginRememberMe, setLoginRememberMe] = useState<boolean>(true);
+
+  // Registrierungs-State (Account anfordern & Admin-Prüfung)
+  const [regFirstName, setRegFirstName] = useState<string>('');
+  const [regLastName, setRegLastName] = useState<string>('');
+  const [regEmail, setRegEmail] = useState<string>('');
+  const [regPhone, setRegPhone] = useState<string>('');
+  const [regDesiredRole, setRegDesiredRole] = useState<'instructor' | 'student' | 'renter' | 'admin'>('student');
+  const [regNotes, setRegNotes] = useState<string>('');
+  const [accountRequests, setAccountRequests] = useState<AccountRequest[]>(INITIAL_ACCOUNT_REQUESTS);
+  const [requestFilter, setRequestFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+  const [approvalProfileSelections, setApprovalProfileSelections] = useState<Record<number, 'instructor' | 'student' | 'renter' | 'admin'>>({});
 
   // State für Payroll
   const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
@@ -519,6 +582,128 @@ export default function App() {
     setTimeout(() => setMagicFeedback(null), 6000);
   };
 
+  const handleNauticLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const emailLower = loginEmail.trim().toLowerCase();
+
+    // Prüfen, ob Fahrlehrer
+    const matchInst = instructors.find(i => i.email.toLowerCase() === emailLower);
+    if (matchInst) {
+      setCurrentInstructorId(matchInst.id);
+      setLoginSuccessMsg(`Magic-Link bestätigt! Erfolgreich angemeldet als Fahrlehrer (${matchInst.name}).`);
+      setTimeout(() => {
+        setLoginSuccessMsg(null);
+        setActiveTab('instructor');
+      }, 700);
+      return;
+    }
+
+    // Prüfen, ob Admin / Flottenleitung
+    if (emailLower.includes('admin') || emailLower.includes('office') || emailLower === 'coachingboot@gmail.com') {
+      setLoginSuccessMsg(`Magic-Link bestätigt! Erfolgreich angemeldet als Flottenleitung (${loginEmail}).`);
+      setTimeout(() => {
+        setLoginSuccessMsg(null);
+        setActiveTab('payroll');
+      }, 700);
+      return;
+    }
+
+    // Standard: Schüler / Kunde / Bootsmieter
+    setLoginSuccessMsg(`Magic-Link bestätigt! Willkommen an Bord (${loginEmail}). Weiterleitung zum Kundenportal...`);
+    setTimeout(() => {
+      setLoginSuccessMsg(null);
+      setActiveTab('student');
+    }, 800);
+  };
+
+  const handleRegisterAccountSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regEmail || !regFirstName || !regLastName) return;
+
+    const newReq: AccountRequest = {
+      id: Date.now(),
+      first_name: regFirstName.trim(),
+      last_name: regLastName.trim(),
+      email: regEmail.trim(),
+      phone: regPhone.trim(),
+      desired_role: regDesiredRole,
+      notes: regNotes.trim(),
+      status: 'pending',
+      created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+    };
+
+    setAccountRequests(prev => [newReq, ...prev]);
+    setLoginEmail(regEmail.trim());
+    setLoginSuccessMsg(`Vielen Dank, ${regFirstName}! Deine Account-Anfrage wurde eingereicht. Sobald der Administrator dein Profil freigeschaltet hat, erhältst du deinen Magic-Link.`);
+    setAuthViewMode('login');
+
+    // Reset Form
+    setRegFirstName('');
+    setRegLastName('');
+    setRegEmail('');
+    setRegPhone('');
+    setRegNotes('');
+    setRegDesiredRole('student');
+  };
+
+  const handleApproveAccountRequest = (requestId: number) => {
+    const target = accountRequests.find(r => r.id === requestId);
+    if (!target) return;
+    const assignedProfile = approvalProfileSelections[requestId] || target.desired_role;
+    const generatedMagicCode = 'MAGIC-' + Math.floor(1000 + Math.random() * 9000);
+
+    setAccountRequests(prev =>
+      prev.map(r =>
+        r.id === requestId
+          ? {
+              ...r,
+              status: 'approved',
+              assigned_profile: assignedProfile,
+              approved_at: new Date().toISOString().replace('T', ' ').substring(0, 19),
+              admin_notes: `Freigegeben als ${assignedProfile}. Magic-Code ${generatedMagicCode} versendet.`
+            }
+          : r
+      )
+    );
+
+    // Falls als Fahrlehrer freigegeben, automatisch in die Fahrlehrer-Liste aufnehmen
+    if (assignedProfile === 'instructor' && !instructors.some(i => i.email.toLowerCase() === target.email.toLowerCase())) {
+      const newInst: Instructor = {
+        id: Date.now(),
+        name: `${target.first_name} ${target.last_name}`,
+        title: 'Bootsfahrlehrer',
+        email: target.email,
+        phone: target.phone || '+41 79 000 00 00',
+        public_mobile: target.phone || '+41 79 000 00 00',
+        is_mobile_public: true,
+        color_code: '#0284c7',
+        pay_rate_type: 'per_hour',
+        pay_rate_amount: 65,
+        hourly_rate: 65,
+        payroll_external_code: 'KRED-' + Math.floor(1000 + Math.random() * 9000),
+        license_number: 'CH-NAUTIC-2026'
+      };
+      setInstructors(prev => [...prev, newInst]);
+    }
+
+    setLoginSuccessMsg(`Account #${requestId} für ${target.first_name} ${target.last_name} als "${assignedProfile}" freigegeben!`);
+    setTimeout(() => setLoginSuccessMsg(null), 4000);
+  };
+
+  const handleRejectAccountRequest = (requestId: number) => {
+    setAccountRequests(prev =>
+      prev.map(r =>
+        r.id === requestId
+          ? {
+              ...r,
+              status: 'rejected',
+              admin_notes: 'Abgelehnt durch Administrator.'
+            }
+          : r
+      )
+    );
+  };
+
   const handleAddAbsenceSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newEntry: CoachAvailability = {
@@ -676,6 +861,17 @@ export default function App() {
               <User className="w-4 h-4" />
               <span className="hidden md:inline">3. Fahrlehrer-Portal &amp; Monatsabschluss</span>
               <span className="md:hidden">Fahrlehrer</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('login')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                activeTab === 'login' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <LogIn className="w-4 h-4" />
+              <span className="hidden md:inline">4. Nautic Logonseite (SVG Logo)</span>
+              <span className="md:hidden">Logon</span>
             </button>
 
             <button
@@ -1646,7 +1842,532 @@ export default function App() {
         )}
 
         {/* ============================================================== */}
-        {/* TAB 4: BACKEND ARCHITEKTUR & MIGRATIONEN                      */}
+        {/* TAB 4: NAUTIC EIGENE LOGONSEITE MIT SVG LOGO                   */}
+        {/* ============================================================== */}
+        {activeTab === 'login' && (
+          <div className="space-y-6">
+            {/* Infobox & Direktlinks */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 bg-sky-100 text-sky-700 rounded-lg">
+                    <Compass className="w-5 h-5" />
+                  </span>
+                  <h2 className="text-xl font-bold text-slate-900">Eigene Nautic Logonseite mit SVG-Logo</h2>
+                </div>
+                <p className="text-sm text-slate-600 mt-1">
+                  Einheitlicher Magic-Link Zugang für alle Benutzer (Fahrlehrer, Schüler, Charterkunden &amp; Flottenleitung) sowie Registrierung mit anschliessender administrativer Profil-Zuweisung.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <a
+                  href="?route=nautic/login"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
+                  title="Öffnet die PHP-Logonseite im neuen Browser-Tab"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>PHP Live-Route (?route=nautic/login)</span>
+                </a>
+                <a
+                  href="?route=admin/boating/account-requests"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+                  title="Öffnet die PHP Admin-Prüfseite für Account-Anfragen"
+                >
+                  <UserCheck className="w-4 h-4 text-sky-600" />
+                  <span>PHP Admin-Freigaben</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Maritime Auth Stage (interaktive Vorschau) */}
+            <div className="rounded-3xl p-6 md:p-12 shadow-2xl relative overflow-hidden flex items-center justify-center min-h-[580px]"
+                 style={{
+                   background: 'radial-gradient(circle at 50% 15%, #0d3859 0%, #0c2d48 45%, #06192a 100%)'
+                 }}>
+              
+              {/* Dekorative Hintergrund-Punkte */}
+              <div className="absolute inset-0 opacity-15 pointer-events-none"
+                   style={{
+                     backgroundImage: 'radial-gradient(#38bdf8 1px, transparent 1px)',
+                     backgroundSize: '24px 24px'
+                   }} />
+
+              {/* Login / Registrierungs-Card */}
+              <div className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-2xl border border-white/20 relative z-10 space-y-5">
+                
+                {/* SVG Logo Einbindung – Ohne Untertext darunter */}
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center">
+                    <svg viewBox="0 0 280 64" className="w-64 h-auto drop-shadow-sm" role="img" aria-label="Nautic Logo">
+                      <defs>
+                        <linearGradient id="appNauticBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#0284c7" />
+                          <stop offset="50%" stopColor="#0369a1" />
+                          <stop offset="100%" stopColor="#072a45" />
+                        </linearGradient>
+                        <linearGradient id="appNauticCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#38bdf8" />
+                          <stop offset="100%" stopColor="#06b6d4" />
+                        </linearGradient>
+                        <linearGradient id="appNauticGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#f59e0b" />
+                          <stop offset="100%" stopColor="#fbbf24" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Emblem */}
+                      <g transform="translate(4, 4)">
+                        <circle cx="28" cy="28" r="27" fill="url(#appNauticBlue)" />
+                        <circle cx="28" cy="28" r="23" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeOpacity="0.3" strokeDasharray="3 3" />
+                        <path d="M 28 8 L 30 20 L 28 17 L 26 20 Z" fill="url(#appNauticCyan)" />
+                        <path d="M 28 48 L 30 36 L 28 39 L 26 36 Z" fill="url(#appNauticCyan)" opacity="0.7" />
+                        <path d="M 8 28 L 20 26 L 17 28 L 20 30 Z" fill="url(#appNauticCyan)" opacity="0.7" />
+                        <path d="M 48 28 L 36 26 L 39 28 L 36 30 Z" fill="url(#appNauticCyan)" opacity="0.7" />
+                        <path d="M 28 15 L 40 37 C 36 40, 20 40, 16 37 Z" fill="#ffffff" />
+                        <path d="M 28 15 L 36 36 L 28 34 Z" fill="url(#appNauticCyan)" opacity="0.85" />
+                        <path d="M 28 15 L 20 36 L 28 34 Z" fill="#e0f2fe" opacity="0.95" />
+                        <path d="M 12 41 C 18 38, 22 43, 28 40 C 34 37, 38 42, 44 39" fill="none" stroke="url(#appNauticCyan)" strokeWidth="2.5" strokeLinecap="round" />
+                        <path d="M 16 46 C 21 44, 24 47, 28 45 C 32 43, 35 46, 40 44" fill="none" stroke="url(#appNauticGold)" strokeWidth="1.8" strokeLinecap="round" />
+                        <circle cx="28" cy="27" r="2.2" fill="url(#appNauticGold)" />
+                      </g>
+
+                      {/* Text */}
+                      <g transform="translate(72, 0)">
+                        <text x="0" y="35" fontFamily="system-ui, sans-serif" fontSize="28" fontWeight="900" letterSpacing="3" fill="#0c4a6e">
+                          NAUTIC
+                        </text>
+                        <rect x="1" y="42" width="180" height="2" rx="1" fill="url(#appNauticCyan)" />
+                        <text x="2" y="55" fontFamily="system-ui, sans-serif" fontSize="9" fontWeight="700" letterSpacing="2.2" fill="#0284c7">
+                          FAHRSCHULE &amp; VERMIETUNG
+                        </text>
+                      </g>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Erfolgsmeldung / Toast */}
+                {loginSuccessMsg && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2 animate-in fade-in">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{loginSuccessMsg}</span>
+                  </div>
+                )}
+
+                {/* ANSICHT 1: UNIFIZIERTER MAGIC-LINK LOGIN (KEINE ROLLEN-BUTTONS) */}
+                {authViewMode === 'login' ? (
+                  <form onSubmit={handleNauticLoginSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Deine E-Mail-Adresse
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                        <input
+                          type="email"
+                          value={loginEmail}
+                          onChange={e => setLoginEmail(e.target.value)}
+                          required
+                          className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition shadow-inner"
+                          placeholder="deine-adresse@domain.ch"
+                        />
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Wir senden dir sofort einen sicheren, passwortlosen Magic-Link.
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                          <Key className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Bereits einen Einmalcode? <span className="text-slate-400 font-normal">(optional)</span></span>
+                        </label>
+                      </div>
+                      <input
+                        type="text"
+                        value={loginCode}
+                        onChange={e => setLoginCode(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition"
+                        placeholder="z. B. ROLAND1234 oder leer lassen"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={loginRememberMe}
+                          onChange={e => setLoginRememberMe(e.target.checked)}
+                          className="rounded text-sky-600 focus:ring-sky-500"
+                        />
+                        <span>E-Mail auf diesem Gerät merken</span>
+                      </label>
+                      <span className="text-[11px] text-slate-400">CH 256-Bit SSL</span>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 px-4 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <LogIn className="w-4 h-4" />
+                      <span>Per Magic-Link anmelden &rarr;</span>
+                    </button>
+
+                    {/* Umschalten zu: Account anfordern */}
+                    <div className="pt-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => setAuthViewMode('register')}
+                        className="text-xs text-sky-700 hover:text-sky-900 font-semibold inline-flex items-center gap-1.5 transition cursor-pointer hover:underline"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" />
+                        <span>Noch kein Konto? Jetzt Account anfordern &rarr;</span>
+                      </button>
+                    </div>
+
+                    {/* Schnellzugriff Demo Buttons für Prototyp */}
+                    <div className="pt-3 border-t border-slate-200/80">
+                      <div className="text-[11px] font-semibold text-slate-400 mb-1.5">
+                        Schnellauswahl für Demo / Testen:
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setLoginEmail('beat@bootschule-see.ch')}
+                          className="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-lg text-[11px] font-medium border border-sky-200 transition"
+                        >
+                          Beat (Fahrlehrer)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLoginEmail('office@studiocreativo.ch')}
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-medium border border-slate-200 transition"
+                        >
+                          Office (Admin)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLoginEmail('lukas.berner@swiss-pilot.ch')}
+                          className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[11px] font-medium border border-emerald-200 transition"
+                        >
+                          Lukas (Schüler)
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                ) : (
+                  /* ANSICHT 2: NEUEN ACCOUNT ANFORDERN */
+                  <form onSubmit={handleRegisterAccountSubmit} className="space-y-3.5">
+                    <div className="border-b border-slate-100 pb-2">
+                      <div className="flex items-center gap-1.5 text-sky-700 font-bold text-sm">
+                        <UserPlus className="w-4 h-4" />
+                        <span>Neuen Account anfordern</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Nach dem Absenden prüft der Administrator deinen Antrag und weist dir das passende Profil zu.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-700 mb-1">Vorname *</label>
+                        <input
+                          type="text"
+                          required
+                          value={regFirstName}
+                          onChange={e => setRegFirstName(e.target.value)}
+                          placeholder="Max"
+                          className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-700 mb-1">Nachname *</label>
+                        <input
+                          type="text"
+                          required
+                          value={regLastName}
+                          onChange={e => setRegLastName(e.target.value)}
+                          placeholder="Muster"
+                          className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">E-Mail-Adresse *</label>
+                      <input
+                        type="email"
+                        required
+                        value={regEmail}
+                        onChange={e => setRegEmail(e.target.value)}
+                        placeholder="max.muster@beispiel.ch"
+                        className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-700 mb-1">Telefon / Mobile</label>
+                        <input
+                          type="tel"
+                          value={regPhone}
+                          onChange={e => setRegPhone(e.target.value)}
+                          placeholder="+41 79 123 45 67"
+                          className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-700 mb-1">Gewünschte Funktion</label>
+                        <select
+                          value={regDesiredRole}
+                          onChange={e => setRegDesiredRole(e.target.value as any)}
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        >
+                          <option value="student">Schüler / Fahrschüler</option>
+                          <option value="instructor">Fahrlehrer / Boots-Coach</option>
+                          <option value="renter">Bootsmieter / Charter</option>
+                          <option value="admin">Flottenleitung / Disposition</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Bemerkung / Vorkenntnisse</label>
+                      <textarea
+                        rows={2}
+                        value={regNotes}
+                        onChange={e => setRegNotes(e.target.value)}
+                        placeholder="z. B. Kat. A Theorie bereits bestanden, Interesse an Charter..."
+                        className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>Account-Anfrage absenden</span>
+                    </button>
+
+                    <div className="pt-1 text-center">
+                      <button
+                        type="button"
+                        onClick={() => setAuthViewMode('login')}
+                        className="text-xs text-slate-600 hover:text-slate-900 font-medium inline-flex items-center gap-1 transition cursor-pointer hover:underline"
+                      >
+                        &larr; Zurück zum Magic-Link Login
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Footer: KEIN "Fahrstunde buchen"-Link mehr */}
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <Shield className="w-3 h-3 text-sky-600" />
+                    <span>Nautic Modul v2.4</span>
+                  </span>
+                  <span>Geschützter Bereich</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ============================================================== */}
+            {/* ADMIN-KONSOLE: ACCOUNT-ANFRAGEN PRÜFEN & PROFIL ZUWEISEN       */}
+            {/* ============================================================== */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="p-2 bg-amber-50 text-amber-700 rounded-xl">
+                    <UserCheck className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">
+                      Admin-Konsole: Offene Account-Anfragen &amp; Profil-Zuweisung
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Hier prüfst du eingereichte Registrierungen, bestimmst das finale Profil und gibst den Zugang mit 1-Klick frei.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Filter-Tabs */}
+                <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold gap-1 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setRequestFilter('pending')}
+                    className={`px-3 py-1.5 rounded-lg transition ${
+                      requestFilter === 'pending' ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Ausstehend ({accountRequests.filter(r => r.status === 'pending').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRequestFilter('approved')}
+                    className={`px-3 py-1.5 rounded-lg transition ${
+                      requestFilter === 'approved' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Bestätigt ({accountRequests.filter(r => r.status === 'approved').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRequestFilter('rejected')}
+                    className={`px-3 py-1.5 rounded-lg transition ${
+                      requestFilter === 'rejected' ? 'bg-white text-rose-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Abgelehnt ({accountRequests.filter(r => r.status === 'rejected').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRequestFilter('all')}
+                    className={`px-3 py-1.5 rounded-lg transition ${
+                      requestFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Alle ({accountRequests.length})
+                  </button>
+                </div>
+              </div>
+
+              {/* Anfragen-Tabelle / Karten */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-600 font-semibold border-y border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3">Antragsteller</th>
+                      <th className="py-2.5 px-3">Kontakt</th>
+                      <th className="py-2.5 px-3">Wunsch &amp; Notiz</th>
+                      <th className="py-2.5 px-3">Profil-Zuweisung (Admin)</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3 text-right">Aktionen</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {accountRequests
+                      .filter(r => requestFilter === 'all' || r.status === requestFilter)
+                      .map(req => {
+                        const selectedProfile = approvalProfileSelections[req.id] || req.desired_role;
+                        return (
+                          <tr key={req.id} className="hover:bg-slate-50/70 transition">
+                            <td className="py-3 px-3 font-medium text-slate-900">
+                              <div className="font-semibold">{req.first_name} {req.last_name}</div>
+                              <div className="text-[10px] text-slate-400 font-normal">Eingang: {req.created_at}</div>
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="flex items-center gap-1 text-slate-700 font-medium">
+                                <Mail className="w-3.5 h-3.5 text-slate-400" />
+                                <span>{req.email}</span>
+                              </div>
+                              {req.phone && (
+                                <div className="flex items-center gap-1 text-slate-500 text-[11px] mt-0.5">
+                                  <Phone className="w-3 h-3 text-slate-400" />
+                                  <span>{req.phone}</span>
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 max-w-[200px]">
+                              <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-medium mb-1">
+                                Wunsch: {req.desired_role === 'instructor' ? 'Fahrlehrer' : req.desired_role === 'student' ? 'Schüler' : req.desired_role === 'renter' ? 'Bootsmieter' : 'Flottenleitung'}
+                              </span>
+                              {req.notes && (
+                                <p className="text-[11px] text-slate-500 italic truncate" title={req.notes}>
+                                  "{req.notes}"
+                                </p>
+                              )}
+                            </td>
+                            <td className="py-3 px-3">
+                              {req.status === 'pending' ? (
+                                <div className="space-y-1">
+                                  <select
+                                    value={selectedProfile}
+                                    onChange={e =>
+                                      setApprovalProfileSelections(prev => ({
+                                        ...prev,
+                                        [req.id]: e.target.value as any
+                                      }))
+                                    }
+                                    className="px-2 py-1.5 bg-amber-50/60 border border-amber-300 rounded-lg text-xs font-medium text-amber-950 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                  >
+                                    <option value="instructor">Fahrlehrer / Coach</option>
+                                    <option value="student">Schüler / Fahrschüler</option>
+                                    <option value="renter">Bootsmieter / Charterkunde</option>
+                                    <option value="admin">Flottenleitung / Admin</option>
+                                  </select>
+                                </div>
+                              ) : (
+                                <div className="font-semibold text-slate-800">
+                                  {req.assigned_profile === 'instructor' && 'Fahrlehrer / Coach'}
+                                  {req.assigned_profile === 'student' && 'Schüler / Fahrschüler'}
+                                  {req.assigned_profile === 'renter' && 'Bootsmieter / Charter'}
+                                  {req.assigned_profile === 'admin' && 'Flottenleitung / Admin'}
+                                  {!req.assigned_profile && '-'}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 px-3">
+                              {req.status === 'pending' && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-[11px] font-semibold">
+                                  <Clock className="w-3 h-3" /> Ausstehend
+                                </span>
+                              )}
+                              {req.status === 'approved' && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-semibold">
+                                  <Check className="w-3 h-3" /> Bestätigt
+                                </span>
+                              )}
+                              {req.status === 'rejected' && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full text-[11px] font-semibold">
+                                  <X className="w-3 h-3" /> Abgelehnt
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-right">
+                              {req.status === 'pending' ? (
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleApproveAccountRequest(req.id)}
+                                    className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold flex items-center gap-1 shadow-sm transition cursor-pointer"
+                                    title="Antrag bestätigen & Profil aktivieren"
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>Bestätigen</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRejectAccountRequest(req.id)}
+                                    className="px-2 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 rounded-lg transition cursor-pointer"
+                                    title="Antrag ablehnen"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-[11px] text-slate-400">
+                                  {req.approved_at ? `Freigabe: ${req.approved_at}` : 'Bearbeitet'}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 5: BACKEND ARCHITEKTUR & MIGRATIONEN                      */}
         {/* ============================================================== */}
         {activeTab === 'architecture' && (
           <div className="space-y-6">

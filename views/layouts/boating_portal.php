@@ -140,11 +140,16 @@ unset($_SESSION['flash_portal_success'], $_SESSION['flash_portal_error'], $_SESS
     <nav class="navbar navbar-expand-lg navbar-dark portal-navbar sticky-top">
         <div class="container">
             <a class="navbar-brand navbar-brand-logo" href="?route=bootschule">
-                <span class="p-2 bg-white bg-opacity-10 rounded-circle text-info d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                    <i class="bi bi-compass fs-5"></i>
-                </span>
-                <span>
-                    <?= htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8') ?>
+                <img src="public/assets/nautic-logo-white.svg" 
+                     alt="Nautic" 
+                     height="34" 
+                     style="height: 34px; width: auto;"
+                     onerror="this.style.display='none'; document.getElementById('navbarTextLogo').style.display='inline-flex';">
+                <span id="navbarTextLogo" style="display: none;" class="align-items-center gap-2">
+                    <span class="p-1 bg-white bg-opacity-10 rounded-circle text-info d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-compass fs-5"></i>
+                    </span>
+                    <span><?= htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8') ?></span>
                 </span>
             </a>
 
@@ -167,6 +172,11 @@ unset($_SESSION['flash_portal_success'], $_SESSION['flash_portal_error'], $_SESS
                     <li class="nav-item">
                         <a class="nav-link portal-nav-link <?= in_array($currentRoute, ['bootschule/me/appointments', '/bootschule/me/appointments'], true) ? 'active' : '' ?>" href="?route=bootschule/me/appointments">
                             <i class="bi bi-calendar-check me-1"></i> Meine Termine
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link portal-nav-link <?= str_contains($currentRoute, 'login') ? 'active' : '' ?>" href="?route=nautic/login" title="Crew- &amp; Fahrlehrer-Login">
+                            <i class="bi bi-person-workspace me-1"></i> Crew-Login
                         </a>
                     </li>
                     <li class="nav-item ms-lg-2 mt-2 mt-lg-0">

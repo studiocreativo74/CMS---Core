@@ -118,8 +118,26 @@ $subtitleText = $navSubtitle ?? 'Zentrales Management für Praxisfahrstunden, Bo
                                 <span>E-Mail &amp; Einstellungen</span>
                             </a>
                         </li>
+                        <li>
+                            <?php $pendingAccReqs = class_exists('NauticAccountRequestService') ? NauticAccountRequestService::getPendingCount() : 0; ?>
+                            <a class="dropdown-item rounded-2 py-2 d-flex align-items-center justify-content-between <?= str_starts_with($routeClean, 'admin/boating/account-requests') ? 'active fw-bold' : '' ?>" href="?route=admin/boating/account-requests">
+                                <span class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-person-check text-success"></i>
+                                    <span>Account-Anfragen</span>
+                                </span>
+                                <?php if ($pendingAccReqs > 0): ?>
+                                    <span class="badge bg-warning text-dark"><?= $pendingAccReqs ?></span>
+                                <?php endif; ?>
+                            </a>
+                        </li>
 
                         <li><hr class="dropdown-divider my-2"></li>
+                        <li>
+                            <a class="dropdown-item rounded-2 py-2 d-flex align-items-center gap-2 text-primary fw-semibold" href="?route=nautic/login" target="_blank" rel="noopener">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                                <span>Nautic Logonseite (Vorschau)</span>
+                            </a>
+                        </li>
                         <li>
                             <a class="dropdown-item rounded-2 py-2 d-flex align-items-center gap-2 text-info" href="?route=bootschule" target="_blank" rel="noopener">
                                 <i class="bi bi-box-arrow-up-right"></i>
@@ -128,6 +146,11 @@ $subtitleText = $navSubtitle ?? 'Zentrales Management für Praxisfahrstunden, Bo
                         </li>
                     </ul>
                 </div>
+
+                <a href="?route=nautic/login" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex align-items-center gap-1 rounded-3 px-3 py-2" title="Eigene Nautic Logonseite mit SVG-Logo öffnen">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Nautic Login</span>
+                </a>
 
                 <a href="?route=bootschule" target="_blank" rel="noopener" class="btn btn-sm btn-outline-info d-none d-sm-inline-flex align-items-center gap-1 rounded-3 px-3 py-2" title="Öffentliches Kundenportal in neuem Tab öffnen">
                     <i class="bi bi-box-arrow-up-right"></i>
@@ -175,6 +198,12 @@ $subtitleText = $navSubtitle ?? 'Zentrales Management für Praxisfahrstunden, Bo
             </a>
             <a href="?route=admin/boating/reports" class="btn btn-sm <?= str_starts_with($routeClean, 'admin/boating/reports') ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill px-3">
                 <i class="bi bi-graph-up-arrow me-1"></i> Reports &amp; Payroll
+            </a>
+            <a href="?route=admin/boating/account-requests" class="btn btn-sm <?= str_starts_with($routeClean, 'admin/boating/account-requests') ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill px-3">
+                <i class="bi bi-person-check me-1"></i> Account-Anfragen
+                <?php if (!empty($pendingAccReqs)): ?>
+                    <span class="badge bg-warning text-dark ms-1"><?= $pendingAccReqs ?></span>
+                <?php endif; ?>
             </a>
             <a href="?route=admin/boating/settings" class="btn btn-sm <?= str_starts_with($routeClean, 'admin/boating/settings') ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill px-3 ms-auto">
                 <i class="bi bi-gear me-1"></i> Einstellungen
