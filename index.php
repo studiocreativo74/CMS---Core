@@ -302,6 +302,16 @@ $nauticCoreLoginHandler = function (): void {
 $router->get('/nautic/login', $nauticCoreLoginHandler);
 $router->get('/nautic/logon', $nauticCoreLoginHandler);
 
+// Direkte Weiterleitung für Modul-Keywords auf die Nautic-Loginseite
+$nauticRedirectHandler = function (): void {
+    header('Location: ?route=nautic/login');
+    exit;
+};
+$router->get('/boating_school', $nauticRedirectHandler);
+$router->get('/boating-school', $nauticRedirectHandler);
+$router->get('/nautic', $nauticRedirectHandler);
+$router->get('/bootschule', $nauticRedirectHandler);
+
 // GET /logout
 $router->get('/logout', function (): void {
     Auth::logout();
@@ -640,6 +650,10 @@ $router->post('/admin/homepage', function () use ($requireAdminAuthAndCsrf): voi
             if (isset($_POST['homepage_module_route'])) {
                 Settings::set('homepage_module_route', trim((string) $_POST['homepage_module_route']));
             }
+
+            // Nautic Login-Maske: Testmodus (ein / aus)
+            $nauticTestmode = !empty($_POST['nautic_login_testmode']) ? '1' : '0';
+            Settings::set('nautic_login_testmode', $nauticTestmode);
 
             // Logo-Entfernung
             if ($removeLogo) {

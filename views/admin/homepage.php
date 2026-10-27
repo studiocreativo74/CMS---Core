@@ -22,6 +22,7 @@ $homepageLogoPath = (string) ($settings['homepage_logo_path'] ?? '');
 $homepageLayout = (string) ($settings['homepage_layout'] ?? 'contained');
 $afterLoginRedirect = (string) ($settings['after_login_redirect'] ?? 'admin');
 $afterLoginCustomUrl = (string) ($settings['after_login_custom_url'] ?? '');
+$nauticLoginTestmode = (string) ($settings['nautic_login_testmode'] ?? '0');
 
 // Startseiten-Modus & Modul-Einstellungen
 $homepageMode = (string) ($settings['homepage_mode'] ?? 'blocks');
@@ -571,6 +572,38 @@ ob_start();
                                    value="<?= htmlspecialchars($afterLoginCustomUrl, ENT_QUOTES, 'UTF-8') ?>"
                                    placeholder="z.B. ?route=admin/users oder /intern">
                         </div>
+                    </div>
+                </div>
+
+                <!-- Nautic Login-Maske (Testmodus) -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="p-1.5 bg-primary bg-opacity-10 text-primary rounded">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-compass-fill" viewBox="0 0 16 16">
+                                    <path d="M15.5 8.516a7.5 7.5 0 1 1-9.462-7.24A1 1 0 0 1 7 0h2a1 1 0 0 1 .962 1.276 7.5 7.5 0 0 1 5.538 7.24m-3.61-3.905L6.94 7.439 4.11 12.39l4.95-2.828 2.83-4.95z"/>
+                                </svg>
+                            </span>
+                            <div>
+                                <h5 class="card-title mb-0 fw-semibold text-dark">Nautic Login-Maske: Testmodus</h5>
+                                <small class="text-muted">Steuert die Anzeige der Schnell-Login-Buttons auf der Nautic-Logonseite</small>
+                            </div>
+                        </div>
+                        <a href="?route=nautic/login" target="_blank" class="btn btn-sm btn-outline-secondary">
+                            Login-Maske ansehen &rarr;
+                        </a>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" role="switch" id="nautic_login_testmode" name="nautic_login_testmode" value="1" <?= $nauticLoginTestmode === '1' ? 'checked' : '' ?>>
+                            <label class="form-check-label fw-bold" for="nautic_login_testmode">
+                                Testmodus / Schnell-Login auf Nautic-Logonseite anzeigen
+                            </label>
+                        </div>
+                        <p class="text-muted small mb-0">
+                            <strong>Aus (Standard &amp; empfohlen):</strong> Die Maske ist maximal schlank – es wird nur das E-Mail-Feld angezeigt, danach der 10-stellige Code in kleinen Einzelboxen.<br>
+                            <strong>Ein:</strong> Zeigt Schnell-Buttons (Beat, Flottenleitung, Lukas) zur schnellen Anmeldung während der Entwicklungs- oder Demo-Phase an.
+                        </p>
                     </div>
                     <div class="card-footer bg-white border-top p-3">
                         <button type="submit" class="btn btn-primary">

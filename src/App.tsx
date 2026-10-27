@@ -553,6 +553,9 @@ export default function App() {
 
   // State für Nautic Logon & Account-Anforderung
   const [authViewMode, setAuthViewMode] = useState<'login' | 'register'>('login');
+  const [nauticLoginStep, setNauticLoginStep] = useState<'email' | 'code'>('email');
+  const [nauticLoginTestMode, setNauticLoginTestMode] = useState<boolean>(false);
+  const [codeDigits, setCodeDigits] = useState<string[]>(['R', 'O', 'L', 'A', 'N', 'D', '1', '2', '3', '4']);
   const [loginEmail, setLoginEmail] = useState<string>('beat@bootschule-see.ch');
   const [loginCode, setLoginCode] = useState<string>('ROLAND1234');
   const [loginSuccessMsg, setLoginSuccessMsg] = useState<string | null>(null);
@@ -729,15 +732,71 @@ export default function App() {
     setTimeout(() => setMagicFeedback(null), 6000);
   };
 
+  const handleDigitChange = (index: number, val: string) => {
+    const clean = val.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const newDigits = [...codeDigits];
+    newDigits[index] = clean.slice(-1);
+    setCodeDigits(newDigits);
+    setLoginCode(newDigits.join(''));
+
+    if (clean && index < 9) {
+      const nextInput = document.getElementById(`digit-box-${index + 1}`);
+      if (nextInput) (nextInput as HTMLInputElement).focus();
+    }
+  };
+
+  const handleDigitKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !codeDigits[index] && index > 0) {
+      const prevInput = document.getElementById(`digit-box-${index - 1}`);
+      if (prevInput) (prevInput as HTMLInputElement).focus();
+    }
+  };
+
+  const handleDigitPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+    if (!pasted) return;
+    const newDigits = [...codeDigits];
+    for (let i = 0; i < 10; i++) {
+      newDigits[i] = pasted[i] || '';
+    }
+    setCodeDigits(newDigits);
+    setLoginCode(newDigits.join(''));
+    const targetIdx = Math.min(pasted.length, 9);
+    const targetEl = document.getElementById(`digit-box-${targetIdx}`);
+    if (targetEl) (targetEl as HTMLInputElement).focus();
+  };
+
+  const fillTestCode = (code: string) => {
+    const chars = code.toUpperCase().split('');
+    const newDigits = Array(10).fill('');
+    chars.forEach((c, idx) => {
+      if (idx < 10) newDigits[idx] = c;
+    });
+    setCodeDigits(newDigits);
+    setLoginCode(code);
+  };
+
   const handleNauticLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Stufe 1: Nur E-Mail eingegeben -> Weiter zu Stufe 2 (Code eingeben)
+    if (nauticLoginStep === 'email') {
+      if (!loginEmail.trim()) return;
+      setNauticLoginStep('code');
+      setLoginSuccessMsg(`Magic-Code wurde an ${loginEmail} gesendet. Bitte gib den Code unten in die Boxen ein.`);
+      setTimeout(() => setLoginSuccessMsg(null), 4000);
+      return;
+    }
+
+    // Stufe 2: Code bestätigen & Anmelden
     const emailLower = loginEmail.trim().toLowerCase();
 
     // Prüfen, ob Fahrlehrer
     const matchInst = instructors.find(i => i.email.toLowerCase() === emailLower);
     if (matchInst) {
       setCurrentInstructorId(matchInst.id);
-      setLoginSuccessMsg(`Magic-Link bestätigt! Erfolgreich angemeldet als Fahrlehrer (${matchInst.name}).`);
+      setLoginSuccessMsg(`Magic-Code bestätigt! Erfolgreich angemeldet als Fahrlehrer (${matchInst.name}).`);
       setTimeout(() => {
         setLoginSuccessMsg(null);
         setActiveTab('instructor');
@@ -747,7 +806,7 @@ export default function App() {
 
     // Prüfen, ob Admin / Flottenleitung
     if (emailLower.includes('admin') || emailLower.includes('office') || emailLower === 'coachingboot@gmail.com') {
-      setLoginSuccessMsg(`Magic-Link bestätigt! Erfolgreich angemeldet als Flottenleitung (${loginEmail}).`);
+      setLoginSuccessMsg(`Magic-Code bestätigt! Erfolgreich angemeldet als Flottenleitung (${loginEmail}).`);
       setTimeout(() => {
         setLoginSuccessMsg(null);
         setActiveTab('payroll');
@@ -756,7 +815,7 @@ export default function App() {
     }
 
     // Standard: Schüler / Kunde / Bootsmieter
-    setLoginSuccessMsg(`Magic-Link bestätigt! Willkommen an Bord (${loginEmail}). Weiterleitung zum Kundenportal...`);
+    setLoginSuccessMsg(`Magic-Code bestätigt! Willkommen an Bord (${loginEmail}). Weiterleitung zum Kundenportal...`);
     setTimeout(() => {
       setLoginSuccessMsg(null);
       setActiveTab('student');
@@ -2115,108 +2174,193 @@ export default function App() {
                   </div>
                 )}
 
-                {/* ANSICHT 1: UNIFIZIERTER MAGIC-LINK LOGIN (KEINE ROLLEN-BUTTONS) */}
+                {/* ANSICHT 1: UNIFIZIERTER MAGIC-LINK LOGIN (2 STUFEN) */}
                 {authViewMode === 'login' ? (
-                  <form onSubmit={handleNauticLoginSubmit} className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Deine E-Mail-Adresse
-                      </label>
-                      <div className="relative">
-                        <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                        <input
-                          type="email"
-                          value={loginEmail}
-                          onChange={e => setLoginEmail(e.target.value)}
-                          required
-                          className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition shadow-inner"
-                          placeholder="deine-adresse@domain.ch"
-                        />
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-1">
-                        Wir senden dir sofort einen sicheren, passwortlosen Magic-Link.
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
-                          <Key className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Bereits einen Einmalcode? <span className="text-slate-400 font-normal">(optional)</span></span>
+                  nauticLoginStep === 'email' ? (
+                    /* ================================================== */
+                    /* STUFE 1 (STANDARD): NUR E-MAIL-ADRESSE EINGEBEN   */
+                    /* ================================================== */
+                    <form onSubmit={handleNauticLoginSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Deine E-Mail-Adresse
                         </label>
+                        <div className="relative">
+                          <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                          <input
+                            type="email"
+                            value={loginEmail}
+                            onChange={e => setLoginEmail(e.target.value)}
+                            required
+                            autoFocus
+                            className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition shadow-inner"
+                            placeholder="name@nautic.ch"
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Wir senden dir sofort einen sicheren, passwortlosen Magic-Code.
+                        </p>
                       </div>
-                      <input
-                        type="text"
-                        value={loginCode}
-                        onChange={e => setLoginCode(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none transition"
-                        placeholder="z. B. ROLAND1234 oder leer lassen"
-                      />
-                    </div>
 
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                      <label className="flex items-center gap-1.5 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={loginRememberMe}
-                          onChange={e => setLoginRememberMe(e.target.checked)}
-                          className="rounded text-sky-600 focus:ring-sky-500"
-                        />
-                        <span>E-Mail auf diesem Gerät merken</span>
-                      </label>
-                      <span className="text-[11px] text-slate-400">CH 256-Bit SSL</span>
-                    </div>
+                      <div className="flex items-center justify-between text-xs text-slate-500">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={loginRememberMe}
+                            onChange={e => setLoginRememberMe(e.target.checked)}
+                            className="rounded text-sky-600 focus:ring-sky-500"
+                          />
+                          <span>E-Mail auf diesem Gerät merken</span>
+                        </label>
+                        <span className="text-[11px] text-slate-400">CH 256-Bit SSL</span>
+                      </div>
 
-                    <button
-                      type="submit"
-                      className="w-full py-2.5 px-4 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <LogIn className="w-4 h-4" />
-                      <span>Per Magic-Link anmelden &rarr;</span>
-                    </button>
-
-                    {/* Umschalten zu: Account anfordern */}
-                    <div className="pt-2 text-center">
                       <button
-                        type="button"
-                        onClick={() => setAuthViewMode('register')}
-                        className="text-xs text-sky-700 hover:text-sky-900 font-semibold inline-flex items-center gap-1.5 transition cursor-pointer hover:underline"
+                        type="submit"
+                        className="w-full py-2.5 px-4 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
                       >
-                        <UserPlus className="w-3.5 h-3.5" />
-                        <span>Noch kein Konto? Jetzt Account anfordern &rarr;</span>
+                        <LogIn className="w-4 h-4" />
+                        <span>Magic-Code anfordern &rarr;</span>
                       </button>
-                    </div>
 
-                    {/* Schnellzugriff Demo Buttons für Prototyp */}
-                    <div className="pt-3 border-t border-slate-200/80">
-                      <div className="text-[11px] font-semibold text-slate-400 mb-1.5">
-                        Schnellauswahl für Demo / Testen:
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
+                      {/* Umschalten zu: Account anfordern */}
+                      <div className="pt-2 text-center border-t border-slate-100">
                         <button
                           type="button"
-                          onClick={() => setLoginEmail('beat@bootschule-see.ch')}
-                          className="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-lg text-[11px] font-medium border border-sky-200 transition"
+                          onClick={() => setAuthViewMode('register')}
+                          className="text-xs text-sky-700 hover:text-sky-900 font-semibold inline-flex items-center gap-1.5 transition cursor-pointer hover:underline"
                         >
-                          Beat (Fahrlehrer)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setLoginEmail('office@studiocreativo.ch')}
-                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-medium border border-slate-200 transition"
-                        >
-                          Office (Admin)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setLoginEmail('lukas.berner@swiss-pilot.ch')}
-                          className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[11px] font-medium border border-emerald-200 transition"
-                        >
-                          Lukas (Schüler)
+                          <UserPlus className="w-3.5 h-3.5" />
+                          <span>Noch kein Nautic-Konto? Jetzt Account anfordern &rarr;</span>
                         </button>
                       </div>
-                    </div>
-                  </form>
+
+                      {/* Schnellzugriff Demo Buttons für Prototyp (NUR WENN IM ADMIN AKTIVIERT) */}
+                      {nauticLoginTestMode && (
+                        <div className="pt-3 border-t border-slate-200/80 animate-in fade-in">
+                          <div className="text-[11px] font-semibold text-amber-600 flex items-center gap-1 mb-1.5">
+                            <Sparkles className="w-3 h-3" />
+                            <span>Testmodus aktiv (Schnell-Auswahl):</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLoginEmail('beat@bootschule-see.ch');
+                                setNauticLoginStep('code');
+                                fillTestCode('ROLAND1234');
+                              }}
+                              className="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 rounded-lg text-[11px] font-medium border border-sky-200 transition cursor-pointer"
+                            >
+                              Beat (Fahrlehrer)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLoginEmail('office@studiocreativo.ch');
+                                setNauticLoginStep('code');
+                                fillTestCode('ROLAND1234');
+                              }}
+                              className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-medium border border-slate-200 transition cursor-pointer"
+                            >
+                              Office (Admin)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLoginEmail('lukas.berner@swiss-pilot.ch');
+                                setNauticLoginStep('code');
+                                fillTestCode('LUKAS12345');
+                              }}
+                              className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[11px] font-medium border border-emerald-200 transition cursor-pointer"
+                            >
+                              Lukas (Schüler)
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </form>
+                  ) : (
+                    /* ================================================== */
+                    /* STUFE 2: MAGIC-CODE IN KLEINEN BOXEN EINGEBEN      */
+                    /* ================================================== */
+                    <form onSubmit={handleNauticLoginSubmit} className="space-y-4 animate-in fade-in">
+                      {/* E-Mail Info & Wechseln-Button */}
+                      <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div className="text-left">
+                          <span className="text-[10px] text-slate-400 block font-medium">E-Mail-Adresse:</span>
+                          <span className="text-xs font-mono font-bold text-slate-800">{loginEmail}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setNauticLoginStep('email')}
+                          className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition cursor-pointer"
+                        >
+                          E-Mail ändern
+                        </button>
+                      </div>
+
+                      <div className="text-center">
+                        <h4 className="text-sm font-bold text-slate-900">Magic-Code eingeben</h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Gib deinen 10-stelligen Code aus der E-Mail ein:
+                        </p>
+                      </div>
+
+                      {/* 10 kleine Boxen – genau eine Box pro Code-Zeichen */}
+                      <div className="flex justify-between gap-1 sm:gap-1.5 py-1">
+                        {codeDigits.map((digit, idx) => (
+                          <input
+                            key={idx}
+                            id={`digit-box-${idx}`}
+                            type="text"
+                            maxLength={1}
+                            value={digit}
+                            onChange={e => handleDigitChange(idx, e.target.value)}
+                            onKeyDown={e => handleDigitKeyDown(idx, e)}
+                            onPaste={handleDigitPaste}
+                            autoFocus={idx === 0}
+                            className="w-8 sm:w-9 h-11 text-center font-mono font-bold text-sm sm:text-base text-sky-950 bg-slate-50 border-2 border-slate-300 rounded-lg focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-200 focus:outline-none transition shadow-inner"
+                          />
+                        ))}
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full py-2.5 px-4 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Code bestätigen &amp; Anmelden</span>
+                      </button>
+
+                      <div className="text-center pt-1 border-t border-slate-100 flex items-center justify-center gap-1.5 text-xs text-slate-500">
+                        <span>Keinen Code erhalten?</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLoginSuccessMsg(`Neuer Magic-Code wurde an ${loginEmail} gesendet.`);
+                            setTimeout(() => setLoginSuccessMsg(null), 3000);
+                          }}
+                          className="font-semibold text-sky-700 hover:text-sky-900 hover:underline cursor-pointer"
+                        >
+                          Neuen Code anfordern
+                        </button>
+                      </div>
+
+                      {/* Testmodus: Backdoor Code einfüllen */}
+                      {nauticLoginTestMode && (
+                        <div className="pt-2 text-center">
+                          <button
+                            type="button"
+                            onClick={() => fillTestCode('ROLAND1234')}
+                            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-[11px] font-semibold border border-amber-200 transition cursor-pointer"
+                          >
+                            Dev-Code (ROLAND1234) einfüllen
+                          </button>
+                        </div>
+                      )}
+                    </form>
+                  )
                 ) : (
                   /* ANSICHT 2: NEUEN ACCOUNT ANFORDERN */
                   <form onSubmit={handleRegisterAccountSubmit} className="space-y-3.5">
@@ -2330,8 +2474,12 @@ export default function App() {
                     <Shield className="w-3 h-3 text-sky-600" />
                     <span>Nautic Modul v2.4</span>
                   </span>
-                  <span>Geschützter Bereich</span>
                 </div>
+              </div>
+
+              {/* Copyright fest im Hauptfenster UNTEN LINKS */}
+              <div className="absolute bottom-4 left-6 z-20 text-[11px] text-sky-200/60 font-medium select-none pointer-events-auto">
+                &copy; {new Date().getFullYear()} Coaching-Boot / Nautic. Alle Rechte vorbehalten.
               </div>
             </div>
 
@@ -3145,6 +3293,45 @@ export default function App() {
                       </button>
                     </div>
                   </div>
+                </div>
+
+                {/* Nautic Login-Maske: Testmodus Schalter */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-5">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 bg-amber-50 text-amber-700 rounded-lg">
+                        <Key className="w-4 h-4" />
+                      </span>
+                      <h4 className="text-sm font-bold text-slate-900">
+                        Nautic Login-Maske: Testmodus (Schnell-Login ein / aus)
+                      </h4>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {nauticLoginTestMode
+                        ? 'Testmodus ist AKTIV: Auf der Nautic-Logonseite werden Schnell-Login-Buttons für Coach, Admin und Schüler angezeigt.'
+                        : 'Testmodus ist AUS (Standard): Loginseite ist maximal aufgeräumt – nur E-Mail-Adresse und danach 10 Magic-Code Einzelboxen.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !nauticLoginTestMode;
+                      setNauticLoginTestMode(next);
+                      setCmsToast(
+                        next
+                          ? 'Testmodus aktiviert: Schnell-Login Buttons sind jetzt im Nautic-Login sichtbar.'
+                          : 'Testmodus deaktiviert: Nautic-Login ist jetzt vollkommen aufgeräumt.'
+                      );
+                      setTimeout(() => setCmsToast(null), 3000);
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs ${
+                      nauticLoginTestMode
+                        ? 'bg-amber-500 text-white hover:bg-amber-600'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+                    }`}
+                  >
+                    <span>{nauticLoginTestMode ? 'Testmodus: EIN' : 'Testmodus: AUS'}</span>
+                  </button>
                 </div>
               </div>
             )}

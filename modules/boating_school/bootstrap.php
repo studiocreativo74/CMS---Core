@@ -2758,15 +2758,44 @@ if (isset($router) && $router !== null) {
         $error = $_SESSION['flash_nautic_error'] ?? null;
         $success = $_SESSION['flash_nautic_success'] ?? null;
         $info = $_SESSION['flash_nautic_info'] ?? null;
+        $sessionEmail = $_SESSION['nautic_login_email'] ?? null;
         require __DIR__ . '/views/portal/login.php';
     };
 
-    // Einheitlicher Magic-Link Login für alle (Fahrlehrer, Flottenleitung, Schüler)
+    // Einheitlicher 2-Stufen Magic-Code Login (Stufe 1: E-Mail -> Stufe 2: Code in Boxen)
     $nauticLoginPostHandler = static function (): void {
+        $action = trim((string) ($_POST['action'] ?? 'login'));
+
+        // Aktion: E-Mail zurücksetzen ("E-Mail ändern")
+        if ($action === 'clear_email' || $action === 'reset_email') {
+            unset($_SESSION['nautic_login_email']);
+            header('Location: ?route=nautic/login');
+            exit;
+        }
+
+        $sessionEmail = trim(strtolower((string) ($_SESSION['nautic_login_email'] ?? '')));
         $email = trim(strtolower((string) ($_POST['email'] ?? '')));
-        $code = trim(strtoupper((string) ($_POST['code'] ?? '')));
+        if ($email === '' && $sessionEmail !== '') {
+            $email = $sessionEmail;
+        }
+
         $remember = !empty($_POST['remember']);
 
+        // Code aus hidden Input oder aus den 10 Einzelboxen digit_0..digit_9 zusammensetzen
+        $code = trim(strtoupper((string) ($_POST['code'] ?? '')));
+        if ($code === '' && isset($_POST['digit_0'])) {
+            $assembled = '';
+            for ($d = 0; $d < 10; $d++) {
+                if (isset($_POST["digit_{$d}"])) {
+                    $assembled .= trim(strtoupper((string) $_POST["digit_{$d}"]));
+                }
+            }
+            if ($assembled !== '') {
+                $code = $assembled;
+            }
+        }
+
+        // Validierung E-Mail
         if ($email === '') {
             $_SESSION['flash_nautic_error'] = 'Bitte gib deine E-Mail-Adresse ein.';
             header('Location: ?route=nautic/login');
@@ -2775,11 +2804,9 @@ if (isset($router) && $router !== null) {
 
         if ($remember) {
             setcookie('nautic_remember_email', $email, time() + (86400 * 30), '/');
-        } else {
-            setcookie('nautic_remember_email', '', time() - 3600, '/');
         }
 
-        // Profil des Nutzers erkennen (für automatische Ziel-Weiterleitung)
+        // Profil des Nutzers erkennen (für automatische Ziel-Weiterleitung nach Login)
         $isCoach = false;
         $isAdmin = false;
         $isStudent = false;
@@ -2808,54 +2835,54 @@ if (isset($router) && $router !== null) {
             $targetUrl = '?route=admin/boating';
         }
 
-        // 1. Fall: Code wurde direkt eingegeben
+        // STUFE 2: Magic-Code wurde übermittelt -> Verifizierung
         if ($code !== '') {
             if (class_exists('MagicCode') && MagicCode::isDevMagicCodeValid($email, $code)) {
                 Auth::loginWithMagicCodeForEmail($email, $code);
+                unset($_SESSION['nautic_login_email']);
                 $_SESSION['flash_success'] = 'Erfolgreich via Magic-Code angemeldet!';
                 header('Location: ' . $targetUrl);
                 exit;
             }
 
             if (class_exists('Auth') && Auth::loginWithMagicCodeForEmail($email, $code)) {
+                unset($_SESSION['nautic_login_email']);
                 $_SESSION['flash_success'] = 'Erfolgreich via Magic-Code angemeldet!';
                 header('Location: ' . $targetUrl);
                 exit;
             }
 
+            $_SESSION['nautic_login_email'] = $email;
             $_SESSION['flash_nautic_error'] = 'Der eingegebene Magic-Code ist ungültig oder abgelaufen.';
-            header('Location: ?route=nautic/login');
+            header('Location: ?route=nautic/login&step=code');
             exit;
         }
 
-        // 2. Fall: Schnell-Login im Entwicklermodus für Standard-Konten
-        if (class_exists('MagicCode') && MagicCode::isDevMagicCodeEnabled()) {
-            if ($email === MagicCode::getDevMagicCodeEmail() || $email === 'beat@bootschule-see.ch' || $email === 'corinne@bootschule-see.ch' || $email === 'office@studiocreativo.ch') {
-                Auth::startSession();
-                $_SESSION['magic_authenticated'] = true;
-                $_SESSION['magic_email'] = $email;
-                $_SESSION['user_email'] = $email;
-                $_SESSION['flash_success'] = 'Erfolgreich via Magic-Link angemeldet.';
-                header('Location: ' . $targetUrl);
-                exit;
-            }
-        }
+        // STUFE 1: Nur E-Mail eingegeben -> Code erstellen, Session setzen und zu Stufe 2 wechseln
+        $_SESSION['nautic_login_email'] = $email;
 
-        // 3. Fall: Magic-Code erstellen und per E-Mail versenden
+        // Sonderfall Schnell-Login im Entwicklermodus (Backdoor für ROLAND1234)
+        $isDevMode = class_exists('MagicCode') && MagicCode::isDevMagicCodeEnabled();
+        $isDevEmail = $isDevMode && ($email === MagicCode::getDevMagicCodeEmail() || $email === 'beat@bootschule-see.ch' || $email === 'corinne@bootschule-see.ch' || $email === 'office@studiocreativo.ch');
+
         if (class_exists('MagicCode')) {
             try {
                 $created = MagicCode::createCodeForEmail($email, 'nautic_login', 1, 24);
                 MagicCode::sendEmailNotification($created['code'], $email, 'nautic_login', 1, 'office@studiocreativo.ch');
-                $_SESSION['flash_nautic_success'] = "Ein persönlicher Magic-Code ({$created['code']}) wurde an {$email} gesendet! Gib ihn einfach oben ein.";
+                $_SESSION['flash_nautic_success'] = "Ein persönlicher Magic-Code wurde an {$email} gesendet. Bitte gib den Code unten in die Boxen ein.";
             } catch (\Throwable $e) {
-                $_SESSION['flash_nautic_error'] = 'Fehler beim Erstellen des Magic-Codes: ' . $e->getMessage();
+                if ($isDevEmail) {
+                    $_SESSION['flash_nautic_info'] = 'Dev-Modus aktiv: Du kannst dich direkt mit dem Code ROLAND1234 einloggen.';
+                } else {
+                    $_SESSION['flash_nautic_error'] = 'Fehler beim Erstellen des Magic-Codes: ' . $e->getMessage();
+                }
             }
         } elseif (class_exists('BoatingCustomerMagicLinkService')) {
             $res = BoatingCustomerMagicLinkService::requestLinkByEmail($email);
             $_SESSION['flash_nautic_success'] = $res['message'] ?? 'Magic-Link wurde gesendet.';
         }
 
-        header('Location: ?route=nautic/login');
+        header('Location: ?route=nautic/login&step=code');
         exit;
     };
 
