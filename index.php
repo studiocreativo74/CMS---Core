@@ -66,6 +66,8 @@ $router->get('/', function (): void {
                     $moduleRoute = '/portal';
                 } elseif ($moduleKey === 'secure_portal') {
                     $moduleRoute = '/sicherung';
+                } elseif ($moduleKey === 'boating_school') {
+                    $moduleRoute = '/nautic/login';
                 } else {
                     $moduleRoute = '/' . $moduleKey;
                 }
@@ -1488,6 +1490,22 @@ $router->post('/admin/system/health/test-sharepoint', function () use ($requireA
 
 // Aktive Module laden (Routen & Hooks registrieren)
 ModuleManager::loadActiveModules(__DIR__ . '/modules', $router);
+
+// Ausfallsicherheit: Falls das Modul "boating_school" (Nautic) aufgerufen wird, aber in der DB noch nicht aktiviert war
+$currentRouteKey = trim((string) ($_GET['route'] ?? ''), '/');
+if (
+    in_array($currentRouteKey, ['boating_school', 'boating-school', 'nautic', 'nautic/login', 'nautic/logon', 'bootschule', 'bootschule/login'], true)
+    || str_starts_with($currentRouteKey, 'admin/boating')
+    || str_starts_with($currentRouteKey, 'boating_school/')
+    || str_starts_with($currentRouteKey, 'boating-school/')
+) {
+    if (!Router::hasRoute('/' . $currentRouteKey) && file_exists(__DIR__ . '/modules/boating_school/bootstrap.php')) {
+        $bsBootstrap = __DIR__ . '/modules/boating_school/bootstrap.php';
+        $module = ['key' => 'boating_school', 'name' => 'Nautic', 'is_enabled' => 1];
+        $moduleDir = __DIR__ . '/modules/boating_school';
+        require_once $bsBootstrap;
+    }
+}
 
 $route = $_GET['route'] ?? null;
 if ($route === null || $route === '') {

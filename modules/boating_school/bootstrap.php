@@ -2899,6 +2899,82 @@ if (isset($router) && $router !== null) {
         exit;
     };
 
+    // =========================================================================
+    // MODUL-EINSTIEG FÜR /boating_school, /boating-school & /nautic
+    // =========================================================================
+    $nauticModuleEntryHandler = static function () use ($nauticLoginGetHandler, $portalStartHandler): void {
+        // Falls bereits angemeldet: direkt ins passende Dashboard / Portal
+        if (class_exists('Auth') && Auth::check()) {
+            $user = Auth::user();
+            $email = strtolower((string) ($user['email'] ?? ''));
+            $role = (string) ($user['role'] ?? '');
+
+            if ($role === 'admin' || $role === 'super_admin' || (class_exists('Rbac') && (Rbac::can('admin.boating.manage') || Rbac::can('admin.boating.view')))) {
+                header('Location: ?route=admin/boating');
+                exit;
+            }
+
+            if (class_exists('BoatingSchoolRepository')) {
+                $coachList = BoatingSchoolRepository::getInstructors(['email' => $email, 'is_active' => 1], 1, 0);
+                if (!empty($coachList)) {
+                    header('Location: ?route=admin/boating/instructor-portal');
+                    exit;
+                }
+            }
+
+            header('Location: ?route=bootschule/me/appointments');
+            exit;
+        }
+
+        // Falls explizit das Buchungsportal gewünscht ist (?portal=1):
+        if (isset($_GET['portal']) || (isset($_GET['view']) && $_GET['view'] === 'booking')) {
+            $portalStartHandler();
+            return;
+        }
+
+        // Nautic Logonseite mit SVG-Logo und Magic-Link anzeigen
+        $nauticLoginGetHandler();
+    };
+
+    $nauticModuleEntryPostHandler = static function () use ($nauticLoginPostHandler, $nauticRequestAccountPostHandler): void {
+        $action = trim((string) ($_POST['action'] ?? 'login'));
+        if ($action === 'register') {
+            $nauticRequestAccountPostHandler();
+            return;
+        }
+        $nauticLoginPostHandler();
+    };
+
+    // Modul-Einstiegsrouten registrieren (GET & POST)
+    $router->get('/boating_school', $nauticModuleEntryHandler);
+    $router->get('boating_school', $nauticModuleEntryHandler);
+    $router->get('/boating-school', $nauticModuleEntryHandler);
+    $router->get('boating-school', $nauticModuleEntryHandler);
+    $router->get('/nautic', $nauticModuleEntryHandler);
+    $router->get('nautic', $nauticModuleEntryHandler);
+
+    $router->post('/boating_school', $nauticModuleEntryPostHandler);
+    $router->post('boating_school', $nauticModuleEntryPostHandler);
+    $router->post('/boating-school', $nauticModuleEntryPostHandler);
+    $router->post('boating-school', $nauticModuleEntryPostHandler);
+    $router->post('/nautic', $nauticModuleEntryPostHandler);
+    $router->post('nautic', $nauticModuleEntryPostHandler);
+
+    // Dedizierte Login- & Register-Aliase
+    $router->get('/boating_school/login', $nauticLoginGetHandler);
+    $router->get('boating_school/login', $nauticLoginGetHandler);
+    $router->get('/boating-school/login', $nauticLoginGetHandler);
+    $router->get('boating-school/login', $nauticLoginGetHandler);
+    $router->post('/boating_school/login', $nauticLoginPostHandler);
+    $router->post('boating_school/login', $nauticLoginPostHandler);
+    $router->post('/boating-school/login', $nauticLoginPostHandler);
+    $router->post('boating-school/login', $nauticLoginPostHandler);
+
+    $router->post('/boating_school/request-account', $nauticRequestAccountPostHandler);
+    $router->post('boating_school/request-account', $nauticRequestAccountPostHandler);
+    $router->post('/boating-school/request-account', $nauticRequestAccountPostHandler);
+    $router->post('boating-school/request-account', $nauticRequestAccountPostHandler);
+
     $router->get('/nautic/login', $nauticLoginGetHandler);
     $router->get('nautic/login', $nauticLoginGetHandler);
     $router->get('/nautic/logon', $nauticLoginGetHandler);

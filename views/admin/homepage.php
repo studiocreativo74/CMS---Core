@@ -889,6 +889,8 @@ function onModuleSelectChange(selectEl) {
             routeInput.value = '/portal';
         } else if (selectEl.value === 'secure_portal') {
             routeInput.value = '/sicherung';
+        } else if (selectEl.value === 'boating_school') {
+            routeInput.value = '/nautic/login';
         } else {
             routeInput.value = '/' + selectEl.value;
         }
