@@ -21,6 +21,10 @@ $homepageSecondaryColor = (string) (!empty($settings['homepage_secondary_color']
 $homepageBgColor = (string) ($settings['homepage_background_color'] ?? '#f8fafc');
 $homepageTextColor = (string) ($settings['homepage_text_color'] ?? '#222222');
 $homepageLogoPath = (string) ($settings['homepage_logo_path'] ?? '');
+if ($homepageLogoPath !== '' && str_starts_with($homepageLogoPath, 'public/')) {
+    $homepageLogoPath = substr($homepageLogoPath, 7);
+}
+$homepageTemplate = (string) ($settings['homepage_template'] ?? 'standard');
 $homepageLayout = (string) ($settings['homepage_layout'] ?? 'contained');
 
 $homepageMode = (string) ($settings['homepage_mode'] ?? 'blocks');
@@ -703,6 +707,13 @@ $containerMaxWidth = match ($homepageLayout) {
                             </div>
                             <button type="submit" class="btn">Weiter</button>
                         </form>
+                        <?php if ($homepageTemplate === 'nautic' || (class_exists('ModuleManager') && ModuleManager::isEnabled('boating_school'))): ?>
+                            <div style="text-align: center; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed #e2e8f0;">
+                                <a href="?route=nautic/login" style="color: var(--cms-primary); font-size: 0.88rem; text-decoration: none; font-weight: 600;">
+                                    Noch kein Konto? Jetzt Nautic-Account anfordern &rarr;
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php else: ?>
                     <!-- Schritt 2: E-Mail in der Session gespeichert -->

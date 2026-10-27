@@ -18,6 +18,7 @@ require_once __DIR__ . '/core/Settings.php';
 require_once __DIR__ . '/core/SharePointConfig.php';
 require_once __DIR__ . '/core/SecurePortalConfig.php';
 require_once __DIR__ . '/core/HomepageBlock.php';
+require_once __DIR__ . '/core/HomepageTemplateService.php';
 require_once __DIR__ . '/core/Version.php';
 require_once __DIR__ . '/core/MigrationManager.php';
 require_once __DIR__ . '/core/Upload.php';
@@ -827,6 +828,34 @@ $router->post('/admin/homepage/block-delete', function () use ($requireAdminAuth
     }
 
     header('Location: ?route=admin/homepage');
+    exit;
+});
+
+// POST /admin/homepage/apply-template - Startseiten-Vorlage anwenden (z.B. Nautic, Standard, Corporate, Minimal)
+$router->post('/admin/homepage/apply-template', function () use ($requireAdminAuthAndCsrf): void {
+    $requireAdminAuthAndCsrf('admin/homepage');
+
+    if (class_exists('Rbac') && !Rbac::can('admin.homepage.manage') && !Rbac::can('admin.homepage')) {
+        $_SESSION['flash_error'] = 'Zugriff verweigert: Fehlende Berechtigung für Startseiten-Vorlagen.';
+        header('Location: ?route=admin/homepage');
+        exit;
+    }
+
+    $templateKey = trim((string) ($_POST['template_key'] ?? ''));
+    $replaceBlocks = !empty($_POST['replace_blocks']);
+
+    if (class_exists('HomepageTemplateService')) {
+        $result = HomepageTemplateService::apply($templateKey, $replaceBlocks);
+        if ($result['success']) {
+            $_SESSION['flash_success'] = $result['message'];
+        } else {
+            $_SESSION['flash_error'] = $result['message'];
+        }
+    } else {
+        $_SESSION['flash_error'] = 'HomepageTemplateService nicht verfügbar.';
+    }
+
+    header('Location: ?route=admin/homepage&tab=templates');
     exit;
 });
 

@@ -34,10 +34,13 @@ import {
   LogIn,
   UserPlus,
   UserCheck,
-  Key
+  Key,
+  Palette,
+  LayoutTemplate,
+  Sparkles
 } from 'lucide-react';
 
-// --- Datentypen & Mock-Daten der Bootsfahrschule ---
+// --- Datentypen & Mock-Daten der Bootsfahrschule & CMS ---
 
 interface Instructor {
   id: number;
@@ -145,6 +148,70 @@ const INITIAL_ACCOUNT_REQUESTS: AccountRequest[] = [
     status: 'pending',
     created_at: '2026-03-24 16:30',
     notes: 'Möchte Motorbootprüfung Kat. A absolvieren. Theorieprüfung Schifffahrtsamt bereits bestanden.'
+  }
+];
+
+export interface CmsBlock {
+  id: number;
+  type: 'hero' | 'features' | 'two_column' | 'cta' | 'text';
+  title: string;
+  subtitle: string;
+  content: string;
+  sort_order: number;
+  is_visible: boolean;
+  extra?: any;
+}
+
+export const INITIAL_CMS_BLOCKS: CmsBlock[] = [
+  {
+    id: 1,
+    type: 'hero',
+    title: 'Leinen los! Deine Bootsfahrschule & Charter am See',
+    subtitle: 'Professionelle Ausbildung für Motorboot Kat. A & Segeln Kat. D sowie exklusive Bootsvermietung',
+    content: 'Lerne das Bootfahren von Grund auf bei erfahrenen und lizenzierten Skippern. Flexible Ausbildungszeiten von Montag bis Sonntag, transparenter Ausbildungsstand und direkte Terminbuchung.',
+    sort_order: 10,
+    is_visible: true,
+    extra: { btn_text: 'Zum Magic-Link Login', btn_link: '#magic-section' }
+  },
+  {
+    id: 2,
+    type: 'features',
+    title: 'Unser Angebot auf dem Wasser',
+    subtitle: 'Von den ersten Manövern bis zum amtlichen Schiffsführerausweis und Wochenend-Charter',
+    content: '',
+    sort_order: 20,
+    is_visible: true,
+    extra: {
+      items: [
+        { title: 'Motorboot Kat. A', text: 'Intensive Prüfungsvorbereitung, Hafenmanöver, An- und Ablegen, Mann-über-Bord und Knotenkunde mit hoher Erfolgsquote.' },
+        { title: 'Segelausbildung Kat. D', text: 'Von den Segelgrundlagen bis zur Regatta-Taktik. Praxisnahe Ausbildung bei jedem Wind auf dem See.' },
+        { title: 'Flottenvermietung & Charter', text: 'Gepflegte Boote (Boesch, Axopar) für Ausflüge, Sonnenuntergangs-Cruises oder private Events mieten.' },
+        { title: 'Crew & Schüler Portal', text: 'Passwortloser Magic-Link Zugang: Alle Fahrstunden, Ausbildungskarten, Termine und Abrechnungen auf einen Blick.' }
+      ]
+    }
+  },
+  {
+    id: 3,
+    type: 'two_column',
+    title: 'Warum Nautic Bootsfahrschule?',
+    subtitle: 'Sicherheit, modernste Technik und persönliche Betreuung',
+    content: 'Unsere Ausbildungsflotte erfüllt höchste Sicherheitsstandards und wird laufend gewartet. Mit flexiblen Ausbildungszeiten von Montag bis Sonntag passen wir uns deinem Terminkalender an.\n\nAlle Fahrlehrer sind staatlich lizenziert und bringen jahrelange Erfahrung auf Schweizer Seen mit.',
+    sort_order: 30,
+    is_visible: true,
+    extra: {
+      col2_title: 'Transparenz & Direkte Buchung',
+      col2_content: 'Keine versteckten Gebühren: Treibstoff, Versicherung und Prüfungsbegleitung sind transparent kalkuliert.\n\nPrüfungsstandorte: Schifffahrtsamt Zürich, Luzern und St. Gallen.'
+    }
+  },
+  {
+    id: 4,
+    type: 'cta',
+    title: 'Bereit für das Skipper-Patent?',
+    subtitle: 'Fordere jetzt dein persönliches Konto an oder logge dich direkt per Magic-Link ein.',
+    content: 'Als Schüler oder Crew-Mitglied benötigst du kein Passwort. Gib einfach deine E-Mail-Adresse ein und starte sofort.',
+    sort_order: 40,
+    is_visible: true,
+    extra: { btn_text: 'Jetzt per Magic-Link einloggen', btn_link: '#magic-section' }
   }
 ];
 
@@ -402,7 +469,87 @@ const INITIAL_WORKING_HOURS: CoachWorkingHour[] = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'payroll' | 'student' | 'instructor' | 'login' | 'architecture'>('login');
+  const [activeTab, setActiveTab] = useState<'payroll' | 'student' | 'instructor' | 'login' | 'cms' | 'architecture'>('cms');
+
+  // State für Startseite bearbeiten & Mini-CMS (Vorlagen & Inhaltsblöcke)
+  const [cmsActiveTemplate, setCmsActiveTemplate] = useState<'nautic' | 'standard' | 'corporate' | 'minimal'>('nautic');
+  const [cmsPageTitle, setCmsPageTitle] = useState<string>('Nautic – Bootsfahrschule & Vermietung');
+  const [cmsPageSubtitle, setCmsPageSubtitle] = useState<string>('Fahrstunden Kat. A & D, Bootscharter, Crew & Disposition');
+  const [cmsPageDescription, setCmsPageDescription] = useState<string>('Offizielle Ausbildungs- und Charterplattform. Buche deine Lektionen oder melde dich per sicherem Magic-Link an.');
+  const [cmsPrimaryColor, setCmsPrimaryColor] = useState<string>('#0284c7');
+  const [cmsSecondaryColor, setCmsSecondaryColor] = useState<string>('#0369a1');
+  const [cmsBgColor, setCmsBgColor] = useState<string>('#f0f9ff');
+  const [cmsTextColor, setCmsTextColor] = useState<string>('#0f172a');
+  const [cmsLayout, setCmsLayout] = useState<'contained' | 'wide' | 'full'>('wide');
+  const [cmsBlocks, setCmsBlocks] = useState<CmsBlock[]>(INITIAL_CMS_BLOCKS);
+  const [cmsSubTab, setCmsSubTab] = useState<'templates' | 'blocks' | 'design' | 'preview'>('templates');
+  const [cmsEditingBlock, setCmsEditingBlock] = useState<CmsBlock | null>(null);
+  const [cmsToast, setCmsToast] = useState<string | null>(null);
+
+  const handleApplyCmsTemplate = (key: 'nautic' | 'standard' | 'corporate' | 'minimal') => {
+    setCmsActiveTemplate(key);
+    if (key === 'nautic') {
+      setCmsPageTitle('Nautic – Bootsfahrschule & Vermietung');
+      setCmsPageSubtitle('Fahrstunden Kat. A & D, Bootscharter, Crew & Disposition');
+      setCmsPageDescription('Offizielle Ausbildungs- und Charterplattform. Buche deine Lektionen oder melde dich per sicherem Magic-Link an.');
+      setCmsPrimaryColor('#0284c7');
+      setCmsSecondaryColor('#0369a1');
+      setCmsBgColor('#f0f9ff');
+      setCmsTextColor('#0f172a');
+      setCmsLayout('wide');
+      setCmsBlocks(INITIAL_CMS_BLOCKS);
+      setCmsToast("Nautic-Vorlage erfolgreich angewendet! 4 maritime Abschnitte wurden im Tab 'Inhaltsblöcke' angelegt.");
+    } else if (key === 'standard') {
+      setCmsPageTitle('Willkommen im Kunden- & Mitarbeiterportal');
+      setCmsPageSubtitle('Sicherer Zugriff über passwortlose Magic-Links');
+      setCmsPageDescription('Zentraler Einstiegspunkt für Kunden, Partner und Mitarbeiter.');
+      setCmsPrimaryColor('#0d6efd');
+      setCmsSecondaryColor('#6c757d');
+      setCmsBgColor('#f8fafc');
+      setCmsTextColor('#222222');
+      setCmsLayout('contained');
+      setCmsBlocks([INITIAL_CMS_BLOCKS[0], INITIAL_CMS_BLOCKS[1]]);
+      setCmsToast("Standard-Vorlage angewendet.");
+    } else if (key === 'corporate') {
+      setCmsPageTitle('Unternehmensportal & Services');
+      setCmsPageSubtitle('Exklusiver Zugang für autorisierte Partner & Kunden');
+      setCmsPageDescription('Verwalte deine Projekte, Verträge und Services an einem zentralen Ort.');
+      setCmsPrimaryColor('#1e293b');
+      setCmsSecondaryColor('#f59e0b');
+      setCmsBgColor('#ffffff');
+      setCmsTextColor('#0f172a');
+      setCmsLayout('wide');
+      setCmsBlocks([INITIAL_CMS_BLOCKS[0], INITIAL_CMS_BLOCKS[2]]);
+      setCmsToast("Corporate-Vorlage angewendet.");
+    } else {
+      setCmsPageTitle('Portal Login');
+      setCmsPageSubtitle('Bitte authentifiziere dich mit deiner registrierten E-Mail-Adresse');
+      setCmsPageDescription('Passwortlose Anmeldung.');
+      setCmsPrimaryColor('#0284c7');
+      setCmsSecondaryColor('#64748b');
+      setCmsBgColor('#f8fafc');
+      setCmsTextColor('#1e293b');
+      setCmsLayout('contained');
+      setCmsBlocks([]);
+      setCmsToast("Minimal-Vorlage angewendet (reiner Magic-Login ohne Zusatzblöcke).");
+    }
+    setTimeout(() => setCmsToast(null), 4000);
+  };
+
+  const handleUpdateBlock = (updated: CmsBlock) => {
+    setCmsBlocks(prev => prev.map(b => b.id === updated.id ? updated : b));
+    setCmsEditingBlock(null);
+    setCmsToast(`Inhaltsblock "${updated.title}" wurde erfolgreich aktualisiert.`);
+    setTimeout(() => setCmsToast(null), 3000);
+  };
+
+  const handleToggleBlockVisible = (id: number) => {
+    setCmsBlocks(prev => prev.map(b => b.id === id ? { ...b, is_visible: !b.is_visible } : b));
+  };
+
+  const handleDeleteBlock = (id: number) => {
+    setCmsBlocks(prev => prev.filter(b => b.id !== id));
+  };
 
   // State für Nautic Logon & Account-Anforderung
   const [authViewMode, setAuthViewMode] = useState<'login' | 'register'>('login');
@@ -872,6 +1019,17 @@ export default function App() {
               <LogIn className="w-4 h-4" />
               <span className="hidden md:inline">4. Nautic Logonseite (SVG Logo)</span>
               <span className="md:hidden">Logon</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('cms')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                activeTab === 'cms' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <LayoutTemplate className="w-4 h-4" />
+              <span className="hidden md:inline">5. Startseite &amp; Mini-CMS</span>
+              <span className="md:hidden">CMS</span>
             </button>
 
             <button
@@ -2367,7 +2525,813 @@ export default function App() {
         )}
 
         {/* ============================================================== */}
-        {/* TAB 5: BACKEND ARCHITEKTUR & MIGRATIONEN                      */}
+        {/* TAB 5: STARTSEITE BEARBEITEN & MINI-CMS (TEMPLATES & BLÖCKE)   */}
+        {/* ============================================================== */}
+        {activeTab === 'cms' && (
+          <div className="space-y-6">
+            {/* Header mit Direktlinks */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 bg-sky-100 text-sky-700 rounded-lg">
+                    <LayoutTemplate className="w-5 h-5" />
+                  </span>
+                  <h2 className="text-xl font-bold text-slate-900">Startseite bearbeiten &amp; Mini-CMS</h2>
+                </div>
+                <p className="text-sm text-slate-600 mt-1">
+                  Wähle eine fertige Vorlage (z. B. <strong>Nautic – Bootsfahrschule &amp; Vermietung</strong>), bearbeite alle Inhaltsblöcke nach Belieben und passe Farben, Logo und Layout in Echtzeit an.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <a
+                  href="?route=admin/homepage"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
+                  title="Öffnet das PHP-Backend Mini-CMS im neuen Browser-Tab"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>PHP Live-CMS öffnen (?route=admin/homepage)</span>
+                </a>
+                <a
+                  href="?route=/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+                  title="Öffnet die öffentliche Startseite"
+                >
+                  <Eye className="w-4 h-4 text-sky-600" />
+                  <span>Live-Startseite ansehen (?route=/)</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Toast Feedback */}
+            {cmsToast && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2 animate-in fade-in shadow-xs">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{cmsToast}</span>
+              </div>
+            )}
+
+            {/* CMS Sub-Navigation Tabs */}
+            <div className="flex bg-slate-100 p-1 rounded-2xl gap-1 text-xs font-semibold overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setCmsSubTab('templates')}
+                className={`py-2 px-4 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                  cmsSubTab === 'templates' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>1. Vorlagen (Templates)</span>
+                <span className="px-1.5 py-0.2 bg-sky-100 text-sky-800 rounded-full text-[10px]">
+                  {cmsActiveTemplate.toUpperCase()}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCmsSubTab('blocks')}
+                className={`py-2 px-4 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                  cmsSubTab === 'blocks' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Layers className="w-4 h-4 text-sky-600" />
+                <span>2. Inhaltsblöcke (Sections)</span>
+                <span className="px-1.5 py-0.2 bg-slate-200 text-slate-700 rounded-full text-[10px]">
+                  {cmsBlocks.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCmsSubTab('design')}
+                className={`py-2 px-4 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                  cmsSubTab === 'design' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Palette className="w-4 h-4 text-indigo-600" />
+                <span>3. Design, Farben &amp; Logo</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCmsSubTab('preview')}
+                className={`py-2 px-4 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                  cmsSubTab === 'preview' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Eye className="w-4 h-4 text-emerald-600" />
+                <span>4. Live-Vorschau der Startseite</span>
+              </button>
+            </div>
+
+            {/* ============================================================== */}
+            {/* SUBTAB 1: VORLAGEN (TEMPLATES) AUSWAHL                         */}
+            {/* ============================================================== */}
+            {cmsSubTab === 'templates' && (
+              <div className="space-y-4">
+                <div className="bg-sky-50 border border-sky-200 rounded-2xl p-4 text-xs text-sky-900 flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block text-sm font-bold mb-0.5">Template-System für die Startseite</strong>
+                    <span>
+                      Wähle eine der Vorlagen, um Design, Farben und Abschnitte mit 1-Klick vorzubereiten. 
+                      Sobald ein Template angewendet wird, werden alle Inhaltsblöcke generiert und können anschließend im Tab <strong>„Inhaltsblöcke“</strong> frei editiert werden.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Template 1: NAUTIC (EMPFOHLEN) */}
+                  <div className={`bg-white rounded-2xl p-5 border-2 transition shadow-sm relative overflow-hidden flex flex-col justify-between ${
+                    cmsActiveTemplate === 'nautic' ? 'border-sky-500 shadow-md ring-2 ring-sky-100' : 'border-slate-200 hover:border-slate-300'
+                  }`}>
+                    {cmsActiveTemplate === 'nautic' && (
+                      <div className="absolute top-0 right-0 bg-sky-600 text-white text-[11px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                        ● Aktiv im System
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2.5 py-0.5 bg-sky-100 text-sky-800 rounded-full text-xs font-bold">
+                          Offiziell für Nautic
+                        </span>
+                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-semibold">
+                          Empfohlen
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 mb-1">Nautic – Bootsfahrschule &amp; Vermietung</h3>
+                      <p className="text-xs text-slate-600 mb-3">
+                        Vollständige maritime Startseite für Motorboot Kat. A &amp; Segeln Kat. D, Flottencharter, Skipper-Team und Magic-Link Login.
+                      </p>
+
+                      {/* Mini Preview Box */}
+                      <div className="p-3 bg-sky-50/60 rounded-xl border border-sky-100 mb-3 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500">Logo:</span>
+                          <span className="font-semibold text-sky-900 font-mono text-[11px]">SVG Vektor (Steuerrad &amp; Rumpf)</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500">Farben:</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-3.5 h-3.5 rounded-full bg-[#0284c7] inline-block border border-white shadow-xs"></span>
+                            <span className="w-3.5 h-3.5 rounded-full bg-[#0369a1] inline-block border border-white shadow-xs"></span>
+                            <span className="w-3.5 h-3.5 rounded-full bg-[#f0f9ff] inline-block border border-slate-300 shadow-xs"></span>
+                            <span className="text-[11px] font-mono text-slate-600">Ocean Blue</span>
+                          </div>
+                        </div>
+                        <div className="text-xs text-slate-700">
+                          <span className="text-slate-500">Vorkonfigurierte Blöcke:</span>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            <span className="px-1.5 py-0.5 bg-white border border-sky-200 rounded text-[10px] text-sky-800">1. Hero Aufhänger</span>
+                            <span className="px-1.5 py-0.5 bg-white border border-sky-200 rounded text-[10px] text-sky-800">2. 4× Kurse &amp; Charter</span>
+                            <span className="px-1.5 py-0.5 bg-white border border-sky-200 rounded text-[10px] text-sky-800">3. 2-Spalten Flotte</span>
+                            <span className="px-1.5 py-0.5 bg-white border border-sky-200 rounded text-[10px] text-sky-800">4. CTA Magic-Login</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleApplyCmsTemplate('nautic')}
+                      className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        cmsActiveTemplate === 'nautic'
+                          ? 'bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100'
+                          : 'bg-sky-600 hover:bg-sky-700 text-white shadow'
+                      }`}
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>{cmsActiveTemplate === 'nautic' ? 'Nautic-Vorlage erneut laden / zurücksetzen' : 'Nautic-Vorlage anwenden & im Mini-CMS bearbeiten'}</span>
+                    </button>
+                  </div>
+
+                  {/* Template 2: STANDARD CMS */}
+                  <div className={`bg-white rounded-2xl p-5 border-2 transition shadow-sm relative overflow-hidden flex flex-col justify-between ${
+                    cmsActiveTemplate === 'standard' ? 'border-sky-500 shadow-md ring-2 ring-sky-100' : 'border-slate-200 hover:border-slate-300'
+                  }`}>
+                    {cmsActiveTemplate === 'standard' && (
+                      <div className="absolute top-0 right-0 bg-sky-600 text-white text-[11px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                        ● Aktiv im System
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2.5 py-0.5 bg-slate-100 text-slate-800 rounded-full text-xs font-bold">
+                          Klassisch
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 mb-1">Standard CMS &amp; Magic-Link Portal</h3>
+                      <p className="text-xs text-slate-600 mb-3">
+                        Neutrales, universelles Design für Firmenportale mit dezenten Grautönen, Standard-Kacheln und Magic-Code Login.
+                      </p>
+
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-3 space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Farben:</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-3.5 h-3.5 rounded-full bg-[#0d6efd] inline-block border border-white"></span>
+                            <span className="w-3.5 h-3.5 rounded-full bg-[#6c757d] inline-block border border-white"></span>
+                            <span className="w-3.5 h-3.5 rounded-full bg-[#f8fafc] inline-block border border-slate-300"></span>
+                            <span className="text-[11px] font-mono text-slate-600">Standard Slate</span>
+                          </div>
+                        </div>
+                        <div className="text-slate-700">
+                          <span className="text-slate-500">Blöcke:</span> Hero Sektion + 3 Vorteils-Kacheln.
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleApplyCmsTemplate('standard')}
+                      className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        cmsActiveTemplate === 'standard'
+                          ? 'bg-slate-100 text-slate-700 border border-slate-200'
+                          : 'bg-slate-800 hover:bg-slate-900 text-white shadow'
+                      }`}
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>{cmsActiveTemplate === 'standard' ? 'Standard-Vorlage aktiv' : 'Standard-Vorlage laden'}</span>
+                    </button>
+                  </div>
+
+                  {/* Template 3: CORPORATE */}
+                  <div className={`bg-white rounded-2xl p-5 border-2 transition shadow-sm relative overflow-hidden flex flex-col justify-between ${
+                    cmsActiveTemplate === 'corporate' ? 'border-sky-500 shadow-md ring-2 ring-sky-100' : 'border-slate-200 hover:border-slate-300'
+                  }`}>
+                    {cmsActiveTemplate === 'corporate' && (
+                      <div className="absolute top-0 right-0 bg-sky-600 text-white text-[11px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                        ● Aktiv im System
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2.5 py-0.5 bg-slate-900 text-white rounded-full text-xs font-bold">
+                          Enterprise
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 mb-1">Corporate Business &amp; Partner</h3>
+                      <p className="text-xs text-slate-600 mb-3">
+                        Dunkles Schieferblau mit goldenen Akzenten für exklusive Partner- und Kundenbereiche.
+                      </p>
+
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-3 space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500">Farben:</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-3.5 h-3.5 rounded-full bg-[#1e293b] inline-block border border-white"></span>
+                            <span className="w-3.5 h-3.5 rounded-full bg-[#f59e0b] inline-block border border-white"></span>
+                            <span className="text-[11px] font-mono text-slate-600">Navy Gold</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleApplyCmsTemplate('corporate')}
+                      className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        cmsActiveTemplate === 'corporate'
+                          ? 'bg-slate-100 text-slate-700 border border-slate-200'
+                          : 'bg-slate-800 hover:bg-slate-900 text-white shadow'
+                      }`}
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>{cmsActiveTemplate === 'corporate' ? 'Corporate-Vorlage aktiv' : 'Corporate-Vorlage laden'}</span>
+                    </button>
+                  </div>
+
+                  {/* Template 4: MINIMAL */}
+                  <div className={`bg-white rounded-2xl p-5 border-2 transition shadow-sm relative overflow-hidden flex flex-col justify-between ${
+                    cmsActiveTemplate === 'minimal' ? 'border-sky-500 shadow-md ring-2 ring-sky-100' : 'border-slate-200 hover:border-slate-300'
+                  }`}>
+                    {cmsActiveTemplate === 'minimal' && (
+                      <div className="absolute top-0 right-0 bg-sky-600 text-white text-[11px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                        ● Aktiv im System
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2.5 py-0.5 bg-slate-200 text-slate-700 rounded-full text-xs font-bold">
+                          Fokus Login
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 mb-1">Minimal Clean Login</h3>
+                      <p className="text-xs text-slate-600 mb-3">
+                        Reduziert auf das Wesentliche: Keine Marketingblöcke, direkter Einstieg ins Magic-Link Feld.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleApplyCmsTemplate('minimal')}
+                      className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        cmsActiveTemplate === 'minimal'
+                          ? 'bg-slate-100 text-slate-700 border border-slate-200'
+                          : 'bg-slate-800 hover:bg-slate-900 text-white shadow'
+                      }`}
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>{cmsActiveTemplate === 'minimal' ? 'Minimal-Vorlage aktiv' : 'Minimal-Vorlage laden'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* SUBTAB 2: INHALTSBLÖCKE BEARBEITEN                            */}
+            {/* ============================================================== */}
+            {cmsSubTab === 'blocks' && (
+              <div className="space-y-4">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-base">Inhaltsblöcke der aktiven Vorlage</h3>
+                    <p className="text-xs text-slate-500">
+                      Hier bearbeitest du die Texte, Überschriften und Kacheln, die durch die Vorlage auf der Startseite platziert werden.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newId = Date.now();
+                      const newB: CmsBlock = {
+                        id: newId,
+                        type: 'text',
+                        title: 'Neuer Abschnitt',
+                        subtitle: 'Untertitel für diesen Block',
+                        content: 'Füge hier beliebige Inhalte, Fahrstunden-Hinweise oder Kontaktinfos ein.',
+                        sort_order: (cmsBlocks.length + 1) * 10,
+                        is_visible: true
+                      };
+                      setCmsBlocks([...cmsBlocks, newB]);
+                      setCmsEditingBlock(newB);
+                    }}
+                    className="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition self-start sm:self-auto cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Neuen Block hinzufügen</span>
+                  </button>
+                </div>
+
+                {/* Block Editor Modal / Inline Formular */}
+                {cmsEditingBlock && (
+                  <div className="bg-amber-50/70 border-2 border-amber-300 rounded-2xl p-5 shadow-md space-y-3 animate-in fade-in">
+                    <div className="flex items-center justify-between border-b border-amber-200/80 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-mono text-[10px] uppercase font-bold">
+                          {cmsEditingBlock.type}
+                        </span>
+                        <h4 className="font-bold text-slate-900 text-sm">
+                          Block #{cmsEditingBlock.id} bearbeiten: {cmsEditingBlock.title}
+                        </h4>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCmsEditingBlock(null)}
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Titel / Überschrift</label>
+                        <input
+                          type="text"
+                          value={cmsEditingBlock.title}
+                          onChange={e => setCmsEditingBlock({ ...cmsEditingBlock, title: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Untertitel / Tagline</label>
+                        <input
+                          type="text"
+                          value={cmsEditingBlock.subtitle}
+                          onChange={e => setCmsEditingBlock({ ...cmsEditingBlock, subtitle: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Inhalt / Text</label>
+                      <textarea
+                        rows={3}
+                        value={cmsEditingBlock.content}
+                        onChange={e => setCmsEditingBlock({ ...cmsEditingBlock, content: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-amber-200/80">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-slate-600 font-medium">Reihenfolge:</label>
+                        <input
+                          type="number"
+                          value={cmsEditingBlock.sort_order}
+                          onChange={e => setCmsEditingBlock({ ...cmsEditingBlock, sort_order: parseInt(e.target.value) || 10 })}
+                          className="w-16 px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-mono"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCmsEditingBlock(null)}
+                          className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold cursor-pointer"
+                        >
+                          Abbrechen
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateBlock(cmsEditingBlock)}
+                          className="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Änderungen speichern</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Liste aller Blöcke */}
+                <div className="space-y-3">
+                  {cmsBlocks.map((b, idx) => (
+                    <div
+                      key={b.id}
+                      className={`bg-white rounded-2xl p-4 border transition flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs ${
+                        b.is_visible ? 'border-slate-200' : 'border-slate-200 bg-slate-50/60 opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-sky-50 border border-sky-200 text-sky-800 font-bold text-xs flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-sm">{b.title}</span>
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-mono font-semibold uppercase">
+                              {b.type}
+                            </span>
+                            {!b.is_visible && (
+                              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-[10px] font-semibold">
+                                Versteckt
+                              </span>
+                            )}
+                          </div>
+                          {b.subtitle && (
+                            <p className="text-xs text-slate-500 mt-0.5">{b.subtitle}</p>
+                          )}
+                          {b.content && (
+                            <p className="text-[11px] text-slate-600 mt-1 line-clamp-1 italic">
+                              "{b.content}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleBlockVisible(b.id)}
+                          className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                            b.is_visible ? 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          }`}
+                        >
+                          {b.is_visible ? 'Ausblenden' : 'Einblenden'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setCmsEditingBlock(b)}
+                          className="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-semibold transition cursor-pointer"
+                        >
+                          Bearbeiten
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteBlock(b.id)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition cursor-pointer"
+                          title="Block entfernen"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* SUBTAB 3: DESIGN, FARBEN & LOGO                               */}
+            {/* ============================================================== */}
+            {cmsSubTab === 'design' && (
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">Design, Akzentfarben &amp; Markenauftritt</h3>
+                  <p className="text-xs text-slate-500">
+                    Passe das Farblayout und das Branding der Startseite an. Änderungen werden sofort in der Vorschau sichtbar.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Seitentitel (H1 &amp; Browser-Tab)</label>
+                      <input
+                        type="text"
+                        value={cmsPageTitle}
+                        onChange={e => setCmsPageTitle(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Untertitel / Tagline</label>
+                      <input
+                        type="text"
+                        value={cmsPageSubtitle}
+                        onChange={e => setCmsPageSubtitle(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Primärfarbe (Buttons, Links)</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={cmsPrimaryColor}
+                            onChange={e => setCmsPrimaryColor(e.target.value)}
+                            className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5"
+                          />
+                          <input
+                            type="text"
+                            value={cmsPrimaryColor}
+                            onChange={e => setCmsPrimaryColor(e.target.value)}
+                            className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-medium"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Hintergrundfarbe</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={cmsBgColor}
+                            onChange={e => setCmsBgColor(e.target.value)}
+                            className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5"
+                          />
+                          <input
+                            type="text"
+                            value={cmsBgColor}
+                            onChange={e => setCmsBgColor(e.target.value)}
+                            className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-medium"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Logo-Vorschau */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                    <div>
+                      <span className="text-xs uppercase font-semibold text-slate-400 block mb-2">Hinterlegtes Logo</span>
+                      <div className="p-4 bg-white rounded-xl border border-slate-200 flex items-center justify-center">
+                        <svg viewBox="0 0 280 64" className="w-56 h-auto drop-shadow-sm" role="img" aria-label="Nautic Logo">
+                          <g transform="translate(4, 4)">
+                            <circle cx="28" cy="28" r="27" fill="#0284c7" />
+                            <circle cx="28" cy="28" r="23" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeOpacity="0.3" strokeDasharray="3 3" />
+                            <path d="M 28 8 L 30 20 L 28 17 L 26 20 Z" fill="#38bdf8" />
+                            <path d="M 28 15 L 40 37 C 36 40, 20 40, 16 37 Z" fill="#ffffff" />
+                            <path d="M 12 41 C 18 38, 22 43, 28 40 C 34 37, 38 42, 44 39" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" />
+                          </g>
+                          <g transform="translate(72, 0)">
+                            <text x="0" y="35" fontFamily="system-ui, sans-serif" fontSize="28" fontWeight="900" letterSpacing="3" fill="#0c4a6e">
+                              NAUTIC
+                            </text>
+                            <rect x="1" y="42" width="180" height="2" rx="1" fill="#0284c7" />
+                            <text x="2" y="55" fontFamily="system-ui, sans-serif" fontSize="9" fontWeight="700" letterSpacing="2.2" fill="#0284c7">
+                              FAHRSCHULE &amp; VERMIETUNG
+                            </text>
+                          </g>
+                        </svg>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-2">
+                        Wird über die Vorlage aus <code>public/assets/nautic-logo.svg</code> bezogen und skaliert gestochen scharf.
+                      </p>
+                    </div>
+
+                    <div className="pt-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCmsToast('Design-Einstellungen gespeichert.');
+                          setTimeout(() => setCmsToast(null), 3000);
+                        }}
+                        className="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                      >
+                        Design-Änderungen sichern
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* SUBTAB 4: LIVE-VORSCHAU DER STARTSEITE                        */}
+            {/* ============================================================== */}
+            {cmsSubTab === 'preview' && (
+              <div className="rounded-3xl border border-slate-200 overflow-hidden shadow-lg bg-white" style={{ backgroundColor: cmsBgColor }}>
+                {/* Browser Mockup Header */}
+                <div className="bg-slate-900 px-4 py-2.5 flex items-center justify-between text-xs text-slate-300 border-b border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                    </div>
+                    <span className="font-mono text-[11px] text-slate-400 pl-2">https://bootschule-see.ch/ (Live-Startseite)</span>
+                  </div>
+                  <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-sky-400 font-mono">
+                    Template: {cmsActiveTemplate.toUpperCase()}
+                  </span>
+                </div>
+
+                {/* Header Bar */}
+                <header className="px-6 py-4 bg-white/90 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between sticky top-0 z-10">
+                  <div className="flex items-center gap-2">
+                    <svg viewBox="0 0 280 64" className="w-48 h-auto" role="img">
+                      <g transform="translate(4, 4)">
+                        <circle cx="28" cy="28" r="27" fill={cmsPrimaryColor} />
+                        <path d="M 28 15 L 40 37 C 36 40, 20 40, 16 37 Z" fill="#ffffff" />
+                        <path d="M 12 41 C 18 38, 22 43, 28 40 C 34 37, 38 42, 44 39" fill="none" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" />
+                      </g>
+                      <g transform="translate(72, 0)">
+                        <text x="0" y="35" fontFamily="system-ui, sans-serif" fontSize="28" fontWeight="900" letterSpacing="3" fill="#0c4a6e">
+                          NAUTIC
+                        </text>
+                        <rect x="1" y="42" width="180" height="2" rx="1" fill={cmsPrimaryColor} />
+                        <text x="2" y="55" fontFamily="system-ui, sans-serif" fontSize="9" fontWeight="700" letterSpacing="2.2" fill={cmsPrimaryColor}>
+                          FAHRSCHULE &amp; VERMIETUNG
+                        </text>
+                      </g>
+                    </svg>
+                  </div>
+
+                  <a
+                    href="#preview-login"
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs transition"
+                    style={{ backgroundColor: cmsPrimaryColor }}
+                  >
+                    Login / Magic Link
+                  </a>
+                </header>
+
+                {/* Render Blöcke */}
+                <div className="p-6 md:p-12 space-y-12 max-w-5xl mx-auto">
+                  {cmsBlocks.filter(b => b.is_visible).map(block => (
+                    <div key={block.id} className="animate-in fade-in">
+                      {block.type === 'hero' && (
+                        <div className="text-center space-y-4 max-w-3xl mx-auto py-6">
+                          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
+                            {block.title}
+                          </h1>
+                          <p className="text-base text-slate-600 font-medium">{block.subtitle}</p>
+                          <p className="text-xs text-slate-500 leading-relaxed">{block.content}</p>
+                          {block.extra?.btn_text && (
+                            <div className="pt-2">
+                              <a
+                                href="#preview-login"
+                                className="inline-flex items-center gap-2 px-6 py-3 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition"
+                                style={{ backgroundColor: cmsPrimaryColor }}
+                              >
+                                <span>{block.extra.btn_text}</span>
+                                <ChevronRight className="w-4 h-4" />
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {block.type === 'features' && (
+                        <div className="space-y-6">
+                          <div className="text-center max-w-xl mx-auto">
+                            <h2 className="text-2xl font-bold text-slate-900">{block.title}</h2>
+                            <p className="text-xs text-slate-500 mt-1">{block.subtitle}</p>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {(block.extra?.items || []).map((item: any, i: number) => (
+                              <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition">
+                                <div
+                                  className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs mb-3 shadow-xs"
+                                  style={{ backgroundColor: cmsPrimaryColor }}
+                                >
+                                  {i + 1}
+                                </div>
+                                <h4 className="font-bold text-slate-900 text-sm mb-1">{item.title}</h4>
+                                <p className="text-xs text-slate-600 leading-relaxed">{item.text}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {block.type === 'two_column' && (
+                        <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200/80 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-1">{block.title}</h3>
+                            <p className="text-xs text-slate-500 mb-3">{block.subtitle}</p>
+                            <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{block.content}</p>
+                          </div>
+                          <div className="p-4 bg-sky-50/60 rounded-2xl border border-sky-100 flex flex-col justify-center">
+                            <h4 className="font-bold text-sky-950 text-sm mb-1">{block.extra?.col2_title || 'Information'}</h4>
+                            <p className="text-xs text-sky-900 leading-relaxed whitespace-pre-line">{block.extra?.col2_content}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {block.type === 'cta' && (
+                        <div
+                          className="rounded-3xl p-8 text-center text-white shadow-xl relative overflow-hidden"
+                          style={{
+                            background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 60%, #072a45 100%)'
+                          }}
+                        >
+                          <h3 className="text-2xl font-bold mb-2">{block.title}</h3>
+                          <p className="text-xs text-sky-100 max-w-xl mx-auto mb-4">{block.subtitle}</p>
+                          <a
+                            href="#preview-login"
+                            className="inline-flex items-center gap-2 px-6 py-2.5 bg-white text-sky-800 rounded-xl text-xs font-bold shadow hover:bg-slate-50 transition"
+                          >
+                            <span>{block.extra?.btn_text || 'Jetzt loslegen'}</span>
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Magic Login Preview Card */}
+                  <div id="preview-login" className="max-w-md mx-auto bg-white p-6 rounded-2xl border border-slate-200 shadow-md space-y-4">
+                    <div className="text-center">
+                      <h3 className="text-base font-bold text-slate-900">Magic-Link Anmeldung</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">Gib deine E-Mail-Adresse ein, um dich einzuloggen:</p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">E-Mail-Adresse</label>
+                        <input
+                          type="email"
+                          disabled
+                          placeholder="deine-adresse@domain.ch"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full py-2 text-white font-bold text-xs rounded-xl shadow-xs"
+                        style={{ backgroundColor: cmsPrimaryColor }}
+                      >
+                        Per Magic-Link anmelden &rarr;
+                      </button>
+                    </div>
+
+                    <div className="pt-2 text-center border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('login')}
+                        className="text-xs font-semibold text-sky-700 hover:underline cursor-pointer"
+                      >
+                        Noch kein Konto? Jetzt Nautic-Account anfordern &rarr;
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <footer className="px-6 py-6 border-t border-slate-200/80 text-center text-xs text-slate-400">
+                  © 2026 {cmsPageTitle} – Alle Rechte vorbehalten.
+                </footer>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 6: BACKEND ARCHITEKTUR & MIGRATIONEN                      */}
         {/* ============================================================== */}
         {activeTab === 'architecture' && (
           <div className="space-y-6">

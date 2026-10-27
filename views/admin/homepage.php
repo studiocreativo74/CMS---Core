@@ -34,6 +34,14 @@ $homepageModuleRoute = (string) ($settings['homepage_module_route'] ?? '');
 // Aktive Module für Auswahl ermitteln
 $activeModules = class_exists('ModuleManager') ? ModuleManager::all(true) : [];
 
+// Startseiten-Vorlage & verfügbare Templates
+$homepageTemplate = (string) ($settings['homepage_template'] ?? 'standard');
+$availableTemplates = class_exists('HomepageTemplateService') ? HomepageTemplateService::getTemplates() : [];
+$activeTab = (string) ($_GET['tab'] ?? 'blocks');
+if (!in_array($activeTab, ['blocks', 'templates', 'design', 'settings'], true)) {
+    $activeTab = 'blocks';
+}
+
 // Blöcke laden
 $blocks = class_exists('HomepageBlock') ? HomepageBlock::all(false) : [];
 $validTypes = class_exists('HomepageBlock') ? HomepageBlock::VALID_TYPES : [];
@@ -71,10 +79,10 @@ ob_start();
     </div>
 <?php endif; ?>
 
-<!-- Tabs zur schnellen Navigation zwischen Design/Grundeinstellungen und Block-Management -->
+<!-- Tabs zur schnellen Navigation zwischen Vorlagen, Inhaltsblöcken, Design und Einstellungen -->
 <ul class="nav nav-pills mb-4" id="cmsTab" role="tablist">
     <li class="nav-item" role="presentation">
-        <button class="nav-link active fw-medium" id="blocks-tab" data-bs-toggle="pill" data-bs-target="#tab-blocks" type="button" role="tab" aria-controls="tab-blocks" aria-selected="true">
+        <button class="nav-link <?= $activeTab === 'blocks' ? 'active' : '' ?> fw-medium" id="blocks-tab" data-bs-toggle="pill" data-bs-target="#tab-blocks" type="button" role="tab" aria-controls="tab-blocks" aria-selected="<?= $activeTab === 'blocks' ? 'true' : 'false' ?>">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-collection me-1" viewBox="0 0 16 16">
                 <path d="M2.5 3.5a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1zm2-2a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1zM0 13a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 16 13V6a1.5 1.5 0 0 0-1.5-1.5h-13A1.5 1.5 0 0 0 0 6zm1.5.5A.5.5 0 0 1 1 13V6a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5z"/>
             </svg>
@@ -82,7 +90,16 @@ ob_start();
         </button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link fw-medium" id="design-tab" data-bs-toggle="pill" data-bs-target="#tab-design" type="button" role="tab" aria-controls="tab-design" aria-selected="false">
+        <button class="nav-link <?= $activeTab === 'templates' ? 'active' : '' ?> fw-medium" id="templates-tab" data-bs-toggle="pill" data-bs-target="#tab-templates" type="button" role="tab" aria-controls="tab-templates" aria-selected="<?= $activeTab === 'templates' ? 'true' : 'false' ?>">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-layout-text-window me-1" viewBox="0 0 16 16">
+                <path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h13A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 12.5zM1.5 3a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5z"/>
+                <path d="M2 4.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5"/>
+            </svg>
+            Vorlagen (Templates) <span class="badge bg-success ms-1">Nautic</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link <?= $activeTab === 'design' ? 'active' : '' ?> fw-medium" id="design-tab" data-bs-toggle="pill" data-bs-target="#tab-design" type="button" role="tab" aria-controls="tab-design" aria-selected="<?= $activeTab === 'design' ? 'true' : 'false' ?>">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-palette me-1" viewBox="0 0 16 16">
                 <path d="M8 5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3m4 3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3M5.5 7a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m.5 6a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3"/>
                 <path d="M16 8c0 3.15-1.866 2.585-3.58 2.585a4.9 4.9 0 0 1-.96-.093c-.66-.13-1.04-.224-1.28-.224-.543 0-.82.441-.82 1.05 0 .51.39.99.78 1.48.43.53.88 1.08.88 1.77 0 1.52-1.36 2.43-3.02 2.43C3.58 17 0 13.42 0 8s3.58-8 8-8 8 3.58 8 8m-8-7a7 7 0 0 0-7 7c0 4.41 2.91 7.22 6.58 7.22 1.05 0 1.42-.51 1.42-1.03 0-.31-.22-.61-.46-.91-.4-.5-.88-1.11-.88-1.92 0-1.42 1.06-2.4 2.32-2.4.52 0 1.05.13 1.63.24.63.12 1.34.25 2.19.25 1.02 0 2.2-.42 2.2-1.45 0-3.86-3.14-7-7-7"/>
@@ -91,7 +108,7 @@ ob_start();
         </button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link fw-medium" id="settings-tab" data-bs-toggle="pill" data-bs-target="#tab-settings" type="button" role="tab" aria-controls="tab-settings" aria-selected="false">
+        <button class="nav-link <?= $activeTab === 'settings' ? 'active' : '' ?> fw-medium" id="settings-tab" data-bs-toggle="pill" data-bs-target="#tab-settings" type="button" role="tab" aria-controls="tab-settings" aria-selected="<?= $activeTab === 'settings' ? 'true' : 'false' ?>">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-sliders me-1" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M11.5 2a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3M9.05 3a2.5 2.5 0 0 1 4.9 0H16v1h-2.05a2.5 2.5 0 0 1-4.9 0H0V3zM4.5 7a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3M2.05 8a2.5 2.5 0 0 1 4.9 0H16v1H6.95a2.5 2.5 0 0 1-4.9 0H0V8zm9.45 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3m-2.45 1a2.5 2.5 0 0 1 4.9 0H16v1h-2.05a2.5 2.5 0 0 1-4.9 0H0v-1z"/>
             </svg>
@@ -563,6 +580,144 @@ ob_start();
                 </div>
             </div>
         </form>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- TAB 4: VORLAGEN (TEMPLATES) - NAUTIC, STANDARD, CORPORATE, MINIMAL-->
+    <!-- ================================================================= -->
+    <div class="tab-pane fade <?= $activeTab === 'templates' ? 'show active' : '' ?>" id="tab-templates" role="tabpanel" aria-labelledby="templates-tab">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="card-title mb-0 fw-semibold text-dark">Startseiten-Vorlagen (Design- &amp; Inhalts-Presets)</h5>
+                    <small class="text-muted">Wähle eine fertige Vorlage, um das Startseiten-Design, Farben, Logo und alle Inhaltsblöcke mit einem Klick zu laden.</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small text-muted">Aktives Template:</span>
+                    <span class="badge bg-primary px-3 py-1.5 font-monospace">
+                        <?= htmlspecialchars(strtoupper($homepageTemplate), ENT_QUOTES, 'UTF-8') ?>
+                    </span>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="alert alert-info d-flex align-items-start gap-3 mb-4" role="alert">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-info-circle-fill flex-shrink-0 mt-1 text-primary" viewBox="0 0 16 16">
+                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/>
+                    </svg>
+                    <div>
+                        <h6 class="alert-heading fw-bold mb-1">Vollständig modular bearbeitbar</h6>
+                        <p class="small mb-0">
+                            Sobald du eine Vorlage anwendest, werden die Inhaltsblöcke automatisch in der Datenbank angelegt.
+                            Du kannst anschließend jeden einzelnen Text, die Überschriften, Kacheln und Button-Links im Tab <strong>„Inhaltsblöcke“</strong> nach Belieben anpassen, erweitern oder löschen.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <?php foreach ($availableTemplates as $tKey => $tpl): 
+                        $isCurrent = ($homepageTemplate === $tKey);
+                    ?>
+                        <div class="col-md-6 col-xl-6">
+                            <div class="card h-100 border <?= $isCurrent ? 'border-primary shadow' : 'border-slate-200 shadow-sm' ?> rounded-3 position-relative overflow-hidden">
+                                <?php if ($isCurrent): ?>
+                                    <div class="position-absolute top-0 end-0 bg-primary text-white text-uppercase px-3 py-1 small fw-bold" style="border-bottom-left-radius: 8px; font-size: 0.72rem; letter-spacing: 0.5px;">
+                                        ● Aktuell aktiv
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="card-body p-4 d-flex flex-column">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge <?= $tpl['badge_class'] ?? 'bg-secondary' ?> px-2 py-1">
+                                            <?= htmlspecialchars((string) ($tpl['badge'] ?? 'Vorlage'), ENT_QUOTES, 'UTF-8') ?>
+                                        </span>
+                                        <?php if ($tKey === 'nautic'): ?>
+                                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1">
+                                                Inklusive SVG-Logo &amp; 4 Blöcke
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <h5 class="card-title fw-bold text-dark mb-1">
+                                        <?= htmlspecialchars((string) $tpl['name'], ENT_QUOTES, 'UTF-8') ?>
+                                    </h5>
+                                    <p class="small text-muted mb-3">
+                                        <?= htmlspecialchars((string) $tpl['description'], ENT_QUOTES, 'UTF-8') ?>
+                                    </p>
+
+                                    <!-- Farb- & Style-Palette Vorschau -->
+                                    <div class="bg-light p-3 rounded-2 border mb-3">
+                                        <div class="small fw-semibold text-secondary mb-2">Design &amp; Styling:</div>
+                                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                                            <div class="d-flex align-items-center gap-1.5" title="Primärfarbe">
+                                                <span class="d-inline-block rounded-circle border" style="width: 18px; height: 18px; background-color: <?= htmlspecialchars((string) $tpl['primary_color'], ENT_QUOTES, 'UTF-8') ?>;"></span>
+                                                <small class="font-monospace text-muted"><?= htmlspecialchars((string) $tpl['primary_color'], ENT_QUOTES, 'UTF-8') ?></small>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-1.5" title="Hintergrundfarbe">
+                                                <span class="d-inline-block rounded-circle border" style="width: 18px; height: 18px; background-color: <?= htmlspecialchars((string) $tpl['background_color'], ENT_QUOTES, 'UTF-8') ?>;"></span>
+                                                <small class="font-monospace text-muted"><?= htmlspecialchars((string) $tpl['background_color'], ENT_QUOTES, 'UTF-8') ?></small>
+                                            </div>
+                                            <div class="small text-muted">
+                                                Layout: <strong><?= htmlspecialchars(ucfirst((string) $tpl['layout']), ENT_QUOTES, 'UTF-8') ?></strong>
+                                            </div>
+                                            <?php if (!empty($tpl['logo_path'])): ?>
+                                                <div class="badge bg-white text-dark border">
+                                                    SVG-Logo integriert
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+
+                                    <!-- Enthaltene Sektionen -->
+                                    <div class="mb-4 flex-grow-1">
+                                        <div class="small fw-semibold text-secondary mb-1.5">Enthaltene Inhaltsblöcke (anschließend frei editierbar):</div>
+                                        <ul class="list-unstyled small text-muted mb-0">
+                                            <?php if (!empty($tpl['blocks'])): ?>
+                                                <?php foreach ($tpl['blocks'] as $b): ?>
+                                                    <li class="d-flex align-items-center gap-2 mb-1">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-check2-circle text-success flex-shrink-0" viewBox="0 0 16 16">
+                                                            <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0"/>
+                                                            <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0z"/>
+                                                        </svg>
+                                                        <span>
+                                                            <strong><?= htmlspecialchars(ucfirst((string) $b['type']), ENT_QUOTES, 'UTF-8') ?>:</strong>
+                                                            <?= htmlspecialchars((string) ($b['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                                                        </span>
+                                                    </li>
+                                                <?php endforeach; ?>
+                                            <?php else: ?>
+                                                <li class="text-muted fst-italic">Keine zusätzlichen Marketingblöcke (rein fokussierter Magic-Login).</li>
+                                            <?php endif; ?>
+                                        </ul>
+                                    </div>
+
+                                    <!-- Aktionsformular -->
+                                    <form method="post" action="?route=admin/homepage/apply-template" onsubmit="return confirm('Möchtest du die Vorlage \'<?= htmlspecialchars(addslashes((string) $tpl['name']), ENT_QUOTES, 'UTF-8') ?>\' jetzt anwenden?');">
+                                        <?= class_exists('Csrf') ? Csrf::input() : '' ?>
+                                        <input type="hidden" name="template_key" value="<?= htmlspecialchars((string) $tKey, ENT_QUOTES, 'UTF-8') ?>">
+
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" name="replace_blocks" id="replace_blocks_<?= $tKey ?>" value="1" checked>
+                                            <label class="form-check-label small" for="replace_blocks_<?= $tKey ?>">
+                                                Inhaltsblöcke mit dieser Vorlage initialisieren / ersetzen
+                                            </label>
+                                        </div>
+
+                                        <button type="submit" class="btn <?= $isCurrent ? 'btn-outline-primary' : 'btn-primary' ?> w-100 d-flex align-items-center justify-content-center gap-1.5 fw-semibold">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-in-down" viewBox="0 0 16 16">
+                                                <path fill-rule="evenodd" d="M3.5 6a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-8a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 1 0-1h2A1.5 1.5 0 0 1 14 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 14.5v-8A1.5 1.5 0 0 1 3.5 5h2a.5.5 0 0 1 0 1z"/>
+                                                <path fill-rule="evenodd" d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+                                            </svg>
+                                            <span><?= $isCurrent ? 'Vorlage erneut laden / zurücksetzen' : 'Vorlage anwenden & im Mini-CMS bearbeiten' ?></span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
