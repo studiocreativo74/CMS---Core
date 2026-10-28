@@ -2468,13 +2468,6 @@ export default function App() {
                   </form>
                 )}
 
-                {/* Footer: KEIN "Fahrstunde buchen"-Link mehr */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <Shield className="w-3 h-3 text-sky-600" />
-                    <span>Nautic Modul v2.4</span>
-                  </span>
-                </div>
               </div>
 
               {/* Copyright fest im Hauptfenster UNTEN LINKS */}

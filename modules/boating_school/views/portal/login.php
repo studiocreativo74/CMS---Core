@@ -543,30 +543,6 @@ $isTestMode = class_exists('Settings') ? (Settings::get('nautic_login_testmode',
                     </div>
                 </form>
             <?php endif; ?>
-
-            <!-- Trennlinie & Verlinkung zum Kundenportal (OHNE Fahrstunde buchen Link!) -->
-            <hr class="my-3 opacity-10">
-
-            <div class="d-flex justify-content-between align-items-center text-muted small">
-                <a href="?route=bootschule" class="text-decoration-none text-muted d-inline-flex align-items-center gap-1">
-                    <i class="bi bi-compass text-primary"></i>
-                    <span>Zum Kundenportal</span>
-                </a>
-                <span class="text-muted" style="font-size: 0.76rem;">
-                    Nautic &middot; Fahrschule &amp; Vermietung
-                </span>
-            </div>
-        </div>
-
-        <!-- Schnellnavigation außerhalb der Card -->
-        <div class="text-center mt-3 nautic-footer-links">
-            <div class="d-flex justify-content-center gap-3">
-                <a href="?route=bootschule/services">Angebote &amp; Tarife</a>
-                <span class="text-white-50">&middot;</span>
-                <a href="?route=admin/boating">Flotten-Admin</a>
-                <span class="text-white-50">&middot;</span>
-                <a href="?route=/">CMS Startseite</a>
-            </div>
         </div>
     </div>
 
