@@ -839,8 +839,7 @@ export default function App() {
     };
 
     setAccountRequests(prev => [newReq, ...prev]);
-    setLoginEmail(regEmail.trim());
-    setLoginSuccessMsg(`Vielen Dank, ${regFirstName}! Deine Account-Anfrage wurde eingereicht. Sobald der Administrator dein Profil freigeschaltet hat, erhältst du deinen Magic-Link.`);
+    setLoginSuccessMsg(`Vielen Dank, ${regFirstName}! Schön, dass du mit an Bord bist. Wir richten deinen persönlichen Zugang für dich ein und melden uns so schnell wie möglich bei dir.`);
     setAuthViewMode('login');
 
     // Reset Form
@@ -2364,13 +2363,13 @@ export default function App() {
                 ) : (
                   /* ANSICHT 2: NEUEN ACCOUNT ANFORDERN */
                   <form onSubmit={handleRegisterAccountSubmit} className="space-y-3.5">
-                    <div className="border-b border-slate-100 pb-2">
-                      <div className="flex items-center gap-1.5 text-sky-700 font-bold text-sm">
+                    <div className="border-b border-slate-100 pb-2 text-center">
+                      <div className="flex items-center justify-center gap-1.5 text-sky-700 font-bold text-sm">
                         <UserPlus className="w-4 h-4" />
-                        <span>Neuen Account anfordern</span>
+                        <span>Herzlich willkommen an Bord!</span>
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        Nach dem Absenden prüft der Administrator deinen Antrag und weist dir das passende Profil zu.
+                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                        Schön, dass du dabei bist! Hinterlasse uns kurz deine Kontaktdaten – wir richten deinen persönlichen Zugang für dich ein und melden uns so schnell wie möglich bei dir.
                       </p>
                     </div>
 
@@ -2411,34 +2410,19 @@ export default function App() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-[11px] font-medium text-slate-700 mb-1">Telefon / Mobile</label>
-                        <input
-                          type="tel"
-                          value={regPhone}
-                          onChange={e => setRegPhone(e.target.value)}
-                          placeholder="+41 79 123 45 67"
-                          className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-medium text-slate-700 mb-1">Gewünschte Funktion</label>
-                        <select
-                          value={regDesiredRole}
-                          onChange={e => setRegDesiredRole(e.target.value as any)}
-                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                        >
-                          <option value="student">Schüler / Fahrschüler</option>
-                          <option value="instructor">Fahrlehrer / Boots-Coach</option>
-                          <option value="renter">Bootsmieter / Charter</option>
-                          <option value="admin">Flottenleitung / Disposition</option>
-                        </select>
-                      </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Telefon / Mobile (optional)</label>
+                      <input
+                        type="tel"
+                        value={regPhone}
+                        onChange={e => setRegPhone(e.target.value)}
+                        placeholder="+41 79 123 45 67"
+                        className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 focus:outline-none"
+                      />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Bemerkung / Vorkenntnisse</label>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">Bemerkung / Vorkenntnisse (optional)</label>
                       <textarea
                         rows={2}
                         value={regNotes}
@@ -2453,7 +2437,7 @@ export default function App() {
                       className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <UserPlus className="w-4 h-4" />
-                      <span>Account-Anfrage absenden</span>
+                      <span>Zugang anfordern</span>
                     </button>
 
                     <div className="pt-1 text-center">

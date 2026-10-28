@@ -480,16 +480,17 @@ $isTestMode = class_exists('Settings') ? (Settings::get('nautic_login_testmode',
             <!-- ANSICHT 2: NEUEN ACCOUNT ANFORDERN / REGISTRIERUNG             -->
             <!-- ============================================================== -->
             <?php else: ?>
-                <div class="mb-3">
-                    <h6 class="fw-bold mb-1 text-dark">Nautic Account anfordern</h6>
+                <div class="mb-3 text-center">
+                    <h6 class="fw-bold mb-1 text-dark">Herzlich willkommen an Bord!</h6>
                     <p class="text-muted small mb-0">
-                        Erstelle deine Anfrage. Die Flottenleitung prüft deinen Account und weist dein persönliches Profil zu.
+                        Schön, dass du dabei bist! Hinterlasse uns kurz deine Kontaktdaten – wir richten deinen persönlichen Zugang für dich ein und melden uns so schnell wie möglich bei dir.
                     </p>
                 </div>
 
                 <form method="POST" action="?route=nautic/request-account" id="nauticRegisterForm">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="action" value="register">
+                    <input type="hidden" name="desired_role" value="student">
 
                     <div class="row g-2 mb-2">
                         <div class="col-6">
@@ -513,27 +514,17 @@ $isTestMode = class_exists('Settings') ? (Settings::get('nautic_login_testmode',
 
                     <div class="form-floating mb-2">
                         <input type="tel" class="form-control rounded-3" id="regPhone" name="phone" placeholder="+41 79 ...">
-                        <label for="regPhone"><i class="bi bi-phone me-1 text-muted"></i>Telefon / Mobil</label>
-                    </div>
-
-                    <div class="form-floating mb-2">
-                        <select class="form-select rounded-3" id="regDesiredRole" name="desired_role" required>
-                            <option value="student" selected>Fahrschüler (Praxisausbildung Kat. A / D)</option>
-                            <option value="instructor">Fahrcoach / Skipper (Fahrlehrer)</option>
-                            <option value="renter">Bootsmieter / Charterkunde</option>
-                            <option value="admin">Flottenleitung &amp; Disposition</option>
-                        </select>
-                        <label for="regDesiredRole">Gewünschtes Profil / Zweck *</label>
+                        <label for="regPhone"><i class="bi bi-phone me-1 text-muted"></i>Telefon / Mobil (optional)</label>
                     </div>
 
                     <div class="form-floating mb-3">
                         <textarea class="form-control rounded-3" id="regNotes" name="notes" placeholder="Bemerkung" style="height: 70px;"></textarea>
-                        <label for="regNotes">Bemerkung / Lizenz / Vorkenntnisse (optional)</label>
+                        <label for="regNotes">Bemerkung / Vorkenntnisse (optional)</label>
                     </div>
 
                     <button type="submit" class="btn btn-nautic-primary w-100 d-flex align-items-center justify-content-center gap-2 mb-2">
                         <i class="bi bi-send-fill"></i>
-                        <span>Account-Anfrage absenden</span>
+                        <span>Zugang anfordern</span>
                     </button>
 
                     <div class="text-center pt-2">

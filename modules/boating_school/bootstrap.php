@@ -2912,7 +2912,7 @@ if (isset($router) && $router !== null) {
                     'notes'        => $notes,
                 ]);
 
-                $_SESSION['flash_nautic_success'] = "Vielen Dank, {$firstName}! Deine Registrierung wurde eingereicht. Die Flottenleitung prüft deine Anfrage und weist dein Profil zu. Sobald du freigeschaltet wurdest, kannst du dich direkt mit deiner E-Mail per Magic-Link einloggen.";
+                $_SESSION['flash_nautic_success'] = "Vielen Dank, {$firstName}! Schön, dass du mit an Bord bist. Wir richten deinen persönlichen Zugang für dich ein und melden uns zeitnah per E-Mail bei dir.";
                 header('Location: ?route=nautic/login');
                 exit;
             } catch (\Throwable $e) {
