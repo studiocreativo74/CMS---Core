@@ -295,7 +295,7 @@ final class NauticAccountRequestService
             // 3. Magic-Code für sofortigen Erst-Login erstellen
             if (class_exists('MagicCode')) {
                 try {
-                    $createdCode = MagicCode::createCodeForEmail($email, 'nautic_login', 3, 48);
+                    $createdCode = MagicCode::createCodeForEmail($email, 'nautic_login', 3, new \DateTimeImmutable('+48 hours'));
                     MagicCode::sendEmailNotification(
                         $createdCode['code'],
                         $email,

@@ -784,8 +784,13 @@ export default function App() {
     if (nauticLoginStep === 'email') {
       if (!loginEmail.trim()) return;
       setNauticLoginStep('code');
-      setLoginSuccessMsg(`Magic-Code wurde an ${loginEmail} gesendet. Bitte gib den Code unten in die Boxen ein.`);
-      setTimeout(() => setLoginSuccessMsg(null), 4000);
+      if (nauticLoginTestMode) {
+        fillTestCode('ROLAND1234');
+        setLoginSuccessMsg(`Testmodus aktiv (E-Mail inaktiv): Dein Test-Code lautet ROLAND1234 (bereits in die Boxen eingefügt).`);
+      } else {
+        setLoginSuccessMsg(`Magic-Code wurde an ${loginEmail} gesendet. Bitte gib den Code unten in die Boxen ein.`);
+      }
+      setTimeout(() => setLoginSuccessMsg(null), 5000);
       return;
     }
 

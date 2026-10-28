@@ -305,7 +305,7 @@ $isTestMode = class_exists('Settings') ? (Settings::get('nautic_login_testmode',
             <?php if (!empty($error)): ?>
                 <div class="alert alert-danger alert-dismissible fade show border-0 rounded-3 py-2 px-3 small d-flex align-items-center mb-3" role="alert">
                     <i class="bi bi-exclamation-triangle-fill me-2 fs-6"></i>
-                    <div><?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') ?></div>
+                    <div><?= strip_tags((string) $error, '<strong><b><code><i><mark><small><span><br>') ?></div>
                     <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Schließen"></button>
                 </div>
             <?php endif; ?>
@@ -313,7 +313,7 @@ $isTestMode = class_exists('Settings') ? (Settings::get('nautic_login_testmode',
             <?php if (!empty($success)): ?>
                 <div class="alert alert-success alert-dismissible fade show border-0 rounded-3 py-2 px-3 small d-flex align-items-center mb-3" role="alert">
                     <i class="bi bi-check-circle-fill me-2 fs-6"></i>
-                    <div><?= htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') ?></div>
+                    <div><?= strip_tags((string) $success, '<strong><b><code><i><mark><small><span><br>') ?></div>
                     <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Schließen"></button>
                 </div>
             <?php endif; ?>
@@ -321,7 +321,7 @@ $isTestMode = class_exists('Settings') ? (Settings::get('nautic_login_testmode',
             <?php if (!empty($info)): ?>
                 <div class="alert alert-info alert-dismissible fade show border-0 rounded-3 py-2 px-3 small d-flex align-items-center mb-3" role="alert">
                     <i class="bi bi-info-circle-fill me-2 fs-6"></i>
-                    <div><?= htmlspecialchars((string) $info, ENT_QUOTES, 'UTF-8') ?></div>
+                    <div><?= strip_tags((string) $info, '<strong><b><code><i><mark><small><span><br>') ?></div>
                     <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Schließen"></button>
                 </div>
             <?php endif; ?>
@@ -578,6 +578,10 @@ $isTestMode = class_exists('Settings') ? (Settings::get('nautic_login_testmode',
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('nauticCodeForm');
             if (!form) return;
+
+            form.addEventListener('submit', function() {
+                updateHiddenCode();
+            });
 
             const inputs = Array.from(form.querySelectorAll('.code-digit'));
             if (!inputs.length) return;

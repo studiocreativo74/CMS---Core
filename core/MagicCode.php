@@ -71,16 +71,21 @@ final class MagicCode
      */
     public static function isDevMagicCodeValid(string $email, string $code): bool
     {
-        if (!self::DEV_MAGIC_CODE_ENABLED) {
+        $isTestModeSetting = class_exists('Settings') && ((string) Settings::get('nautic_login_testmode', '0') === '1');
+        $isDevMode = self::DEV_MAGIC_CODE_ENABLED || $isTestModeSetting;
+        if (!$isDevMode) {
             return false;
         }
 
-        $normalizedEmail = strtolower(trim($email));
-        $devEmail = strtolower(trim(self::DEV_MAGIC_CODE_EMAIL));
         $cleanCode = strtoupper(trim($code));
         $devCode = strtoupper(trim(self::DEV_MAGIC_CODE_VALUE));
 
-        return ($normalizedEmail === $devEmail && $cleanCode === $devCode);
+        if ($cleanCode !== $devCode) {
+            return false;
+        }
+
+        // Im Nautic-Testmodus oder Dev-Modus: ROLAND1234 ist für jede beliebige E-Mail-Adresse gültig
+        return true;
     }
 
     /** @var array<string>|null Gecachte Spalten der Tabelle magic_codes */
@@ -130,8 +135,12 @@ final class MagicCode
         string $email,
         string $usageType = 'admin_login',
         int $maxUses = 1,
-        ?\DateTimeInterface $expiresAt = null
+        \DateTimeInterface|int|null $expiresAt = null
     ): array {
+        if (is_int($expiresAt)) {
+            $expiresAt = $expiresAt > 0 ? new \DateTimeImmutable("+{$expiresAt} hours") : null;
+        }
+
         $normalizedEmail = strtolower(trim($email));
         $code = self::generateCode(self::DEFAULT_LENGTH);
         $codeHash = password_hash($code, PASSWORD_DEFAULT);
@@ -198,9 +207,9 @@ final class MagicCode
         if (self::isDevMagicCodeValid($normalizedEmail, $cleanCode)) {
             return [
                 'id' => 0,
-                'email' => strtolower(trim(self::DEV_MAGIC_CODE_EMAIL)),
+                'email' => $normalizedEmail,
                 'code_hash' => '',
-                'usage_type' => 'admin_login',
+                'usage_type' => 'nautic_login',
                 'max_uses' => 999999,
                 'used_count' => 0,
                 'is_active' => 1,
@@ -211,7 +220,7 @@ final class MagicCode
         $hasIsActive = self::hasColumn('is_active');
         $hasIsDeleted = self::hasColumn('is_deleted');
 
-        $whereClause = "email = :email AND usage_type = 'admin_login' AND used_count < max_uses AND (expires_at IS NULL OR expires_at > NOW())";
+        $whereClause = "email = :email AND usage_type IN ('admin_login', 'nautic_login', 'portal_login') AND used_count < max_uses AND (expires_at IS NULL OR expires_at > NOW())";
         if ($hasIsActive) {
             $whereClause .= ' AND is_active = 1';
         }
