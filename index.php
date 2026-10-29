@@ -1506,4 +1506,13 @@ if ($route === null || $route === '') {
 $currentRoute = (string) $route;
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
+// Robuster Fallback für Modul-Einstiege (z.B. ?route=boating_school oder ?route=nautic)
+$cleanRoute = trim((string) $route, '/');
+if (in_array($cleanRoute, ['boating_school', 'boating-school', 'nautic', 'bootschule', 'boating'], true)) {
+    if (!$router->has('/' . $cleanRoute, $method) && !$router->has($cleanRoute, $method)) {
+        header('Location: ?route=nautic/login');
+        exit;
+    }
+}
+
 $router->dispatch($method, (string) $route);

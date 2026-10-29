@@ -37,7 +37,12 @@ import {
   Key,
   Palette,
   LayoutTemplate,
-  Sparkles
+  Sparkles,
+  Wind,
+  Sun,
+  Waves,
+  Wallet,
+  LayoutDashboard
 } from 'lucide-react';
 
 // --- Datentypen & Mock-Daten der Bootsfahrschule & CMS ---
@@ -593,6 +598,35 @@ export default function App() {
   const [cancelModalAppointment, setCancelModalAppointment] = useState<Appointment | null>(null);
   const [cancelReason, setCancelReason] = useState<string>('');
 
+  // State für Kunden-Dashboard (Wetter, Kontostand, Profil, Terminanfrage)
+  const [studentWeatherStation, setStudentWeatherStation] = useState<'luzern' | 'nidwalden'>('luzern');
+  const [showStudentProfileModal, setShowStudentProfileModal] = useState<boolean>(false);
+  const [showStudentRequestModal, setShowStudentRequestModal] = useState<boolean>(false);
+  const [studentAppointmentTab, setStudentAppointmentTab] = useState<'upcoming' | 'past'>('upcoming');
+  const [studentProfile, setStudentProfile] = useState({
+    first_name: 'Lukas',
+    last_name: 'Berner',
+    email: 'lukas.berner@swiss-pilot.ch',
+    phone: '+41 79 400 11 22',
+    birthdate: '1995-06-14',
+    street: 'Alpenquai 12',
+    zip: '6005',
+    city: 'Luzern',
+    faber: '123.456.789',
+    pin: '7841',
+    pid: 'CHE-902.144.5',
+    license_number: '123.456.789',
+    emergency_contact: 'Anna Berner (+41 79 888 77 66)',
+    notes: 'Bevorzugt Nachmittagstermine'
+  });
+  const [newReqService, setNewReqService] = useState('Motorboot Kat. A (90 Min.)');
+  const [newReqDate, setNewReqDate] = useState('2026-04-02');
+  const [newReqTimeWindow, setNewReqTimeWindow] = useState('afternoon');
+  const [newReqLocation, setNewReqLocation] = useState('Luzern (Alpenquai)');
+  const [newReqCoach, setNewReqCoach] = useState('Beat Vollenweider');
+  const [newReqUseBalance, setNewReqUseBalance] = useState(true);
+  const [newReqNotes, setNewReqNotes] = useState('');
+
   // Fahrlehrer-Stammdaten als State (damit Admin h-Lohn fest hinterlegen kann)
   const [instructors, setInstructors] = useState<Instructor[]>(INITIAL_INSTRUCTORS);
   const [editingRateInstructorId, setEditingRateInstructorId] = useState<number | null>(null);
@@ -1057,9 +1091,9 @@ export default function App() {
                 activeTab === 'student' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
               }`}
             >
-              <Link className="w-4 h-4" />
-              <span className="hidden md:inline">2. Schüler Magic-Link</span>
-              <span className="md:hidden">Schüler</span>
+              <LayoutDashboard className="w-4 h-4" />
+              <span className="hidden md:inline">2. Kunden-Dashboard</span>
+              <span className="md:hidden">Dashboard</span>
             </button>
 
             <button
@@ -1345,219 +1379,854 @@ export default function App() {
         {/* ============================================================== */}
         {/* TAB 2: SCHÜLER-MAGIC-LINK & SELF-SERVICE (PROMPT 2 & 5)        */}
         {/* ============================================================== */}
-        {activeTab === 'student' && (
-          <div className="space-y-6">
-            <div className="bg-gradient-to-r from-sky-900 to-indigo-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-semibold border border-sky-400/30 mb-3">
-                    <Shield className="w-3.5 h-3.5" />
-                    Sicherer Token-Zugang ohne Passwort
-                  </div>
-                  <h1 className="text-3xl font-extrabold tracking-tight">Schülerportal: «Meine Termine»</h1>
-                  <p className="text-sky-200/80 text-sm mt-2 max-w-2xl">
-                    Kunden erhalten ihren persönlichen Magic-Link automatisch in jeder Buchungsbestätigung oder können jederzeit per E-Mail einen neuen Einmal-Link generieren.
-                  </p>
-                </div>
+        {/* ============================================================== */}
+        {/* TAB 2: NAUTIC KUNDEN-DASHBOARD (USER BRIEF)                    */}
+        {/* ============================================================== */}
+        {activeTab === 'student' && (() => {
+          // Profil-Vollständigkeit berechnen
+          const missingFields: { key: string; label: string }[] = [];
+          if (!studentProfile.phone.trim()) missingFields.push({ key: 'phone', label: 'Mobiltelefonnummer' });
+          if (!studentProfile.birthdate.trim()) missingFields.push({ key: 'birthdate', label: 'Geburtsdatum' });
+          if (!studentProfile.faber.trim()) missingFields.push({ key: 'faber', label: 'FABER:' });
+          if (!studentProfile.pin.trim()) missingFields.push({ key: 'pin', label: 'PIN:' });
+          if (!studentProfile.pid.trim()) missingFields.push({ key: 'pid', label: 'PID:' });
+          if (!studentProfile.emergency_contact.trim()) missingFields.push({ key: 'emergency_contact', label: 'Notfallkontakt' });
+          if (!studentProfile.street.trim() || !studentProfile.city.trim()) missingFields.push({ key: 'address', label: 'Wohnadresse' });
 
-                <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-xs space-y-2 max-w-sm">
-                  <div className="font-semibold text-white flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-sky-400" />
-                    Aktiver Magic-Token (SHA-256)
-                  </div>
-                  <div className="font-mono bg-black/30 p-2 rounded text-sky-300 break-all select-all">
-                    {magicToken}
-                  </div>
-                  <div className="text-slate-300 text-[11px] flex justify-between">
-                    <span>Gültig für: <strong>Lukas Berner</strong></span>
-                    <span>Ablauf: 7 Tage</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          const totalRequired = 7;
+          const completedCount = totalRequired - missingFields.length;
+          const completenessPercent = Math.round((completedCount / totalRequired) * 100);
 
-            {magicFeedback && (
-              <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-800 text-sm flex items-center gap-3 shadow-sm">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                <span>{magicFeedback}</span>
-              </div>
-            )}
+          const studentApps = appointments.filter(a => a.customer_id === 1);
+          const upcomingApps = studentApps.filter(a => a.status === 'confirmed' || a.status === 'requested');
+          const pastApps = studentApps.filter(a => a.status === 'completed' || a.status === 'cancelled_customer');
 
-            {/* Schüler Info & Übersicht */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Schüler-Karte */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-lg">
-                      LB
+          return (
+            <div className="space-y-6">
+              {/* 1. Warnbanner: Profil-Vollständigkeit fehlt */}
+              {missingFields.length > 0 && (
+                <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 sm:p-5 shadow-sm text-amber-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-200/80 text-amber-800 flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">
+                      <AlertTriangle className="w-5 h-5 text-amber-700" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-slate-900">Hallo Lukas!</h2>
-                      <p className="text-xs text-slate-500">Lukas Berner &bull; Nr. #1042 &bull; Schüler Kat. A</p>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-sm sm:text-base text-amber-900">
+                          Dein Schülerprofil ist zu {completenessPercent}% ausgefüllt – Angaben fehlen noch
+                        </h4>
+                        <span className="text-xs px-2 py-0.5 bg-amber-200 text-amber-900 rounded-full font-semibold">
+                          Wichtig für Schifffahrtsamt
+                        </span>
+                      </div>
+                      <p className="text-xs text-amber-800 mt-1 max-w-2xl">
+                        Für die offizielle Prüfungsanmeldung und Notfallerreichbarkeit auf dem See fehlen: {' '}
+                        <strong>{missingFields.map(f => f.label).join(' • ')}</strong>.
+                      </p>
                     </div>
                   </div>
                   <button
+                    onClick={() => setShowStudentProfileModal(true)}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap self-stretch md:self-auto text-center"
+                  >
+                    Profil jetzt vervollständigen &rarr;
+                  </button>
+                </div>
+              )}
+
+              {/* Feedback Alert */}
+              {magicFeedback && (
+                <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-800 text-sm flex items-center gap-3 shadow-sm">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                  <span>{magicFeedback}</span>
+                </div>
+              )}
+
+              {/* 2. Begrüssungs-Karte mit Schnellaktionen */}
+              <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center font-extrabold text-2xl shadow-lg border border-white/20">
+                    {studentProfile.first_name[0]}{studentProfile.last_name[0]}
+                  </div>
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-semibold border border-sky-400/30 mb-1.5">
+                      <Compass className="w-3.5 h-3.5" />
+                      Nautic Kunden-Dashboard • Schüler #{1042}
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+                      Hallo {studentProfile.first_name}!
+                    </h2>
+                    <p className="text-sky-200/80 text-xs sm:text-sm mt-0.5 flex flex-wrap items-center gap-2">
+                      <span>{studentProfile.email}</span>
+                      <span>•</span>
+                      <span>{studentProfile.phone || 'Keine Telefonnr.'}</span>
+                      <span>•</span>
+                      <span>Kat. A Motorboot</span>
+                      {studentProfile.faber && (
+                        <span className="bg-sky-400/20 text-sky-200 px-2 py-0.5 rounded border border-sky-400/30 text-[11px] font-mono">
+                          <strong>FABER:</strong> {studentProfile.faber}
+                        </span>
+                      )}
+                      {studentProfile.pin && (
+                        <span className="bg-sky-400/20 text-sky-200 px-2 py-0.5 rounded border border-sky-400/30 text-[11px] font-mono">
+                          <strong>PIN:</strong> {studentProfile.pin}
+                        </span>
+                      )}
+                      {studentProfile.pid && (
+                        <span className="bg-sky-400/20 text-sky-200 px-2 py-0.5 rounded border border-sky-400/30 text-[11px] font-mono">
+                          <strong>PID:</strong> {studentProfile.pid}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <button
+                    onClick={() => setShowStudentRequestModal(true)}
+                    className="px-4 py-2.5 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-sky-500/20 transition flex items-center gap-1.5"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Terminanfrage stellen
+                  </button>
+                  <button
+                    onClick={() => setShowStudentProfileModal(true)}
+                    className="px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl text-xs sm:text-sm border border-white/20 transition flex items-center gap-1.5"
+                  >
+                    <User className="w-4 h-4" />
+                    Mein Profil
+                  </button>
+                  <button
                     onClick={() => {
-                      setMagicFeedback('Sitzung sicher beendet. Du hast dich erfolgreich abgemeldet.');
-                      setTimeout(() => setMagicFeedback(null), 5000);
+                      setMagicFeedback('Du hast dich erfolgreich abgemeldet.');
+                      setTimeout(() => setMagicFeedback(null), 4000);
                     }}
-                    className="px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 transition"
+                    className="px-3 py-2.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-400/30 font-semibold rounded-xl text-xs transition"
                   >
                     Abmelden
                   </button>
                 </div>
+              </div>
 
-                <div className="border-t border-slate-100 pt-3 space-y-2 text-xs text-slate-600">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-slate-400" />
-                    <span>lukas.berner@swiss-pilot.ch</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-slate-400" />
-                    <span>+41 79 400 11 22</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-slate-400" />
-                    <span>Theorieprüfung bestanden (01/2026)</span>
-                  </div>
-                </div>
+              {/* 3. Zweispaltige Kacheln: Kontostand & See-Wetter */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Kachel A: Kontostand & Guthaben */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                          <Wallet className="w-5 h-5 text-sky-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-base">Dein Kontostand &amp; Guthaben</h3>
+                          <p className="text-xs text-slate-500">Bezahlte Fahrstunden &amp; Mieten</p>
+                        </div>
+                      </div>
+                      <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
+                        Abo Aktiv
+                      </span>
+                    </div>
 
-                {/* Abo Card */}
-                <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-xl shadow-sm text-xs space-y-2">
-                  <div className="flex justify-between items-center text-slate-300">
-                    <span>Mehrfachkarte / 10er Abo</span>
-                    <span className="text-emerald-400 font-bold">Aktiv</span>
-                  </div>
-                  <div className="text-lg font-bold">6 / 10 Lektionen absolviert</div>
-                  <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
-                    <div className="bg-sky-400 h-full w-[60%]" />
-                  </div>
-                  <div className="text-[11px] text-slate-400 flex justify-between">
-                    <span>Verbleibend: 4 Lektionen</span>
-                    <span>Wert: CHF 780.00</span>
-                  </div>
-                </div>
+                    <div className="grid grid-cols-2 gap-4 mt-5">
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+                        <span className="text-xs text-slate-500 uppercase font-semibold">Verfügbare Fahrstunden</span>
+                        <div className="text-3xl font-black text-slate-900 mt-1">
+                          4 <span className="text-sm font-normal text-slate-500">von 10</span>
+                        </div>
+                        <span className="text-[11px] text-emerald-600 font-semibold mt-1 inline-block">
+                          à 90 Min. im Voraus bezahlt
+                        </span>
+                      </div>
 
-                {/* Neuen Link per Mail anfordern */}
-                <div className="border-t border-slate-100 pt-3">
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Neuen Zugangslink anfordern:
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="email"
-                      value={studentEmailRequest}
-                      onChange={e => setStudentEmailRequest(e.target.value)}
-                      placeholder="deine-email@beispiel.ch"
-                      className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs flex-1 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    />
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+                        <span className="text-xs text-slate-500 uppercase font-semibold">Bootsmiete / Charter</span>
+                        <div className="text-3xl font-black text-slate-900 mt-1">
+                          1 <span className="text-sm font-normal text-slate-500">Guthaben</span>
+                        </div>
+                        <span className="text-[11px] text-sky-600 font-semibold mt-1 inline-block">
+                          Tagescharter Boesch 620
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mt-5 space-y-2">
+                      <div className="flex justify-between text-xs font-semibold text-slate-700">
+                        <span>Ausbildungsfortschritt (10er Paket)</span>
+                        <span>60% absolviert (6/10)</span>
+                      </div>
+                      <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                        <div className="bg-gradient-to-r from-sky-500 to-indigo-600 h-full w-[60%] rounded-full transition-all duration-500" />
+                      </div>
+                      <div className="flex justify-between text-[11px] text-slate-400">
+                        <span>Noch 4 Fahrstunden verbleibend</span>
+                        <span>Restwert: CHF 760.00</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-600 flex items-center justify-between">
+                      <span className="text-slate-500">Abo: <strong>10er Block Motorboot Kat. A (Luzern / NW)</strong></span>
+                      <span className="text-slate-400">Gültig bis 31.12.2026</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-xs text-slate-500">Automatische Verrechnung bei Buchung aktiv</span>
                     <button
-                      onClick={() => {
-                        setMagicFeedback(`Neuer Zugangslink wurde an ${studentEmailRequest || 'lukas.berner@swiss-pilot.ch'} gesendet.`);
-                        setTimeout(() => setMagicFeedback(null), 5000);
-                      }}
-                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition"
+                      onClick={() => setShowStudentRequestModal(true)}
+                      className="text-xs text-sky-600 hover:text-sky-800 font-bold hover:underline"
                     >
-                      Senden
+                      Termin mit Guthaben buchen &rarr;
                     </button>
                   </div>
                 </div>
-              </div>
 
-              {/* Schüler Termine */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Anstehende Termine */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-4 border-b border-slate-100 bg-sky-50/50 flex items-center justify-between">
-                    <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-sky-600" />
-                      Bevorstehende Fahrstunden (2)
-                    </h3>
-                    <span className="text-xs text-sky-700 font-medium">Stornierung bis 24h vorher kostenlos</span>
+                {/* Kachel B: See-Wetter Vierwaldstättersee (Luzern & Nidwalden) */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                          <Waves className="w-5 h-5 text-sky-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-base">See-Wetter &amp; Seebedingungen</h3>
+                          <p className="text-xs text-slate-500">Vierwaldstättersee Live-Stationen</p>
+                        </div>
+                      </div>
+
+                      {/* Station Switcher */}
+                      <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-semibold">
+                        <button
+                          onClick={() => setStudentWeatherStation('luzern')}
+                          className={`px-3 py-1 rounded-lg transition ${
+                            studentWeatherStation === 'luzern'
+                              ? 'bg-white text-slate-900 shadow-sm font-bold'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          Luzern (LU)
+                        </button>
+                        <button
+                          onClick={() => setStudentWeatherStation('nidwalden')}
+                          className={`px-3 py-1 rounded-lg transition ${
+                            studentWeatherStation === 'nidwalden'
+                              ? 'bg-white text-slate-900 shadow-sm font-bold'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          Nidwalden (NW)
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Wetter-Detailanzeige */}
+                    {studentWeatherStation === 'luzern' ? (
+                      <div className="mt-4 space-y-4">
+                        <div className="flex items-center justify-between bg-sky-50/60 border border-sky-100 rounded-xl p-3.5">
+                          <div className="flex items-center gap-3">
+                            <Sun className="w-8 h-8 text-amber-500" />
+                            <div>
+                              <div className="font-bold text-slate-900 text-sm">Luzern Seebecken / Tribschen</div>
+                              <div className="text-xs text-slate-500">Heiter bis leicht bewölkt • Bucht Luzern</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-black text-slate-900">19.5 °C</div>
+                            <div className="text-xs text-slate-500">Wasser: <strong className="text-sky-700">16.5 °C</strong></div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Wind</span>
+                            <strong className="text-slate-900 text-sm">12 km/h</strong>
+                            <span className="text-slate-500 block text-[10px]">6.5 kn (Bft 2)</span>
+                          </div>
+                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Richtung</span>
+                            <strong className="text-slate-900 text-sm">WSW (240°)</strong>
+                            <span className="text-slate-500 block text-[10px]">Leichte Brise</span>
+                          </div>
+                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Wellen</span>
+                            <strong className="text-slate-900 text-sm">&lt; 0.2m</strong>
+                            <span className="text-slate-500 block text-[10px]">Ruhig</span>
+                          </div>
+                        </div>
+
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 font-semibold">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            Manövereignung: Optimal für An- &amp; Ablegemanöver
+                          </span>
+                          <span className="text-[11px] px-2 py-0.5 bg-emerald-200/80 rounded-full font-bold text-emerald-900">
+                            Perfekt
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 space-y-4">
+                        <div className="flex items-center justify-between bg-sky-50/60 border border-sky-100 rounded-xl p-3.5">
+                          <div className="flex items-center gap-3">
+                            <Sun className="w-8 h-8 text-amber-500" />
+                            <div>
+                              <div className="font-bold text-slate-900 text-sm">Nidwalden (Stansstad &amp; Hergiswil NW)</div>
+                              <div className="text-xs text-slate-500">Sonnig mit thermischem Wind • Alpnachersee / Seebecken Stansstad-Hergiswil</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-black text-slate-900">20.2 °C</div>
+                            <div className="text-xs text-slate-500">Wasser: <strong className="text-sky-700">16.1 °C</strong></div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Wind</span>
+                            <strong className="text-slate-900 text-sm">15 km/h</strong>
+                            <span className="text-slate-500 block text-[10px]">8.0 kn (Bft 3)</span>
+                          </div>
+                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Richtung</span>
+                            <strong className="text-slate-900 text-sm">ESE (110°)</strong>
+                            <span className="text-slate-500 block text-[10px]">Schwache Brise</span>
+                          </div>
+                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Wellen</span>
+                            <strong className="text-slate-900 text-sm">0.2 - 0.3m</strong>
+                            <span className="text-slate-500 block text-[10px]">Leichte Kabbelwellen</span>
+                          </div>
+                        </div>
+
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 font-semibold">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            Manövereignung: Sehr gut für Boje über Bord &amp; Kursfahren
+                          </span>
+                          <span className="text-[11px] px-2 py-0.5 bg-emerald-200/80 rounded-full font-bold text-emerald-900">
+                            Gut
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
+                  {/* Sturmwarnleuchten Status */}
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-slate-700 font-semibold">
+                        Sturmwarnleuchten: <strong>Entwarnung / Ruhe</strong> (Alle Leuchten aus)
+                      </span>
+                    </div>
+                    <span className="text-slate-400 text-[11px]">Vierwaldstättersee Warnregion 3</span>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* 4. Termine Bereich (Kommende Termine & Vergangene Termine Tabs) */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                      <Calendar className="w-4 h-4" />
+                    </div>
+                    <h3 className="font-bold text-slate-900 text-base">Deine Termine &amp; Fahrten</h3>
+                  </div>
+
+                  {/* Tabs: Kommende vs. Vergangene */}
+                  <div className="flex items-center gap-2">
+                    <div className="inline-flex p-1 bg-slate-200/80 rounded-xl text-xs font-semibold">
+                      <button
+                        onClick={() => setStudentAppointmentTab('upcoming')}
+                        className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                          studentAppointmentTab === 'upcoming'
+                            ? 'bg-white text-slate-900 shadow-sm font-bold'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <Calendar className="w-3.5 h-3.5" />
+                        Kommende Termine ({upcomingApps.length})
+                      </button>
+                      <button
+                        onClick={() => setStudentAppointmentTab('past')}
+                        className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                          studentAppointmentTab === 'past'
+                            ? 'bg-white text-slate-900 shadow-sm font-bold'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        Vergangene Termine ({pastApps.length})
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => setShowStudentRequestModal(true)}
+                      className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Termin anfragen
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tab-Inhalt */}
+                {studentAppointmentTab === 'upcoming' ? (
                   <div className="divide-y divide-slate-100">
-                    {appointments
-                      .filter(a => a.customer_id === 1 && a.status === 'confirmed')
-                      .map(a => (
-                        <div key={a.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition">
+                    {upcomingApps.length === 0 ? (
+                      <div className="p-8 text-center text-slate-500 text-sm">
+                        Keine bevorstehenden Termine gefunden.
+                      </div>
+                    ) : (
+                      upcomingApps.map(a => (
+                        <div key={a.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition">
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-slate-900 text-base">{a.service_name}</span>
-                              <span className="text-xs px-2 py-0.5 bg-sky-100 text-sky-800 rounded-full font-medium">
-                                Bestätigt
+                              {a.status === 'confirmed' ? (
+                                <span className="text-xs px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold border border-emerald-200">
+                                  Bestätigt
+                                </span>
+                              ) : (
+                                <span className="text-xs px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-full font-bold border border-amber-200">
+                                  Angefragt (in Prüfung)
+                                </span>
+                              )}
+                              <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md font-medium">
+                                Abo-Guthaben
                               </span>
                             </div>
-                            <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                              <span><Calendar className="w-3.5 h-3.5 inline mr-1 text-slate-400" />{a.date}</span>
-                              <span><Clock className="w-3.5 h-3.5 inline mr-1 text-slate-400" />{a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)} Uhr</span>
-                              <span><Ship className="w-3.5 h-3.5 inline mr-1 text-slate-400" />{a.boat_name}</span>
-                              <span><User className="w-3.5 h-3.5 inline mr-1 text-slate-400" />Coach: {a.instructor_name}</span>
+                            <div className="text-xs text-slate-600 mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                              <span><Calendar className="w-3.5 h-3.5 inline mr-1 text-sky-600" /><strong>{a.date}</strong></span>
+                              <span><Clock className="w-3.5 h-3.5 inline mr-1 text-sky-600" />{a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)} Uhr (90 Min.)</span>
+                              <span><Ship className="w-3.5 h-3.5 inline mr-1 text-sky-600" />{a.boat_name}</span>
+                              <span><User className="w-3.5 h-3.5 inline mr-1 text-sky-600" />Coach: {a.instructor_name}</span>
                             </div>
                             <div className="text-xs text-slate-400 mt-1">
-                              <MapPin className="w-3.5 h-3.5 inline mr-1 text-slate-400" />{a.location_name}
+                              <MapPin className="w-3.5 h-3.5 inline mr-1 text-slate-400" />Treffpunkt: <strong>{a.location_name}</strong>
                             </div>
                           </div>
 
-                          <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2">
+                          <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2.5">
                             <span className="text-sm font-bold text-slate-900">CHF {a.price.toFixed(2)}</span>
                             <button
                               onClick={() => setCancelModalAppointment(a)}
                               className="px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition"
                             >
-                              Stornieren
+                              Termin stornieren
                             </button>
                           </div>
                         </div>
-                      ))}
+                      ))
+                    )}
                   </div>
-                </div>
-
-                {/* Vergangene Termine */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                    <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-slate-500" />
-                      Vergangene Fahrstunden &amp; Prüfungserfolge
-                    </h3>
-                  </div>
-
+                ) : (
                   <div className="divide-y divide-slate-100">
-                    {appointments
-                      .filter(a => a.customer_id === 1 && (a.status === 'completed' || a.status === 'cancelled_customer'))
-                      .map(a => (
-                        <div key={a.id} className="p-4 flex items-center justify-between text-xs hover:bg-slate-50 transition">
+                    {pastApps.length === 0 ? (
+                      <div className="p-8 text-center text-slate-500 text-sm">
+                        Keine vergangenen Termine vorhanden.
+                      </div>
+                    ) : (
+                      pastApps.map(a => (
+                        <div key={a.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition text-xs">
                           <div>
-                            <div className="font-semibold text-slate-800 text-sm">{a.service_name}</div>
-                            <div className="text-slate-500 mt-0.5">
-                              {a.date} &bull; {a.duration_minutes} Min mit {a.instructor_name} auf {a.boat_name}
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 text-sm">{a.service_name}</span>
+                              {a.status === 'completed' ? (
+                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold">
+                                  Erfolgreich absolviert
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-rose-100 text-rose-800 rounded-full font-bold">
+                                  Storniert
+                                </span>
+                              )}
                             </div>
-                            {a.status === 'cancelled_customer' && (
-                              <div className="text-rose-600 font-medium mt-0.5">
-                                {a.instructor_payout_note}
+                            <div className="text-slate-500 mt-1">
+                              {a.date} • {a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)} Uhr • Coach {a.instructor_name} • Boot {a.boat_name}
+                            </div>
+                            {a.instructor_payout_note && (
+                              <div className="text-slate-600 font-medium mt-1 bg-slate-50 p-2 rounded border border-slate-200">
+                                Feedback / Notiz: {a.instructor_payout_note}
                               </div>
                             )}
                           </div>
-
                           <div className="text-right">
-                            <div className="font-bold text-slate-900">CHF {a.price.toFixed(2)}</div>
-                            {a.status === 'completed' ? (
-                              <span className="text-emerald-600 font-semibold flex items-center gap-1 justify-end">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Abgeschlossen
-                              </span>
-                            ) : (
-                              <span className="text-rose-600 font-semibold">Storniert</span>
-                            )}
+                            <div className="font-bold text-slate-900 text-sm">CHF {a.price.toFixed(2)}</div>
+                            <span className="text-slate-400">Abo-Einheit abgebucht</span>
                           </div>
                         </div>
-                      ))}
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* MODAL 1: Terminanfrage stellen */}
+              {showStudentRequestModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                  <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                          <Calendar className="w-5 h-5 text-sky-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-base">Terminanfrage einreichen</h3>
+                          <p className="text-xs text-slate-500">Wunschtermin für Fahrstunde oder Bootsmiete</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowStudentRequestModal(false)}
+                        className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <form
+                      onSubmit={e => {
+                        e.preventDefault();
+                        const newApp: Appointment = {
+                          id: Date.now(),
+                          date: newReqDate,
+                          start_time: newReqTimeWindow === 'morning' ? '09:00:00' : newReqTimeWindow === 'afternoon' ? '14:00:00' : '17:30:00',
+                          end_time: newReqTimeWindow === 'morning' ? '10:30:00' : newReqTimeWindow === 'afternoon' ? '15:30:00' : '19:00:00',
+                          duration_minutes: 90,
+                          customer_id: 1,
+                          customer_name: `${studentProfile.first_name} ${studentProfile.last_name}`,
+                          customer_email: studentProfile.email,
+                          customer_phone: studentProfile.phone,
+                          instructor_id: 1,
+                          instructor_name: newReqCoach,
+                          boat_name: 'Boesch 620 Bimini',
+                          location_name: newReqLocation,
+                          service_name: newReqService,
+                          price: 190.0,
+                          status: 'requested',
+                          instructor_payout_amount: 97.5,
+                          instructor_payout_status: 'open',
+                          instructor_payout_note: newReqNotes ? `Schüler-Anfrage: ${newReqNotes}` : 'Terminanfrage über Kunden-Dashboard'
+                        };
+
+                        setAppointments(prev => [newApp, ...prev]);
+                        setShowStudentRequestModal(false);
+                        setMagicFeedback(`Deine Terminanfrage für ${newReqDate} wurde erfolgreich eingereicht! Die Flottenleitung prüft die Zuteilung.`);
+                        setTimeout(() => setMagicFeedback(null), 6000);
+                      }}
+                      className="mt-5 space-y-4 text-xs"
+                    >
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Ausbildungsleistung / Terminart *</label>
+                        <select
+                          value={newReqService}
+                          onChange={e => setNewReqService(e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                        >
+                          <option value="Motorboot Kat. A (90 Min.)">Motorboot Kat. A (90 Min.) – CHF 190.00</option>
+                          <option value="Intensiv-Doppelstunde (180 Min.)">Intensiv-Doppelstunde (180 Min.) – CHF 380.00</option>
+                          <option value="Hafen- & Boxen-Manövertraining">Hafen- &amp; Boxen-Manövertraining (90 Min.) – CHF 190.00</option>
+                          <option value="Prüfungsvorbereitung / Generalprobe">Prüfungsvorbereitung / Generalprobe – CHF 210.00</option>
+                          <option value="Bootsmiete / Charter (Halbtag)">Bootsmiete / Charter (Halbtag) – CHF 350.00</option>
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">Wunschdatum *</label>
+                          <input
+                            type="date"
+                            value={newReqDate}
+                            onChange={e => setNewReqDate(e.target.value)}
+                            min="2026-03-20"
+                            required
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">Zeitfenster</label>
+                          <select
+                            value={newReqTimeWindow}
+                            onChange={e => setNewReqTimeWindow(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                          >
+                            <option value="morning">Vormittag (09:00 - 10:30 Uhr)</option>
+                            <option value="afternoon">Nachmittag (14:00 - 15:30 Uhr)</option>
+                            <option value="evening">Abenddämmerung (17:30 - 19:00 Uhr)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">Bevorzugter Standort</label>
+                          <select
+                            value={newReqLocation}
+                            onChange={e => setNewReqLocation(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                          >
+                            <option value="Luzern (Alpenquai)">Luzern (Alpenquai / Tribschen)</option>
+                            <option value="Stansstad (Hafen)">Stansstad NW (Hafenanlage)</option>
+                            <option value="Hergiswil (Hafen)">Hergiswil NW (Bootshafen)</option>
+                            <option value="Buochs (Seefeld)">Buochs NW (Seefeld Pier)</option>
+                            <option value="Ennetbürgen">Ennetbürgen (Bürgenstock-Bucht)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">Wunsch-Fahrlehrer</label>
+                          <select
+                            value={newReqCoach}
+                            onChange={e => setNewReqCoach(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                          >
+                            <option value="Beat Vollenweider">Beat Vollenweider</option>
+                            <option value="Marc Hürlimann">Marc Hürlimann</option>
+                            <option value="Sandra Meier">Sandra Meier</option>
+                            <option value="Beliebiger verfügbarer Coach">Beliebiger Coach</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="useBalanceCheck"
+                          checked={newReqUseBalance}
+                          onChange={e => setNewReqUseBalance(e.target.checked)}
+                          className="rounded text-sky-600 focus:ring-sky-500"
+                        />
+                        <label htmlFor="useBalanceCheck" className="font-semibold text-sky-900 cursor-pointer">
+                          Mit vorhandenem Abo-Guthaben verrechnen (4 Lektionen verfügbar)
+                        </label>
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Besondere Wünsche / Notizen</label>
+                        <textarea
+                          rows={2}
+                          value={newReqNotes}
+                          onChange={e => setNewReqNotes(e.target.value)}
+                          placeholder="z. B. Schwerpunkt auf Boxenmanöver rückwärts oder Generalprobe..."
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                        />
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowStudentRequestModal(false)}
+                          className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold"
+                        >
+                          Abbrechen
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-md transition"
+                        >
+                          Terminanfrage verbindlich absenden &rarr;
+                        </button>
+                      </div>
+                    </form>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* MODAL 2: Schülerprofil bearbeiten */}
+              {showStudentProfileModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                  <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                          <User className="w-5 h-5 text-amber-700" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-base">Schülerprofil bearbeiten</h3>
+                          <p className="text-xs text-slate-500">Persönliche Angaben &amp; Schifffahrtsamts-Daten</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowStudentProfileModal(false)}
+                        className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <form
+                      onSubmit={e => {
+                        e.preventDefault();
+                        setShowStudentProfileModal(false);
+                        setMagicFeedback('Dein Profil wurde erfolgreich gespeichert und aktualisiert.');
+                        setTimeout(() => setMagicFeedback(null), 5000);
+                      }}
+                      className="mt-5 space-y-3.5 text-xs"
+                    >
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">Vorname</label>
+                          <input
+                            type="text"
+                            value={studentProfile.first_name}
+                            onChange={e => setStudentProfile({ ...studentProfile, first_name: e.target.value })}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">Nachname</label>
+                          <input
+                            type="text"
+                            value={studentProfile.last_name}
+                            onChange={e => setStudentProfile({ ...studentProfile, last_name: e.target.value })}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">E-Mail-Adresse</label>
+                        <input
+                          type="email"
+                          value={studentProfile.email}
+                          disabled
+                          className="w-full px-3 py-2 bg-slate-100 text-slate-500 border border-slate-200 rounded-xl text-xs font-medium"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">Mobiltelefonnummer *</label>
+                          <input
+                            type="tel"
+                            value={studentProfile.phone}
+                            onChange={e => setStudentProfile({ ...studentProfile, phone: e.target.value })}
+                            placeholder="+41 79 123 45 67"
+                            required
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">Geburtsdatum *</label>
+                          <input
+                            type="date"
+                            value={studentProfile.birthdate}
+                            onChange={e => setStudentProfile({ ...studentProfile, birthdate: e.target.value })}
+                            required
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Schweizer Schifffahrtsamt: FABER:, PIN:, PID: */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">FABER: *</label>
+                          <input
+                            type="text"
+                            value={studentProfile.faber}
+                            onChange={e => setStudentProfile({ ...studentProfile, faber: e.target.value, license_number: e.target.value })}
+                            placeholder="z. B. 123.456.789"
+                            required
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-sky-500"
+                          />
+                          <span className="text-[10px] text-slate-400 block mt-0.5">Fahrberechtigungs-Reg.</span>
+                        </div>
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">PIN: *</label>
+                          <input
+                            type="text"
+                            value={studentProfile.pin}
+                            onChange={e => setStudentProfile({ ...studentProfile, pin: e.target.value })}
+                            placeholder="z. B. 7841"
+                            required
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-sky-500"
+                          />
+                          <span className="text-[10px] text-slate-400 block mt-0.5">Persönliche Ident.-Nr.</span>
+                        </div>
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">PID: *</label>
+                          <input
+                            type="text"
+                            value={studentProfile.pid}
+                            onChange={e => setStudentProfile({ ...studentProfile, pid: e.target.value })}
+                            placeholder="z. B. CHE-123.456.7"
+                            required
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-sky-500"
+                          />
+                          <span className="text-[10px] text-slate-400 block mt-0.5">Personen-Identifikator</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Notfallkontakt (Name &amp; Tel) *</label>
+                        <input
+                          type="text"
+                          value={studentProfile.emergency_contact}
+                          onChange={e => setStudentProfile({ ...studentProfile, emergency_contact: e.target.value })}
+                          placeholder="z. B. Anna Berner, 079 888 77 66"
+                          required
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-2">
+                          <label className="font-bold text-slate-700 block mb-1">Strasse &amp; Nr.</label>
+                          <input
+                            type="text"
+                            value={studentProfile.street}
+                            onChange={e => setStudentProfile({ ...studentProfile, street: e.target.value })}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">PLZ &amp; Ort</label>
+                          <input
+                            type="text"
+                            value={`${studentProfile.zip} ${studentProfile.city}`.trim()}
+                            onChange={e => {
+                              const parts = e.target.value.split(' ');
+                              setStudentProfile({
+                                ...studentProfile,
+                                zip: parts[0] || '',
+                                city: parts.slice(1).join(' ') || ''
+                              });
+                            }}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowStudentProfileModal(false)}
+                          className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold"
+                        >
+                          Abbrechen
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-md transition"
+                        >
+                          Profilangaben speichern &rarr;
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ============================================================== */}
         {/* TAB 3: FAHRLEHRER-PORTAL & MONATSABSCHLUSS (PROMPT 2, 3 & 5)   */}

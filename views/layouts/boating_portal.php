@@ -160,34 +160,47 @@ unset($_SESSION['flash_portal_success'], $_SESSION['flash_portal_error'], $_SESS
             <div class="collapse navbar-collapse" id="portalNav">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-1">
                     <li class="nav-item">
-                        <a class="nav-link portal-nav-link <?= in_array($currentRoute, ['bootschule', '/bootschule'], true) ? 'active' : '' ?>" href="?route=bootschule">
-                            <i class="bi bi-house-door me-1"></i> Startseite
+                        <a class="nav-link portal-nav-link <?= in_array($currentRoute, ['bootschule/me/appointments', '/bootschule/me/appointments', 'bootschule'], true) ? 'active' : '' ?>" href="?route=bootschule/me/appointments">
+                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link portal-nav-link <?= in_array($currentRoute, ['bootschule/services', '/bootschule/services'], true) ? 'active' : '' ?>" href="?route=bootschule/services">
-                            <i class="bi bi-tag me-1"></i> Angebote &amp; Tarife
+                        <a class="nav-link portal-nav-link" href="?route=bootschule/me/appointments#upcoming">
+                            <i class="bi bi-calendar-check me-1"></i> Termine
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link portal-nav-link <?= in_array($currentRoute, ['bootschule/me/appointments', '/bootschule/me/appointments'], true) ? 'active' : '' ?>" href="?route=bootschule/me/appointments">
-                            <i class="bi bi-calendar-check me-1"></i> Meine Termine
+                        <a class="nav-link portal-nav-link" href="?route=bootschule/me/appointments#weatherCard">
+                            <i class="bi bi-cloud-sun me-1"></i> Wetter (LU &amp; NW)
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link portal-nav-link <?= str_contains($currentRoute, 'login') ? 'active' : '' ?>" href="?route=nautic/login" title="Crew- &amp; Fahrlehrer-Login">
-                            <i class="bi bi-person-workspace me-1"></i> Crew-Login
-                        </a>
-                    </li>
-                    <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                        <a class="btn portal-btn-book" href="?route=bootschule/book">
-                            <i class="bi bi-calendar-plus me-1"></i> Slot buchen
-                        </a>
-                    </li>
-                    <?php if (class_exists('Auth') && Auth::check()): ?>
+                    <?php if (!empty($_SESSION['boating_customer_id']) || !empty($_SESSION['bs_customer_id']) || !empty($_SESSION['magic_authenticated'])): ?>
+                        <li class="nav-item">
+                            <button type="button" class="nav-link portal-nav-link btn btn-link text-decoration-none border-0" data-bs-toggle="modal" data-bs-target="#profileModal">
+                                <i class="bi bi-person-circle me-1"></i> Mein Profil
+                            </button>
+                        </li>
                         <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                            <a class="btn btn-sm btn-outline-light rounded-pill px-3" href="?route=admin/boating">
-                                <i class="bi bi-gear-fill me-1"></i> Admin
+                            <button type="button" class="btn portal-btn-book" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
+                                <i class="bi bi-calendar-plus me-1"></i> Terminanfrage
+                            </button>
+                        </li>
+                        <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                            <a class="btn btn-sm btn-outline-light rounded-pill px-3" href="?route=bootschule/me/logout" title="Sitzung sicher beenden">
+                                <i class="bi bi-box-arrow-right me-1"></i> Abmelden
+                            </a>
+                        </li>
+                    <?php else: ?>
+                        <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                            <a class="btn portal-btn-book" href="?route=nautic/login">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Anmelden
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                    <?php if (class_exists('Auth') && Auth::check() && ((string) (Auth::user()['role'] ?? '') === 'admin' || (string) (Auth::user()['role'] ?? '') === 'super_admin')): ?>
+                        <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                            <a class="btn btn-sm btn-outline-warning rounded-pill px-2.5" href="?route=admin/boating">
+                                <i class="bi bi-shield-lock me-1"></i> Admin
                             </a>
                         </li>
                     <?php endif; ?>

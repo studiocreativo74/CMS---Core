@@ -343,6 +343,9 @@ ob_start();
                                 <input type="hidden" name="target_license" value="<?= htmlspecialchars((string) ($customer['target_license'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                                 <input type="hidden" name="licenses_held" value="<?= htmlspecialchars((string) ($customer['licenses_held'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                                 <input type="hidden" name="license_number" value="<?= htmlspecialchars((string) ($customer['license_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="faber" value="<?= htmlspecialchars((string) ($customer['faber'] ?? $customer['license_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="pin" value="<?= htmlspecialchars((string) ($customer['pin'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                <input type="hidden" name="pid" value="<?= htmlspecialchars((string) ($customer['pid'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                                 <input type="hidden" name="experience_level" value="<?= htmlspecialchars((string) ($customer['experience_level'] ?? 'beginner'), ENT_QUOTES, 'UTF-8') ?>">
                                 <input type="hidden" name="theory_passed" value="<?= !empty($customer['theory_passed']) ? '1' : '0' ?>">
                                 <input type="hidden" name="theory_passed_at" value="<?= htmlspecialchars((string) ($customer['theory_passed_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
@@ -459,9 +462,18 @@ ob_start();
                             <label class="form-label small fw-semibold">Vorhandene Lizenzen / Vorbesitz</label>
                             <input type="text" name="licenses_held" class="form-control" value="<?= htmlspecialchars((string) ($customer['licenses_held'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="z. B. Bodenseepatent, Funkschein SRC, SBF Binnen">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Schiffsführerausweis- / Führerschein-Nummer</label>
-                            <input type="text" name="license_number" class="form-control" value="<?= htmlspecialchars((string) ($customer['license_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="z. B. CH-6005-1234">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">FABER: <span class="text-muted fw-normal">(Fahrberechtigungs-Register)</span></label>
+                            <input type="text" name="faber" class="form-control font-monospace" value="<?= htmlspecialchars((string) ($customer['faber'] ?? $customer['license_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="z. B. 123.456.789">
+                            <input type="hidden" name="license_number" value="<?= htmlspecialchars((string) ($customer['faber'] ?? $customer['license_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">PIN: <span class="text-muted fw-normal">(Persönliche Identifikations-Nr.)</span></label>
+                            <input type="text" name="pin" class="form-control font-monospace" value="<?= htmlspecialchars((string) ($customer['pin'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="z. B. 7841">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">PID: <span class="text-muted fw-normal">(Personen-Identifikator)</span></label>
+                            <input type="text" name="pid" class="form-control font-monospace" value="<?= htmlspecialchars((string) ($customer['pid'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="z. B. CHE-123.456.7">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Erfahrungsstufe auf dem Wasser</label>
@@ -773,6 +785,9 @@ ob_start();
                     <input type="hidden" name="target_license" value="<?= htmlspecialchars((string) ($customer['target_license'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="licenses_held" value="<?= htmlspecialchars((string) ($customer['licenses_held'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="license_number" value="<?= htmlspecialchars((string) ($customer['license_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="faber" value="<?= htmlspecialchars((string) ($customer['faber'] ?? $customer['license_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="pin" value="<?= htmlspecialchars((string) ($customer['pin'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="pid" value="<?= htmlspecialchars((string) ($customer['pid'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="experience_level" value="<?= htmlspecialchars((string) ($customer['experience_level'] ?? 'beginner'), ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="theory_passed" value="<?= !empty($customer['theory_passed']) ? '1' : '0' ?>">
                     <input type="hidden" name="theory_passed_at" value="<?= htmlspecialchars((string) ($customer['theory_passed_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">

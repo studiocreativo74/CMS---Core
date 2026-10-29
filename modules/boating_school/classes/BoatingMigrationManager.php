@@ -59,12 +59,29 @@ final class BoatingMigrationManager
                 BoatingPermissions::registerAll();
             }
 
-            // 9. Schema-Version in Settings aktualisieren
+            // 9. Modul "boating_school" in Tabelle modules als aktiv sicherstellen
+            self::ensureModuleEnabledInDatabase();
+
+            // 10. Schema-Version in Settings aktualisieren
             if (class_exists('Settings')) {
                 Settings::set('boating_schema_version', self::CURRENT_SCHEMA_VERSION);
             }
         } catch (\Throwable $e) {
             error_log('BoatingMigrationManager::run Fehler: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Stellt sicher, dass das Modul in der CMS modules-Tabelle als aktiviert (is_enabled = 1) geführt wird.
+     */
+    public static function ensureModuleEnabledInDatabase(): void
+    {
+        try {
+            if (self::tableExists('modules')) {
+                DB::execute("UPDATE `modules` SET `is_enabled` = 1, `updated_at` = NOW() WHERE `key` = 'boating_school'");
+            }
+        } catch (\Throwable $e) {
+            // Ignorieren falls nicht vorhanden
         }
     }
 

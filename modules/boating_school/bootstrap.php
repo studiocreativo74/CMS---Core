@@ -144,19 +144,27 @@ if (isset($router) && $router !== null) {
         }
     };
 
-    // Helper zur Registrierung beider Routenpräfixe (/admin/boating und /admin/boating-school)
+    // Helper zur Registrierung aller Routenpräfixe (/admin/boating, /admin/boating-school, /admin/boating_school, /admin/nautic)
     $registerGet = static function (string $subPath, callable $handler) use ($router): void {
         $p1 = '/admin/boating' . ($subPath ? '/' . ltrim($subPath, '/') : '');
         $p2 = '/admin/boating-school' . ($subPath ? '/' . ltrim($subPath, '/') : '');
+        $p3 = '/admin/boating_school' . ($subPath ? '/' . ltrim($subPath, '/') : '');
+        $p4 = '/admin/nautic' . ($subPath ? '/' . ltrim($subPath, '/') : '');
         $router->get($p1, $handler);
         $router->get($p2, $handler);
+        $router->get($p3, $handler);
+        $router->get($p4, $handler);
     };
 
     $registerPost = static function (string $subPath, callable $handler) use ($router): void {
         $p1 = '/admin/boating' . ($subPath ? '/' . ltrim($subPath, '/') : '');
         $p2 = '/admin/boating-school' . ($subPath ? '/' . ltrim($subPath, '/') : '');
+        $p3 = '/admin/boating_school' . ($subPath ? '/' . ltrim($subPath, '/') : '');
+        $p4 = '/admin/nautic' . ($subPath ? '/' . ltrim($subPath, '/') : '');
         $router->post($p1, $handler);
         $router->post($p2, $handler);
+        $router->post($p3, $handler);
+        $router->post($p4, $handler);
     };
 
     // =========================================================================
@@ -882,7 +890,10 @@ if (isset($router) && $router !== null) {
             'birthdate'           => trim((string) ($_POST['birthdate'] ?? '')),
             'target_license'      => trim((string) ($_POST['target_license'] ?? '')),
             'licenses_held'       => trim((string) ($_POST['licenses_held'] ?? '')),
-            'license_number'      => trim((string) ($_POST['license_number'] ?? '')),
+            'license_number'      => trim((string) ($_POST['license_number'] ?? ($_POST['faber'] ?? ''))),
+            'faber'               => trim((string) ($_POST['faber'] ?? ($_POST['license_number'] ?? ''))),
+            'pin'                 => trim((string) ($_POST['pin'] ?? '')),
+            'pid'                 => trim((string) ($_POST['pid'] ?? '')),
             'experience_level'    => trim((string) ($_POST['experience_level'] ?? 'beginner')),
             'theory_passed'       => !empty($_POST['theory_passed']) ? 1 : 0,
             'theory_passed_at'    => trim((string) ($_POST['theory_passed_at'] ?? '')),
@@ -972,7 +983,10 @@ if (isset($router) && $router !== null) {
             'birthdate'           => trim((string) ($_POST['birthdate'] ?? '')),
             'target_license'      => trim((string) ($_POST['target_license'] ?? '')),
             'licenses_held'       => trim((string) ($_POST['licenses_held'] ?? '')),
-            'license_number'      => trim((string) ($_POST['license_number'] ?? '')),
+            'license_number'      => trim((string) ($_POST['license_number'] ?? ($_POST['faber'] ?? ''))),
+            'faber'               => trim((string) ($_POST['faber'] ?? ($_POST['license_number'] ?? ''))),
+            'pin'                 => trim((string) ($_POST['pin'] ?? '')),
+            'pid'                 => trim((string) ($_POST['pid'] ?? '')),
             'experience_level'    => trim((string) ($_POST['experience_level'] ?? 'beginner')),
             'theory_passed'       => !empty($_POST['theory_passed']) ? 1 : 0,
             'theory_passed_at'    => trim((string) ($_POST['theory_passed_at'] ?? '')),
@@ -2339,15 +2353,52 @@ if (isset($router) && $router !== null) {
     // 6. KUNDEN-BUCHUNGSPORTAL (ÖFFENTLICH / FRONTEND-ROUTEN)
     // =========================================================================
 
-    // GET /bootschule (Portal Startseite)
-    $portalStartHandler = static function (): void {
-        $featuredServices = ServiceService::getAll(['is_active' => 1], 6);
-        $boats = BoatService::getAll(['is_active' => 1]);
-        $instructors = InstructorService::getAll(['is_active' => 1]);
-        require __DIR__ . '/views/portal/start.php';
+    // GET /bootschule & /boating_school & /nautic (Führt direkt zum Kunden-Dashboard, externe Marketing-Webseite existiert separat)
+    $portalStartHandler = static function () use (&$portalMyAppointmentsGetHandler): void {
+        if (isset($_GET['view']) && $_GET['view'] === 'catalog') {
+            $featuredServices = ServiceService::getAll(['is_active' => 1], 6);
+            $boats = BoatService::getAll(['is_active' => 1]);
+            $instructors = InstructorService::getAll(['is_active' => 1]);
+            require __DIR__ . '/views/portal/start.php';
+            return;
+        }
+
+        $sessionCustomerId = !empty($_SESSION['boating_customer_id'])
+            ? (int) $_SESSION['boating_customer_id']
+            : (!empty($_SESSION['bs_customer_id']) ? (int) $_SESSION['bs_customer_id'] : 0);
+
+        $authEmail = $_SESSION['boating_customer_email'] 
+            ?? $_SESSION['bs_customer_email'] 
+            ?? $_SESSION['magic_email'] 
+            ?? $_SESSION['user_email'] 
+            ?? null;
+
+        // Wenn eingeloggt oder Schüler-Session vorhanden: Direkt Kunden-Dashboard rendern
+        if ($sessionCustomerId > 0 || !empty($authEmail)) {
+            if (is_callable($portalMyAppointmentsGetHandler)) {
+                $portalMyAppointmentsGetHandler();
+                return;
+            }
+            header('Location: ?route=bootschule/me/appointments');
+            exit;
+        }
+
+        // Falls noch nicht eingeloggt: Weiterleitung zur aufgeräumten Loginmaske
+        header('Location: ?route=nautic/login');
+        exit;
     };
     $router->get('/bootschule', $portalStartHandler);
     $router->get('bootschule', $portalStartHandler);
+    $router->get('/bootschule/dashboard', $portalStartHandler);
+    $router->get('bootschule/dashboard', $portalStartHandler);
+    $router->get('/boating_school', $portalStartHandler);
+    $router->get('boating_school', $portalStartHandler);
+    $router->get('/boating', $portalStartHandler);
+    $router->get('boating', $portalStartHandler);
+    $router->get('/nautic', $portalStartHandler);
+    $router->get('nautic', $portalStartHandler);
+    $router->get('/nautic/dashboard', $portalStartHandler);
+    $router->get('nautic/dashboard', $portalStartHandler);
 
     // GET /bootschule/services (Leistungen & Tarife)
     $portalServicesHandler = static function (): void {
@@ -2645,9 +2696,39 @@ if (isset($router) && $router !== null) {
             }
         }
 
+        // Session-Kundennummer ermitteln
         $sessionCustomerId = !empty($_SESSION['boating_customer_id'])
             ? (int) $_SESSION['boating_customer_id']
             : (!empty($_SESSION['bs_customer_id']) ? (int) $_SESSION['bs_customer_id'] : 0);
+
+        // Falls keine spezifische Customer-ID vorliegt, prüfen wir auf aktive Session-E-Mail (z.B. nach Magic-Code-Login)
+        if ($sessionCustomerId <= 0) {
+            $authEmail = $_SESSION['boating_customer_email'] 
+                ?? $_SESSION['bs_customer_email'] 
+                ?? $_SESSION['magic_email'] 
+                ?? $_SESSION['user_email'] 
+                ?? null;
+
+            if (!empty($authEmail) && class_exists('CustomerService')) {
+                $c = CustomerService::findByEmail($authEmail);
+                if ($c !== null) {
+                    $sessionCustomerId = (int) $c['id'];
+                } else {
+                    $sessionCustomerId = CustomerService::findOrCreateByEmail($authEmail, [
+                        'first_name' => explode('@', $authEmail)[0] ?? 'Kunde',
+                        'last_name'  => '',
+                        'email'      => $authEmail,
+                    ]);
+                }
+
+                if ($sessionCustomerId > 0) {
+                    $_SESSION['boating_customer_id'] = $sessionCustomerId;
+                    $_SESSION['boating_customer_email'] = $authEmail;
+                    $_SESSION['bs_customer_id'] = $sessionCustomerId;
+                    $_SESSION['bs_customer_email'] = $authEmail;
+                }
+            }
+        }
 
         $customer = null;
         $upcomingAppointments = [];
@@ -2656,6 +2737,70 @@ if (isset($router) && $router !== null) {
         $tokenInvalid = false;
         $noSession = false;
 
+        $availableInstructors = [];
+        $availableLocations   = [];
+        $availableServices    = [];
+        $availableBoats       = [];
+
+        // Kontostand / Guthaben
+        $prepaidBalance = [
+            'total_units'       => 0,
+            'used_units'        => 0,
+            'remaining_units'   => 0,
+            'prepaid_hours'     => 0.0,
+            'prepaid_rentals'   => 0,
+            'has_active_plan'   => false,
+            'active_sub_title'  => null,
+            'progress_percent'  => 0,
+        ];
+
+        // Profil-Vollständigkeit
+        $profileCheck = [
+            'completeness_percent' => 100,
+            'is_incomplete'        => false,
+            'missing_fields'       => [],
+        ];
+
+        // Live-See-Wetter Vierwaldstättersee: Luzern & Nidwalden (NW)
+        $lakeWeather = [
+            'updated_at' => date('H:i'),
+            'date_str'   => date('d.m.Y'),
+            'luzern' => [
+                'name'               => 'Luzern (Seebecken / Tribschen)',
+                'lake_part'          => 'Luzerner Bucht / Kreuztrichter',
+                'temp'               => '19.5 °C',
+                'condition'          => 'Heiter bis leicht bewölkt',
+                'icon'               => 'sun',
+                'wind_speed_kmh'     => 12,
+                'wind_knots'         => 6.5,
+                'beaufort'           => 2,
+                'beaufort_desc'      => 'Leichte Brise',
+                'wind_direction'     => 'WSW (240°)',
+                'water_temp'         => '16.5 °C',
+                'wave_condition'     => 'Ruhig (Kräuselwellen < 0.2m)',
+                'maneuver_rating'    => 'Optimal für An- & Ablegemanöver',
+                'storm_warning'      => 'off', // off | caution | storm
+                'storm_warning_desc' => 'Entwarnung / Ruhe – Alle Warnleuchten aus',
+            ],
+            'nidwalden' => [
+                'name'               => 'Nidwalden (Stansstad & Hergiswil NW)',
+                'lake_part'          => 'Alpnachersee / Seebecken Stansstad-Hergiswil',
+                'temp'               => '20.2 °C',
+                'condition'          => 'Sonnig mit thermischem Wind',
+                'icon'               => 'sun-fill',
+                'wind_speed_kmh'     => 15,
+                'wind_knots'         => 8.0,
+                'beaufort'           => 3,
+                'beaufort_desc'      => 'Schwache Brise',
+                'wind_direction'     => 'ESE (110°)',
+                'water_temp'         => '16.1 °C',
+                'wave_condition'     => 'Leichte Kabbelwellen (0.2 - 0.3m)',
+                'maneuver_rating'    => 'Gute Bedingungen für Manövertraining & Boje über Bord',
+                'storm_warning'      => 'off',
+                'storm_warning_desc' => 'Entwarnung / Ruhe – Alle Warnleuchten aus',
+            ],
+        ];
+
         if ($sessionCustomerId > 0) {
             $customer = BoatingSchoolRepository::getCustomerById($sessionCustomerId);
             if ($customer && (int) ($customer['is_active'] ?? 1) === 1) {
@@ -2663,6 +2808,94 @@ if (isset($router) && $router !== null) {
                 $upcomingAppointments = $grouped['upcoming'];
                 $pastAppointments     = $grouped['past'];
                 $subscriptions        = BoatingSchoolRepository::getCustomerSubscriptions($sessionCustomerId);
+
+                // Ressourcen für Terminanfrage laden
+                if (class_exists('InstructorService')) {
+                    $availableInstructors = InstructorService::getAll(['is_active' => 1]);
+                }
+                if (class_exists('LocationService')) {
+                    $availableLocations = LocationService::getAll(true);
+                }
+                if (class_exists('ServiceService')) {
+                    $availableServices = ServiceService::getAll(['is_active' => 1], 100);
+                }
+                if (class_exists('BoatService')) {
+                    $availableBoats = BoatService::getAll(['is_active' => 1]);
+                }
+
+                // 1. Kontostand & Guthaben auswerten
+                $totU = 0;
+                $usedU = 0;
+                $rentals = 0;
+                $activeTitle = null;
+
+                foreach ($subscriptions as $sub) {
+                    $status = (string) ($sub['status'] ?? 'active');
+                    if ($status === 'active') {
+                        $t = (int) ($sub['total_units'] ?? 0);
+                        $u = (int) ($sub['used_units'] ?? 0);
+                        $totU += $t;
+                        $usedU += $u;
+                        if (!$activeTitle) {
+                            $activeTitle = (string) ($sub['title'] ?? 'Fahrschul-Abo');
+                        }
+                        if (stripos((string) ($sub['title'] ?? ''), 'miete') !== false || stripos((string) ($sub['title'] ?? ''), 'charter') !== false) {
+                            $rentals += max(0, $t - $u);
+                        }
+                    }
+                }
+
+                $remU = max(0, $totU - $usedU);
+                $progress = $totU > 0 ? (int) round(($usedU / $totU) * 100) : 0;
+
+                $prepaidBalance = [
+                    'total_units'       => $totU,
+                    'used_units'        => $usedU,
+                    'remaining_units'   => $remU,
+                    'prepaid_hours'     => round($remU * 1.5, 1), // Standard 90 Min pro Einheit
+                    'prepaid_rentals'   => $rentals,
+                    'has_active_plan'   => $totU > 0,
+                    'active_sub_title'  => $activeTitle,
+                    'progress_percent'  => $progress,
+                ];
+
+                // 2. Profil-Vollständigkeit ermitteln (inkl. Schweizer Schifffahrtsamts-Daten FABER, PIN, PID)
+                $missing = [];
+                if (empty(trim((string) ($customer['phone'] ?? '')))) {
+                    $missing['phone'] = 'Telefon- / Handynummer (für kurzfristige Absagen)';
+                }
+                if (empty(trim((string) ($customer['birthdate'] ?? '')))) {
+                    $missing['birthdate'] = 'Geburtsdatum (für Schifffahrtsamt-Prüfungsanmeldung)';
+                }
+                if (empty(trim((string) ($customer['street'] ?? '')))) {
+                    $missing['street'] = 'Strasse & Hausnummer';
+                }
+                if (empty(trim((string) ($customer['city'] ?? ''))) || empty(trim((string) ($customer['zip'] ?? '')))) {
+                    $missing['city'] = 'Postleitzahl & Wohnort';
+                }
+                if (empty(trim((string) ($customer['faber'] ?? $customer['license_number'] ?? '')))) {
+                    $missing['faber'] = 'FABER: Fahrberechtigungs-Register-Nr.';
+                }
+                if (empty(trim((string) ($customer['pin'] ?? '')))) {
+                    $missing['pin'] = 'PIN: Persönliche Identifikationsnummer';
+                }
+                if (empty(trim((string) ($customer['pid'] ?? '')))) {
+                    $missing['pid'] = 'PID: Personen-Identifikator';
+                }
+                if (empty(trim((string) ($customer['emergency_contact'] ?? '')))) {
+                    $missing['emergency_contact'] = 'Notfallkontakt (Name & Telefon)';
+                }
+
+                $totalCheckFields = 8;
+                $filledCount = $totalCheckFields - count($missing);
+                $percent = (int) round(($filledCount / $totalCheckFields) * 100);
+
+                $profileCheck = [
+                    'completeness_percent' => $percent,
+                    'is_incomplete'        => !empty($missing),
+                    'missing_fields'       => $missing,
+                ];
+
             } else {
                 unset($_SESSION['boating_customer_id'], $_SESSION['bs_customer_id']);
                 $customer = null;
@@ -2682,6 +2915,14 @@ if (isset($router) && $router !== null) {
     $router->get('bootschule/meine-termine', $portalMyAppointmentsGetHandler);
     $router->get('/bootschule/my-appointments', $portalMyAppointmentsGetHandler);
     $router->get('bootschule/my-appointments', $portalMyAppointmentsGetHandler);
+    $router->get('/bootschule/dashboard', $portalMyAppointmentsGetHandler);
+    $router->get('bootschule/dashboard', $portalMyAppointmentsGetHandler);
+    $router->get('/bootschule/me', $portalMyAppointmentsGetHandler);
+    $router->get('bootschule/me', $portalMyAppointmentsGetHandler);
+    $router->get('/nautic/dashboard', $portalMyAppointmentsGetHandler);
+    $router->get('nautic/dashboard', $portalMyAppointmentsGetHandler);
+    $router->get('/nautic/me', $portalMyAppointmentsGetHandler);
+    $router->get('nautic/me', $portalMyAppointmentsGetHandler);
 
     // d) POST /bootschule/me/appointments/{id}/cancel & /bootschule/me/appointments/cancel (CSRF-geschützt)
     $portalCancelHandler = static function (?string $paramId = null): void {
@@ -2729,7 +2970,180 @@ if (isset($router) && $router !== null) {
     $router->post('/bootschule/meine-termine/cancel', $portalCancelHandler);
     $router->post('bootschule/meine-termine/cancel', $portalCancelHandler);
 
-    // e) Logout Route für Schüler
+    // e) POST /bootschule/me/profile (Profildaten vom Schüler speichern)
+    $portalUpdateProfileHandler = static function (): void {
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_portal_error'] = 'Ungültiges Sicherheitstoken (CSRF).';
+            header('Location: ?route=bootschule/me/appointments');
+            exit;
+        }
+
+        $sessionCustomerId = !empty($_SESSION['boating_customer_id'])
+            ? (int) $_SESSION['boating_customer_id']
+            : (!empty($_SESSION['bs_customer_id']) ? (int) $_SESSION['bs_customer_id'] : 0);
+
+        if ($sessionCustomerId <= 0) {
+            $_SESSION['flash_portal_error'] = 'Keine aktive Sitzung gefunden.';
+            header('Location: ?route=bootschule/me/appointments');
+            exit;
+        }
+
+        $existing = BoatingSchoolRepository::getCustomerById($sessionCustomerId);
+        if (!$existing) {
+            $_SESSION['flash_portal_error'] = 'Kundenprofil nicht gefunden.';
+            header('Location: ?route=bootschule/me/appointments');
+            exit;
+        }
+
+        $phone            = trim((string) ($_POST['phone'] ?? ''));
+        $street           = trim((string) ($_POST['street'] ?? ''));
+        $zip              = trim((string) ($_POST['zip'] ?? ''));
+        $city             = trim((string) ($_POST['city'] ?? ''));
+        $birthdate        = trim((string) ($_POST['birthdate'] ?? ''));
+        $faber            = trim((string) ($_POST['faber'] ?? ($_POST['license_number'] ?? '')));
+        $pin              = trim((string) ($_POST['pin'] ?? ''));
+        $pid              = trim((string) ($_POST['pid'] ?? ''));
+        $licenseNumber    = trim((string) ($_POST['license_number'] ?? $faber));
+        $emergencyContact = trim((string) ($_POST['emergency_contact'] ?? ''));
+        $notes            = trim((string) ($_POST['notes'] ?? ''));
+
+        $updateData = array_merge($existing, [
+            'phone'             => $phone !== '' ? $phone : null,
+            'street'            => $street !== '' ? $street : null,
+            'zip'               => $zip !== '' ? $zip : null,
+            'city'              => $city !== '' ? $city : null,
+            'birthdate'         => $birthdate !== '' ? $birthdate : null,
+            'license_number'    => $licenseNumber !== '' ? $licenseNumber : null,
+            'faber'             => $faber !== '' ? $faber : null,
+            'pin'               => $pin !== '' ? $pin : null,
+            'pid'               => $pid !== '' ? $pid : null,
+            'emergency_contact' => $emergencyContact !== '' ? $emergencyContact : null,
+        ]);
+
+        if ($notes !== '') {
+            $updateData['notes'] = $notes;
+        }
+
+        $ok = BoatingSchoolRepository::updateCustomer($sessionCustomerId, $updateData);
+        if ($ok) {
+            $_SESSION['flash_portal_success'] = 'Dein Profil wurde erfolgreich aktualisiert und gespeichert!';
+        } else {
+            $_SESSION['flash_portal_error'] = 'Fehler beim Speichern der Profilangaben.';
+        }
+
+        header('Location: ?route=bootschule/me/appointments');
+        exit;
+    };
+
+    $router->post('/bootschule/me/profile', $portalUpdateProfileHandler);
+    $router->post('bootschule/me/profile', $portalUpdateProfileHandler);
+    $router->post('/bootschule/profile/update', $portalUpdateProfileHandler);
+    $router->post('bootschule/profile/update', $portalUpdateProfileHandler);
+
+    // f) POST /bootschule/me/request-appointment (Terminanfrage direkt aus dem Dashboard)
+    $portalRequestAppointmentHandler = static function (): void {
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_portal_error'] = 'Ungültiges Sicherheitstoken (CSRF).';
+            header('Location: ?route=bootschule/me/appointments');
+            exit;
+        }
+
+        $sessionCustomerId = !empty($_SESSION['boating_customer_id'])
+            ? (int) $_SESSION['boating_customer_id']
+            : (!empty($_SESSION['bs_customer_id']) ? (int) $_SESSION['bs_customer_id'] : 0);
+
+        if ($sessionCustomerId <= 0) {
+            $_SESSION['flash_portal_error'] = 'Bitte melde dich an, um einen Termin anzufragen.';
+            header('Location: ?route=bootschule/me/appointments');
+            exit;
+        }
+
+        $serviceId      = (int) ($_POST['service_id'] ?? 0);
+        $date           = trim((string) ($_POST['date'] ?? ''));
+        $timePreference = trim((string) ($_POST['time_preference'] ?? 'morning'));
+        $locationId     = !empty($_POST['location_id']) ? (int) $_POST['location_id'] : null;
+        $instructorId   = !empty($_POST['instructor_id']) ? (int) $_POST['instructor_id'] : null;
+        $boatId         = !empty($_POST['boat_id']) ? (int) $_POST['boat_id'] : null;
+        $notes          = trim((string) ($_POST['notes'] ?? ''));
+        $useBalance     = !empty($_POST['use_balance']);
+
+        if ($date === '') {
+            $_SESSION['flash_portal_error'] = 'Bitte wähle ein Wunschdatum für deinen Termin aus.';
+            header('Location: ?route=bootschule/me/appointments');
+            exit;
+        }
+
+        // Standard-Uhrzeiten basierend auf Zeitfenster-Präferenz
+        $startTime = '09:00:00';
+        $endTime   = '10:30:00';
+        if ($timePreference === 'afternoon') {
+            $startTime = '14:00:00';
+            $endTime   = '15:30:00';
+        } elseif ($timePreference === 'evening') {
+            $startTime = '17:30:00';
+            $endTime   = '19:00:00';
+        } elseif (!empty($_POST['custom_time'])) {
+            $custom = trim((string) $_POST['custom_time']);
+            if (strlen($custom) === 5) {
+                $startTime = $custom . ':00';
+                $startTs = strtotime("2000-01-01 {$startTime}");
+                $endTime = date('H:i:s', $startTs + (90 * 60));
+            }
+        }
+
+        $service = $serviceId > 0 && class_exists('ServiceService') ? ServiceService::find($serviceId) : null;
+        $price = $service ? (float) ($service['price'] ?? 160.00) : 160.00;
+
+        // Prüfen, ob ein aktives Abo mit Guthaben vorliegt
+        $subId = null;
+        if ($useBalance) {
+            $subs = BoatingSchoolRepository::getCustomerSubscriptions($sessionCustomerId);
+            foreach ($subs as $s) {
+                if (($s['status'] ?? '') === 'active' && ((int) ($s['total_units'] ?? 0) - (int) ($s['used_units'] ?? 0)) > 0) {
+                    $subId = (int) $s['id'];
+                    break;
+                }
+            }
+        }
+
+        $appointmentNotes = $notes;
+        if ($useBalance && $subId) {
+            $appointmentNotes .= ($appointmentNotes !== '' ? ' | ' : '') . 'Verrechnung mit Guthaben/Abo #' . $subId;
+        }
+
+        try {
+            $appData = [
+                'date'            => $date,
+                'start_time'      => $startTime,
+                'end_time'        => $endTime,
+                'service_id'      => $serviceId > 0 ? $serviceId : null,
+                'customer_id'     => $sessionCustomerId,
+                'location_id'     => $locationId,
+                'instructor_id'   => $instructorId,
+                'boat_id'         => $boatId,
+                'price'           => $price,
+                'subscription_id' => $subId,
+                'status'          => 'requested',
+                'notes'           => $appointmentNotes !== '' ? $appointmentNotes : 'Terminanfrage über Kunden-Dashboard',
+            ];
+
+            $newId = AppointmentService::create($appData);
+
+            $_SESSION['flash_portal_success'] = 'Deine Terminanfrage für ' . date('d.m.Y', strtotime($date)) . ' (' . substr($startTime, 0, 5) . ' Uhr) wurde erfolgreich eingereicht! Die Flottenleitung prüft die Zuteilung und bestätigt den Slot zeitnah.';
+        } catch (\Throwable $e) {
+            $_SESSION['flash_portal_error'] = 'Fehler beim Absenden der Terminanfrage: ' . $e->getMessage();
+        }
+
+        header('Location: ?route=bootschule/me/appointments');
+        exit;
+    };
+
+    $router->post('/bootschule/me/request-appointment', $portalRequestAppointmentHandler);
+    $router->post('bootschule/me/request-appointment', $portalRequestAppointmentHandler);
+    $router->post('/bootschule/request-appointment', $portalRequestAppointmentHandler);
+    $router->post('bootschule/request-appointment', $portalRequestAppointmentHandler);
+
+    // g) Logout Route für Schüler
     $portalLogoutHandler = static function (): void {
         unset(
             $_SESSION['boating_customer_id'],
@@ -2742,7 +3156,7 @@ if (isset($router) && $router !== null) {
             session_regenerate_id(true);
         }
         $_SESSION['flash_portal_success'] = 'Du hast dich erfolgreich abgemeldet.';
-        header('Location: ?route=bootschule/me/appointments');
+        header('Location: ?route=nautic/login');
         exit;
     };
 

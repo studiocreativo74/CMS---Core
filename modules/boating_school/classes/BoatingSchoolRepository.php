@@ -786,7 +786,10 @@ final class BoatingSchoolRepository
             // 1. CRM-Spalten in bs_customers idempotent ergänzen
             self::ensureColumn('bs_customers', 'licenses_held', 'VARCHAR(255) NULL AFTER `target_license`');
             self::ensureColumn('bs_customers', 'license_number', 'VARCHAR(128) NULL AFTER `licenses_held`');
-            self::ensureColumn('bs_customers', 'experience_level', "VARCHAR(64) NULL DEFAULT 'beginner' AFTER `license_number`");
+            self::ensureColumn('bs_customers', 'faber', 'VARCHAR(64) NULL AFTER `license_number`');
+            self::ensureColumn('bs_customers', 'pin', 'VARCHAR(64) NULL AFTER `faber`');
+            self::ensureColumn('bs_customers', 'pid', 'VARCHAR(64) NULL AFTER `pin`');
+            self::ensureColumn('bs_customers', 'experience_level', "VARCHAR(64) NULL DEFAULT 'beginner' AFTER `pid`");
             self::ensureColumn('bs_customers', 'notify_email', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER `experience_level`');
             self::ensureColumn('bs_customers', 'notify_whatsapp', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `notify_email`');
             self::ensureColumn('bs_customers', 'company', 'VARCHAR(191) NULL AFTER `last_name`');
@@ -1017,10 +1020,14 @@ final class BoatingSchoolRepository
             $customerNumber = 'KD-' . $year . '-' . $rand;
         }
 
+        $faberVal = !empty($data['faber']) ? trim((string) $data['faber']) : (!empty($data['license_number']) ? trim((string) $data['license_number']) : null);
+        $pinVal   = !empty($data['pin']) ? trim((string) $data['pin']) : null;
+        $pidVal   = !empty($data['pid']) ? trim((string) $data['pid']) : null;
+
         $sql = 'INSERT INTO `bs_customers` 
-                (`customer_number`, `type`, `user_id`, `first_name`, `last_name`, `company`, `email`, `phone`, `preferred_contact`, `lead_source`, `crm_stage`, `tags`, `street`, `zip`, `city`, `birthdate`, `target_license`, `licenses_held`, `license_number`, `experience_level`, `notify_email`, `notify_whatsapp`, `theory_passed`, `theory_passed_at`, `practical_passed`, `practical_passed_at`, `emergency_contact`, `notes`, `internal_notes`, `is_active`, `created_at`, `updated_at`) 
+                (`customer_number`, `type`, `user_id`, `first_name`, `last_name`, `company`, `email`, `phone`, `preferred_contact`, `lead_source`, `crm_stage`, `tags`, `street`, `zip`, `city`, `birthdate`, `target_license`, `licenses_held`, `license_number`, `faber`, `pin`, `pid`, `experience_level`, `notify_email`, `notify_whatsapp`, `theory_passed`, `theory_passed_at`, `practical_passed`, `practical_passed_at`, `emergency_contact`, `notes`, `internal_notes`, `is_active`, `created_at`, `updated_at`) 
                 VALUES 
-                (:customer_number, :type, :user_id, :first_name, :last_name, :company, :email, :phone, :preferred_contact, :lead_source, :crm_stage, :tags, :street, :zip, :city, :birthdate, :target_license, :licenses_held, :license_number, :experience_level, :notify_email, :notify_whatsapp, :theory_passed, :theory_passed_at, :practical_passed, :practical_passed_at, :emergency_contact, :notes, :internal_notes, :is_active, NOW(), NOW())';
+                (:customer_number, :type, :user_id, :first_name, :last_name, :company, :email, :phone, :preferred_contact, :lead_source, :crm_stage, :tags, :street, :zip, :city, :birthdate, :target_license, :licenses_held, :license_number, :faber, :pin, :pid, :experience_level, :notify_email, :notify_whatsapp, :theory_passed, :theory_passed_at, :practical_passed, :practical_passed_at, :emergency_contact, :notes, :internal_notes, :is_active, NOW(), NOW())';
 
         DB::execute($sql, [
             'customer_number'     => $customerNumber,
@@ -1041,7 +1048,10 @@ final class BoatingSchoolRepository
             'birthdate'           => !empty($data['birthdate']) ? trim((string) $data['birthdate']) : null,
             'target_license'      => !empty($data['target_license']) ? trim((string) $data['target_license']) : null,
             'licenses_held'       => !empty($data['licenses_held']) ? trim((string) $data['licenses_held']) : null,
-            'license_number'      => !empty($data['license_number']) ? trim((string) $data['license_number']) : null,
+            'license_number'      => $faberVal,
+            'faber'               => $faberVal,
+            'pin'                 => $pinVal,
+            'pid'                 => $pidVal,
             'experience_level'    => !empty($data['experience_level']) ? trim((string) $data['experience_level']) : 'beginner',
             'notify_email'        => isset($data['notify_email']) ? (int) (bool) $data['notify_email'] : 1,
             'notify_whatsapp'     => !empty($data['notify_whatsapp']) ? 1 : 0,
@@ -1066,6 +1076,10 @@ final class BoatingSchoolRepository
 
         self::ensureCrmSchema();
 
+        $faberVal = !empty($data['faber']) ? trim((string) $data['faber']) : (!empty($data['license_number']) ? trim((string) $data['license_number']) : null);
+        $pinVal   = !empty($data['pin']) ? trim((string) $data['pin']) : null;
+        $pidVal   = !empty($data['pid']) ? trim((string) $data['pid']) : null;
+
         $sql = 'UPDATE `bs_customers` 
                 SET `customer_number` = :customer_number, 
                     `type` = :type, 
@@ -1086,6 +1100,9 @@ final class BoatingSchoolRepository
                     `target_license` = :target_license, 
                     `licenses_held` = :licenses_held,
                     `license_number` = :license_number,
+                    `faber` = :faber,
+                    `pin` = :pin,
+                    `pid` = :pid,
                     `experience_level` = :experience_level,
                     `notify_email` = :notify_email,
                     `notify_whatsapp` = :notify_whatsapp,
@@ -1120,7 +1137,10 @@ final class BoatingSchoolRepository
                 'birthdate'           => !empty($data['birthdate']) ? trim((string) $data['birthdate']) : null,
                 'target_license'      => !empty($data['target_license']) ? trim((string) $data['target_license']) : null,
                 'licenses_held'       => !empty($data['licenses_held']) ? trim((string) $data['licenses_held']) : null,
-                'license_number'      => !empty($data['license_number']) ? trim((string) $data['license_number']) : null,
+                'license_number'      => $faberVal,
+                'faber'               => $faberVal,
+                'pin'                 => $pinVal,
+                'pid'                 => $pidVal,
                 'experience_level'    => !empty($data['experience_level']) ? trim((string) $data['experience_level']) : 'beginner',
                 'notify_email'        => isset($data['notify_email']) ? (int) (bool) $data['notify_email'] : 1,
                 'notify_whatsapp'     => !empty($data['notify_whatsapp']) ? 1 : 0,

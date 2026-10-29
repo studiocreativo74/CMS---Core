@@ -96,6 +96,13 @@ class Router
             }
         }
 
+        // Intelligenter Fallback für Bootsfahrschul- & Nautic-Einstiegsrouten
+        $clean = trim($normalized, '/');
+        if (in_array($clean, ['boating_school', 'boating-school', 'nautic', 'bootschule', 'boating'], true)) {
+            header('Location: ?route=nautic/login');
+            exit;
+        }
+
         http_response_code(404);
         echo '404 - Not Found';
     }
