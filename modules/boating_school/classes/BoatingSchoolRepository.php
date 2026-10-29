@@ -1287,6 +1287,16 @@ final class BoatingSchoolRepository
         return self::getSubscriptions(['customer_id' => $customerId], 100, 0);
     }
 
+    /**
+     * Alias für getSubscriptionsByCustomerId
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getCustomerSubscriptions(int $customerId): array
+    {
+        return self::getSubscriptionsByCustomerId($customerId);
+    }
+
     public static function getSubscriptionById(int $id): ?array
     {
         self::ensureCrmSchema();

@@ -256,6 +256,22 @@ class CustomerService
     }
 
     /**
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getCustomerSubscriptions(int $customerId): array
+    {
+        return BoatingSchoolRepository::getSubscriptionsByCustomerId($customerId);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getSubscriptionsByCustomerId(int $customerId): array
+    {
+        return BoatingSchoolRepository::getSubscriptionsByCustomerId($customerId);
+    }
+
+    /**
      * @param array<string, mixed> $data
      */
     public static function createSubscription(array $data): int

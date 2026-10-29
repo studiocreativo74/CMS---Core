@@ -2807,7 +2807,11 @@ if (isset($router) && $router !== null) {
                 $grouped = BoatingCustomerMagicLinkService::getCustomerAppointments($sessionCustomerId);
                 $upcomingAppointments = $grouped['upcoming'];
                 $pastAppointments     = $grouped['past'];
-                $subscriptions        = BoatingSchoolRepository::getCustomerSubscriptions($sessionCustomerId);
+                $subscriptions = method_exists('BoatingSchoolRepository', 'getSubscriptionsByCustomerId')
+                    ? BoatingSchoolRepository::getSubscriptionsByCustomerId($sessionCustomerId)
+                    : (method_exists('BoatingSchoolRepository', 'getCustomerSubscriptions')
+                        ? BoatingSchoolRepository::getCustomerSubscriptions($sessionCustomerId)
+                        : []);
 
                 // Ressourcen für Terminanfrage laden
                 if (class_exists('InstructorService')) {
