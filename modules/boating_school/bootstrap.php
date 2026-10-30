@@ -2730,6 +2730,24 @@ if (isset($router) && $router !== null) {
             }
         }
 
+        // Sitzungszeit-Prüfung (15 Minuten = 900 Sekunden Inaktivität)
+        if ($sessionCustomerId > 0) {
+            $sessionLifetime = 900;
+            if (!empty($_SESSION['portal_last_activity']) && (time() - (int) $_SESSION['portal_last_activity']) > $sessionLifetime) {
+                unset(
+                    $_SESSION['boating_customer_id'],
+                    $_SESSION['boating_customer_email'],
+                    $_SESSION['boating_customer_first_name'],
+                    $_SESSION['bs_customer_id'],
+                    $_SESSION['bs_customer_email'],
+                    $_SESSION['portal_last_activity']
+                );
+                header('Location: ?route=nautic/login&expired=1');
+                exit;
+            }
+            $_SESSION['portal_last_activity'] = time();
+        }
+
         $customer = null;
         $upcomingAppointments = [];
         $pastAppointments = [];
@@ -3174,6 +3192,9 @@ if (isset($router) && $router !== null) {
     // =========================================================================
     $nauticLoginGetHandler = static function (): void {
         $error = $_SESSION['flash_nautic_error'] ?? null;
+        if (isset($_GET['expired']) && (string) $_GET['expired'] === '1' && empty($error)) {
+            $error = 'Ihre Sitzungszeit ist abgelaufen. Sie wurden aus Sicherheitsgründen automatisch zur Login-Seite weitergeleitet. Bitte fordern Sie einen neuen Magic-Code an.';
+        }
         $success = $_SESSION['flash_nautic_success'] ?? null;
         $info = $_SESSION['flash_nautic_info'] ?? null;
         $sessionEmail = $_SESSION['nautic_login_email'] ?? null;

@@ -200,6 +200,10 @@ ob_start();
                     </div>
 
                     <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge bg-light text-muted border px-2.5 py-1.5 rounded-pill small d-inline-flex align-items-center gap-1.5" title="Verbleibende Sitzungsdauer">
+                            <span class="spinner-grow spinner-grow-sm text-success" style="width: 0.5rem; height: 0.5rem;" role="status"></span>
+                            <span>Sitzung: <strong id="session-timer-display" class="font-monospace text-dark">15:00</strong></span>
+                        </span>
                         <button type="button" class="btn btn-primary rounded-pill px-3.5 fw-semibold shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
                             <i class="bi bi-calendar-plus me-1"></i> Terminanfrage stellen
                         </button>
@@ -1014,6 +1018,28 @@ ob_start();
 
     </div>
 </div>
+
+<script>
+// Automatische Weiterleitung zur Login-Seite bei Ablauf der Sitzung
+(function() {
+    let sessionRemainingSeconds = 900; // 15 Minuten
+    const timerDisplay = document.getElementById('session-timer-display');
+
+    const countdownTimer = setInterval(function() {
+        sessionRemainingSeconds--;
+        if (timerDisplay) {
+            const mins = Math.floor(sessionRemainingSeconds / 60);
+            const secs = sessionRemainingSeconds % 60;
+            timerDisplay.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
+
+        if (sessionRemainingSeconds <= 0) {
+            clearInterval(countdownTimer);
+            window.location.href = '?route=nautic/login&expired=1';
+        }
+    }, 1000);
+})();
+</script>
 
 <?php
 $content = ob_get_clean();

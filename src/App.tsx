@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Calendar,
   Clock,
@@ -42,7 +42,10 @@ import {
   Sun,
   Waves,
   Wallet,
-  LayoutDashboard
+  LayoutDashboard,
+  ExternalLink,
+  QrCode,
+  FileCheck
 } from 'lucide-react';
 
 // --- Datentypen & Mock-Daten der Bootsfahrschule & CMS ---
@@ -598,25 +601,33 @@ export default function App() {
   const [cancelModalAppointment, setCancelModalAppointment] = useState<Appointment | null>(null);
   const [cancelReason, setCancelReason] = useState<string>('');
 
-  // State für Kunden-Dashboard (Wetter, Kontostand, Profil, Terminanfrage)
+  // State für Kunden-Dashboard (Wetter, Kontostand, Profil, Terminanfrage & Session)
   const [studentWeatherStation, setStudentWeatherStation] = useState<'luzern' | 'nidwalden'>('luzern');
   const [showStudentProfileModal, setShowStudentProfileModal] = useState<boolean>(false);
   const [showStudentRequestModal, setShowStudentRequestModal] = useState<boolean>(false);
   const [studentAppointmentTab, setStudentAppointmentTab] = useState<'upcoming' | 'past'>('upcoming');
+  const [agbAccepted, setAgbAccepted] = useState<boolean>(false);
+  const [studentNavSubTab, setStudentNavSubTab] = useState<'overview' | 'packages' | 'invoices' | 'legal' | 'profile'>('overview');
+  const [studentSidebarNav, setStudentSidebarNav] = useState<'dashboard' | 'calendar' | 'checkin' | 'store' | 'invoices' | 'profile'>('dashboard');
+
+  // Automatische Sitzungsdauer & Auto-Redirect bei Ablauf (15 Min = 900 Sek)
+  const [sessionRemainingSeconds, setSessionRemainingSeconds] = useState<number>(900);
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState<string | null>(null);
+
   const [studentProfile, setStudentProfile] = useState({
-    first_name: 'Lukas',
-    last_name: 'Berner',
-    email: 'lukas.berner@swiss-pilot.ch',
-    phone: '+41 79 400 11 22',
-    birthdate: '1995-06-14',
-    street: 'Alpenquai 12',
-    zip: '6005',
-    city: 'Luzern',
-    faber: '123.456.789',
-    pin: '7841',
-    pid: 'CHE-902.144.5',
-    license_number: '123.456.789',
-    emergency_contact: 'Anna Berner (+41 79 888 77 66)',
+    first_name: 'Roland',
+    last_name: 'Grüter',
+    email: 'office@studiocreativo.ch',
+    phone: '+41 79 000 00 00',
+    birthdate: '1984-05-12',
+    street: '',
+    zip: '',
+    city: '',
+    faber: '',
+    pin: '',
+    pid: '',
+    license_number: '',
+    emergency_contact: '',
     notes: 'Bevorzugt Nachmittagstermine'
   });
   const [newReqService, setNewReqService] = useState('Motorboot Kat. A (90 Min.)');
@@ -624,8 +635,26 @@ export default function App() {
   const [newReqTimeWindow, setNewReqTimeWindow] = useState('afternoon');
   const [newReqLocation, setNewReqLocation] = useState('Luzern (Alpenquai)');
   const [newReqCoach, setNewReqCoach] = useState('Beat Vollenweider');
-  const [newReqUseBalance, setNewReqUseBalance] = useState(true);
+  const [newReqUseBalance, setNewReqUseBalance] = useState(false);
   const [newReqNotes, setNewReqNotes] = useState('');
+
+  // Auto-Redirect Timer Effekt: Zählt herunter und wechselt bei 0 automatisch auf Login
+  useEffect(() => {
+    if (activeTab === 'student' || activeTab === 'instructor') {
+      const interval = setInterval(() => {
+        setSessionRemainingSeconds(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setActiveTab('login');
+            setSessionExpiredNotice('Ihre Sitzungszeit ist abgelaufen. Sie wurden aus Sicherheitsgründen automatisch zur Login-Seite weitergeleitet. Bitte fordern Sie einen neuen Magic-Code an.');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
 
   // Fahrlehrer-Stammdaten als State (damit Admin h-Lohn fest hinterlegen kann)
   const [instructors, setInstructors] = useState<Instructor[]>(INITIAL_INSTRUCTORS);
@@ -830,6 +859,10 @@ export default function App() {
 
     // Stufe 2: Code bestätigen & Anmelden
     const emailLower = loginEmail.trim().toLowerCase();
+
+    // Reset session timer on successful login
+    setSessionRemainingSeconds(900);
+    setSessionExpiredNotice(null);
 
     // Prüfen, ob Fahrlehrer
     const matchInst = instructors.find(i => i.email.toLowerCase() === emailLower);
@@ -1382,499 +1415,766 @@ export default function App() {
         {/* ============================================================== */}
         {/* TAB 2: NAUTIC KUNDEN-DASHBOARD (USER BRIEF)                    */}
         {/* ============================================================== */}
+        {/* ============================================================== */}
+        {/* TAB 2: NAUTIC KUNDEN-DASHBOARD (LAYOUT WIE SCREENSHOT)         */}
+        {/* ============================================================== */}
         {activeTab === 'student' && (() => {
           // Profil-Vollständigkeit berechnen
           const missingFields: { key: string; label: string }[] = [];
+          if (!studentProfile.emergency_contact.trim()) missingFields.push({ key: 'emergency_contact', label: 'Notfallkontakt' });
           if (!studentProfile.phone.trim()) missingFields.push({ key: 'phone', label: 'Mobiltelefonnummer' });
-          if (!studentProfile.birthdate.trim()) missingFields.push({ key: 'birthdate', label: 'Geburtsdatum' });
           if (!studentProfile.faber.trim()) missingFields.push({ key: 'faber', label: 'FABER:' });
           if (!studentProfile.pin.trim()) missingFields.push({ key: 'pin', label: 'PIN:' });
           if (!studentProfile.pid.trim()) missingFields.push({ key: 'pid', label: 'PID:' });
-          if (!studentProfile.emergency_contact.trim()) missingFields.push({ key: 'emergency_contact', label: 'Notfallkontakt' });
           if (!studentProfile.street.trim() || !studentProfile.city.trim()) missingFields.push({ key: 'address', label: 'Wohnadresse' });
 
-          const totalRequired = 7;
+          const totalRequired = 6;
           const completedCount = totalRequired - missingFields.length;
           const completenessPercent = Math.round((completedCount / totalRequired) * 100);
 
-          const studentApps = appointments.filter(a => a.customer_id === 1);
+          const studentApps = appointments.filter(a => a.customer_id === 1 || a.customer_name.toLowerCase().includes('roland') || a.customer_name.toLowerCase().includes('lukas'));
           const upcomingApps = studentApps.filter(a => a.status === 'confirmed' || a.status === 'requested');
-          const pastApps = studentApps.filter(a => a.status === 'completed' || a.status === 'cancelled_customer');
+          
+          // Vergangene Termine (analog Screenshot mit 3 Terminen)
+          const pastApps = [
+            { id: 901, date: '2026-08-24', service_name: 'Probelektion', status: 'Abgeschlossen', price_status: 'CHF Offen', price: 90.0 },
+            { id: 902, date: '2026-08-10', service_name: 'Motorboot Kat. A Manöver', status: 'Abgeschlossen', price_status: 'CHF Bezahlt', price: 190.0 },
+            { id: 903, date: '2026-07-28', service_name: 'Hafen- & Boxen-Manövertraining', status: 'Abgeschlossen', price_status: 'CHF Bezahlt', price: 190.0 }
+          ];
+
+          const sessionMins = Math.floor(sessionRemainingSeconds / 60);
+          const sessionSecs = sessionRemainingSeconds % 60;
+          const sessionTimerText = `${sessionMins}:${sessionSecs < 10 ? '0' : ''}${sessionSecs}`;
 
           return (
-            <div className="space-y-6">
-              {/* 1. Warnbanner: Profil-Vollständigkeit fehlt */}
-              {missingFields.length > 0 && (
-                <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 sm:p-5 shadow-sm text-amber-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-200/80 text-amber-800 flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">
-                      <AlertTriangle className="w-5 h-5 text-amber-700" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-sm sm:text-base text-amber-900">
-                          Dein Schülerprofil ist zu {completenessPercent}% ausgefüllt – Angaben fehlen noch
-                        </h4>
-                        <span className="text-xs px-2 py-0.5 bg-amber-200 text-amber-900 rounded-full font-semibold">
-                          Wichtig für Schifffahrtsamt
-                        </span>
+            <div className="bg-slate-100 rounded-3xl shadow-xl overflow-hidden border border-slate-200 -mt-2">
+              <div className="flex flex-col lg:flex-row min-h-[920px]">
+                
+                {/* ============================================================== */}
+                {/* LINKE SIDEBAR (WIE SCREENSHOT)                                */}
+                {/* ============================================================== */}
+                <aside className="w-full lg:w-72 bg-[#2d2421] text-stone-200 p-5 flex flex-col justify-between shrink-0 border-r border-[#3f3531]">
+                  <div>
+                    {/* Nautisches Emblem Logo */}
+                    <div className="mb-8 flex items-center justify-center">
+                      <div className="w-28 h-20 bg-[#423733] rounded-2xl border border-stone-600/50 flex items-center justify-center shadow-inner">
+                        <svg viewBox="0 0 48 48" className="w-12 h-12 text-stone-200" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="24" cy="24" r="18" stroke="currentColor" strokeWidth="2" strokeDasharray="2 3" />
+                          <circle cx="24" cy="24" r="14" stroke="currentColor" strokeWidth="1.5" />
+                          <path d="M 24 10 L 24 38 M 10 24 L 38 24 M 14 14 L 34 34 M 14 34 L 34 14" stroke="currentColor" strokeWidth="1.5" />
+                          <circle cx="24" cy="24" r="4" fill="currentColor" />
+                          <path d="M 24 18 L 24 30 M 18 24 L 30 24" stroke="#2d2421" strokeWidth="2" />
+                        </svg>
                       </div>
-                      <p className="text-xs text-amber-800 mt-1 max-w-2xl">
-                        Für die offizielle Prüfungsanmeldung und Notfallerreichbarkeit auf dem See fehlen: {' '}
-                        <strong>{missingFields.map(f => f.label).join(' • ')}</strong>.
+                    </div>
+
+                    {/* Navigation Menu Items */}
+                    <nav className="space-y-1.5 text-xs font-medium">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStudentSidebarNav('dashboard');
+                          setStudentNavSubTab('overview');
+                        }}
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition ${
+                          studentSidebarNav === 'dashboard'
+                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
+                            : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <LayoutDashboard className="w-4 h-4 text-amber-400" />
+                          <span>Dashboard</span>
+                        </div>
+                        <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStudentSidebarNav('calendar');
+                          setShowStudentRequestModal(true);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
+                          studentSidebarNav === 'calendar'
+                            ? 'bg-[#4a3d38] text-white font-semibold'
+                            : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                        }`}
+                      >
+                        <Calendar className="w-4 h-4" />
+                        <span>Termine &amp; Kalender</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStudentSidebarNav('checkin');
+                          setMagicFeedback('Self Check-in Portal: Schiffsbeschau & Schlüsselkasten-Code aktiviert.');
+                          setTimeout(() => setMagicFeedback(null), 4000);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
+                          studentSidebarNav === 'checkin'
+                            ? 'bg-[#4a3d38] text-white font-semibold'
+                            : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                        }`}
+                      >
+                        <QrCode className="w-4 h-4" />
+                        <span>Self Checkin (Miete)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStudentSidebarNav('store');
+                          setStudentNavSubTab('packages');
+                        }}
+                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
+                          studentSidebarNav === 'store'
+                            ? 'bg-[#4a3d38] text-white font-semibold'
+                            : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                        }`}
+                      >
+                        <Award className="w-4 h-4" />
+                        <span>Store &amp; Abos</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStudentSidebarNav('invoices');
+                          setStudentNavSubTab('invoices');
+                        }}
+                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
+                          studentSidebarNav === 'invoices'
+                            ? 'bg-[#4a3d38] text-white font-semibold'
+                            : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>Meine Rechnungen</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowStudentProfileModal(true)}
+                        className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-stone-300 hover:bg-[#3d322e] hover:text-white transition"
+                      >
+                        <User className="w-4 h-4" />
+                        <span>Mein Profil</span>
+                      </button>
+                    </nav>
+                  </div>
+
+                  {/* Unterer Sidebar-Bereich: Rollen-Umschalter, User-Card, Abmelden & Session-Timeout */}
+                  <div className="pt-6 space-y-4 border-t border-stone-700/60 mt-6">
+                    
+                    {/* Live Session Countdown & Timeout-Status */}
+                    <div className="bg-[#211a17] p-2.5 rounded-xl border border-stone-700/80 text-[11px] space-y-1.5">
+                      <div className="flex items-center justify-between text-stone-300">
+                        <span className="flex items-center gap-1.5">
+                          <span className={`w-2 h-2 rounded-full ${sessionRemainingSeconds > 60 ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500 animate-ping'}`} />
+                          Sitzung aktiv:
+                        </span>
+                        <span className="font-mono font-bold text-amber-300">{sessionTimerText} min</span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-[10px] text-stone-400 pt-1 border-t border-stone-800">
+                        <span>Auto-Logout bei 0:00</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Sofortiges Testen des Timeouts simulieren
+                            setSessionRemainingSeconds(0);
+                            setActiveTab('login');
+                            setSessionExpiredNotice('Ihre Sitzungszeit ist abgelaufen. Sie wurden automatisch zur Login-Seite weitergeleitet.');
+                          }}
+                          className="text-amber-400 hover:text-amber-300 font-semibold underline cursor-pointer"
+                          title="Simulation: Automatische Weiterleitung zur Loginseite"
+                        >
+                          Timeout testen
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Rolle Wechseln Pills (Demo) */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-bold tracking-wider text-stone-400 uppercase">Rolle wechseln</span>
+                        <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-bold uppercase">DEMO</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 bg-[#1f1816] p-1 rounded-xl text-[11px] font-medium">
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('payroll')}
+                          className="py-1 px-2 rounded-lg text-center text-stone-400 hover:text-white transition"
+                        >
+                          Admin
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('instructor')}
+                          className="py-1 px-2 rounded-lg text-center text-stone-400 hover:text-white transition"
+                        >
+                          Coach
+                        </button>
+                        <button
+                          type="button"
+                          className="py-1 px-2 rounded-lg text-center bg-[#4a3d38] text-white font-bold shadow-xs"
+                        >
+                          Kunde
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Kunde Profil Card */}
+                    <div className="bg-[#3b302c] p-3 rounded-2xl border border-stone-700/60 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 overflow-hidden">
+                        <div className="w-8 h-8 rounded-xl bg-amber-600/30 text-amber-300 border border-amber-500/40 flex items-center justify-center font-bold text-xs shrink-0">
+                          {studentProfile.first_name[0]}{studentProfile.last_name[0]}
+                        </div>
+                        <div className="truncate">
+                          <div className="text-xs font-bold text-white truncate">{studentProfile.first_name} {studentProfile.last_name}</div>
+                          <div className="text-[10px] text-stone-400">Customer</div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowStudentProfileModal(true)}
+                        className="text-stone-400 hover:text-white p-1"
+                        title="Profil bearbeiten"
+                      >
+                        <User className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Abmelden Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('login');
+                        setLoginSuccessMsg('Sie wurden erfolgreich abgemeldet.');
+                        setTimeout(() => setLoginSuccessMsg(null), 4000);
+                      }}
+                      className="w-full py-2 px-3 bg-[#3d322e]/60 hover:bg-rose-950/40 text-stone-300 hover:text-rose-200 border border-stone-700/70 hover:border-rose-800/60 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition"
+                    >
+                      <LogIn className="w-3.5 h-3.5 rotate-180" />
+                      <span>Abmelden</span>
+                    </button>
+                  </div>
+                </aside>
+
+                {/* ============================================================== */}
+                {/* HAUPTINHALT (RECHTS)                                          */}
+                {/* ============================================================== */}
+                <div className="flex-1 bg-stone-50/70 p-6 lg:p-8 space-y-6 overflow-y-auto">
+                  
+                  {/* Toast Feedback */}
+                  {magicFeedback && (
+                    <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl text-emerald-800 text-xs flex items-center gap-3 shadow-xs">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <span>{magicFeedback}</span>
+                    </div>
+                  )}
+
+                  {/* 1. Header Zeile */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                        Willkommen zurück, {studentProfile.first_name}!
+                      </h1>
+                      <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+                        <span>Hier ist Ihre Kunden-Übersicht für heute.</span>
+                        <span className="text-slate-400">&bull;</span>
+                        <span className="flex items-center gap-1 text-slate-600 font-medium">
+                          <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          {studentProfile.email}
+                        </span>
                       </p>
                     </div>
-                  </div>
-                  <button
-                    onClick={() => setShowStudentProfileModal(true)}
-                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap self-stretch md:self-auto text-center"
-                  >
-                    Profil jetzt vervollständigen &rarr;
-                  </button>
-                </div>
-              )}
 
-              {/* Feedback Alert */}
-              {magicFeedback && (
-                <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-800 text-sm flex items-center gap-3 shadow-sm">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                  <span>{magicFeedback}</span>
-                </div>
-              )}
+                    <div className="flex items-center gap-2.5 self-start sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => setShowStudentProfileModal(true)}
+                        className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-xl border border-slate-300 shadow-xs flex items-center gap-1.5 transition"
+                      >
+                        <User className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Mein Profil</span>
+                      </button>
 
-              {/* 2. Begrüssungs-Karte mit Schnellaktionen */}
-              <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center font-extrabold text-2xl shadow-lg border border-white/20">
-                    {studentProfile.first_name[0]}{studentProfile.last_name[0]}
-                  </div>
-                  <div>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-semibold border border-sky-400/30 mb-1.5">
-                      <Compass className="w-3.5 h-3.5" />
-                      Nautic Kunden-Dashboard • Schüler #{1042}
+                      <button
+                        type="button"
+                        onClick={() => setShowStudentRequestModal(true)}
+                        className="px-4 py-2 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition"
+                      >
+                        <Plus className="w-4 h-4 text-amber-400" />
+                        <span>+ Lektion / Abo buchen</span>
+                      </button>
                     </div>
-                    <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-                      Hallo {studentProfile.first_name}!
-                    </h2>
-                    <p className="text-sky-200/80 text-xs sm:text-sm mt-0.5 flex flex-wrap items-center gap-2">
-                      <span>{studentProfile.email}</span>
-                      <span>•</span>
-                      <span>{studentProfile.phone || 'Keine Telefonnr.'}</span>
-                      <span>•</span>
-                      <span>Kat. A Motorboot</span>
-                      {studentProfile.faber && (
-                        <span className="bg-sky-400/20 text-sky-200 px-2 py-0.5 rounded border border-sky-400/30 text-[11px] font-mono">
-                          <strong>FABER:</strong> {studentProfile.faber}
-                        </span>
-                      )}
-                      {studentProfile.pin && (
-                        <span className="bg-sky-400/20 text-sky-200 px-2 py-0.5 rounded border border-sky-400/30 text-[11px] font-mono">
-                          <strong>PIN:</strong> {studentProfile.pin}
-                        </span>
-                      )}
-                      {studentProfile.pid && (
-                        <span className="bg-sky-400/20 text-sky-200 px-2 py-0.5 rounded border border-sky-400/30 text-[11px] font-mono">
-                          <strong>PID:</strong> {studentProfile.pid}
-                        </span>
-                      )}
-                    </p>
                   </div>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <button
-                    onClick={() => setShowStudentRequestModal(true)}
-                    className="px-4 py-2.5 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-sky-500/20 transition flex items-center gap-1.5"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    Terminanfrage stellen
-                  </button>
-                  <button
-                    onClick={() => setShowStudentProfileModal(true)}
-                    className="px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl text-xs sm:text-sm border border-white/20 transition flex items-center gap-1.5"
-                  >
-                    <User className="w-4 h-4" />
-                    Mein Profil
-                  </button>
-                  <button
-                    onClick={() => {
-                      setMagicFeedback('Du hast dich erfolgreich abgemeldet.');
-                      setTimeout(() => setMagicFeedback(null), 4000);
-                    }}
-                    className="px-3 py-2.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-400/30 font-semibold rounded-xl text-xs transition"
-                  >
-                    Abmelden
-                  </button>
-                </div>
-              </div>
-
-              {/* 3. Zweispaltige Kacheln: Kontostand & See-Wetter */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
-                {/* Kachel A: Kontostand & Guthaben */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
-                          <Wallet className="w-5 h-5 text-sky-600" />
+                  {/* 2. Side-by-Side Dual Wetter-Kacheln (Luzern & Hergiswil) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* Wetterkarte Luzern */}
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-slate-300 transition">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600">
+                          <Sun className="w-7 h-7 text-amber-500" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-slate-900 text-base">Dein Kontostand &amp; Guthaben</h3>
-                          <p className="text-xs text-slate-500">Bezahlte Fahrstunden &amp; Mieten</p>
-                        </div>
-                      </div>
-                      <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
-                        Abo Aktiv
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 mt-5">
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
-                        <span className="text-xs text-slate-500 uppercase font-semibold">Verfügbare Fahrstunden</span>
-                        <div className="text-3xl font-black text-slate-900 mt-1">
-                          4 <span className="text-sm font-normal text-slate-500">von 10</span>
-                        </div>
-                        <span className="text-[11px] text-emerald-600 font-semibold mt-1 inline-block">
-                          à 90 Min. im Voraus bezahlt
-                        </span>
-                      </div>
-
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
-                        <span className="text-xs text-slate-500 uppercase font-semibold">Bootsmiete / Charter</span>
-                        <div className="text-3xl font-black text-slate-900 mt-1">
-                          1 <span className="text-sm font-normal text-slate-500">Guthaben</span>
-                        </div>
-                        <span className="text-[11px] text-sky-600 font-semibold mt-1 inline-block">
-                          Tagescharter Boesch 620
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="mt-5 space-y-2">
-                      <div className="flex justify-between text-xs font-semibold text-slate-700">
-                        <span>Ausbildungsfortschritt (10er Paket)</span>
-                        <span>60% absolviert (6/10)</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
-                        <div className="bg-gradient-to-r from-sky-500 to-indigo-600 h-full w-[60%] rounded-full transition-all duration-500" />
-                      </div>
-                      <div className="flex justify-between text-[11px] text-slate-400">
-                        <span>Noch 4 Fahrstunden verbleibend</span>
-                        <span>Restwert: CHF 760.00</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-600 flex items-center justify-between">
-                      <span className="text-slate-500">Abo: <strong>10er Block Motorboot Kat. A (Luzern / NW)</strong></span>
-                      <span className="text-slate-400">Gültig bis 31.12.2026</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-xs text-slate-500">Automatische Verrechnung bei Buchung aktiv</span>
-                    <button
-                      onClick={() => setShowStudentRequestModal(true)}
-                      className="text-xs text-sky-600 hover:text-sky-800 font-bold hover:underline"
-                    >
-                      Termin mit Guthaben buchen &rarr;
-                    </button>
-                  </div>
-                </div>
-
-                {/* Kachel B: See-Wetter Vierwaldstättersee (Luzern & Nidwalden) */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
-                          <Waves className="w-5 h-5 text-sky-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-slate-900 text-base">See-Wetter &amp; Seebedingungen</h3>
-                          <p className="text-xs text-slate-500">Vierwaldstättersee Live-Stationen</p>
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="font-bold text-slate-900 text-sm">Luzern</h3>
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" title="Messstation aktiv"></span>
+                          </div>
+                          <div className="text-2xl font-black text-slate-900 mt-0.5">
+                            19.5°C
+                          </div>
                         </div>
                       </div>
 
-                      {/* Station Switcher */}
-                      <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-semibold">
+                      <div className="text-right space-y-1">
                         <button
+                          type="button"
                           onClick={() => setStudentWeatherStation('luzern')}
-                          className={`px-3 py-1 rounded-lg transition ${
-                            studentWeatherStation === 'luzern'
-                              ? 'bg-white text-slate-900 shadow-sm font-bold'
-                              : 'text-slate-500 hover:text-slate-800'
-                          }`}
+                          className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold hover:text-sky-600 inline-flex items-center gap-1 transition"
                         >
-                          Luzern (LU)
+                          PROGNOSE <ExternalLink className="w-3 h-3" />
                         </button>
+                        <div className="flex items-center gap-1 text-xs text-slate-600 font-medium justify-end">
+                          <Wind className="w-3.5 h-3.5 text-slate-400" />
+                          <span>12 km/h</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Wetterkarte Hergiswil NW */}
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-slate-300 transition">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600">
+                          <Sun className="w-7 h-7 text-amber-500" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="font-bold text-slate-900 text-sm">Hergiswil</h3>
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" title="Messstation aktiv"></span>
+                          </div>
+                          <div className="text-2xl font-black text-slate-900 mt-0.5">
+                            20.2°C
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right space-y-1">
                         <button
+                          type="button"
                           onClick={() => setStudentWeatherStation('nidwalden')}
-                          className={`px-3 py-1 rounded-lg transition ${
-                            studentWeatherStation === 'nidwalden'
-                              ? 'bg-white text-slate-900 shadow-sm font-bold'
-                              : 'text-slate-500 hover:text-slate-800'
+                          className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold hover:text-sky-600 inline-flex items-center gap-1 transition"
+                        >
+                          PROGNOSE <ExternalLink className="w-3 h-3" />
+                        </button>
+                        <div className="flex items-center gap-1 text-xs text-slate-600 font-medium justify-end">
+                          <Wind className="w-3.5 h-3.5 text-slate-400" />
+                          <span>15 km/h</span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* 3. Gelbes Warnbanner: Profil vervollständigen & AGB bestätigen */}
+                  {(!agbAccepted || missingFields.length > 0) && (
+                    <div className="bg-[#fef9ee] border-2 border-[#f5d996] rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                          <AlertTriangle className="w-5 h-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-sm">
+                            Bitte Profil-Angaben vervollständigen und AGB bestätigen
+                          </h4>
+                          <p className="text-xs text-slate-600 mt-0.5">
+                            {missingFields.length > 0 ? (
+                              <>Fehlend: <strong>{missingFields.map(f => f.label).join(', ')}</strong>. </>
+                            ) : null}
+                            {!agbAccepted ? 'Bitte vor dem ersten Ablegen die AGB & Mietbedingungen bestätigen.' : 'AGB & Mietbedingungen sind akzeptiert.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+                        {missingFields.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowStudentProfileModal(true)}
+                            className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                          >
+                            Profil ergänzen
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAgbAccepted(true);
+                            setMagicFeedback('AGB & Mietbedingungen wurden erfolgreich bestätigt!');
+                            setTimeout(() => setMagicFeedback(null), 4000);
+                          }}
+                          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs ${
+                            agbAccepted
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : 'bg-[#2d2421] hover:bg-[#3d322e] text-white'
                           }`}
                         >
-                          Nidwalden (NW)
+                          <Check className="w-3.5 h-3.5 text-amber-400" />
+                          <span>{agbAccepted ? 'AGB bestätigt ✓' : 'AGB bestätigen'}</span>
                         </button>
                       </div>
                     </div>
+                  )}
 
-                    {/* Wetter-Detailanzeige */}
-                    {studentWeatherStation === 'luzern' ? (
-                      <div className="mt-4 space-y-4">
-                        <div className="flex items-center justify-between bg-sky-50/60 border border-sky-100 rounded-xl p-3.5">
-                          <div className="flex items-center gap-3">
-                            <Sun className="w-8 h-8 text-amber-500" />
-                            <div>
-                              <div className="font-bold text-slate-900 text-sm">Luzern Seebecken / Tribschen</div>
-                              <div className="text-xs text-slate-500">Heiter bis leicht bewölkt • Bucht Luzern</div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-black text-slate-900">19.5 °C</div>
-                            <div className="text-xs text-slate-500">Wasser: <strong className="text-sky-700">16.5 °C</strong></div>
-                          </div>
-                        </div>
+                  {/* 4. Subnavigation Tabs (Pills) */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold">
+                    {[
+                      { id: 'overview', label: 'Übersicht & Termine', icon: Calendar },
+                      { id: 'packages', label: 'Meine VIP Pakete & Abos', icon: Award },
+                      { id: 'invoices', label: 'Rechnungen & Belege', icon: FileText },
+                      { id: 'legal', label: 'Rechtliches & Nachweise', icon: Shield },
+                      { id: 'profile', label: 'Mein Profil', icon: User }
+                    ].map(tab => {
+                      const Icon = tab.icon;
+                      const isActive = studentNavSubTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => {
+                            if (tab.id === 'profile') {
+                              setShowStudentProfileModal(true);
+                            } else {
+                              setStudentNavSubTab(tab.id as any);
+                            }
+                          }}
+                          className={`px-4 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                            isActive
+                              ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                              : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
+                          }`}
+                        >
+                          <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-600' : 'text-slate-400'}`} />
+                          <span>{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                        <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Wind</span>
-                            <strong className="text-slate-900 text-sm">12 km/h</strong>
-                            <span className="text-slate-500 block text-[10px]">6.5 kn (Bft 2)</span>
+                  {/* 5. 3 Feature Quick-Action Cards (Self Check-in, Fahrguthaben, Rechnungen) */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    {/* Kachel 1: Self Check-in */}
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+                      <div>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <QrCode className="w-5 h-5" />
                           </div>
-                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Richtung</span>
-                            <strong className="text-slate-900 text-sm">WSW (240°)</strong>
-                            <span className="text-slate-500 block text-[10px]">Leichte Brise</span>
-                          </div>
-                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Wellen</span>
-                            <strong className="text-slate-900 text-sm">&lt; 0.2m</strong>
-                            <span className="text-slate-500 block text-[10px]">Ruhig</span>
-                          </div>
-                        </div>
-
-                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 flex items-center justify-between">
-                          <span className="flex items-center gap-1.5 font-semibold">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                            Manövereignung: Optimal für An- &amp; Ablegemanöver
+                          <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            BOOT MIETEN
                           </span>
-                          <span className="text-[11px] px-2 py-0.5 bg-emerald-200/80 rounded-full font-bold text-emerald-900">
-                            Perfekt
+                        </div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-bold text-slate-900 text-sm">Self Check-in</h4>
+                          <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-semibold">
+                            Nur Miete
                           </span>
                         </div>
+                        <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                          Digitaler Check-in, Schiffsübernahme &amp; Telemetrie vor dem Ablegen bei Bootsmieten.
+                        </p>
                       </div>
-                    ) : (
-                      <div className="mt-4 space-y-4">
-                        <div className="flex items-center justify-between bg-sky-50/60 border border-sky-100 rounded-xl p-3.5">
-                          <div className="flex items-center gap-3">
-                            <Sun className="w-8 h-8 text-amber-500" />
-                            <div>
-                              <div className="font-bold text-slate-900 text-sm">Nidwalden (Stansstad &amp; Hergiswil NW)</div>
-                              <div className="text-xs text-slate-500">Sonnig mit thermischem Wind • Alpnachersee / Seebecken Stansstad-Hergiswil</div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-black text-slate-900">20.2 °C</div>
-                            <div className="text-xs text-slate-500">Wasser: <strong className="text-sky-700">16.1 °C</strong></div>
-                          </div>
-                        </div>
 
-                        <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Wind</span>
-                            <strong className="text-slate-900 text-sm">15 km/h</strong>
-                            <span className="text-slate-500 block text-[10px]">8.0 kn (Bft 3)</span>
-                          </div>
-                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Richtung</span>
-                            <strong className="text-slate-900 text-sm">ESE (110°)</strong>
-                            <span className="text-slate-500 block text-[10px]">Schwache Brise</span>
-                          </div>
-                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Wellen</span>
-                            <strong className="text-slate-900 text-sm">0.2 - 0.3m</strong>
-                            <span className="text-slate-500 block text-[10px]">Leichte Kabbelwellen</span>
-                          </div>
-                        </div>
-
-                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900 flex items-center justify-between">
-                          <span className="flex items-center gap-1.5 font-semibold">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                            Manövereignung: Sehr gut für Boje über Bord &amp; Kursfahren
-                          </span>
-                          <span className="text-[11px] px-2 py-0.5 bg-emerald-200/80 rounded-full font-bold text-emerald-900">
-                            Gut
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Sturmwarnleuchten Status */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-slate-700 font-semibold">
-                        Sturmwarnleuchten: <strong>Entwarnung / Ruhe</strong> (Alle Leuchten aus)
-                      </span>
-                    </div>
-                    <span className="text-slate-400 text-[11px]">Vierwaldstättersee Warnregion 3</span>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* 4. Termine Bereich (Kommende Termine & Vergangene Termine Tabs) */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
-                      <Calendar className="w-4 h-4" />
-                    </div>
-                    <h3 className="font-bold text-slate-900 text-base">Deine Termine &amp; Fahrten</h3>
-                  </div>
-
-                  {/* Tabs: Kommende vs. Vergangene */}
-                  <div className="flex items-center gap-2">
-                    <div className="inline-flex p-1 bg-slate-200/80 rounded-xl text-xs font-semibold">
                       <button
-                        onClick={() => setStudentAppointmentTab('upcoming')}
-                        className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
-                          studentAppointmentTab === 'upcoming'
-                            ? 'bg-white text-slate-900 shadow-sm font-bold'
-                            : 'text-slate-600 hover:text-slate-900'
-                        }`}
+                        type="button"
+                        onClick={() => {
+                          setMagicFeedback('Self Check-in aktiv: Schiffsübernahme & Bootsdokumente für Boesch 620 geöffnet.');
+                          setTimeout(() => setMagicFeedback(null), 4000);
+                        }}
+                        className="w-full py-2 bg-emerald-50/60 hover:bg-emerald-100/70 text-emerald-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-emerald-200/60"
                       >
-                        <Calendar className="w-3.5 h-3.5" />
-                        Kommende Termine ({upcomingApps.length})
-                      </button>
-                      <button
-                        onClick={() => setStudentAppointmentTab('past')}
-                        className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
-                          studentAppointmentTab === 'past'
-                            ? 'bg-white text-slate-900 shadow-sm font-bold'
-                            : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        <Clock className="w-3.5 h-3.5" />
-                        Vergangene Termine ({pastApps.length})
+                        <span>Zum Self Check-in (Bootsmiete)</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
 
-                    <button
-                      onClick={() => setShowStudentRequestModal(true)}
-                      className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      Termin anfragen
-                    </button>
-                  </div>
-                </div>
-
-                {/* Tab-Inhalt */}
-                {studentAppointmentTab === 'upcoming' ? (
-                  <div className="divide-y divide-slate-100">
-                    {upcomingApps.length === 0 ? (
-                      <div className="p-8 text-center text-slate-500 text-sm">
-                        Keine bevorstehenden Termine gefunden.
+                    {/* Kachel 2: Fahrguthaben & VIP */}
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+                      <div>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                            <Award className="w-5 h-5" />
+                          </div>
+                          <span className="text-[10px] bg-amber-50 text-amber-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            0 AKTIVE ABOS
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-slate-900 text-sm mb-1">Fahrguthaben &amp; VIP</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                          10er &amp; 5er Abos, Fahrstunden oder Spezial-Coachings erwerben &amp; verwalten.
+                        </p>
                       </div>
-                    ) : (
-                      upcomingApps.map(a => (
-                        <div key={a.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 text-base">{a.service_name}</span>
-                              {a.status === 'confirmed' ? (
-                                <span className="text-xs px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold border border-emerald-200">
-                                  Bestätigt
-                                </span>
-                              ) : (
-                                <span className="text-xs px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-full font-bold border border-amber-200">
-                                  Angefragt (in Prüfung)
-                                </span>
-                              )}
-                              <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md font-medium">
-                                Abo-Guthaben
-                              </span>
+
+                      <button
+                        type="button"
+                        onClick={() => setStudentNavSubTab('packages')}
+                        className="w-full py-2 bg-amber-50/60 hover:bg-amber-100/70 text-amber-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-amber-200/60"
+                      >
+                        <span>Store &amp; Pakete öffnen</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Kachel 3: Rechnungen & Belege */}
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+                      <div>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            SWISS QR-BILL
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-slate-900 text-sm mb-1">Rechnungen &amp; Belege</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                          Übersicht aller Quittungen, Lektionen und Treibstoffkosten mit PDF-Druck.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setStudentNavSubTab('invoices')}
+                        className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-300"
+                      >
+                        <span>Zu den Rechnungen</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                  </div>
+
+                  {/* 6. Hauptbereich: 2-Spalten Layout (Links Termine 2/3, Rechts Status 1/3) */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    {/* LINKE SPALTE (2/3): ANSTEHENDE & VERGANGENE TERMINE */}
+                    <div className="lg:col-span-2 space-y-6">
+                      
+                      {/* Anstehende Termine Karte */}
+                      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6">
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-slate-500" />
+                            <h3 className="font-bold text-slate-900 text-sm">
+                              Anstehende Termine ({upcomingApps.length})
+                            </h3>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowStudentRequestModal(true)}
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-xl flex items-center gap-1.5 transition"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Termin im Kalender buchen</span>
+                          </button>
+                        </div>
+
+                        {upcomingApps.length === 0 ? (
+                          /* Empty State wie im Screenshot */
+                          <div className="py-12 px-4 text-center space-y-3">
+                            <div className="w-12 h-12 mx-auto rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-400">
+                              <Calendar className="w-6 h-6" />
                             </div>
-                            <div className="text-xs text-slate-600 mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                              <span><Calendar className="w-3.5 h-3.5 inline mr-1 text-sky-600" /><strong>{a.date}</strong></span>
-                              <span><Clock className="w-3.5 h-3.5 inline mr-1 text-sky-600" />{a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)} Uhr (90 Min.)</span>
-                              <span><Ship className="w-3.5 h-3.5 inline mr-1 text-sky-600" />{a.boat_name}</span>
-                              <span><User className="w-3.5 h-3.5 inline mr-1 text-sky-600" />Coach: {a.instructor_name}</span>
-                            </div>
-                            <div className="text-xs text-slate-400 mt-1">
-                              <MapPin className="w-3.5 h-3.5 inline mr-1 text-slate-400" />Treffpunkt: <strong>{a.location_name}</strong>
+                            <h4 className="font-bold text-slate-800 text-sm">
+                              Aktuell keine anstehenden Termine eingetragen.
+                            </h4>
+                            <p className="text-xs text-slate-500 max-w-md mx-auto">
+                              Reservieren Sie Ihre nächste Fahrstunde direkt im Kalender – Bezahlung erfolgt flexibel später.
+                            </p>
+                            <div className="pt-2">
+                              <button
+                                type="button"
+                                onClick={() => setShowStudentRequestModal(true)}
+                                className="px-5 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold text-xs rounded-xl shadow-xs transition inline-flex items-center gap-1.5"
+                              >
+                                <Plus className="w-4 h-4 text-amber-400" />
+                                <span>Jetzt freien Termin im Kalender wählen</span>
+                              </button>
                             </div>
                           </div>
+                        ) : (
+                          <div className="divide-y divide-slate-100 space-y-3">
+                            {upcomingApps.map(app => (
+                              <div key={app.id} className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-slate-900 text-sm">{app.service_name}</span>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                                      {app.status === 'confirmed' ? 'Bestätigt' : 'Angefragt'}
+                                    </span>
+                                  </div>
+                                  <div className="text-slate-500 mt-1 flex flex-wrap items-center gap-3">
+                                    <span>{app.date} ({app.start_time.slice(0, 5)} Uhr)</span>
+                                    <span>&bull;</span>
+                                    <span>Coach: {app.instructor_name}</span>
+                                    <span>&bull;</span>
+                                    <span>Boot: {app.boat_name}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-slate-800">CHF {app.price.toFixed(2)}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setCancelModalAppointment(app)}
+                                    className="px-2.5 py-1 text-[11px] text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-lg transition"
+                                  >
+                                    Stornieren
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
-                          <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2.5">
-                            <span className="text-sm font-bold text-slate-900">CHF {a.price.toFixed(2)}</span>
+                      {/* Vergangene Termine Karte */}
+                      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6">
+                        <div className="flex items-center gap-2 pb-4 border-b border-slate-100 mb-4">
+                          <Clock className="w-4 h-4 text-slate-500" />
+                          <h3 className="font-bold text-slate-900 text-sm">
+                            Vergangene Termine ({pastApps.length})
+                          </h3>
+                        </div>
+
+                        <div className="divide-y divide-slate-100 space-y-3">
+                          {pastApps.map(p => (
+                            <div key={p.id} className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-bold text-slate-800">{p.date}</span>
+                                  <span className="text-slate-400">&bull;</span>
+                                  <span className="font-semibold text-slate-900">{p.service_name}</span>
+                                </div>
+                                <div className="text-[11px] text-slate-500 mt-0.5">
+                                  Status: <span className="text-slate-700 font-medium">{p.status}</span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className={`font-semibold px-2 py-0.5 rounded text-[11px] ${
+                                  p.price_status.includes('Offen') ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700'
+                                }`}>
+                                  {p.price_status}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* RECHTE SPALTE (1/3): PROFIL-STATUS & SKIPPER SUPPORT */}
+                    <div className="space-y-6">
+                      
+                      {/* Profil- & Kontostatus Box */}
+                      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+                        <h3 className="font-bold text-slate-900 text-sm pb-2 border-b border-slate-100">
+                          Profil- &amp; Kontostatus
+                        </h3>
+
+                        <div className="space-y-3 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-600">Stammdaten:</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                              missingFields.length === 0
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {missingFields.length === 0 ? 'Vollständig' : 'Unvollständig'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-600">AGB / AMB:</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                              agbAccepted
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-rose-100 text-rose-800'
+                            }`}>
+                              {agbAccepted ? 'Bestätigt' : 'Ausstehend'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-600">Aktive VIP Pakete:</span>
+                            <span className="font-semibold text-slate-800">0 Pakete</span>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-slate-600">Rechnungs-Status:</span>
                             <button
-                              onClick={() => setCancelModalAppointment(a)}
-                              className="px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition"
+                              type="button"
+                              onClick={() => setStudentNavSubTab('invoices')}
+                              className="text-amber-800 hover:text-amber-900 font-bold hover:underline"
                             >
-                              Termin stornieren
+                              Belege ansehen &rarr;
                             </button>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
-                ) : (
-                  <div className="divide-y divide-slate-100">
-                    {pastApps.length === 0 ? (
-                      <div className="p-8 text-center text-slate-500 text-sm">
-                        Keine vergangenen Termine vorhanden.
                       </div>
-                    ) : (
-                      pastApps.map(a => (
-                        <div key={a.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition text-xs">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-900 text-sm">{a.service_name}</span>
-                              {a.status === 'completed' ? (
-                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold">
-                                  Erfolgreich absolviert
-                                </span>
-                              ) : (
-                                <span className="px-2 py-0.5 bg-rose-100 text-rose-800 rounded-full font-bold">
-                                  Storniert
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-slate-500 mt-1">
-                              {a.date} • {a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)} Uhr • Coach {a.instructor_name} • Boot {a.boat_name}
-                            </div>
-                            {a.instructor_payout_note && (
-                              <div className="text-slate-600 font-medium mt-1 bg-slate-50 p-2 rounded border border-slate-200">
-                                Feedback / Notiz: {a.instructor_payout_note}
-                              </div>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <div className="font-bold text-slate-900 text-sm">CHF {a.price.toFixed(2)}</div>
-                            <span className="text-slate-400">Abo-Einheit abgebucht</span>
-                          </div>
+
+                      {/* Skipper Support & Zentrale Box */}
+                      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-3">
+                        <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                          <Phone className="w-4 h-4 text-amber-600" />
+                          <span>Skipper Support &amp; Zentrale</span>
                         </div>
-                      ))
-                    )}
+
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                          Fragen zu Terminen oder Prüfungsvorbereitung? Ihr Coach-Team ist für Sie erreichbar.
+                        </p>
+
+                        <div className="text-xs text-slate-700 space-y-1 pt-2 border-t border-slate-100">
+                          <div><strong>Standorte:</strong> Luzern (LU) &amp; Nidwalden (NW)</div>
+                          <div><strong>Telefon:</strong> +41 79 000 00 00</div>
+                          <div><strong>E-Mail:</strong> office@studiocreativo.ch</div>
+                        </div>
+
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowStudentRequestModal(true)}
+                            className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition text-center"
+                          >
+                            Direkte Terminanfrage stellen &rarr;
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+
                   </div>
-                )}
+
+                </div>
+
               </div>
 
               {/* MODAL 1: Terminanfrage stellen */}
               {showStudentRequestModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
                   <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
                     <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
-                          <Calendar className="w-5 h-5 text-sky-600" />
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                          <Calendar className="w-5 h-5 text-amber-700" />
                         </div>
                         <div>
                           <h3 className="font-bold text-slate-900 text-base">Terminanfrage einreichen</h3>
@@ -1911,12 +2211,12 @@ export default function App() {
                           status: 'requested',
                           instructor_payout_amount: 97.5,
                           instructor_payout_status: 'open',
-                          instructor_payout_note: newReqNotes ? `Schüler-Anfrage: ${newReqNotes}` : 'Terminanfrage über Kunden-Dashboard'
+                          instructor_payout_note: newReqNotes ? `Kunden-Anfrage: ${newReqNotes}` : 'Terminanfrage über Kunden-Dashboard'
                         };
 
                         setAppointments(prev => [newApp, ...prev]);
                         setShowStudentRequestModal(false);
-                        setMagicFeedback(`Deine Terminanfrage für ${newReqDate} wurde erfolgreich eingereicht! Die Flottenleitung prüft die Zuteilung.`);
+                        setMagicFeedback(`Ihre Terminanfrage für ${newReqDate} wurde erfolgreich eingereicht! Die Flottenleitung prüft die Zuteilung.`);
                         setTimeout(() => setMagicFeedback(null), 6000);
                       }}
                       className="mt-5 space-y-4 text-xs"
@@ -1926,7 +2226,7 @@ export default function App() {
                         <select
                           value={newReqService}
                           onChange={e => setNewReqService(e.target.value)}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
                         >
                           <option value="Motorboot Kat. A (90 Min.)">Motorboot Kat. A (90 Min.) – CHF 190.00</option>
                           <option value="Intensiv-Doppelstunde (180 Min.)">Intensiv-Doppelstunde (180 Min.) – CHF 380.00</option>
@@ -1945,7 +2245,7 @@ export default function App() {
                             onChange={e => setNewReqDate(e.target.value)}
                             min="2026-03-20"
                             required
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
                           />
                         </div>
                         <div>
@@ -1953,7 +2253,7 @@ export default function App() {
                           <select
                             value={newReqTimeWindow}
                             onChange={e => setNewReqTimeWindow(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
                           >
                             <option value="morning">Vormittag (09:00 - 10:30 Uhr)</option>
                             <option value="afternoon">Nachmittag (14:00 - 15:30 Uhr)</option>
@@ -1968,7 +2268,7 @@ export default function App() {
                           <select
                             value={newReqLocation}
                             onChange={e => setNewReqLocation(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
                           >
                             <option value="Luzern (Alpenquai)">Luzern (Alpenquai / Tribschen)</option>
                             <option value="Stansstad (Hafen)">Stansstad NW (Hafenanlage)</option>
@@ -1978,11 +2278,11 @@ export default function App() {
                           </select>
                         </div>
                         <div>
-                          <label className="font-bold text-slate-700 block mb-1">Wunsch-Fahrlehrer</label>
+                          <label className="font-bold text-slate-700 block mb-1">Wunsch-Coach</label>
                           <select
                             value={newReqCoach}
                             onChange={e => setNewReqCoach(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
                           >
                             <option value="Beat Vollenweider">Beat Vollenweider</option>
                             <option value="Marc Hürlimann">Marc Hürlimann</option>
@@ -1992,27 +2292,14 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="useBalanceCheck"
-                          checked={newReqUseBalance}
-                          onChange={e => setNewReqUseBalance(e.target.checked)}
-                          className="rounded text-sky-600 focus:ring-sky-500"
-                        />
-                        <label htmlFor="useBalanceCheck" className="font-semibold text-sky-900 cursor-pointer">
-                          Mit vorhandenem Abo-Guthaben verrechnen (4 Lektionen verfügbar)
-                        </label>
-                      </div>
-
                       <div>
                         <label className="font-bold text-slate-700 block mb-1">Besondere Wünsche / Notizen</label>
                         <textarea
                           rows={2}
                           value={newReqNotes}
                           onChange={e => setNewReqNotes(e.target.value)}
-                          placeholder="z. B. Schwerpunkt auf Boxenmanöver rückwärts oder Generalprobe..."
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                          placeholder="z. B. Schwerpunkt auf Boxenmanöver rückwärts..."
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
                         />
                       </div>
 
@@ -2026,7 +2313,7 @@ export default function App() {
                         </button>
                         <button
                           type="submit"
-                          className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-md transition"
+                          className="px-5 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold rounded-xl shadow-md transition"
                         >
                           Terminanfrage verbindlich absenden &rarr;
                         </button>
@@ -2038,7 +2325,7 @@ export default function App() {
 
               {/* MODAL 2: Schülerprofil bearbeiten */}
               {showStudentProfileModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
                   <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
                     <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                       <div className="flex items-center gap-2.5">
@@ -2046,8 +2333,8 @@ export default function App() {
                           <User className="w-5 h-5 text-amber-700" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-slate-900 text-base">Schülerprofil bearbeiten</h3>
-                          <p className="text-xs text-slate-500">Persönliche Angaben &amp; Schifffahrtsamts-Daten</p>
+                          <h3 className="font-bold text-slate-900 text-base">Kundenprofil bearbeiten</h3>
+                          <p className="text-xs text-slate-500">Persönliche Angaben &amp; ASA Schifffahrtsamts-Daten</p>
                         </div>
                       </div>
                       <button
@@ -2062,7 +2349,7 @@ export default function App() {
                       onSubmit={e => {
                         e.preventDefault();
                         setShowStudentProfileModal(false);
-                        setMagicFeedback('Dein Profil wurde erfolgreich gespeichert und aktualisiert.');
+                        setMagicFeedback('Ihr Profil wurde erfolgreich aktualisiert.');
                         setTimeout(() => setMagicFeedback(null), 5000);
                       }}
                       className="mt-5 space-y-3.5 text-xs"
@@ -2107,9 +2394,9 @@ export default function App() {
                             type="tel"
                             value={studentProfile.phone}
                             onChange={e => setStudentProfile({ ...studentProfile, phone: e.target.value })}
-                            placeholder="+41 79 123 45 67"
+                            placeholder="+41 79 000 00 00"
                             required
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
                           />
                         </div>
                         <div>
@@ -2119,7 +2406,7 @@ export default function App() {
                             value={studentProfile.birthdate}
                             onChange={e => setStudentProfile({ ...studentProfile, birthdate: e.target.value })}
                             required
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
                           />
                         </div>
                       </div>
@@ -2133,8 +2420,7 @@ export default function App() {
                             value={studentProfile.faber}
                             onChange={e => setStudentProfile({ ...studentProfile, faber: e.target.value, license_number: e.target.value })}
                             placeholder="z. B. 123.456.789"
-                            required
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-sky-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500"
                           />
                           <span className="text-[10px] text-slate-400 block mt-0.5">Fahrberechtigungs-Reg.</span>
                         </div>
@@ -2145,8 +2431,7 @@ export default function App() {
                             value={studentProfile.pin}
                             onChange={e => setStudentProfile({ ...studentProfile, pin: e.target.value })}
                             placeholder="z. B. 7841"
-                            required
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-sky-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500"
                           />
                           <span className="text-[10px] text-slate-400 block mt-0.5">Persönliche Ident.-Nr.</span>
                         </div>
@@ -2157,8 +2442,7 @@ export default function App() {
                             value={studentProfile.pid}
                             onChange={e => setStudentProfile({ ...studentProfile, pid: e.target.value })}
                             placeholder="z. B. CHE-123.456.7"
-                            required
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-sky-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500"
                           />
                           <span className="text-[10px] text-slate-400 block mt-0.5">Personen-Identifikator</span>
                         </div>
@@ -2170,9 +2454,8 @@ export default function App() {
                           type="text"
                           value={studentProfile.emergency_contact}
                           onChange={e => setStudentProfile({ ...studentProfile, emergency_contact: e.target.value })}
-                          placeholder="z. B. Anna Berner, 079 888 77 66"
-                          required
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500"
+                          placeholder="z. B. Notfallkontakt, 079 000 00 00"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
                         />
                       </div>
 
@@ -2183,6 +2466,7 @@ export default function App() {
                             type="text"
                             value={studentProfile.street}
                             onChange={e => setStudentProfile({ ...studentProfile, street: e.target.value })}
+                            placeholder="Seestrasse 1"
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium"
                           />
                         </div>
@@ -2199,6 +2483,7 @@ export default function App() {
                                 city: parts.slice(1).join(' ') || ''
                               });
                             }}
+                            placeholder="6000 Luzern"
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium"
                           />
                         </div>
@@ -2838,6 +3123,17 @@ export default function App() {
                     </svg>
                   </div>
                 </div>
+
+                {/* Sitzungsablauf-Warnung */}
+                {sessionExpiredNotice && (
+                  <div className="p-3.5 bg-amber-50 border-2 border-amber-300 text-amber-900 rounded-xl text-xs flex items-start gap-2.5 animate-in fade-in">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="block font-bold">Sitzung abgelaufen</strong>
+                      <span>{sessionExpiredNotice}</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Erfolgsmeldung / Toast */}
                 {loginSuccessMsg && (
