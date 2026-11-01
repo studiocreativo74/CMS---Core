@@ -29,7 +29,26 @@ $breadcrumbCurrent = 'Übersicht & Flotte';
 $navTitle = 'Nautic – Fahrschule, Vermietung & Flotte';
 $navSubtitle = 'Ganzheitliche Verwaltung für Bootsfahrschule, Bootsvermietung & Charter, Flotte und Fahrlehrer/Skipper.';
 require __DIR__ . '/_nautic_nav.php'; 
+
+$pendingAccCount = class_exists('NauticAccountRequestService') ? NauticAccountRequestService::getPendingCount() : 0;
 ?>
+
+<?php if ($pendingAccCount > 0): ?>
+    <div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div class="d-flex align-items-center gap-2.5">
+            <span class="p-2 bg-warning bg-opacity-25 text-dark rounded-circle d-flex align-items-center justify-content-center">
+                <i class="bi bi-person-check-fill fs-5"></i>
+            </span>
+            <div>
+                <strong class="text-dark">Es warten <?= $pendingAccCount ?> neue Registrierungsanfragen auf Freigabe.</strong>
+                <div class="text-muted small">Weisen Sie neuen Benutzern direkt das passende Profil zu (Fahrlehrer, Schüler, Bootsmieter oder Admin).</div>
+            </div>
+        </div>
+        <a href="?route=admin/boating/account-requests" class="btn btn-dark btn-sm rounded-pill px-3 fw-semibold">
+            <i class="bi bi-check2-circle me-1"></i> Direkt in der Admin-Oberfläche bearbeiten &rarr;
+        </a>
+    </div>
+<?php endif; ?>
 
 <!-- 4 KPI-Karten -->
 <div class="row g-3 mb-4">

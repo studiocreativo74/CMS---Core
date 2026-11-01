@@ -875,8 +875,8 @@ export default function App() {
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>(INITIAL_PROMO_CODES);
   const [customerSubscriptions, setCustomerSubscriptions] = useState<CustomerSubscription[]>(INITIAL_CUSTOMER_SUBSCRIPTIONS);
 
-  // Admin Section Navigation: Payroll | Services & Tarife | Gutscheine & Codes
-  const [adminSectionTab, setAdminSectionTab] = useState<'payroll' | 'services' | 'promos'>('payroll');
+  // Admin Section Navigation: Payroll | Services & Tarife | Gutscheine & Codes | Account-Anfragen
+  const [adminSectionTab, setAdminSectionTab] = useState<'payroll' | 'services' | 'promos' | 'account_requests'>('payroll');
 
   // Customer Store View State
   const [storeViewMode, setStoreViewMode] = useState<'catalog' | 'my_subscriptions'>('catalog');
@@ -1809,6 +1809,26 @@ export default function App() {
                     {promoCodes.length}
                   </span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdminSectionTab('account_requests')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                    adminSectionTab === 'account_requests'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>4. Account-Anfragen &amp; Freigaben</span>
+                  {accountRequests.filter(r => r.status === 'pending').length > 0 && (
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      adminSectionTab === 'account_requests' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900'
+                    }`}>
+                      {accountRequests.filter(r => r.status === 'pending').length}
+                    </span>
+                  )}
+                </button>
               </div>
 
               <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -1816,6 +1836,33 @@ export default function App() {
                 <span>Nautic Admin Core (MY CoachingBoot GmbH)</span>
               </div>
             </div>
+
+            {/* Hinweis-Banner für offene Account-Anfragen, falls vorhanden */}
+            {accountRequests.filter(r => r.status === 'pending').length > 0 && adminSectionTab !== 'account_requests' && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center font-bold shrink-0">
+                    <UserCheck className="w-5 h-5 text-amber-800" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-amber-950">
+                      {accountRequests.filter(r => r.status === 'pending').length} neue Registrierungsanfrage(n) warten auf Freigabe
+                    </h4>
+                    <p className="text-[11px] text-amber-800">
+                      Weise neuen Benutzern direkt das passende Profil zu (Fahrlehrer, Schüler, Bootsmieter oder Admin).
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAdminSectionTab('account_requests')}
+                  className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs shrink-0 cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Jetzt in der Admin-Oberfläche prüfen</span>
+                </button>
+              </div>
+            )}
 
             {/* SUB-BEREICH 1: PAYROLL */}
             {adminSectionTab === 'payroll' && (
@@ -2452,6 +2499,200 @@ export default function App() {
               </div>
             )}
 
+            {/* SUB-BEREICH 4: ACCOUNT-ANFRAGEN & FREIGABEN DIREKT IN DER ADMIN-OBERFLÄCHE */}
+            {adminSectionTab === 'account_requests' && (
+              <div className="space-y-6 animate-in fade-in duration-150">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-2xl font-bold text-slate-900">Account-Anfragen &amp; Freigaben</h1>
+                      <span className="bg-amber-100 text-amber-900 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-amber-200">
+                        {accountRequests.filter(r => r.status === 'pending').length} ausstehend
+                      </span>
+                    </div>
+                    <p className="text-slate-500 text-sm mt-1">
+                      Hier prüfen Sie eingereichte Registrierungen von der Nautic-Logonseite direkt in der Admin-Oberfläche, bestimmen das gewünschte Profil (Fahrlehrer, Schüler, Mieter oder Admin) und schalten Zugänge mit 1-Klick frei.
+                    </p>
+                  </div>
+
+                  {/* Filter-Buttons */}
+                  <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-semibold gap-1 self-start md:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setRequestFilter('pending')}
+                      className={`px-3 py-1.5 rounded-lg transition ${
+                        requestFilter === 'pending' ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Ausstehend ({accountRequests.filter(r => r.status === 'pending').length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRequestFilter('approved')}
+                      className={`px-3 py-1.5 rounded-lg transition ${
+                        requestFilter === 'approved' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Bestätigt ({accountRequests.filter(r => r.status === 'approved').length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRequestFilter('rejected')}
+                      className={`px-3 py-1.5 rounded-lg transition ${
+                        requestFilter === 'rejected' ? 'bg-white text-rose-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Abgelehnt ({accountRequests.filter(r => r.status === 'rejected').length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRequestFilter('all')}
+                      className={`px-3 py-1.5 rounded-lg transition ${
+                        requestFilter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Alle ({accountRequests.length})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tabelle der Anfragen */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                        <tr>
+                          <th className="py-3 px-4">Antragsteller</th>
+                          <th className="py-3 px-4">Kontakt</th>
+                          <th className="py-3 px-4">Wunsch &amp; Notiz</th>
+                          <th className="py-3 px-4">Profil-Zuweisung</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4 text-right">Aktionen</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {accountRequests
+                          .filter(r => requestFilter === 'all' || r.status === requestFilter)
+                          .map(req => {
+                            const selectedProfile = approvalProfileSelections[req.id] || req.desired_role;
+                            return (
+                              <tr key={req.id} className="hover:bg-slate-50/70 transition">
+                                <td className="py-3.5 px-4 font-medium text-slate-900">
+                                  <div className="font-semibold text-sm">{req.first_name} {req.last_name}</div>
+                                  <div className="text-[11px] text-slate-400 font-normal">Eingang: {req.created_at}</div>
+                                </td>
+                                <td className="py-3.5 px-4">
+                                  <div className="flex items-center gap-1.5 text-slate-700 font-medium">
+                                    <Mail className="w-3.5 h-3.5 text-slate-400" />
+                                    <span>{req.email}</span>
+                                  </div>
+                                  {req.phone && (
+                                    <div className="flex items-center gap-1.5 text-slate-500 text-[11px] mt-0.5">
+                                      <Phone className="w-3 h-3 text-slate-400" />
+                                      <span>{req.phone}</span>
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="py-3.5 px-4 max-w-[220px]">
+                                  <span className="inline-block px-2.5 py-0.5 bg-slate-100 text-slate-800 rounded-md text-[11px] font-medium mb-1">
+                                    Wunsch: {req.desired_role === 'instructor' ? 'Fahrcoach / Skipper' : req.desired_role === 'student' ? 'Fahrschüler' : req.desired_role === 'renter' ? 'Bootsmieter' : 'Flottenleitung'}
+                                  </span>
+                                  {req.notes && (
+                                    <p className="text-[11px] text-slate-500 italic truncate" title={req.notes}>
+                                      "{req.notes}"
+                                    </p>
+                                  )}
+                                </td>
+                                <td className="py-3.5 px-4">
+                                  {req.status === 'pending' ? (
+                                    <select
+                                      value={selectedProfile}
+                                      onChange={e =>
+                                        setApprovalProfileSelections(prev => ({
+                                          ...prev,
+                                          [req.id]: e.target.value as any
+                                        }))
+                                      }
+                                      className="px-2.5 py-1.5 bg-amber-50/70 border border-amber-300 rounded-lg text-xs font-semibold text-amber-950 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                    >
+                                      <option value="instructor">Fahrlehrer / Coach</option>
+                                      <option value="student">Schüler / Fahrschüler</option>
+                                      <option value="renter">Bootsmieter / Charterkunde</option>
+                                      <option value="admin">Flottenleitung / Admin</option>
+                                    </select>
+                                  ) : (
+                                    <div className="font-semibold text-slate-800 text-xs">
+                                      {req.assigned_profile === 'instructor' && 'Fahrlehrer / Coach'}
+                                      {req.assigned_profile === 'student' && 'Schüler / Fahrschüler'}
+                                      {req.assigned_profile === 'renter' && 'Bootsmieter / Charter'}
+                                      {req.assigned_profile === 'admin' && 'Flottenleitung / Admin'}
+                                      {!req.assigned_profile && '-'}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="py-3.5 px-4">
+                                  {req.status === 'pending' && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-[11px] font-semibold">
+                                      <Clock className="w-3 h-3" /> Ausstehend
+                                    </span>
+                                  )}
+                                  {req.status === 'approved' && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-semibold">
+                                      <Check className="w-3 h-3" /> Bestätigt
+                                    </span>
+                                  )}
+                                  {req.status === 'rejected' && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full text-[11px] font-semibold">
+                                      <X className="w-3 h-3" /> Abgelehnt
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-3.5 px-4 text-right">
+                                  {req.status === 'pending' ? (
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleApproveAccountRequest(req.id)}
+                                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold flex items-center gap-1 shadow-sm transition cursor-pointer text-xs"
+                                        title="Antrag bestätigen & Profil aktivieren"
+                                      >
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>Freischalten</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRejectAccountRequest(req.id)}
+                                        className="px-2 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 rounded-lg transition cursor-pointer"
+                                        title="Antrag ablehnen"
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <span className="text-[11px] text-slate-400">
+                                      Erledigt ({req.status === 'approved' ? 'Freigeschaltet' : 'Abgelehnt'})
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        {accountRequests.filter(r => requestFilter === 'all' || r.status === requestFilter).length === 0 && (
+                          <tr>
+                            <td colSpan={6} className="py-12 text-center text-slate-400">
+                              <UserCheck className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                              <div className="font-semibold text-slate-600">Keine Anfragen in dieser Ansicht</div>
+                              <p className="text-xs text-slate-400 mt-0.5">Neue Anfragen über die Nautic-Logonseite erscheinen hier automatisch.</p>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* MODAL: SERVICE ANLEGEN / BEARBEITEN */}
             {showServiceModal && (
               <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
@@ -2897,14 +3138,19 @@ export default function App() {
           const missingFields: { key: string; label: string }[] = [];
           if (!studentProfile.emergency_contact.trim()) missingFields.push({ key: 'emergency_contact', label: 'Notfallkontakt' });
           if (!studentProfile.phone.trim()) missingFields.push({ key: 'phone', label: 'Mobiltelefonnummer' });
-          if (!studentProfile.faber.trim()) missingFields.push({ key: 'faber', label: 'FABER:' });
-          if (!studentProfile.pin.trim()) missingFields.push({ key: 'pin', label: 'PIN:' });
-          if (!studentProfile.pid.trim()) missingFields.push({ key: 'pid', label: 'PID:' });
           if (!studentProfile.street.trim() || !studentProfile.city.trim()) missingFields.push({ key: 'address', label: 'Wohnadresse' });
 
-          const totalRequired = 6;
+          // FABER, PIN & PID Fehlermeldung erst, wenn markiert ist das die Theorie bestanden ist!
+          let totalRequired = 3;
+          if (studentProfile.theory_passed) {
+            totalRequired += 3;
+            if (!studentProfile.faber.trim()) missingFields.push({ key: 'faber', label: 'FABER: Fahrberechtigungs-Register-Nr.' });
+            if (!studentProfile.pin.trim()) missingFields.push({ key: 'pin', label: 'PIN: Persönliche Identifikationsnummer' });
+            if (!studentProfile.pid.trim()) missingFields.push({ key: 'pid', label: 'PID: Personen-Identifikator' });
+          }
+
           const completedCount = totalRequired - missingFields.length;
-          const completenessPercent = Math.round((completedCount / totalRequired) * 100);
+          const completenessPercent = totalRequired > 0 ? Math.round((completedCount / totalRequired) * 100) : 100;
 
           const studentApps = appointments.filter(a => a.customer_id === 1 || a.customer_name.toLowerCase().includes('roland') || a.customer_name.toLowerCase().includes('lukas'));
           const upcomingApps = studentApps.filter(a => a.status === 'confirmed' || a.status === 'requested');
@@ -4680,7 +4926,9 @@ export default function App() {
                             {/* Schweizer Schifffahrtsamt: FABER:, PIN:, PID: */}
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                               <div>
-                                <label className="font-bold text-slate-800 block mb-1">FABER: *</label>
+                                <label className="font-bold text-slate-800 block mb-1">
+                                  FABER: {studentProfile.theory_passed ? <span className="text-rose-500">*</span> : <span className="text-[10px] text-slate-400 font-normal">(nach Theorie)</span>}
+                                </label>
                                 <input
                                   type="text"
                                   value={studentProfile.faber}
@@ -4691,7 +4939,9 @@ export default function App() {
                                 <span className="text-[10px] text-slate-500 block mt-0.5">Fahrberechtigungs-Register</span>
                               </div>
                               <div>
-                                <label className="font-bold text-slate-800 block mb-1">PIN: *</label>
+                                <label className="font-bold text-slate-800 block mb-1">
+                                  PIN: {studentProfile.theory_passed ? <span className="text-rose-500">*</span> : <span className="text-[10px] text-slate-400 font-normal">(nach Theorie)</span>}
+                                </label>
                                 <input
                                   type="text"
                                   value={studentProfile.pin}
@@ -4702,7 +4952,9 @@ export default function App() {
                                 <span className="text-[10px] text-slate-500 block mt-0.5">Persönliche Ident.-Nr.</span>
                               </div>
                               <div>
-                                <label className="font-bold text-slate-800 block mb-1">PID: *</label>
+                                <label className="font-bold text-slate-800 block mb-1">
+                                  PID: {studentProfile.theory_passed ? <span className="text-rose-500">*</span> : <span className="text-[10px] text-slate-400 font-normal">(nach Theorie)</span>}
+                                </label>
                                 <input
                                   type="text"
                                   value={studentProfile.pid}

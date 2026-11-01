@@ -2910,22 +2910,28 @@ if (isset($router) && $router !== null) {
                 if (empty(trim((string) ($customer['city'] ?? ''))) || empty(trim((string) ($customer['zip'] ?? '')))) {
                     $missing['city'] = 'Postleitzahl & Wohnort';
                 }
-                if (empty(trim((string) ($customer['faber'] ?? $customer['license_number'] ?? '')))) {
-                    $missing['faber'] = 'FABER: Fahrberechtigungs-Register-Nr.';
-                }
-                if (empty(trim((string) ($customer['pin'] ?? '')))) {
-                    $missing['pin'] = 'PIN: Persönliche Identifikationsnummer';
-                }
-                if (empty(trim((string) ($customer['pid'] ?? '')))) {
-                    $missing['pid'] = 'PID: Personen-Identifikator';
-                }
                 if (empty(trim((string) ($customer['emergency_contact'] ?? '')))) {
                     $missing['emergency_contact'] = 'Notfallkontakt (Name & Telefon)';
                 }
 
-                $totalCheckFields = 8;
-                $filledCount = $totalCheckFields - count($missing);
-                $percent = (int) round(($filledCount / $totalCheckFields) * 100);
+                // FABER, PIN & PID Fehlermeldung erst, wenn markiert ist, dass die Theorie bestanden ist!
+                $totalCheckFields = 5;
+                $theoryPassed = !empty($customer['theory_passed']);
+                if ($theoryPassed) {
+                    $totalCheckFields += 3;
+                    if (empty(trim((string) ($customer['faber'] ?? $customer['license_number'] ?? '')))) {
+                        $missing['faber'] = 'FABER: Fahrberechtigungs-Register-Nr.';
+                    }
+                    if (empty(trim((string) ($customer['pin'] ?? '')))) {
+                        $missing['pin'] = 'PIN: Persönliche Identifikationsnummer';
+                    }
+                    if (empty(trim((string) ($customer['pid'] ?? '')))) {
+                        $missing['pid'] = 'PID: Personen-Identifikator';
+                    }
+                }
+
+                $filledCount = max(0, $totalCheckFields - count($missing));
+                $percent = $totalCheckFields > 0 ? (int) round(($filledCount / $totalCheckFields) * 100) : 100;
 
                 $profileCheck = [
                     'completeness_percent' => $percent,

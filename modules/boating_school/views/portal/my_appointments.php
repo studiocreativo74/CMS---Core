@@ -1067,34 +1067,34 @@ ob_start();
                                                             <!-- FABER: Fahrberechtigungs-Register -->
                                                             <div class="col-12 col-md-4">
                                                                 <label class="form-label small fw-semibold text-dark mb-1">
-                                                                    FABER: <span class="text-danger">*</span>
+                                                                    FABER: <span class="theory-req-star text-danger" style="display: <?= !empty($customer['theory_passed']) ? 'inline' : 'none' ?>;">*</span>
                                                                 </label>
                                                                 <input type="text" name="faber" class="form-control rounded-3 font-monospace" placeholder="z. B. 123.456.789" value="<?= htmlspecialchars((string) ($customer['faber'] ?? $customer['license_number'] ?? '')) ?>">
-                                                                <div class="form-text" style="font-size: 0.70rem;">Fahrberechtigungs-Register Nr.</div>
+                                                                <div class="form-text" style="font-size: 0.70rem;">Fahrberechtigungs-Register (nur bei bestandener Theorie)</div>
                                                             </div>
 
                                                             <!-- PIN: Persönliche Identifikationsnummer -->
                                                             <div class="col-12 col-md-4">
                                                                 <label class="form-label small fw-semibold text-dark mb-1">
-                                                                    PIN: <span class="text-danger">*</span>
+                                                                    PIN: <span class="theory-req-star text-danger" style="display: <?= !empty($customer['theory_passed']) ? 'inline' : 'none' ?>;">*</span>
                                                                 </label>
                                                                 <input type="text" name="pin" class="form-control rounded-3 font-monospace" placeholder="z. B. 7841" value="<?= htmlspecialchars((string) ($customer['pin'] ?? '')) ?>">
-                                                                <div class="form-text" style="font-size: 0.70rem;">Persönliche Identifikationsnummer</div>
+                                                                <div class="form-text" style="font-size: 0.70rem;">Persönliche Identifikationsnummer (nur bei bestandener Theorie)</div>
                                                             </div>
 
                                                             <!-- PID: Personen-Identifikator -->
                                                             <div class="col-12 col-md-4">
                                                                 <label class="form-label small fw-semibold text-dark mb-1">
-                                                                    PID: <span class="text-danger">*</span>
+                                                                    PID: <span class="theory-req-star text-danger" style="display: <?= !empty($customer['theory_passed']) ? 'inline' : 'none' ?>;">*</span>
                                                                 </label>
                                                                 <input type="text" name="pid" class="form-control rounded-3 font-monospace" placeholder="z. B. CHE-123.456.7" value="<?= htmlspecialchars((string) ($customer['pid'] ?? '')) ?>">
-                                                                <div class="form-text" style="font-size: 0.70rem;">Personen-Identifikator (Schifffahrtsamt)</div>
+                                                                <div class="form-text" style="font-size: 0.70rem;">Personen-Identifikator (nur bei bestandener Theorie)</div>
                                                             </div>
 
                                                             <div class="col-12">
                                                                 <div class="alert alert-light border small text-muted mb-0">
                                                                     <i class="bi bi-info-circle me-1"></i>
-                                                                    Die ASA-Daten (FABER, PIN und PID) werden für die offizielle Prüfungsanmeldung bei den Schifffahrtsämtern Luzern (LU), Nidwalden (NW), Schwyz (SZ) und Uri (UR) benötigt.
+                                                                    <strong>Hinweis zur Prüfungsanmeldung:</strong> Die ASA-Daten (FABER, PIN und PID) werden erst benötigt und verlangt, sobald Sie die Theorieprüfung beim Schifffahrtsamt erfolgreich bestanden haben.
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1191,6 +1191,20 @@ function copyCalendarFeedUrl(btn) {
         alert('Kalender-Link in Zwischenablage kopiert!');
     }
 }
+
+// Dynamische Anzeige von FABER/PIN/PID Pflichtfeldern bei Umschalten von Theorie bestanden
+document.addEventListener('DOMContentLoaded', function() {
+    const theoryCheck = document.getElementById('theoryPassedCheck');
+    if (theoryCheck) {
+        function updateTheoryRequired() {
+            const isChecked = theoryCheck.checked;
+            document.querySelectorAll('.theory-req-star').forEach(function(el) {
+                el.style.display = isChecked ? 'inline' : 'none';
+            });
+        }
+        theoryCheck.addEventListener('change', updateTheoryRequired);
+    }
+});
 </script>
 
 <?php

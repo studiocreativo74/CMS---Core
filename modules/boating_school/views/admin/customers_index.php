@@ -22,6 +22,7 @@ $canExport = BoatingSchoolService::canExportCustomers();
 $canImport = BoatingSchoolService::canImportCustomers();
 $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
 $users = $users ?? (class_exists('User') ? User::all() : []);
+$pendingRequestsCount = class_exists('NauticAccountRequestService') ? NauticAccountRequestService::getPendingCount() : 0;
 
 // Query-String für CSV-Export mit aktiven Filtern
 $exportQuery = http_build_query(array_filter([
@@ -208,6 +209,42 @@ ob_start();
         <?php endif; ?>
     </div>
 </div>
+
+<!-- Tabs zur schnellen Navigation zwischen Kunden-CRM und Account-Anfragen -->
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <ul class="nav nav-pills bg-white p-1.5 rounded-4 shadow-sm border">
+        <li class="nav-item">
+            <a class="nav-link active rounded-pill px-3 py-1.5 fw-bold" href="?route=admin/boating/customers">
+                <i class="bi bi-people-fill me-1"></i> Kunden- &amp; Schülerkartei (CRM)
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link rounded-pill text-muted px-3 py-1.5 fw-semibold" href="?route=admin/boating/account-requests">
+                <i class="bi bi-person-check me-1"></i> Account-Anfragen &amp; Freigaben
+                <?php if ($pendingRequestsCount > 0): ?>
+                    <span class="badge bg-warning text-dark ms-1.5"><?= $pendingRequestsCount ?></span>
+                <?php endif; ?>
+            </a>
+        </li>
+    </ul>
+</div>
+
+<?php if ($pendingRequestsCount > 0): ?>
+    <div class="alert alert-warning border-0 shadow-sm rounded-4 d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div class="d-flex align-items-center gap-2">
+            <span class="p-2 bg-warning bg-opacity-25 text-dark rounded-circle">
+                <i class="bi bi-bell-fill fs-5"></i>
+            </span>
+            <div>
+                <strong class="text-dark">Es liegen <?= $pendingRequestsCount ?> neue Registrierungsanfragen vor.</strong>
+                <div class="text-muted small">Prüfen Sie neue Anfragen von der Nautic-Logonseite und weisen Sie direkt das gewünschte Profil zu.</div>
+            </div>
+        </div>
+        <a href="?route=admin/boating/account-requests" class="btn btn-dark btn-sm rounded-pill px-3 fw-semibold">
+            <i class="bi bi-person-check me-1"></i> Anfragen jetzt prüfen &rarr;
+        </a>
+    </div>
+<?php endif; ?>
 
 <!-- Filter-Leiste -->
 <div class="card border-0 shadow-sm mb-4">
