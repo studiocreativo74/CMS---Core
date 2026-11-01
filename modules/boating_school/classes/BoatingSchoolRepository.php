@@ -748,6 +748,81 @@ final class BoatingSchoolRepository
         }
     }
 
+    /**
+     * Erstellt eine 1:1-Kopie einer Dienstleistung inklusive aller Preisoptionen (handleDuplicate).
+     */
+    public static function duplicateService(int $id): ?int
+    {
+        $orig = self::getServiceById($id);
+        if (!$orig) {
+            return null;
+        }
+        $data = $orig;
+        unset($data['id'], $data['created_at'], $data['updated_at']);
+        $data['name'] = trim((string) $orig['name']) . ' (Kopie)';
+        if (!empty($orig['code'])) {
+            $data['code'] = trim((string) $orig['code']) . '-KOPIE';
+        }
+        $newId = self::createService($data);
+        if ($newId > 0) {
+            $options = self::getPriceOptions($id);
+            if (!empty($options)) {
+                self::savePriceOptions($newId, $options);
+            }
+            return $newId;
+        }
+        return null;
+    }
+
+    /**
+     * Liefert alle Preis- und Zeitstaffeln eines Angebots.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getPriceOptions(int $serviceId): array
+    {
+        if (!self::isTableCreated('bs_service_price_options') || $serviceId <= 0) {
+            return [];
+        }
+        try {
+            return DB::fetchAll(
+                'SELECT * FROM `bs_service_price_options` WHERE `service_id` = :sid ORDER BY `sort_order` ASC, `price` ASC',
+                ['sid' => $serviceId]
+            );
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Speichert Preis- und Zeitstaffeln für eine Dienstleistung.
+     *
+     * @param array<int, array<string, mixed>> $options
+     */
+    public static function savePriceOptions(int $serviceId, array $options): bool
+    {
+        if (!self::isTableCreated('bs_service_price_options') || $serviceId <= 0) {
+            return false;
+        }
+        try {
+            DB::execute('DELETE FROM `bs_service_price_options` WHERE `service_id` = :sid', ['sid' => $serviceId]);
+            $sql = 'INSERT INTO `bs_service_price_options` (`service_id`, `duration`, `price`, `sessions_count`, `sort_order`) VALUES (:sid, :dur, :pri, :sc, :so)';
+            foreach ($options as $idx => $opt) {
+                DB::execute($sql, [
+                    'sid' => $serviceId,
+                    'dur' => isset($opt['duration']) ? (int) $opt['duration'] : 90,
+                    'pri' => isset($opt['price']) ? (float) $opt['price'] : 0.00,
+                    'sc'  => isset($opt['sessions_count']) ? max(1, (int) $opt['sessions_count']) : 1,
+                    'so'  => isset($opt['sort_order']) ? (int) $opt['sort_order'] : $idx,
+                ]);
+            }
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::savePriceOptions Fehler: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     // =========================================================================
     // 4. KUNDEN & SCHÜLER (bs_customers)
     // =========================================================================
@@ -1278,13 +1353,44 @@ final class BoatingSchoolRepository
     }
 
     /**
-     * Liefert alle Abonnements eines Kunden inklusive Verbrauchs-Berechnung.
+     * Liefert alle Abonnements & Guthaben eines Kunden aus bs_customer_subscriptions und bs_subscriptions.
      *
      * @return array<int, array<string, mixed>>
      */
     public static function getSubscriptionsByCustomerId(int $customerId): array
     {
-        return self::getSubscriptions(['customer_id' => $customerId], 100, 0);
+        $results = [];
+
+        // 1. Store-Abo Tabelle bs_customer_subscriptions abfragen
+        if (self::isTableCreated('bs_customer_subscriptions')) {
+            try {
+                $sql = "SELECT cs.*,
+                               cs.total_sessions AS total_units,
+                               cs.used_sessions AS used_units,
+                               (cs.total_sessions - cs.used_sessions) AS remaining_units,
+                               cs.package_name AS title,
+                               srv.name AS service_name,
+                               srv.offer_type
+                        FROM `bs_customer_subscriptions` cs
+                        LEFT JOIN `bs_services` srv ON cs.service_id = srv.id
+                        WHERE cs.customer_id = :cid
+                        ORDER BY cs.id DESC";
+                $storeSubs = DB::fetchAll($sql, ['cid' => $customerId]);
+                if (!empty($storeSubs)) {
+                    $results = array_merge($results, $storeSubs);
+                }
+            } catch (\Throwable $e) {
+                // Weiter
+            }
+        }
+
+        // 2. Bestehende bs_subscriptions abfragen (falls noch vorhanden)
+        $crmSubs = self::getSubscriptions(['customer_id' => $customerId], 100, 0);
+        if (!empty($crmSubs)) {
+            $results = array_merge($results, $crmSubs);
+        }
+
+        return $results;
     }
 
     /**
@@ -1295,6 +1401,377 @@ final class BoatingSchoolRepository
     public static function getCustomerSubscriptions(int $customerId): array
     {
         return self::getSubscriptionsByCustomerId($customerId);
+    }
+
+    /**
+     * Schreibt einen neuen Guthaben-Datensatz bei Store-Kauf in bs_customer_subscriptions.
+     *
+     * @param array<string, mixed> $data
+     */
+    public static function createCustomerSubscription(array $data): int
+    {
+        if (!self::isTableCreated('bs_customer_subscriptions')) {
+            return 0;
+        }
+
+        $orderId = !empty($data['order_id']) ? trim((string) $data['order_id']) : ('CB-ORD-' . strtoupper(bin2hex(random_bytes(3))));
+        $totalSessions = isset($data['total_sessions']) ? max(1, (int) $data['total_sessions']) : 10;
+        $purchasedAt = !empty($data['purchased_at']) ? trim((string) $data['purchased_at']) : date('Y-m-d H:i:s');
+        $expiresAt = !empty($data['expires_at']) ? trim((string) $data['expires_at']) : date('Y-m-d', strtotime('+1 year'));
+
+        $sql = "INSERT INTO `bs_customer_subscriptions`
+                (`customer_id`, `service_id`, `package_name`, `total_sessions`, `used_sessions`, `purchased_at`, `expires_at`, `price_paid`, `payment_method`, `payment_status`, `order_id`, `location_name`, `created_at`)
+                VALUES
+                (:cid, :sid, :pname, :total, 0, :purchased, :expires, :price, :method, :status, :order_id, :loc, NOW())";
+
+        try {
+            DB::execute($sql, [
+                'cid'       => (int) ($data['customer_id'] ?? 0),
+                'sid'       => (int) ($data['service_id'] ?? 0),
+                'pname'     => trim((string) ($data['package_name'] ?? 'Abonnement / Guthaben')),
+                'total'     => $totalSessions,
+                'purchased' => $purchasedAt,
+                'expires'   => $expiresAt,
+                'price'     => isset($data['price_paid']) ? (float) $data['price_paid'] : 0.00,
+                'method'    => !empty($data['payment_method']) ? trim((string) $data['payment_method']) : 'bank_transfer',
+                'status'    => !empty($data['payment_status']) ? trim((string) $data['payment_status']) : 'paid',
+                'order_id'  => $orderId,
+                'loc'       => !empty($data['location_name']) ? trim((string) $data['location_name']) : 'Luzern',
+            ]);
+            return (int) DB::lastInsertId();
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::createCustomerSubscription Fehler: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Bucht bei Abschluss (completed) einer Fahrstunde 1 Einheit vom ältesten aktiven Abo ab.
+     */
+    public static function consumeSubscriptionSession(int $customerId, ?int $serviceId = null): bool
+    {
+        if (!self::isTableCreated('bs_customer_subscriptions') || $customerId <= 0) {
+            return false;
+        }
+
+        try {
+            $whereService = ($serviceId !== null && $serviceId > 0) ? 'AND (`service_id` = :sid OR `service_id` = 0)' : '';
+            $params = ['cid' => $customerId];
+            if ($serviceId !== null && $serviceId > 0) {
+                $params['sid'] = $serviceId;
+            }
+
+            // Ältestes noch nicht aufgebrauchtes Abo finden
+            $row = DB::fetchOne(
+                "SELECT id FROM `bs_customer_subscriptions` 
+                 WHERE `customer_id` = :cid {$whereService} AND `used_sessions` < `total_sessions` 
+                 ORDER BY `purchased_at` ASC LIMIT 1",
+                $params
+            );
+
+            if ($row && !empty($row['id'])) {
+                DB::execute(
+                    "UPDATE `bs_customer_subscriptions` SET `used_sessions` = `used_sessions` + 1 WHERE `id` = :id",
+                    ['id' => (int) $row['id']]
+                );
+                return true;
+            }
+            return false;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::consumeSubscriptionSession Fehler: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Schreibt bei Stornierung (cancelled) 1 Einheit an das Kundenkonto zurück.
+     */
+    public static function refundSubscriptionSession(int $customerId, ?int $serviceId = null): bool
+    {
+        if (!self::isTableCreated('bs_customer_subscriptions') || $customerId <= 0) {
+            return false;
+        }
+
+        try {
+            $whereService = ($serviceId !== null && $serviceId > 0) ? 'AND (`service_id` = :sid OR `service_id` = 0)' : '';
+            $params = ['cid' => $customerId];
+            if ($serviceId !== null && $serviceId > 0) {
+                $params['sid'] = $serviceId;
+            }
+
+            $row = DB::fetchOne(
+                "SELECT id FROM `bs_customer_subscriptions` 
+                 WHERE `customer_id` = :cid {$whereService} AND `used_sessions` > 0 
+                 ORDER BY `purchased_at` DESC LIMIT 1",
+                $params
+            );
+
+            if ($row && !empty($row['id'])) {
+                DB::execute(
+                    "UPDATE `bs_customer_subscriptions` SET `used_sessions` = `used_sessions` - 1 WHERE `id` = :id",
+                    ['id' => (int) $row['id']]
+                );
+                return true;
+            }
+            return false;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::refundSubscriptionSession Fehler: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    // =========================================================================
+    // PROMO-CODES & GUTSCHEINE (bs_promo_codes)
+    // =========================================================================
+
+    /**
+     * @param array<string, mixed>|null $filters
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getPromoCodes(?array $filters = null): array
+    {
+        if (!self::isTableCreated('bs_promo_codes')) {
+            return [];
+        }
+
+        try {
+            $where = [];
+            $params = [];
+            if (isset($filters['is_active']) && $filters['is_active'] !== '') {
+                $where[] = '`is_active` = :is_active';
+                $params['is_active'] = (int) $filters['is_active'];
+            }
+            if (!empty($filters['search'])) {
+                $where[] = '(`code` LIKE :s OR `description` LIKE :s)';
+                $params['s'] = '%' . trim((string) $filters['search']) . '%';
+            }
+
+            $whereSql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+            return DB::fetchAll("SELECT * FROM `bs_promo_codes` {$whereSql} ORDER BY `id` DESC", $params);
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::getPromoCodes Fehler: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public static function getPromoCodeByCode(string $code): ?array
+    {
+        if (!self::isTableCreated('bs_promo_codes')) {
+            return null;
+        }
+        $clean = strtoupper(trim($code));
+        try {
+            $row = DB::fetchOne('SELECT * FROM `bs_promo_codes` WHERE UPPER(`code`) = :code LIMIT 1', ['code' => $clean]);
+            return $row ?: null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Validiert einen Rabattcode serverseitig nach allen Kriterien der Spezifikation.
+     *
+     * @return array{valid: bool, discount_amount: float, final_amount: float, message: string, promo: array<string, mixed>|null}
+     */
+    public static function validatePromoCode(string $code, float $orderAmount, ?int $serviceId = null): array
+    {
+        $promo = self::getPromoCodeByCode($code);
+        if (!$promo) {
+            return [
+                'valid'           => false,
+                'discount_amount' => 0.0,
+                'final_amount'    => $orderAmount,
+                'message'         => 'Rabattcode existiert nicht oder wurde falsch eingegeben.',
+                'promo'           => null,
+            ];
+        }
+
+        // 1. Aktiv?
+        if (empty($promo['is_active'])) {
+            return [
+                'valid'           => false,
+                'discount_amount' => 0.0,
+                'final_amount'    => $orderAmount,
+                'message'         => 'Dieser Rabattcode ist derzeit nicht aktiv.',
+                'promo'           => $promo,
+            ];
+        }
+
+        // 2. Gültigkeitszeitraum?
+        $today = date('Y-m-d');
+        if (!empty($promo['valid_from']) && $today < $promo['valid_from']) {
+            return [
+                'valid'           => false,
+                'discount_amount' => 0.0,
+                'final_amount'    => $orderAmount,
+                'message'         => 'Dieser Gutscheincode ist erst ab dem ' . date('d.m.Y', strtotime($promo['valid_from'])) . ' gültig.',
+                'promo'           => $promo,
+            ];
+        }
+        if (!empty($promo['valid_until']) && $today > $promo['valid_until']) {
+            return [
+                'valid'           => false,
+                'discount_amount' => 0.0,
+                'final_amount'    => $orderAmount,
+                'message'         => 'Dieser Gutscheincode ist am ' . date('d.m.Y', strtotime($promo['valid_until'])) . ' abgelaufen.',
+                'promo'           => $promo,
+            ];
+        }
+
+        // 3. Maximalkontingent erreicht?
+        if ($promo['max_uses'] !== null && (int) $promo['used_count'] >= (int) $promo['max_uses']) {
+            return [
+                'valid'           => false,
+                'discount_amount' => 0.0,
+                'final_amount'    => $orderAmount,
+                'message'         => 'Das Einlösekontingent für diesen Rabattcode ist leider vollständig ausgeschöpft.',
+                'promo'           => $promo,
+            ];
+        }
+
+        // 4. Mindestbestellwert erreicht?
+        if (!empty($promo['min_order_amount']) && (float) $orderAmount < (float) $promo['min_order_amount']) {
+            return [
+                'valid'           => false,
+                'discount_amount' => 0.0,
+                'final_amount'    => $orderAmount,
+                'message'         => 'Der Mindestbestellwert für diesen Gutschein beträgt CHF ' . number_format((float) $promo['min_order_amount'], 2, '.', "'") . '.',
+                'promo'           => $promo,
+            ];
+        }
+
+        // 5. Gilt nur für bestimmte Services?
+        if (!empty($promo['applicable_service_ids'])) {
+            $allowed = json_decode((string) $promo['applicable_service_ids'], true);
+            if (is_array($allowed) && !empty($allowed)) {
+                if ($serviceId === null || !in_array($serviceId, $allowed)) {
+                    return [
+                        'valid'           => false,
+                        'discount_amount' => 0.0,
+                        'final_amount'    => $orderAmount,
+                        'message'         => 'Dieser Gutschein ist für das gewählte Angebot nicht anwendbar.',
+                        'promo'           => $promo,
+                    ];
+                }
+            }
+        }
+
+        // Rabattbetrag berechnen
+        $discountAmount = 0.0;
+        if ($promo['discount_type'] === 'percentage') {
+            $discountAmount = round(($orderAmount * (float) $promo['discount_value']) / 100.0, 2);
+        } else {
+            $discountAmount = min($orderAmount, (float) $promo['discount_value']);
+        }
+        $finalAmount = max(0.0, round($orderAmount - $discountAmount, 2));
+
+        return [
+            'valid'           => true,
+            'discount_amount' => $discountAmount,
+            'final_amount'    => $finalAmount,
+            'message'         => 'Gutscheincode "' . $promo['code'] . '" erfolgreich angewendet (' . ($promo['discount_type'] === 'percentage' ? ((int) $promo['discount_value'] . ' %') : ('CHF ' . number_format((float) $promo['discount_value'], 2, '.', "'"))) . ' Rabatt).',
+            'promo'           => $promo,
+        ];
+    }
+
+    /**
+     * Erhöht den Zähler used_count eines Promo-Codes.
+     */
+    public static function recordPromoCodeUsage(string $code): bool
+    {
+        if (!self::isTableCreated('bs_promo_codes')) {
+            return false;
+        }
+        $clean = strtoupper(trim($code));
+        try {
+            DB::execute('UPDATE `bs_promo_codes` SET `used_count` = `used_count` + 1, `updated_at` = NOW() WHERE UPPER(`code`) = :code', [
+                'code' => $clean,
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    public static function createPromoCode(array $data): int
+    {
+        if (!self::isTableCreated('bs_promo_codes')) {
+            return 0;
+        }
+        $sql = "INSERT INTO `bs_promo_codes`
+                (`code`, `description`, `discount_type`, `discount_value`, `min_order_amount`, `max_uses`, `used_count`, `valid_from`, `valid_until`, `is_active`, `applicable_service_ids`, `created_at`, `updated_at`)
+                VALUES
+                (:code, :desc, :dtype, :dval, :min_val, :max_u, 0, :vfrom, :vuntil, :active, :appl, NOW(), NOW())";
+        try {
+            DB::execute($sql, [
+                'code'    => strtoupper(trim((string) ($data['code'] ?? ''))),
+                'desc'    => !empty($data['description']) ? trim((string) $data['description']) : null,
+                'dtype'   => in_array($data['discount_type'] ?? '', ['percentage', 'fixed']) ? $data['discount_type'] : 'percentage',
+                'dval'    => isset($data['discount_value']) ? (float) $data['discount_value'] : 0.00,
+                'min_val' => !empty($data['min_order_amount']) ? (float) $data['min_order_amount'] : null,
+                'max_u'   => !empty($data['max_uses']) ? (int) $data['max_uses'] : null,
+                'vfrom'   => !empty($data['valid_from']) ? trim((string) $data['valid_from']) : null,
+                'vuntil'  => !empty($data['valid_until']) ? trim((string) $data['valid_until']) : null,
+                'active'  => isset($data['is_active']) ? (int) (bool) $data['is_active'] : 1,
+                'appl'    => !empty($data['applicable_service_ids']) ? (is_string($data['applicable_service_ids']) ? $data['applicable_service_ids'] : json_encode($data['applicable_service_ids'])) : null,
+            ]);
+            return (int) DB::lastInsertId();
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::createPromoCode Fehler: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public static function updatePromoCode(int $id, array $data): bool
+    {
+        if (!self::isTableCreated('bs_promo_codes') || $id <= 0) {
+            return false;
+        }
+        $sql = "UPDATE `bs_promo_codes`
+                SET `code` = :code,
+                    `description` = :desc,
+                    `discount_type` = :dtype,
+                    `discount_value` = :dval,
+                    `min_order_amount` = :min_val,
+                    `max_uses` = :max_u,
+                    `valid_from` = :vfrom,
+                    `valid_until` = :vuntil,
+                    `is_active` = :active,
+                    `applicable_service_ids` = :appl,
+                    `updated_at` = NOW()
+                WHERE `id` = :id";
+        try {
+            DB::execute($sql, [
+                'code'    => strtoupper(trim((string) ($data['code'] ?? ''))),
+                'desc'    => !empty($data['description']) ? trim((string) $data['description']) : null,
+                'dtype'   => in_array($data['discount_type'] ?? '', ['percentage', 'fixed']) ? $data['discount_type'] : 'percentage',
+                'dval'    => isset($data['discount_value']) ? (float) $data['discount_value'] : 0.00,
+                'min_val' => !empty($data['min_order_amount']) ? (float) $data['min_order_amount'] : null,
+                'max_u'   => !empty($data['max_uses']) ? (int) $data['max_uses'] : null,
+                'vfrom'   => !empty($data['valid_from']) ? trim((string) $data['valid_from']) : null,
+                'vuntil'  => !empty($data['valid_until']) ? trim((string) $data['valid_until']) : null,
+                'active'  => isset($data['is_active']) ? (int) (bool) $data['is_active'] : 1,
+                'appl'    => !empty($data['applicable_service_ids']) ? (is_string($data['applicable_service_ids']) ? $data['applicable_service_ids'] : json_encode($data['applicable_service_ids'])) : null,
+                'id'      => $id,
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::updatePromoCode Fehler: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public static function deletePromoCode(int $id): bool
+    {
+        if (!self::isTableCreated('bs_promo_codes') || $id <= 0) {
+            return false;
+        }
+        try {
+            DB::execute('DELETE FROM `bs_promo_codes` WHERE `id` = :id', ['id' => $id]);
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     public static function getSubscriptionById(int $id): ?array
@@ -2264,5 +2741,229 @@ final class BoatingSchoolRepository
             'appointments_conf'     => self::countAppointments(['status' => 'confirmed']),
         ];
     }
+
+    // =========================================================================
+    // 8. STORE, ABOS & GUTSCHEINE (bs_customer_subscriptions & bs_promo_codes)
+    // =========================================================================
+
+    /**
+     * Liefert alle Abonnements und Guthaben eines Kunden.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getSubscriptionsByCustomerId(int $customerId): array
+    {
+        if ($customerId <= 0) {
+            return [];
+        }
+        if (!self::isTableCreated('bs_customer_subscriptions')) {
+            return [];
+        }
+        try {
+            $sql = 'SELECT s.*, s.total_sessions - s.used_sessions AS remaining_sessions,
+                           srv.name AS service_name, srv.offer_type
+                    FROM `bs_customer_subscriptions` s
+                    LEFT JOIN `bs_services` srv ON srv.id = s.service_id
+                    WHERE s.`customer_id` = :cid
+                    ORDER BY s.`purchased_at` DESC';
+            return DB::fetchAll($sql, ['cid' => $customerId]);
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::getSubscriptionsByCustomerId Fehler: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Alias für getSubscriptionsByCustomerId (garantiert 100% Kompatibilität).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getCustomerSubscriptions(int $customerId): array
+    {
+        return self::getSubscriptionsByCustomerId($customerId);
+    }
+
+    /**
+     * Erstellt ein neues Kunden-Abonnement / Guthaben.
+     */
+    public static function createCustomerSubscription(array $data): int
+    {
+        if (!self::isTableCreated('bs_customer_subscriptions')) {
+            return 0;
+        }
+        try {
+            $sql = 'INSERT INTO `bs_customer_subscriptions`
+                    (`customer_id`, `service_id`, `package_name`, `total_sessions`, `used_sessions`, `purchased_at`, `expires_at`, `price_paid`, `payment_method`, `payment_status`, `order_id`, `created_at`)
+                    VALUES
+                    (:customer_id, :service_id, :package_name, :total_sessions, :used_sessions, :purchased_at, :expires_at, :price_paid, :payment_method, :payment_status, :order_id, NOW())';
+            
+            DB::execute($sql, [
+                'customer_id'    => (int) ($data['customer_id'] ?? 0),
+                'service_id'     => (int) ($data['service_id'] ?? 0),
+                'package_name'   => trim((string) ($data['package_name'] ?? 'Fahrstunden-Paket')),
+                'total_sessions' => max(1, (int) ($data['total_sessions'] ?? 1)),
+                'used_sessions'  => (int) ($data['used_sessions'] ?? 0),
+                'purchased_at'   => !empty($data['purchased_at']) ? (string) $data['purchased_at'] : date('Y-m-d H:i:s'),
+                'expires_at'     => !empty($data['expires_at']) ? (string) $data['expires_at'] : date('Y-m-d', strtotime('+1 year')),
+                'price_paid'     => (float) ($data['price_paid'] ?? 0.0),
+                'payment_method' => (string) ($data['payment_method'] ?? 'bank_transfer'),
+                'payment_status' => (string) ($data['payment_status'] ?? 'open'),
+                'order_id'       => (string) ($data['order_id'] ?? ('CB-ORD-' . strtoupper(substr(md5(uniqid()), 0, 6)))),
+            ]);
+            return (int) DB::lastInsertId();
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::createCustomerSubscription Fehler: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Bucht eine Lerneinheit / Fahrstunde von einem aktiven Guthaben ab.
+     */
+    public static function consumeSubscriptionSession(int $subscriptionId, int $sessions = 1): bool
+    {
+        if ($subscriptionId <= 0 || !self::isTableCreated('bs_customer_subscriptions')) {
+            return false;
+        }
+        try {
+            $sql = 'UPDATE `bs_customer_subscriptions`
+                    SET `used_sessions` = LEAST(`total_sessions`, `used_sessions` + :sess)
+                    WHERE `id` = :id AND `used_sessions` < `total_sessions`';
+            DB::execute($sql, ['id' => $subscriptionId, 'sess' => max(1, $sessions)]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::consumeSubscriptionSession Fehler: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Erstattet eine Lerneinheit / Fahrstunde auf ein aktives Guthaben zurück (z.B. bei Stornierung).
+     */
+    public static function refundSubscriptionSession(int $subscriptionId, int $sessions = 1): bool
+    {
+        if ($subscriptionId <= 0 || !self::isTableCreated('bs_customer_subscriptions')) {
+            return false;
+        }
+        try {
+            $sql = 'UPDATE `bs_customer_subscriptions`
+                    SET `used_sessions` = GREATEST(0, `used_sessions` - :sess)
+                    WHERE `id` = :id';
+            DB::execute($sql, ['id' => $subscriptionId, 'sess' => max(1, $sessions)]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::refundSubscriptionSession Fehler: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Liefert alle Rabatt- & Promo-Codes.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getPromoCodes(array $filters = []): array
+    {
+        if (!self::isTableCreated('bs_promo_codes')) {
+            return [];
+        }
+        try {
+            $where = [];
+            $params = [];
+            if (isset($filters['is_active'])) {
+                $where[] = '`is_active` = :is_active';
+                $params['is_active'] = (int) $filters['is_active'];
+            }
+            $whereSql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+            return DB::fetchAll("SELECT * FROM `bs_promo_codes` {$whereSql} ORDER BY `id` DESC", $params);
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::getPromoCodes Fehler: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public static function getPromoCodeByCode(string $code): ?array
+    {
+        if (!self::isTableCreated('bs_promo_codes') || trim($code) === '') {
+            return null;
+        }
+        try {
+            $row = DB::fetchOne('SELECT * FROM `bs_promo_codes` WHERE UPPER(`code`) = :c LIMIT 1', [
+                'c' => strtoupper(trim($code)),
+            ]);
+            return $row ?: null;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::getPromoCodeByCode Fehler: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Prüft die Gültigkeit eines Promo-Codes gegen einen Warenkorbwert.
+     *
+     * @return array{valid: bool, discount_amount: float, discount_type?: string, discount_value?: float, message: string}
+     */
+    public static function validatePromoCode(string $code, float $cartTotal = 0.0): array
+    {
+        $promo = self::getPromoCodeByCode($code);
+        if (!$promo) {
+            return ['valid' => false, 'discount_amount' => 0.0, 'message' => 'Gutschein-Code nicht gefunden oder ungültig.'];
+        }
+        if ((int) ($promo['is_active'] ?? 1) !== 1) {
+            return ['valid' => false, 'discount_amount' => 0.0, 'message' => 'Dieser Aktionscode ist nicht mehr aktiv.'];
+        }
+        $today = date('Y-m-d');
+        if (!empty($promo['valid_from']) && $promo['valid_from'] > $today) {
+            return ['valid' => false, 'discount_amount' => 0.0, 'message' => 'Dieser Aktionscode ist noch nicht gültig.'];
+        }
+        if (!empty($promo['valid_until']) && $promo['valid_until'] < $today) {
+            return ['valid' => false, 'discount_amount' => 0.0, 'message' => 'Dieser Aktionscode ist abgelaufen.'];
+        }
+        if ($promo['max_uses'] !== null && (int) $promo['used_count'] >= (int) $promo['max_uses']) {
+            return ['valid' => false, 'discount_amount' => 0.0, 'message' => 'Das Kontingent für diesen Aktionscode ist bereits erschöpft.'];
+        }
+        $minOrder = (float) ($promo['min_order_amount'] ?? 0);
+        if ($minOrder > 0 && $cartTotal < $minOrder) {
+            return [
+                'valid' => false,
+                'discount_amount' => 0.0,
+                'message' => sprintf('Mindestbestellwert von CHF %.2f nicht erreicht.', $minOrder),
+            ];
+        }
+
+        $type = (string) ($promo['discount_type'] ?? 'percentage');
+        $val = (float) ($promo['discount_value'] ?? 0);
+        $discountAmount = 0.0;
+        if ($type === 'percentage') {
+            $discountAmount = round(($cartTotal * $val) / 100, 2);
+        } else {
+            $discountAmount = min($cartTotal, $val);
+        }
+
+        return [
+            'valid'           => true,
+            'discount_amount' => $discountAmount,
+            'discount_type'   => $type,
+            'discount_value'  => $val,
+            'message'         => sprintf('Rabatt abgezogen: CHF %.2f', $discountAmount),
+        ];
+    }
+
+    public static function recordPromoCodeUsage(string $code): bool
+    {
+        if (!self::isTableCreated('bs_promo_codes') || trim($code) === '') {
+            return false;
+        }
+        try {
+            DB::execute('UPDATE `bs_promo_codes` SET `used_count` = `used_count` + 1 WHERE UPPER(`code`) = :c', [
+                'c' => strtoupper(trim($code)),
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::recordPromoCodeUsage Fehler: ' . $e->getMessage());
+            return false;
+        }
+    }
 }
+
 

@@ -54,6 +54,9 @@ final class BoatingMigrationManager
             // 7. Schüler-Magic-Link Tabelle sicherstellen
             self::ensureMagicLinksTable();
 
+            // 7b. Modul «Store, Angebote & Gutscheine» Schema sicherstellen
+            self::ensureStoreAndPromoSchema();
+
             // 8. RBAC Berechtigungen registrieren
             if (class_exists('BoatingPermissions')) {
                 BoatingPermissions::registerAll();
@@ -355,6 +358,116 @@ final class BoatingMigrationManager
             } catch (\Throwable $e) {
                 // Weiter
             }
+        }
+    }
+
+    /**
+     * Stellt das Schema für das Modul «Store, Angebote & Gutscheine» sicher.
+     */
+    private static function ensureStoreAndPromoSchema(): void
+    {
+        // 1. Spalten in bs_services erweitern
+        if (self::tableExists('bs_services')) {
+            $colsToAdd = [
+                'offer_type'       => "ALTER TABLE `bs_services` ADD COLUMN `offer_type` ENUM('bootsfahrschule', 'coaching', 'mieten', 'anderes') NOT NULL DEFAULT 'bootsfahrschule' AFTER `name`",
+                'target_audience'  => "ALTER TABLE `bs_services` ADD COLUMN `target_audience` VARCHAR(191) NULL AFTER `offer_type`",
+                'image_url'        => "ALTER TABLE `bs_services` ADD COLUMN `image_url` VARCHAR(500) NULL AFTER `target_audience`",
+                'is_subscription'  => "ALTER TABLE `bs_services` ADD COLUMN `is_subscription` TINYINT(1) NOT NULL DEFAULT 0 AFTER `image_url`",
+                'sessions_count'   => "ALTER TABLE `bs_services` ADD COLUMN `sessions_count` INT UNSIGNED NOT NULL DEFAULT 1 AFTER `is_subscription`",
+                'location_ids'     => "ALTER TABLE `bs_services` ADD COLUMN `location_ids` JSON NULL AFTER `sessions_count`",
+            ];
+            foreach ($colsToAdd as $col => $sql) {
+                if (!self::columnExists('bs_services', $col)) {
+                    try {
+                        DB::execute($sql);
+                    } catch (\Throwable $e) {
+                        error_log("ensureStoreAndPromoSchema: Fehler beim Hinzufügen von {$col}: " . $e->getMessage());
+                    }
+                }
+            }
+        }
+
+        // 2. Preis- & Zeitstufen pro Angebot: bs_service_price_options
+        try {
+            DB::execute("
+                CREATE TABLE IF NOT EXISTS `bs_service_price_options` (
+                    `id`             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `service_id`     INT UNSIGNED NOT NULL,
+                    `duration`       INT UNSIGNED NOT NULL DEFAULT 90,
+                    `price`          DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    `sessions_count` INT UNSIGNED NOT NULL DEFAULT 1,
+                    `sort_order`     INT UNSIGNED NOT NULL DEFAULT 0,
+                    INDEX `idx_spo_service` (`service_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Throwable $e) {
+            error_log("ensureStoreAndPromoSchema: Fehler bei bs_service_price_options: " . $e->getMessage());
+        }
+
+        // 3. Gekaufte Kunden-Guthaben & Abos: bs_customer_subscriptions
+        try {
+            DB::execute("
+                CREATE TABLE IF NOT EXISTS `bs_customer_subscriptions` (
+                    `id`             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `customer_id`     INT UNSIGNED NOT NULL,
+                    `service_id`      INT UNSIGNED NOT NULL,
+                    `package_name`    VARCHAR(191) NOT NULL,
+                    `total_sessions`  INT UNSIGNED NOT NULL DEFAULT 1,
+                    `used_sessions`   INT UNSIGNED NOT NULL DEFAULT 0,
+                    `purchased_at`    DATETIME NOT NULL,
+                    `expires_at`      DATE NULL,
+                    `price_paid`      DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    `payment_method`  VARCHAR(50) NOT NULL DEFAULT 'bank_transfer',
+                    `payment_status`  ENUM('open', 'paid') NOT NULL DEFAULT 'paid',
+                    `order_id`        VARCHAR(64) NOT NULL,
+                    `location_name`   VARCHAR(191) NULL,
+                    `created_at`      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX `idx_cust_sub` (`customer_id`),
+                    INDEX `idx_service_sub` (`service_id`),
+                    INDEX `idx_order_sub` (`order_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Throwable $e) {
+            error_log("ensureStoreAndPromoSchema: Fehler bei bs_customer_subscriptions: " . $e->getMessage());
+        }
+
+        // 4. Promo-Codes & Gutscheine: bs_promo_codes
+        try {
+            DB::execute("
+                CREATE TABLE IF NOT EXISTS `bs_promo_codes` (
+                    `id`                     INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `code`                   VARCHAR(50) NOT NULL UNIQUE,
+                    `description`            VARCHAR(255) NULL,
+                    `discount_type`          ENUM('percentage', 'fixed') NOT NULL DEFAULT 'percentage',
+                    `discount_value`         DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    `min_order_amount`       DECIMAL(10,2) NULL,
+                    `max_uses`               INT UNSIGNED NULL,
+                    `used_count`             INT UNSIGNED NOT NULL DEFAULT 0,
+                    `valid_from`             DATE NULL,
+                    `valid_until`            DATE NULL,
+                    `is_active`              TINYINT(1) NOT NULL DEFAULT 1,
+                    `applicable_service_ids` JSON NULL,
+                    `created_at`             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at`             DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX `idx_promo_code` (`code`),
+                    INDEX `idx_promo_active` (`is_active`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            // Beispiel-Codes initial anlegen falls Tabelle noch leer
+            $count = (int) DB::fetchValue("SELECT COUNT(*) FROM `bs_promo_codes`");
+            if ($count === 0) {
+                DB::execute("
+                    INSERT INTO `bs_promo_codes` 
+                    (`code`, `description`, `discount_type`, `discount_value`, `min_order_amount`, `max_uses`, `used_count`, `valid_from`, `valid_until`, `is_active`, `created_at`, `updated_at`)
+                    VALUES 
+                    ('BOOT50', 'CHF 50.- Willkommensrabatt auf alle Fahrschul-Pakete', 'fixed', 50.00, 300.00, 100, 3, '2026-01-01', '2026-12-31', 1, NOW(), NOW()),
+                    ('SOMMER2026', '10 % Sommer-Aktion auf Abos & Spezial-Coachings', 'percentage', 10.00, 150.00, 50, 12, '2026-03-01', '2026-09-30', 1, NOW(), NOW()),
+                    ('VIPNAUTIC', '15 % Exklusiv-Rabatt für VIP Kunden', 'percentage', 15.00, 500.00, 20, 2, '2026-01-01', '2026-12-31', 1, NOW(), NOW())
+                ");
+            }
+        } catch (\Throwable $e) {
+            error_log("ensureStoreAndPromoSchema: Fehler bei bs_promo_codes: " . $e->getMessage());
         }
     }
 }

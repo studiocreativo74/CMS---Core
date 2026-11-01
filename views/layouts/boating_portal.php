@@ -243,65 +243,10 @@ unset($_SESSION['flash_portal_success'], $_SESSION['flash_portal_error'], $_SESS
         <?= $content ?>
     </main>
 
-    <!-- Footer -->
-    <footer class="portal-footer py-5">
-        <div class="container">
-            <div class="row g-4 justify-content-between">
-                <div class="col-lg-4">
-                    <div class="d-flex align-items-center gap-2 mb-3 text-white fw-bold fs-5">
-                        <i class="bi bi-compass text-info"></i>
-                        <span><?= htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8') ?></span>
-                    </div>
-                    <p class="small text-muted mb-3">
-                        Ihre professionelle Bootsfahrschule für Motorboot (Kat. A), Segelschiff (Kat. D),
-                        Prüfungsvorbereitung und exklusive Bootsmiete.
-                    </p>
-                    <div class="d-flex gap-3 text-white-50 fs-5">
-                        <i class="bi bi-geo-alt"></i> Vierwaldstättersee / Region
-                    </div>
-                </div>
-
-                <div class="col-6 col-lg-2">
-                    <h6 class="text-white fw-semibold mb-3">Ausbildung</h6>
-                    <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small">
-                        <li><a href="?route=bootschule/services&category=practical">Motorboot Praxis (Kat. A)</a></li>
-                        <li><a href="?route=bootschule/services&category=practical">Segelausbildung (Kat. D)</a></li>
-                        <li><a href="?route=bootschule/services&category=theory">Theorie &amp; Navigation</a></li>
-                        <li><a href="?route=bootschule/services&category=exam">Prüfungstraining</a></li>
-                    </ul>
-                </div>
-
-                <div class="col-6 col-lg-2">
-                    <h6 class="text-white fw-semibold mb-3">Kundenportal</h6>
-                    <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small">
-                        <li><a href="?route=bootschule/book">Termin &amp; Slot buchen</a></li>
-                        <li><a href="?route=bootschule/services&category=rental">Bootsmiete anfragen</a></li>
-                        <li><a href="?route=bootschule/me/appointments">Meine Termine verwalten</a></li>
-                        <li><a href="?route=kontakt">Kontakt &amp; Standort</a></li>
-                    </ul>
-                </div>
-
-                <div class="col-lg-3">
-                    <h6 class="text-white fw-semibold mb-3">Schnellkontakt</h6>
-                    <p class="small text-muted mb-2">
-                        Haben Sie Fragen zur Führerscheinprüfung oder wünschen Sie eine individuelle Beratung?
-                    </p>
-                    <a href="?route=bootschule/book" class="btn btn-sm btn-outline-info rounded-pill px-3">
-                        <i class="bi bi-calendar-check me-1"></i> Direkt online anfragen
-                    </a>
-                </div>
-            </div>
-
-            <hr class="border-secondary border-opacity-25 my-4">
-
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 small text-muted">
-                <div>
-                    &copy; <?= date('Y') ?> <?= htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8') ?>. Alle Rechte vorbehalten.
-                </div>
-                <div class="d-flex gap-3">
-                    <a href="?route=login" class="text-secondary text-decoration-none">Internes Login</a>
-                </div>
-            </div>
+    <!-- Footer (nur Copyrights) -->
+    <footer class="portal-footer py-4 border-top mt-auto bg-white">
+        <div class="container text-center small text-muted">
+            &copy; <?= date('Y') ?> <?= htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8') ?>. Alle Rechte vorbehalten.
         </div>
     </footer>
 

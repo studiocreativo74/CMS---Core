@@ -2825,11 +2825,26 @@ if (isset($router) && $router !== null) {
                 $grouped = BoatingCustomerMagicLinkService::getCustomerAppointments($sessionCustomerId);
                 $upcomingAppointments = $grouped['upcoming'];
                 $pastAppointments     = $grouped['past'];
-                $subscriptions = method_exists('BoatingSchoolRepository', 'getSubscriptionsByCustomerId')
-                    ? BoatingSchoolRepository::getSubscriptionsByCustomerId($sessionCustomerId)
-                    : (method_exists('BoatingSchoolRepository', 'getCustomerSubscriptions')
-                        ? BoatingSchoolRepository::getCustomerSubscriptions($sessionCustomerId)
-                        : []);
+                $subscriptions = [];
+                if (method_exists('BoatingSchoolRepository', 'getSubscriptionsByCustomerId')) {
+                    try {
+                        $subscriptions = BoatingSchoolRepository::getSubscriptionsByCustomerId($sessionCustomerId);
+                    } catch (\Throwable $e) {
+                        $subscriptions = [];
+                    }
+                } elseif (method_exists('BoatingSchoolRepository', 'getCustomerSubscriptions')) {
+                    try {
+                        $subscriptions = BoatingSchoolRepository::getCustomerSubscriptions($sessionCustomerId);
+                    } catch (\Throwable $e) {
+                        $subscriptions = [];
+                    }
+                } elseif (method_exists('CustomerService', 'getCustomerSubscriptions')) {
+                    try {
+                        $subscriptions = CustomerService::getCustomerSubscriptions($sessionCustomerId);
+                    } catch (\Throwable $e) {
+                        $subscriptions = [];
+                    }
+                }
 
                 // Ressourcen für Terminanfrage laden
                 if (class_exists('InstructorService')) {
@@ -3588,6 +3603,84 @@ if (isset($router) && $router !== null) {
         }
 
         header('Location: ?route=admin/boating/account-requests');
+        exit;
+    });
+
+    // =========================================================================
+    // 14. STORE, CHECKOUT & PROMO-CODES REST API
+    // =========================================================================
+    $router->get('/api/services', static function (): void {
+        header('Content-Type: application/json; charset=utf-8');
+        $services = BoatingSchoolRepository::getServices(['is_active' => 1], 100);
+        foreach ($services as &$s) {
+            $s['price_options'] = BoatingSchoolRepository::getPriceOptions((int) $s['id']);
+        }
+        unset($s);
+        echo json_encode(['success' => true, 'services' => $services], JSON_UNESCAPED_UNICODE);
+        exit;
+    });
+
+    $router->post('/api/services/duplicate', static function (): void {
+        header('Content-Type: application/json; charset=utf-8');
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true) ?: $_POST;
+        $id = (int) ($data['id'] ?? 0);
+        if ($id <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Ungültige Service-ID.'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        $newId = BoatingSchoolRepository::duplicateService($id);
+        echo json_encode([
+            'success' => $newId > 0,
+            'new_id'  => $newId,
+            'message' => $newId > 0 ? 'Dienstleistung erfolgreich dupliziert.' : 'Fehler beim Duplizieren.',
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    });
+
+    $router->post('/api/promo-codes/validate', static function (): void {
+        header('Content-Type: application/json; charset=utf-8');
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true) ?: $_POST;
+        $code = trim((string) ($data['code'] ?? ''));
+        $amount = (float) ($data['amount'] ?? 0.0);
+        $serviceId = !empty($data['service_id']) ? (int) $data['service_id'] : null;
+
+        $res = BoatingSchoolRepository::validatePromoCode($code, $amount, $serviceId);
+        echo json_encode($res, JSON_UNESCAPED_UNICODE);
+        exit;
+    });
+
+    $router->post('/api/store/checkout', static function (): void {
+        header('Content-Type: application/json; charset=utf-8');
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true) ?: $_POST;
+
+        $sessionCustomerId = !empty($_SESSION['boating_customer_id'])
+            ? (int) $_SESSION['boating_customer_id']
+            : (!empty($_SESSION['bs_customer_id']) ? (int) $_SESSION['bs_customer_id'] : (int) ($data['customer_id'] ?? 1));
+
+        $data['customer_id'] = $sessionCustomerId;
+        $res = ServiceService::checkout($data);
+        echo json_encode($res, JSON_UNESCAPED_UNICODE);
+        exit;
+    });
+
+    $router->get('/api/customer/subscriptions', static function (): void {
+        header('Content-Type: application/json; charset=utf-8');
+        $sessionCustomerId = !empty($_SESSION['boating_customer_id'])
+            ? (int) $_SESSION['boating_customer_id']
+            : (!empty($_SESSION['bs_customer_id']) ? (int) $_SESSION['bs_customer_id'] : 1);
+
+        $subs = BoatingSchoolRepository::getSubscriptionsByCustomerId($sessionCustomerId);
+        echo json_encode(['success' => true, 'subscriptions' => $subs], JSON_UNESCAPED_UNICODE);
+        exit;
+    });
+
+    $router->get('/api/admin/promo-codes', static function (): void {
+        header('Content-Type: application/json; charset=utf-8');
+        $promos = BoatingSchoolRepository::getPromoCodes();
+        echo json_encode(['success' => true, 'promo_codes' => $promos], JSON_UNESCAPED_UNICODE);
         exit;
     });
 }

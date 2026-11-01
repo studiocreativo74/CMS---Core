@@ -19,6 +19,8 @@ import {
   Download,
   Filter,
   Check,
+  Copy,
+  Camera,
   X,
   CreditCard,
   Briefcase,
@@ -45,7 +47,16 @@ import {
   LayoutDashboard,
   ExternalLink,
   QrCode,
-  FileCheck
+  FileCheck,
+  Tag,
+  ShoppingBag,
+  Printer,
+  Receipt,
+  Percent,
+  Trash2,
+  Edit3,
+  Search,
+  Gift
 } from 'lucide-react';
 
 // --- Datentypen & Mock-Daten der Bootsfahrschule & CMS ---
@@ -156,6 +167,222 @@ const INITIAL_ACCOUNT_REQUESTS: AccountRequest[] = [
     status: 'pending',
     created_at: '2026-03-24 16:30',
     notes: 'Möchte Motorbootprüfung Kat. A absolvieren. Theorieprüfung Schifffahrtsamt bereits bestanden.'
+  }
+];
+
+// --- MODUL: STORE, ANGEBOTE & GUTSCHEINE (Spezifikation) ---
+
+export interface ServicePriceOption {
+  id: number;
+  service_id: number;
+  duration: number; // Minuten pro Einheit (z. B. 60, 90, 120, 180 Min)
+  price: number; // Preis in CHF
+  sessions_count: number; // 1 bei Einzellektion, 5 bei 5er Abo, 10 bei 10er Abo
+  sort_order: number;
+}
+
+export interface ServiceOffer {
+  id: number;
+  name: string;
+  description: string;
+  offer_type: 'bootsfahrschule' | 'coaching' | 'mieten' | 'anderes';
+  target_audience: string;
+  image_url: string;
+  is_active: boolean;
+  is_subscription: boolean;
+  sessions_count: number;
+  location_ids: string[]; // ["loc_luzern", "loc_stansstad", "loc_hergiswil", ...]
+  price_options: ServicePriceOption[];
+}
+
+export interface CustomerSubscription {
+  id: number;
+  customer_id: number;
+  service_id: number;
+  package_name: string;
+  total_sessions: number;
+  used_sessions: number;
+  purchased_at: string;
+  expires_at: string;
+  price_paid: number;
+  payment_method: 'bank_transfer' | 'invoice' | 'qr_bill';
+  payment_status: 'open' | 'paid';
+  order_id: string;
+  location_name?: string;
+  created_at?: string;
+}
+
+export interface PromoCode {
+  id: number;
+  code: string;
+  description: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number; // 10.00 (%) oder 50.00 (CHF)
+  min_order_amount: number | null;
+  max_uses: number | null;
+  used_count: number;
+  valid_from: string | null;
+  valid_until: string | null;
+  is_active: boolean;
+  applicable_service_ids?: number[] | null;
+}
+
+export const INITIAL_SERVICES: ServiceOffer[] = [
+  {
+    id: 1,
+    name: '10er VIP Abo Motorboot Kat. A (Luzern & NW)',
+    description: 'Das Rundum-Sorglos-Paket für Ihre amtliche Schiffsführerprüfung Kat. A. Beinhaltet 10 intensive Praxisfahrstunden à 90 Minuten, Hafen- & Boxenmanöver, Boje über Bord sowie Prüfungsbegleitung. Inklusive Treibstoff und Versicherung.',
+    offer_type: 'bootsfahrschule',
+    target_audience: 'Prüfungsvorbereitung Kat. A',
+    image_url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+    is_active: true,
+    is_subscription: true,
+    sessions_count: 10,
+    location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil'],
+    price_options: [
+      { id: 101, service_id: 1, duration: 90, price: 1800.0, sessions_count: 10, sort_order: 1 }
+    ]
+  },
+  {
+    id: 2,
+    name: '5er Abo Hafen- & Boxentraining Kat. A',
+    description: 'Gezieltes Manövertraining für höchste Präzision: Rückwärts einparken in enge Boxen, Anlegen bei Seitenwind, Festmachen an Bojen und Verhalten bei Wellengang.',
+    offer_type: 'bootsfahrschule',
+    target_audience: 'Fortgeschrittene & Prüfungsendspurt',
+    image_url: 'https://images.unsplash.com/photo-1569263979104-865ab7cd8d17?auto=format&fit=crop&w=800&q=80',
+    is_active: true,
+    is_subscription: true,
+    sessions_count: 5,
+    location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil'],
+    price_options: [
+      { id: 102, service_id: 2, duration: 90, price: 925.0, sessions_count: 5, sort_order: 1 }
+    ]
+  },
+  {
+    id: 3,
+    name: 'Motorboot Einzellektion Kat. A',
+    description: 'Flexible Praxisausbildung auf modernen Fahrschulbooten mit Doppelsteuerstand. Wählen Sie Ihre gewünschte Lektionsdauer frei nach Bedarf.',
+    offer_type: 'bootsfahrschule',
+    target_audience: 'Alle Ausbildungsstufen & Schnupperer',
+    image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    is_active: true,
+    is_subscription: false,
+    sessions_count: 1,
+    location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil', 'loc_buochs'],
+    price_options: [
+      { id: 103, service_id: 3, duration: 60, price: 135.0, sessions_count: 1, sort_order: 1 },
+      { id: 104, service_id: 3, duration: 90, price: 195.0, sessions_count: 1, sort_order: 2 },
+      { id: 105, service_id: 3, duration: 120, price: 260.0, sessions_count: 1, sort_order: 3 }
+    ]
+  },
+  {
+    id: 4,
+    name: 'Spezial-Skipper Coaching & Nachtfahrt',
+    description: 'Für Patentinhaber und Skipper, die ihre Sicherheit bei Dunkelheit, Radar- und GPS-Navigation oder bei schwierigen Wetterlagen vertiefen möchten.',
+    offer_type: 'coaching',
+    target_audience: 'Inhaber Schiffsführerausweis',
+    image_url: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=800&q=80',
+    is_active: true,
+    is_subscription: false,
+    sessions_count: 1,
+    location_ids: ['loc_luzern', 'loc_stansstad', 'loc_buochs'],
+    price_options: [
+      { id: 106, service_id: 4, duration: 120, price: 290.0, sessions_count: 1, sort_order: 1 },
+      { id: 107, service_id: 4, duration: 180, price: 390.0, sessions_count: 1, sort_order: 2 }
+    ]
+  },
+  {
+    id: 5,
+    name: 'Exklusiver Wertgutschein Nautic',
+    description: 'Verschenken Sie unvergessliche Erlebnisse auf dem Vierwaldstättersee. Einlösbar für alle Ausbildungen, Coachings oder Bootsmieten.',
+    offer_type: 'anderes',
+    target_audience: 'Geschenk für Bootssportler & Paare',
+    image_url: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=800&q=80',
+    is_active: true,
+    is_subscription: false,
+    sessions_count: 1,
+    location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil', 'loc_buochs', 'loc_ennetbuergen'],
+    price_options: [
+      { id: 108, service_id: 5, duration: 60, price: 100.0, sessions_count: 1, sort_order: 1 },
+      { id: 109, service_id: 5, duration: 90, price: 250.0, sessions_count: 1, sort_order: 2 },
+      { id: 110, service_id: 5, duration: 120, price: 500.0, sessions_count: 1, sort_order: 3 }
+    ]
+  },
+  {
+    id: 6,
+    name: 'Bootsmiete Boesch 620 Bimini',
+    description: 'Erleben Sie Schweizer Edel-Mahagoni auf dem Vierwaldstättersee. Inklusive Sicherheitsausrüstung, Badeleiter, Sonnenverdeck und Self-Check-in.',
+    offer_type: 'mieten',
+    target_audience: 'Patentierte Skipper & Familien',
+    image_url: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=800&q=80',
+    is_active: true,
+    is_subscription: false,
+    sessions_count: 1,
+    location_ids: ['loc_luzern', 'loc_hergiswil'],
+    price_options: [
+      { id: 111, service_id: 6, duration: 240, price: 480.0, sessions_count: 1, sort_order: 1 },
+      { id: 112, service_id: 6, duration: 480, price: 850.0, sessions_count: 1, sort_order: 2 }
+    ]
+  }
+];
+
+export const INITIAL_PROMO_CODES: PromoCode[] = [
+  {
+    id: 1,
+    code: 'BOOT50',
+    description: 'CHF 50.- Willkommens-Rabatt für neue Fahrschüler',
+    discount_type: 'fixed',
+    discount_value: 50.0,
+    min_order_amount: 300.0,
+    max_uses: 50,
+    used_count: 4,
+    valid_from: '2026-01-01',
+    valid_until: '2026-12-31',
+    is_active: true
+  },
+  {
+    id: 2,
+    code: 'SOMMER2026',
+    description: '10% Sommer-Aktion auf alle Abos & Coachings',
+    discount_type: 'percentage',
+    discount_value: 10.0,
+    min_order_amount: 200.0,
+    max_uses: null,
+    used_count: 14,
+    valid_from: '2026-03-01',
+    valid_until: '2026-09-30',
+    is_active: true
+  },
+  {
+    id: 3,
+    code: 'VIPNAUTIC',
+    description: '15% VIP-Aktionsrabatt für 10er Pakete',
+    discount_type: 'percentage',
+    discount_value: 15.0,
+    min_order_amount: 500.0,
+    max_uses: 20,
+    used_count: 12,
+    valid_from: '2026-02-01',
+    valid_until: '2026-12-31',
+    is_active: true
+  }
+];
+
+export const INITIAL_CUSTOMER_SUBSCRIPTIONS: CustomerSubscription[] = [
+  {
+    id: 1,
+    customer_id: 1,
+    service_id: 1,
+    package_name: '10er VIP Abo Motorboot Kat. A (Luzern & NW)',
+    total_sessions: 10,
+    used_sessions: 2,
+    purchased_at: '2026-03-01 10:15:00',
+    expires_at: '2027-03-01',
+    price_paid: 1800.0,
+    payment_method: 'bank_transfer',
+    payment_status: 'paid',
+    order_id: 'CB-ORD-849201',
+    location_name: 'Luzern & Stansstad'
   }
 ];
 
@@ -623,13 +850,18 @@ export default function App() {
     street: '',
     zip: '',
     city: '',
+    avatar_url: '',
+    theory_passed: true,
+    theory_passed_date: '2026-02-15',
     faber: '',
     pin: '',
     pid: '',
     license_number: '',
     emergency_contact: '',
-    notes: 'Bevorzugt Nachmittagstermine'
+    notes: 'Bevorzugt Nachmittagstermine. Fokus auf Hafenmanöver und Anlegen in die Boxe rückwärts.'
   });
+  const [theoryAccordionOpen, setTheoryAccordionOpen] = useState<boolean>(false);
+  const [copiedCalendarLink, setCopiedCalendarLink] = useState<boolean>(false);
   const [newReqService, setNewReqService] = useState('Motorboot Kat. A (90 Min.)');
   const [newReqDate, setNewReqDate] = useState('2026-04-02');
   const [newReqTimeWindow, setNewReqTimeWindow] = useState('afternoon');
@@ -637,6 +869,58 @@ export default function App() {
   const [newReqCoach, setNewReqCoach] = useState('Beat Vollenweider');
   const [newReqUseBalance, setNewReqUseBalance] = useState(false);
   const [newReqNotes, setNewReqNotes] = useState('');
+
+  // --- STATE: STORE, CHECKOUT & PROMO-CODES ENGINE ---
+  const [services, setServices] = useState<ServiceOffer[]>(INITIAL_SERVICES);
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>(INITIAL_PROMO_CODES);
+  const [customerSubscriptions, setCustomerSubscriptions] = useState<CustomerSubscription[]>(INITIAL_CUSTOMER_SUBSCRIPTIONS);
+
+  // Admin Section Navigation: Payroll | Services & Tarife | Gutscheine & Codes
+  const [adminSectionTab, setAdminSectionTab] = useState<'payroll' | 'services' | 'promos'>('payroll');
+
+  // Customer Store View State
+  const [storeViewMode, setStoreViewMode] = useState<'catalog' | 'my_subscriptions'>('catalog');
+  const [storeFilter, setStoreFilter] = useState<'all' | 'subscriptions' | 'bootsfahrschule' | 'coaching' | 'anderes' | 'mieten'>('all');
+  const [storeSearch, setStoreSearch] = useState<string>('');
+
+  // Checkout Modal State
+  const [checkoutService, setCheckoutService] = useState<ServiceOffer | null>(null);
+  const [checkoutSelectedOptionId, setCheckoutSelectedOptionId] = useState<number | null>(null);
+  const [checkoutLocation, setCheckoutLocation] = useState<string>('loc_luzern');
+  const [checkoutPromoInput, setCheckoutPromoInput] = useState<string>('');
+  const [checkoutPromoApplied, setCheckoutPromoApplied] = useState<PromoCode | null>(null);
+  const [checkoutPromoMsg, setCheckoutPromoMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [checkoutPaymentMethod, setCheckoutPaymentMethod] = useState<'bank_transfer' | 'qr_bill'>('bank_transfer');
+  const [copiedIban, setCopiedIban] = useState<boolean>(false);
+  const [showReceiptModal, setShowReceiptModal] = useState<CustomerSubscription | null>(null);
+
+  // Admin Service Modal State (Create / Edit)
+  const [showServiceModal, setShowServiceModal] = useState<boolean>(false);
+  const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
+  const [serviceFormName, setServiceFormName] = useState<string>('');
+  const [serviceFormDesc, setServiceFormDesc] = useState<string>('');
+  const [serviceFormType, setServiceFormType] = useState<ServiceOffer['offer_type']>('bootsfahrschule');
+  const [serviceFormTarget, setServiceFormTarget] = useState<string>('');
+  const [serviceFormImage, setServiceFormImage] = useState<string>('');
+  const [serviceFormIsSubscription, setServiceFormIsSubscription] = useState<boolean>(false);
+  const [serviceFormSessionsCount, setServiceFormSessionsCount] = useState<number>(10);
+  const [serviceFormLocations, setServiceFormLocations] = useState<string[]>(['loc_luzern', 'loc_stansstad']);
+  const [serviceFormPriceOptions, setServiceFormPriceOptions] = useState<{ duration: number; price: number; sessions_count: number; sort_order: number }[]>([
+    { duration: 90, price: 195.0, sessions_count: 1, sort_order: 1 }
+  ]);
+
+  // Admin Promo Modal State (Create / Edit)
+  const [showPromoModal, setShowPromoModal] = useState<boolean>(false);
+  const [editingPromoId, setEditingPromoId] = useState<number | null>(null);
+  const [promoFormCode, setPromoFormCode] = useState<string>('');
+  const [promoFormDesc, setPromoFormDesc] = useState<string>('');
+  const [promoFormType, setPromoFormType] = useState<'percentage' | 'fixed'>('fixed');
+  const [promoFormValue, setPromoFormValue] = useState<number>(50);
+  const [promoFormMinOrder, setPromoFormMinOrder] = useState<number | ''>(300);
+  const [promoFormMaxUses, setPromoFormMaxUses] = useState<number | ''>(50);
+  const [promoFormValidFrom, setPromoFormValidFrom] = useState<string>('2026-01-01');
+  const [promoFormValidUntil, setPromoFormValidUntil] = useState<string>('2026-12-31');
+  const [promoFormIsActive, setPromoFormIsActive] = useState<boolean>(true);
 
   // Auto-Redirect Timer Effekt: Zählt herunter und wechselt bei 0 automatisch auf Login
   useEffect(() => {
@@ -792,6 +1076,297 @@ export default function App() {
     setCancelModalAppointment(null);
     setCancelReason('');
     setMagicFeedback('Termin erfolgreich storniert. Eine E-Mail-Bestätigung wurde an den Fahrlehrer und an dich versandt.');
+    setTimeout(() => setMagicFeedback(null), 6000);
+  };
+
+  // --- STORE & GUTSCHEIN HELPER FUNCTIONS ---
+
+  // Standorte Mapping
+  const locationLabels: Record<string, string> = {
+    loc_luzern: 'Luzern (Alpenquai / Tribschen)',
+    loc_stansstad: 'Stansstad NW (Hafen)',
+    loc_hergiswil: 'Hergiswil NW (Bootshafen)',
+    loc_buochs: 'Buochs NW (Seefeld Pier)',
+    loc_ennetbuergen: 'Ennetbürgen (Bürgenstock)'
+  };
+
+  // Lektionen-Guthaben berechnen
+  const studentTotalSessions = useMemo(() => {
+    return customerSubscriptions.reduce((acc, sub) => acc + sub.total_sessions, 0);
+  }, [customerSubscriptions]);
+
+  const studentUsedSessions = useMemo(() => {
+    return customerSubscriptions.reduce((acc, sub) => acc + sub.used_sessions, 0);
+  }, [customerSubscriptions]);
+
+  const studentRemainingSessions = useMemo(() => {
+    return Math.max(0, studentTotalSessions - studentUsedSessions);
+  }, [studentTotalSessions, studentUsedSessions]);
+
+  // Gefilterte Services im Store
+  const filteredServices = useMemo(() => {
+    return services.filter(service => {
+      if (!service.is_active) return false;
+      if (storeFilter === 'subscriptions' && !service.is_subscription) return false;
+      if (storeFilter === 'bootsfahrschule' && service.offer_type !== 'bootsfahrschule') return false;
+      if (storeFilter === 'coaching' && service.offer_type !== 'coaching') return false;
+      if (storeFilter === 'anderes' && service.offer_type !== 'anderes') return false;
+      if (storeFilter === 'mieten' && service.offer_type !== 'mieten') return false;
+      if (storeSearch.trim()) {
+        const q = storeSearch.toLowerCase();
+        const matchesName = service.name.toLowerCase().includes(q);
+        const matchesDesc = service.description.toLowerCase().includes(q);
+        const matchesTarget = service.target_audience.toLowerCase().includes(q);
+        if (!matchesName && !matchesDesc && !matchesTarget) return false;
+      }
+      return true;
+    });
+  }, [services, storeFilter, storeSearch]);
+
+  // 1-Click Duplikation: Klont Service + Preisstufen mit (Kopie)
+  const handleDuplicateService = (id: number) => {
+    const original = services.find(s => s.id === id);
+    if (!original) return;
+    const newServiceId = Date.now();
+    const clonedPriceOptions: ServicePriceOption[] = original.price_options.map((opt, idx) => ({
+      ...opt,
+      id: Date.now() + idx + 1,
+      service_id: newServiceId
+    }));
+
+    const clonedService: ServiceOffer = {
+      ...original,
+      id: newServiceId,
+      name: `${original.name} (Kopie)`,
+      price_options: clonedPriceOptions
+    };
+
+    setServices(prev => [clonedService, ...prev]);
+    setMagicFeedback(`Angebot "${original.name}" wurde erfolgreich dupliziert.`);
+    setTimeout(() => setMagicFeedback(null), 4000);
+  };
+
+  // Service Speichern (Neu / Bearbeiten)
+  const handleSaveServiceForm = () => {
+    if (!serviceFormName.trim()) return;
+
+    if (editingServiceId !== null) {
+      setServices(prev =>
+        prev.map(s => {
+          if (s.id !== editingServiceId) return s;
+          return {
+            ...s,
+            name: serviceFormName.trim(),
+            description: serviceFormDesc.trim(),
+            offer_type: serviceFormType,
+            target_audience: serviceFormTarget.trim(),
+            image_url: serviceFormImage.trim() || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+            is_subscription: serviceFormIsSubscription,
+            sessions_count: serviceFormIsSubscription ? Math.max(1, Number(serviceFormSessionsCount)) : 1,
+            location_ids: serviceFormLocations,
+            price_options: serviceFormPriceOptions.map((po, idx) => ({
+              id: Date.now() + idx,
+              service_id: editingServiceId,
+              duration: Number(po.duration),
+              price: Number(po.price),
+              sessions_count: Number(po.sessions_count),
+              sort_order: idx + 1
+            }))
+          };
+        })
+      );
+      setMagicFeedback('Angebot wurde erfolgreich aktualisiert.');
+    } else {
+      const newId = Date.now();
+      const newService: ServiceOffer = {
+        id: newId,
+        name: serviceFormName.trim(),
+        description: serviceFormDesc.trim(),
+        offer_type: serviceFormType,
+        target_audience: serviceFormTarget.trim(),
+        image_url: serviceFormImage.trim() || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+        is_active: true,
+        is_subscription: serviceFormIsSubscription,
+        sessions_count: serviceFormIsSubscription ? Math.max(1, Number(serviceFormSessionsCount)) : 1,
+        location_ids: serviceFormLocations,
+        price_options: serviceFormPriceOptions.map((po, idx) => ({
+          id: Date.now() + idx,
+          service_id: newId,
+          duration: Number(po.duration),
+          price: Number(po.price),
+          sessions_count: Number(po.sessions_count),
+          sort_order: idx + 1
+        }))
+      };
+      setServices(prev => [newService, ...prev]);
+      setMagicFeedback('Neues Angebot erfolgreich im Store veröffentlicht.');
+    }
+    setShowServiceModal(false);
+    setTimeout(() => setMagicFeedback(null), 4000);
+  };
+
+  // Promo Code Speichern
+  const handleSavePromoForm = () => {
+    if (!promoFormCode.trim()) return;
+    const cleanCode = promoFormCode.trim().toUpperCase();
+
+    if (editingPromoId !== null) {
+      setPromoCodes(prev =>
+        prev.map(p =>
+          p.id === editingPromoId
+            ? {
+                ...p,
+                code: cleanCode,
+                description: promoFormDesc.trim(),
+                discount_type: promoFormType,
+                discount_value: Number(promoFormValue),
+                min_order_amount: promoFormMinOrder === '' ? null : Number(promoFormMinOrder),
+                max_uses: promoFormMaxUses === '' ? null : Number(promoFormMaxUses),
+                valid_from: promoFormValidFrom || null,
+                valid_until: promoFormValidUntil || null,
+                is_active: promoFormIsActive
+              }
+            : p
+        )
+      );
+      setMagicFeedback(`Rabattcode "${cleanCode}" aktualisiert.`);
+    } else {
+      const newPromo: PromoCode = {
+        id: Date.now(),
+        code: cleanCode,
+        description: promoFormDesc.trim(),
+        discount_type: promoFormType,
+        discount_value: Number(promoFormValue),
+        min_order_amount: promoFormMinOrder === '' ? null : Number(promoFormMinOrder),
+        max_uses: promoFormMaxUses === '' ? null : Number(promoFormMaxUses),
+        used_count: 0,
+        valid_from: promoFormValidFrom || null,
+        valid_until: promoFormValidUntil || null,
+        is_active: promoFormIsActive
+      };
+      setPromoCodes(prev => [newPromo, ...prev]);
+      setMagicFeedback(`Rabattcode "${cleanCode}" neu erstellt.`);
+    }
+    setShowPromoModal(false);
+    setTimeout(() => setMagicFeedback(null), 4000);
+  };
+
+  // Checkout Berechnungen & Promo-Validierung
+  const checkoutSelectedOption = useMemo(() => {
+    if (!checkoutService) return null;
+    return (
+      checkoutService.price_options.find(o => o.id === checkoutSelectedOptionId) ||
+      checkoutService.price_options[0] ||
+      null
+    );
+  }, [checkoutService, checkoutSelectedOptionId]);
+
+  const checkoutSubtotal = checkoutSelectedOption ? checkoutSelectedOption.price : 0;
+
+  const checkoutDiscountAmount = useMemo(() => {
+    if (!checkoutPromoApplied || checkoutSubtotal <= 0) return 0;
+    if (checkoutPromoApplied.discount_type === 'percentage') {
+      return (checkoutSubtotal * checkoutPromoApplied.discount_value) / 100;
+    }
+    return Math.min(checkoutSubtotal, checkoutPromoApplied.discount_value);
+  }, [checkoutPromoApplied, checkoutSubtotal]);
+
+  const checkoutFinalTotal = Math.max(0, checkoutSubtotal - checkoutDiscountAmount);
+  const checkoutVatAmount = checkoutFinalTotal * (8.1 / 108.1);
+  const checkoutNettoAmount = checkoutFinalTotal - checkoutVatAmount;
+
+  const handleValidatePromo = () => {
+    const code = checkoutPromoInput.trim().toUpperCase();
+    if (!code) {
+      setCheckoutPromoMsg({ type: 'error', text: 'Bitte geben Sie einen Rabattcode ein.' });
+      return;
+    }
+    const found = promoCodes.find(p => p.code.toUpperCase() === code);
+    if (!found) {
+      setCheckoutPromoApplied(null);
+      setCheckoutPromoMsg({ type: 'error', text: `Der Rabattcode "${code}" existiert nicht.` });
+      return;
+    }
+    if (!found.is_active) {
+      setCheckoutPromoApplied(null);
+      setCheckoutPromoMsg({ type: 'error', text: 'Dieser Rabattcode ist derzeit inaktiv.' });
+      return;
+    }
+    const today = new Date().toISOString().split('T')[0];
+    if (found.valid_from && today < found.valid_from) {
+      setCheckoutPromoApplied(null);
+      setCheckoutPromoMsg({ type: 'error', text: `Gutschein erst ab ${found.valid_from} gültig.` });
+      return;
+    }
+    if (found.valid_until && today > found.valid_until) {
+      setCheckoutPromoApplied(null);
+      setCheckoutPromoMsg({ type: 'error', text: `Dieser Gutschein ist am ${found.valid_until} abgelaufen.` });
+      return;
+    }
+    if (found.max_uses !== null && found.used_count >= found.max_uses) {
+      setCheckoutPromoApplied(null);
+      setCheckoutPromoMsg({ type: 'error', text: 'Das Kontingent für diesen Code ist erschöpft.' });
+      return;
+    }
+    if (found.min_order_amount !== null && checkoutSubtotal < found.min_order_amount) {
+      setCheckoutPromoApplied(null);
+      setCheckoutPromoMsg({
+        type: 'error',
+        text: `Mindestbestellwert von CHF ${found.min_order_amount.toFixed(2)} noch nicht erreicht.`
+      });
+      return;
+    }
+
+    setCheckoutPromoApplied(found);
+    const savings =
+      found.discount_type === 'percentage'
+        ? `${found.discount_value}%`
+        : `CHF ${found.discount_value.toFixed(2)}`;
+    setCheckoutPromoMsg({
+      type: 'success',
+      text: `Gutschein "${found.code}" angewendet! Ersparnis: ${savings}`
+    });
+  };
+
+  const handleCompleteOrder = () => {
+    if (!checkoutService || !checkoutSelectedOption) return;
+
+    const orderId = `CB-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+    const sessions = checkoutSelectedOption.sessions_count || (checkoutService.is_subscription ? checkoutService.sessions_count : 1);
+
+    const now = new Date();
+    const purchasedAt = now.toISOString().replace('T', ' ').substring(0, 19);
+    const expireYear = now.getFullYear() + 1;
+    const expiresAt = `${expireYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const newSub: CustomerSubscription = {
+      id: Date.now(),
+      customer_id: 1,
+      service_id: checkoutService.id,
+      package_name: `${checkoutService.name} (${checkoutSelectedOption.duration} Min)`,
+      total_sessions: sessions,
+      used_sessions: 0,
+      purchased_at: purchasedAt,
+      expires_at: expiresAt,
+      price_paid: checkoutFinalTotal,
+      payment_method: checkoutPaymentMethod,
+      payment_status: 'paid',
+      order_id: orderId,
+      location_name: locationLabels[checkoutLocation] || 'Luzern'
+    };
+
+    setCustomerSubscriptions(prev => [newSub, ...prev]);
+
+    // Wenn Rabattcode genutzt, Zähler inkrementieren
+    if (checkoutPromoApplied) {
+      setPromoCodes(prev =>
+        prev.map(p => (p.id === checkoutPromoApplied.id ? { ...p, used_count: p.used_count + 1 } : p))
+      );
+    }
+
+    setCheckoutService(null);
+    setShowReceiptModal(newSub);
+    setMagicFeedback(`Vielen Dank! Ihre Bestellung ${orderId} wurde erfolgreich verbucht. Das Guthaben von ${sessions} Lektion(en) steht Ihnen sofort zur Verfügung.`);
     setTimeout(() => setMagicFeedback(null), 6000);
   };
 
@@ -1183,6 +1758,68 @@ export default function App() {
         {/* ============================================================== */}
         {activeTab === 'payroll' && (
           <div className="space-y-6">
+            {/* Admin Sub-Navigation */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAdminSectionTab('payroll')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                    adminSectionTab === 'payroll'
+                      ? 'bg-sky-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>1. Lohnabrechnungen &amp; Timesheets</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdminSectionTab('services')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                    adminSectionTab === 'services'
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>2. Dienstleistungen &amp; Tarife (Store)</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    adminSectionTab === 'services' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {services.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdminSectionTab('promos')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                    adminSectionTab === 'promos'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <Tag className="w-4 h-4" />
+                  <span>3. Gutscheine &amp; Rabattcodes</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    adminSectionTab === 'promos' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    {promoCodes.length}
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <Shield className="w-4 h-4 text-slate-400" />
+                <span>Nautic Admin Core (MY CoachingBoot GmbH)</span>
+              </div>
+            </div>
+
+            {/* SUB-BEREICH 1: PAYROLL */}
+            {adminSectionTab === 'payroll' && (
+              <div className="space-y-6 animate-in fade-in duration-150">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
               <div>
                 <div className="flex items-center gap-2">
@@ -1406,6 +2043,843 @@ export default function App() {
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+            {/* SUB-BEREICH 2: DIENSTLEISTUNGEN & TARIFE (STORE-ANGEBOTE) */}
+            {adminSectionTab === 'services' && (
+              <div className="space-y-6 animate-in fade-in duration-150">
+                {/* Header & New Action */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-2xl font-bold text-slate-900">Dienstleistungen &amp; Tarife</h1>
+                      <span className="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-amber-200">
+                        {services.length} Angebote konfiguriert
+                      </span>
+                    </div>
+                    <p className="text-slate-500 text-sm mt-1">
+                      Verwaltung von Fahrschul-Lektionen, Coaching-Formaten, Mehrfachkarten (Abos), Gutscheinen und Bootsmieten.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingServiceId(null);
+                        setServiceFormName('');
+                        setServiceFormDesc('');
+                        setServiceFormType('bootsfahrschule');
+                        setServiceFormTarget('Prüfungsvorbereitung Kat. A');
+                        setServiceFormImage('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80');
+                        setServiceFormIsSubscription(false);
+                        setServiceFormSessionsCount(1);
+                        setServiceFormLocations(['loc_luzern', 'loc_stansstad']);
+                        setServiceFormPriceOptions([{ duration: 90, price: 195.0, sessions_count: 1, sort_order: 1 }]);
+                        setShowServiceModal(true);
+                      }}
+                      className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>+ Neues Angebot erfassen</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* KPI Summary Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+                    <div className="text-xs uppercase font-semibold text-slate-500">Gesamt-Angebote</div>
+                    <div className="text-2xl font-bold text-slate-900 mt-1">{services.length}</div>
+                    <div className="text-xs text-slate-400 mt-1">Im System hinterlegt</div>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 shadow-xs">
+                    <div className="text-xs uppercase font-semibold text-emerald-700">Aktiv im Store</div>
+                    <div className="text-2xl font-bold text-emerald-800 mt-1">
+                      {services.filter(s => s.is_active).length}
+                    </div>
+                    <div className="text-xs text-emerald-600 mt-1">Für Kunden buchbar</div>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-sky-200 bg-sky-50/40 shadow-xs">
+                    <div className="text-xs uppercase font-semibold text-sky-700">Abos &amp; Mehrfachkarten</div>
+                    <div className="text-2xl font-bold text-sky-800 mt-1">
+                      {services.filter(s => s.is_subscription).length}
+                    </div>
+                    <div className="text-xs text-sky-600 mt-1">Punkte- &amp; Lektionen-Abos</div>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/40 shadow-xs">
+                    <div className="text-xs uppercase font-semibold text-amber-700">Bootsmieten &amp; Charter</div>
+                    <div className="text-2xl font-bold text-amber-800 mt-1">
+                      {services.filter(s => s.offer_type === 'mieten').length}
+                    </div>
+                    <div className="text-xs text-amber-600 mt-1">Mahagoni &amp; Motorboote</div>
+                  </div>
+                </div>
+
+                {/* Services Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {services.map(service => {
+                    const typeBadgeClasses = {
+                      bootsfahrschule: 'bg-sky-100 text-sky-800 border-sky-200',
+                      coaching: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                      mieten: 'bg-amber-100 text-amber-800 border-amber-200',
+                      anderes: 'bg-purple-100 text-purple-800 border-purple-200'
+                    }[service.offer_type];
+
+                    const typeBadgeLabel = {
+                      bootsfahrschule: 'Bootsfahrschule Kat. A',
+                      coaching: 'Spezial-Coaching',
+                      mieten: 'Bootsmiete / Charter',
+                      anderes: 'Gutschein & Weiteres'
+                    }[service.offer_type];
+
+                    return (
+                      <div
+                        key={service.id}
+                        className={`bg-white rounded-2xl border shadow-xs overflow-hidden flex flex-col justify-between transition hover:shadow-md ${
+                          service.is_active ? 'border-slate-200' : 'border-slate-200 opacity-60 bg-slate-50'
+                        }`}
+                      >
+                        <div>
+                          {/* Image Thumbnail & Badges */}
+                          <div className="relative h-44 w-full bg-slate-100 overflow-hidden">
+                            <img
+                              src={service.image_url}
+                              alt={service.name}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-xs backdrop-blur-md bg-white/95 ${typeBadgeClasses}`}>
+                                {typeBadgeLabel}
+                              </span>
+                              {service.is_subscription && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-xs">
+                                  {service.sessions_count}er Abo
+                                </span>
+                              )}
+                            </div>
+                            <div className="absolute top-3 right-3">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs ${
+                                service.is_active ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-white'
+                              }`}>
+                                {service.is_active ? 'Aktiv' : 'Inaktiv'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Content */}
+                          <div className="p-5 space-y-3">
+                            <div>
+                              <div className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider mb-0.5">
+                                {service.target_audience}
+                              </div>
+                              <h3 className="font-bold text-slate-900 text-base leading-snug">
+                                {service.name}
+                              </h3>
+                              <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                                {service.description}
+                              </p>
+                            </div>
+
+                            {/* Standorte */}
+                            <div className="flex flex-wrap gap-1 pt-1">
+                              {service.location_ids.map(locId => (
+                                <span key={locId} className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium">
+                                  {locationLabels[locId]?.split(' ')[0] || locId}
+                                </span>
+                              ))}
+                            </div>
+
+                            {/* Preisstufen Übersicht */}
+                            <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                              <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                                Preis- &amp; Zeitstufen:
+                              </div>
+                              <div className="space-y-1">
+                                {service.price_options.map(po => (
+                                  <div key={po.id} className="flex items-center justify-between text-xs bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                    <span className="text-slate-700 font-medium">
+                                      {po.duration} Min. {po.sessions_count > 1 ? `(${po.sessions_count} Lektionen)` : ''}
+                                    </span>
+                                    <span className="font-bold text-slate-900">
+                                      CHF {po.price.toFixed(2)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions Footer: Duplizieren, Bearbeiten, Löschen */}
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setServices(prev =>
+                                prev.map(s => (s.id === service.id ? { ...s, is_active: !s.is_active } : s))
+                              );
+                              setMagicFeedback(`Status für "${service.name}" geändert.`);
+                              setTimeout(() => setMagicFeedback(null), 3000);
+                            }}
+                            className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition ${
+                              service.is_active
+                                ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                                : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                            }`}
+                          >
+                            {service.is_active ? 'Pausieren' : 'Aktivieren'}
+                          </button>
+
+                          <div className="flex items-center gap-1.5">
+                            {/* 1-Click Schnellduplikation (Klon mit Kopie) */}
+                            <button
+                              type="button"
+                              onClick={() => handleDuplicateService(service.id)}
+                              className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold border border-slate-200 transition flex items-center gap-1 shadow-2xs"
+                              title="Angebot 1-Klick klonen"
+                            >
+                              <Copy className="w-3.5 h-3.5 text-amber-600" />
+                              <span>Duplizieren</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingServiceId(service.id);
+                                setServiceFormName(service.name);
+                                setServiceFormDesc(service.description);
+                                setServiceFormType(service.offer_type);
+                                setServiceFormTarget(service.target_audience);
+                                setServiceFormImage(service.image_url);
+                                setServiceFormIsSubscription(service.is_subscription);
+                                setServiceFormSessionsCount(service.sessions_count);
+                                setServiceFormLocations(service.location_ids);
+                                setServiceFormPriceOptions(
+                                  service.price_options.map(po => ({
+                                    duration: po.duration,
+                                    price: po.price,
+                                    sessions_count: po.sessions_count,
+                                    sort_order: po.sort_order
+                                  }))
+                                );
+                                setShowServiceModal(true);
+                              }}
+                              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition"
+                              title="Bearbeiten"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Möchten Sie das Angebot "${service.name}" wirklich löschen?`)) {
+                                  setServices(prev => prev.filter(s => s.id !== service.id));
+                                  setMagicFeedback(`Angebot "${service.name}" gelöscht.`);
+                                  setTimeout(() => setMagicFeedback(null), 3000);
+                                }
+                              }}
+                              className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition"
+                              title="Löschen"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* SUB-BEREICH 3: GUTSCHEINE & RABATTCODES */}
+            {adminSectionTab === 'promos' && (
+              <div className="space-y-6 animate-in fade-in duration-150">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-2xl font-bold text-slate-900">Gutschein- &amp; Promo-Code Engine</h1>
+                      <span className="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-emerald-200">
+                        {promoCodes.length} Rabattcodes aktiv
+                      </span>
+                    </div>
+                    <p className="text-slate-500 text-sm mt-1">
+                      Verwaltung von Aktionscodes (%-Rabatt oder Fixbetrag in CHF), Mindestbestellwerten, Gültigkeitszeiträumen und Einlösekontingenten.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingPromoId(null);
+                      setPromoFormCode('');
+                      setPromoFormDesc('');
+                      setPromoFormType('fixed');
+                      setPromoFormValue(50);
+                      setPromoFormMinOrder(300);
+                      setPromoFormMaxUses(50);
+                      setPromoFormValidFrom('2026-01-01');
+                      setPromoFormValidUntil('2026-12-31');
+                      setPromoFormIsActive(true);
+                      setShowPromoModal(true);
+                    }}
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>+ Neuer Rabattcode</span>
+                  </button>
+                </div>
+
+                {/* Promo Codes Table */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-slate-600">
+                      <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+                        <tr>
+                          <th className="p-4">Code</th>
+                          <th className="p-4">Beschreibung</th>
+                          <th className="p-4">Rabatt-Typ</th>
+                          <th className="p-4 text-right">Rabattwert</th>
+                          <th className="p-4 text-right">Mindestbestellwert</th>
+                          <th className="p-4 text-center">Einlösungen</th>
+                          <th className="p-4">Gültigkeitsdauer</th>
+                          <th className="p-4 text-center">Status</th>
+                          <th className="p-4 text-right">Aktionen</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {promoCodes.map(promo => (
+                          <tr key={promo.id} className="hover:bg-slate-50 transition">
+                            <td className="p-4 font-mono font-bold text-slate-900 text-sm">
+                              <span className="bg-slate-100 text-slate-900 px-2.5 py-1 rounded-lg border border-slate-300">
+                                {promo.code}
+                              </span>
+                            </td>
+                            <td className="p-4 text-xs text-slate-700 font-medium max-w-xs">
+                              {promo.description}
+                            </td>
+                            <td className="p-4 text-xs font-semibold">
+                              <span className={`px-2 py-0.5 rounded-full ${
+                                promo.discount_type === 'percentage'
+                                  ? 'bg-indigo-100 text-indigo-800'
+                                  : 'bg-emerald-100 text-emerald-800'
+                              }`}>
+                                {promo.discount_type === 'percentage' ? 'Prozentual (%)' : 'Fixbetrag (CHF)'}
+                              </span>
+                            </td>
+                            <td className="p-4 text-right font-bold text-slate-900">
+                              {promo.discount_type === 'percentage'
+                                ? `${promo.discount_value}%`
+                                : `CHF ${promo.discount_value.toFixed(2)}`}
+                            </td>
+                            <td className="p-4 text-right text-xs text-slate-600">
+                              {promo.min_order_amount
+                                ? `CHF ${promo.min_order_amount.toFixed(2)}`
+                                : 'Keiner'}
+                            </td>
+                            <td className="p-4 text-center">
+                              <span className="font-bold text-slate-800">
+                                {promo.used_count}
+                              </span>
+                              <span className="text-slate-400"> / {promo.max_uses ?? '∞'}</span>
+                            </td>
+                            <td className="p-4 text-xs text-slate-600">
+                              <div>{promo.valid_from ? `ab ${promo.valid_from}` : 'ab sofort'}</div>
+                              <div className="text-slate-400">{promo.valid_until ? `bis ${promo.valid_until}` : 'unbefristet'}</div>
+                            </td>
+                            <td className="p-4 text-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPromoCodes(prev =>
+                                    prev.map(p => (p.id === promo.id ? { ...p, is_active: !p.is_active } : p))
+                                  );
+                                }}
+                                className={`text-xs px-2.5 py-0.5 rounded-full font-bold transition cursor-pointer ${
+                                  promo.is_active
+                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                    : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                                }`}
+                              >
+                                {promo.is_active ? 'Aktiv' : 'Inaktiv'}
+                              </button>
+                            </td>
+                            <td className="p-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingPromoId(promo.id);
+                                    setPromoFormCode(promo.code);
+                                    setPromoFormDesc(promo.description);
+                                    setPromoFormType(promo.discount_type);
+                                    setPromoFormValue(promo.discount_value);
+                                    setPromoFormMinOrder(promo.min_order_amount ?? '');
+                                    setPromoFormMaxUses(promo.max_uses ?? '');
+                                    setPromoFormValidFrom(promo.valid_from || '');
+                                    setPromoFormValidUntil(promo.valid_until || '');
+                                    setPromoFormIsActive(promo.is_active);
+                                    setShowPromoModal(true);
+                                  }}
+                                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                  title="Bearbeiten"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (window.confirm(`Rabattcode "${promo.code}" wirklich löschen?`)) {
+                                      setPromoCodes(prev => prev.filter(p => p.id !== promo.id));
+                                    }
+                                  }}
+                                  className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition"
+                                  title="Löschen"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MODAL: SERVICE ANLEGEN / BEARBEITEN */}
+            {showServiceModal && (
+              <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+                <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 my-8 space-y-5 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+                  <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
+                        <ShoppingBag className="w-5 h-5 text-amber-700" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-base">
+                          {editingServiceId ? 'Angebot bearbeiten' : 'Neues Store-Angebot anlegen'}
+                        </h3>
+                        <p className="text-xs text-slate-500">Titel, Typ, Zielgruppe, Standorte und Preis-/Zeitstufen</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowServiceModal(false)}
+                      className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-xl transition cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form
+                    onSubmit={e => {
+                      e.preventDefault();
+                      handleSaveServiceForm();
+                    }}
+                    className="space-y-4 text-xs"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="font-semibold text-slate-700 block mb-1">Angebotsname *</label>
+                        <input
+                          type="text"
+                          value={serviceFormName}
+                          onChange={e => setServiceFormName(e.target.value)}
+                          placeholder="z. B. 10er VIP Abo Motorboot Kat. A"
+                          required
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">Kategorie / Angebotstyp *</label>
+                        <select
+                          value={serviceFormType}
+                          onChange={e => setServiceFormType(e.target.value as any)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-amber-500"
+                        >
+                          <option value="bootsfahrschule">Bootsfahrschule Kat. A (Blau)</option>
+                          <option value="coaching">Spezial-Coaching (Grün)</option>
+                          <option value="mieten">Bootsmiete / Charter (Gelb)</option>
+                          <option value="anderes">Gutschein &amp; Weiteres (Lila)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">Zielgruppe</label>
+                        <input
+                          type="text"
+                          value={serviceFormTarget}
+                          onChange={e => setServiceFormTarget(e.target.value)}
+                          placeholder="z. B. Prüfungsvorbereitung Kat. A"
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-semibold text-slate-700 block mb-1">Beschreibung</label>
+                        <textarea
+                          rows={3}
+                          value={serviceFormDesc}
+                          onChange={e => setServiceFormDesc(e.target.value)}
+                          placeholder="Detaillierte Beschreibung für den Storefront..."
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-semibold text-slate-700 block mb-1">Bild-URL</label>
+                        <input
+                          type="text"
+                          value={serviceFormImage}
+                          onChange={e => setServiceFormImage(e.target.value)}
+                          placeholder="https://images.unsplash.com/..."
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-700 focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Abo- / Mehrfachkarten-Schalter */}
+                    <div className="p-4 bg-amber-50/60 rounded-2xl border border-amber-200/80 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-bold text-slate-900 text-xs">Abo- / Mehrfachkarte (Punktekarte)</div>
+                          <p className="text-[11px] text-slate-500">
+                            Aktivieren, wenn der Kauf dem Kunden ein fixes Lektionen-Guthaben gutschreibt.
+                          </p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={serviceFormIsSubscription}
+                            onChange={e => setServiceFormIsSubscription(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                        </label>
+                      </div>
+
+                      {serviceFormIsSubscription && (
+                        <div className="pt-2 border-t border-amber-200/60 flex items-center gap-3">
+                          <label className="font-bold text-slate-800 text-xs shrink-0">
+                            Anzahl Lektionen / Einheiten:
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="50"
+                            value={serviceFormSessionsCount}
+                            onChange={e => setServiceFormSessionsCount(Number(e.target.value))}
+                            className="w-24 px-3 py-1.5 bg-white border border-amber-300 rounded-xl font-bold text-xs"
+                          />
+                          <span className="text-[11px] text-slate-500">z. B. 10 Einheiten à 90 Min</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Standorte (Mehrfach-Auswahl) */}
+                    <div>
+                      <label className="font-semibold text-slate-700 block mb-2">Verfügbare Häfen &amp; Standorte</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {Object.entries(locationLabels).map(([locKey, locLabel]) => {
+                          const isChecked = serviceFormLocations.includes(locKey);
+                          return (
+                            <label
+                              key={locKey}
+                              className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition text-xs ${
+                                isChecked ? 'bg-amber-50 border-amber-300 text-amber-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setServiceFormLocations(prev => prev.filter(x => x !== locKey));
+                                  } else {
+                                    setServiceFormLocations(prev => [...prev, locKey]);
+                                  }
+                                }}
+                                className="rounded text-amber-600 focus:ring-amber-500"
+                              />
+                              <span className="truncate">{locLabel.split(' ')[0]}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Dynamische Preisoptionen */}
+                    <div className="space-y-2 pt-2 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <label className="font-bold text-slate-900 text-xs">
+                          Preis- &amp; Zeitstufen (bs_service_price_options)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setServiceFormPriceOptions(prev => [
+                              ...prev,
+                              { duration: 90, price: 195.0, sessions_count: serviceFormIsSubscription ? serviceFormSessionsCount : 1, sort_order: prev.length + 1 }
+                            ]);
+                          }}
+                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Option hinzufügen</span>
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {serviceFormPriceOptions.map((po, idx) => (
+                          <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl grid grid-cols-3 gap-3 items-center">
+                            <div>
+                              <label className="text-[10px] text-slate-500 block mb-0.5">Dauer (Minuten)</label>
+                              <select
+                                value={po.duration}
+                                onChange={e => {
+                                  const val = Number(e.target.value);
+                                  setServiceFormPriceOptions(prev => prev.map((p, i) => i === idx ? { ...p, duration: val } : p));
+                                }}
+                                className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold"
+                              >
+                                <option value="60">60 Min (1.0h)</option>
+                                <option value="90">90 Min (1.5h)</option>
+                                <option value="120">120 Min (2.0h)</option>
+                                <option value="180">180 Min (3.0h)</option>
+                                <option value="240">240 Min (Halbtag)</option>
+                                <option value="480">480 Min (Ganztag)</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] text-slate-500 block mb-0.5">Preis in CHF *</label>
+                              <input
+                                type="number"
+                                step="5"
+                                value={po.price}
+                                onChange={e => {
+                                  const val = Number(e.target.value);
+                                  setServiceFormPriceOptions(prev => prev.map((p, i) => i === idx ? { ...p, price: val } : p));
+                                }}
+                                className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold"
+                              />
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex-1">
+                                <label className="text-[10px] text-slate-500 block mb-0.5">Lektionen</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={po.sessions_count}
+                                  onChange={e => {
+                                    const val = Number(e.target.value);
+                                    setServiceFormPriceOptions(prev => prev.map((p, i) => i === idx ? { ...p, sessions_count: val } : p));
+                                  }}
+                                  className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold"
+                                />
+                              </div>
+                              {serviceFormPriceOptions.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setServiceFormPriceOptions(prev => prev.filter((_, i) => i !== idx))}
+                                  className="text-rose-600 hover:text-rose-800 p-1.5 mt-3 rounded-lg hover:bg-rose-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setShowServiceModal(false)}
+                        className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold rounded-xl hover:bg-slate-100 transition"
+                      >
+                        Abbrechen
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-xs transition"
+                      >
+                        Angebot speichern &rarr;
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* MODAL: PROMO CODE ANLEGEN / BEARBEITEN */}
+            {showPromoModal && (
+              <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+                <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 my-8 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold">
+                        <Tag className="w-5 h-5 text-emerald-700" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-base">
+                          {editingPromoId ? 'Rabattcode bearbeiten' : 'Neuen Rabattcode anlegen'}
+                        </h3>
+                        <p className="text-xs text-slate-500">Prozent- oder Fixrabatt mit Mindestbestellwert und Kontingent</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowPromoModal(false)}
+                      className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-xl transition cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form
+                    onSubmit={e => {
+                      e.preventDefault();
+                      handleSavePromoForm();
+                    }}
+                    className="space-y-4 text-xs"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">Code (Grossbuchstaben) *</label>
+                        <input
+                          type="text"
+                          value={promoFormCode}
+                          onChange={e => setPromoFormCode(e.target.value.toUpperCase())}
+                          placeholder="z. B. BOOT50"
+                          required
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">Rabatt-Typ *</label>
+                        <select
+                          value={promoFormType}
+                          onChange={e => setPromoFormType(e.target.value as any)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                        >
+                          <option value="fixed">Fixbetrag in CHF (z. B. CHF 50.-)</option>
+                          <option value="percentage">Prozentualer Abzug (z. B. 10%)</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="font-semibold text-slate-700 block mb-1">Beschreibung / Kampagne</label>
+                        <input
+                          type="text"
+                          value={promoFormDesc}
+                          onChange={e => setPromoFormDesc(e.target.value)}
+                          placeholder="z. B. CHF 50.- Willkommens-Rabatt für neue Fahrschüler"
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">
+                          Rabattwert {promoFormType === 'percentage' ? '(in %)' : '(in CHF)'} *
+                        </label>
+                        <input
+                          type="number"
+                          step="1"
+                          value={promoFormValue}
+                          onChange={e => setPromoFormValue(Number(e.target.value))}
+                          required
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">Mindestbestellwert (CHF)</label>
+                        <input
+                          type="number"
+                          step="10"
+                          value={promoFormMinOrder}
+                          onChange={e => setPromoFormMinOrder(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="Optional (z. B. 300)"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">Max. Einlösungen (Kontingent)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={promoFormMaxUses}
+                          onChange={e => setPromoFormMaxUses(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="Leer lassen für unbegrenzt"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">Aktiv?</label>
+                        <div className="pt-2">
+                          <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-800">
+                            <input
+                              type="checkbox"
+                              checked={promoFormIsActive}
+                              onChange={e => setPromoFormIsActive(e.target.checked)}
+                              className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                            />
+                            <span>Code ist sofort einlösbar</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">Gültig ab</label>
+                        <input
+                          type="date"
+                          value={promoFormValidFrom}
+                          onChange={e => setPromoFormValidFrom(e.target.value)}
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">Gültig bis</label>
+                        <input
+                          type="date"
+                          value={promoFormValidUntil}
+                          onChange={e => setPromoFormValidUntil(e.target.value)}
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setShowPromoModal(false)}
+                        className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold rounded-xl hover:bg-slate-100 transition"
+                      >
+                        Abbrechen
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition"
+                      >
+                        Rabattcode speichern &rarr;
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1868,8 +3342,11 @@ export default function App() {
                     })}
                   </div>
 
-                  {/* 5. 3 Feature Quick-Action Cards (Self Check-in, Fahrguthaben, Rechnungen) */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* 5. Subtab-Content: Übersicht & Termine */}
+                  {studentNavSubTab === 'overview' && (
+                    <>
+                      {/* 3 Feature Quick-Action Cards (Self Check-in, Fahrguthaben, Rechnungen) */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     
                     {/* Kachel 1: Self Check-in */}
                     <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
@@ -1913,20 +3390,24 @@ export default function App() {
                           <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                             <Award className="w-5 h-5" />
                           </div>
-                          <span className="text-[10px] bg-amber-50 text-amber-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                            0 AKTIVE ABOS
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                            studentRemainingSessions > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-50 text-amber-700'
+                          }`}>
+                            {studentRemainingSessions > 0 ? `${studentRemainingSessions} LEKTIONEN VERFÜGBAR` : '0 AKTIVE ABOS'}
                           </span>
                         </div>
                         <h4 className="font-bold text-slate-900 text-sm mb-1">Fahrguthaben &amp; VIP</h4>
                         <p className="text-xs text-slate-500 leading-relaxed mb-4">
-                          10er &amp; 5er Abos, Fahrstunden oder Spezial-Coachings erwerben &amp; verwalten.
+                          {studentRemainingSessions > 0
+                            ? `Aktuell ${studentRemainingSessions} bezahlte Einheiten verfügbar. Weitere Lektionen & Abos entdecken.`
+                            : '10er & 5er Abos, Fahrstunden oder Spezial-Coachings erwerben & verwalten.'}
                         </p>
                       </div>
 
                       <button
                         type="button"
                         onClick={() => setStudentNavSubTab('packages')}
-                        className="w-full py-2 bg-amber-50/60 hover:bg-amber-100/70 text-amber-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-amber-200/60"
+                        className="w-full py-2 bg-amber-50/60 hover:bg-amber-100/70 text-amber-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-amber-200/60 cursor-pointer"
                       >
                         <span>Store &amp; Pakete öffnen</span>
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -2079,6 +3560,95 @@ export default function App() {
                         </div>
                       </div>
 
+                      {/* Kalender-Abonnement (iCal / Webcal) */}
+                      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center font-bold">
+                              <Calendar className="w-5 h-5 text-sky-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-slate-900 text-sm">
+                                Termine im Smartphone-Kalender abonnieren
+                              </h3>
+                              <p className="text-xs text-slate-500">
+                                Live-Synchronisation für Apple Kalender, Google &amp; Outlook
+                              </p>
+                            </div>
+                          </div>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-auto">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            iCal / Webcal Feed
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                          Abonnieren Sie Ihren persönlichen Ausbildungs-Kalender. Alle gebuchten, verschobenen oder bestätigten Fahrstunden und Treffpunkte werden automatisch in Echtzeit in Ihren Smartphone-Kalender übertragen.
+                        </p>
+
+                        {/* URL & Link kopieren Button */}
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                          <div className="flex-1 font-mono text-[11px] text-slate-700 truncate px-2.5 py-1.5 bg-white rounded-lg border border-slate-200 select-all">
+                            webcal://dein.coaching-boot.ch/?route=bootschule/me/calendar.ics&token=ROLAND1234
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard?.writeText('webcal://dein.coaching-boot.ch/?route=bootschule/me/calendar.ics&token=ROLAND1234');
+                              setCopiedCalendarLink(true);
+                              setTimeout(() => setCopiedCalendarLink(false), 3500);
+                            }}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 shadow-xs ${
+                              copiedCalendarLink
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-[#2d2421] hover:bg-[#3d322e] text-white'
+                            }`}
+                          >
+                            {copiedCalendarLink ? (
+                              <>
+                                <Check className="w-4 h-4 text-emerald-200" />
+                                <span>Link kopiert!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-4 h-4" />
+                                <span>Kalender-Link kopieren</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* 3 Kalender Plattformen */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1 text-xs">
+                          <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                              <span>🍏 Apple iOS / Mac</span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 leading-normal">
+                              Kalender-App öffnen &rarr; <em>Ablage</em> &rarr; <em>Neues Kalenderabonnement</em> &rarr; URL einfügen &amp; Abonnieren.
+                            </p>
+                          </div>
+
+                          <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                              <span>📅 Google Kalender</span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 leading-normal">
+                              <em>calendar.google.com</em> &rarr; Neben <em>Weitere Kalender</em> auf <strong>+</strong> &rarr; <em>Per URL hinzufügen</em> &rarr; Speichern.
+                            </p>
+                          </div>
+
+                          <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
+                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                              <span>📧 Microsoft Outlook</span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 leading-normal">
+                              In Outlook &rarr; <em>Kalender hinzufügen</em> &rarr; <em>Aus dem Web abonnieren</em> &rarr; URL einfügen &amp; Importieren.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
                     </div>
 
                     {/* RECHTE SPALTE (1/3): PROFIL-STATUS & SKIPPER SUPPORT */}
@@ -2115,7 +3685,11 @@ export default function App() {
 
                           <div className="flex items-center justify-between">
                             <span className="text-slate-600">Aktive VIP Pakete:</span>
-                            <span className="font-semibold text-slate-800">0 Pakete</span>
+                            <span className="font-semibold text-slate-800">
+                              {studentRemainingSessions > 0
+                                ? `${studentRemainingSessions} Lektionen (${customerSubscriptions.length} Abo${customerSubscriptions.length > 1 ? 's' : ''})`
+                                : '0 Pakete'}
+                            </span>
                           </div>
 
                           <div className="flex items-center justify-between pt-1">
@@ -2162,36 +3736,487 @@ export default function App() {
                     </div>
 
                   </div>
+                </>
+              )}
+
+              {/* ============================================================== */}
+              {/* SUBTAB: MEINE VIP PAKETE, ABOS & STOREFRONT                    */}
+              {/* ============================================================== */}
+              {studentNavSubTab === 'packages' && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  
+                  {/* Switcher: Katalog vs. Meine Guthaben */}
+                  <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setStoreViewMode('catalog')}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                          storeViewMode === 'catalog'
+                            ? 'bg-[#2d2421] text-white shadow-sm'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        }`}
+                      >
+                        <ShoppingBag className="w-4 h-4 text-amber-400" />
+                        <span>Store &amp; Angebote buchen</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setStoreViewMode('my_subscriptions')}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                          storeViewMode === 'my_subscriptions'
+                            ? 'bg-[#2d2421] text-white shadow-sm'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        }`}
+                      >
+                        <Award className="w-4 h-4 text-amber-400" />
+                        <span>Meine Käufe &amp; Guthaben</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white shadow-xs">
+                          {studentRemainingSessions}
+                        </span>
+                      </button>
+                    </div>
+
+                    <div className="text-xs text-slate-500 font-medium self-end sm:self-auto flex items-center gap-2">
+                      <Receipt className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Schweizer MWST-Belege mit CHE-384.192.834 MWST &bull; 8.1% MWST inklusive</span>
+                    </div>
+                  </div>
+
+                  {/* KATALOG-ANSICHT */}
+                  {storeViewMode === 'catalog' && (
+                    <div className="space-y-6">
+                      
+                      {/* Filterleiste & Suche */}
+                      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                          {[
+                            { id: 'all', label: 'Alle Angebote' },
+                            { id: 'subscriptions', label: 'VIP & Abos' },
+                            { id: 'bootsfahrschule', label: 'Fahrschule' },
+                            { id: 'coaching', label: 'Coaching' },
+                            { id: 'mieten', label: 'Bootsmiete' },
+                            { id: 'anderes', label: 'Gutscheine' }
+                          ].map(f => (
+                            <button
+                              key={f.id}
+                              type="button"
+                              onClick={() => setStoreFilter(f.id as any)}
+                              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                                storeFilter === f.id
+                                  ? 'bg-amber-800 text-white shadow-xs'
+                                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                              }`}
+                            >
+                              {f.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="relative min-w-[240px]">
+                          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                          <input
+                            type="text"
+                            placeholder="Angebot oder Suchbegriff..."
+                            value={storeSearch}
+                            onChange={e => setStoreSearch(e.target.value)}
+                            className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Angebote Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredServices.map(srv => {
+                          const minPrice = Math.min(...srv.price_options.map(o => o.price));
+                          const firstOpt = srv.price_options[0];
+                          return (
+                            <div
+                              key={srv.id}
+                              className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col justify-between hover:shadow-md transition"
+                            >
+                              <div>
+                                <div className="relative h-44 overflow-hidden bg-slate-100">
+                                  <img
+                                    src={srv.image_url}
+                                    alt={srv.name}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                  />
+                                  <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                                    {srv.is_subscription && (
+                                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500 text-white uppercase tracking-wider shadow-sm">
+                                        {srv.sessions_count}er Mehrfachkarte
+                                      </span>
+                                    )}
+                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-black/60 backdrop-blur-sm text-white uppercase tracking-wider">
+                                      {srv.offer_type === 'bootsfahrschule'
+                                        ? 'Fahrschule'
+                                        : srv.offer_type === 'coaching'
+                                        ? 'Coaching'
+                                        : srv.offer_type === 'mieten'
+                                        ? 'Miete'
+                                        : 'Gutschein'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="p-5 space-y-3">
+                                  <div>
+                                    <span className="text-[10px] text-amber-700 font-bold uppercase tracking-wider">
+                                      {srv.target_audience}
+                                    </span>
+                                    <h4 className="text-base font-bold text-slate-900 mt-0.5">{srv.name}</h4>
+                                  </div>
+
+                                  <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                                    {srv.description}
+                                  </p>
+
+                                  {/* Standorte */}
+                                  <div className="flex flex-wrap gap-1 pt-1">
+                                    {srv.location_ids.map(loc => (
+                                      <span key={loc} className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700">
+                                        {loc === 'loc_luzern'
+                                          ? 'Luzern'
+                                          : loc === 'loc_stansstad'
+                                          ? 'Stansstad NW'
+                                          : loc === 'loc_hergiswil'
+                                          ? 'Hergiswil NW'
+                                          : loc}
+                                      </span>
+                                    ))}
+                                  </div>
+
+                                  {/* Preisoptionen */}
+                                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5 text-xs">
+                                    <div className="flex items-baseline justify-between">
+                                      <span className="text-slate-500">ab CHF</span>
+                                      <span className="text-lg font-black text-slate-900">
+                                        CHF {minPrice.toFixed(2)}
+                                      </span>
+                                    </div>
+                                    {srv.is_subscription && firstOpt && (
+                                      <div className="text-[11px] text-emerald-700 font-bold">
+                                        ~CHF {(firstOpt.price / firstOpt.sessions_count).toFixed(2)} pro Einzellektion
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="p-5 pt-0">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCheckoutService(srv);
+                                    setCheckoutSelectedOptionId(srv.price_options[0]?.id || null);
+                                    setCheckoutPromoInput('');
+                                    setCheckoutPromoApplied(null);
+                                    setCheckoutPromoMsg(null);
+                                    setCheckoutPaymentMethod('bank_transfer');
+                                  }}
+                                  className="w-full py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                                >
+                                  <span>Jetzt buchen / kaufen</span>
+                                  <ChevronRight className="w-4 h-4 text-amber-400" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* MEINE KÄUFE & GUTHABEN ANSICHT */}
+                  {storeViewMode === 'my_subscriptions' && (
+                    <div className="space-y-6">
+                      
+                      {/* 3 Top KPIs */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                            Gesamte Einheiten
+                          </div>
+                          <div className="text-3xl font-black text-slate-900">
+                            {studentTotalSessions}
+                          </div>
+                          <div className="text-[11px] text-slate-400 mt-1">
+                            Erworbene Fahrstunden &amp; Mieten
+                          </div>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                          <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                            Genutzte Lektionen
+                          </div>
+                          <div className="text-3xl font-black text-slate-700">
+                            {studentUsedSessions}
+                          </div>
+                          <div className="text-[11px] text-slate-400 mt-1">
+                            Bereits absolviert
+                          </div>
+                        </div>
+
+                        <div className="bg-emerald-50/80 p-5 rounded-2xl border border-emerald-300 shadow-xs">
+                          <div className="text-xs font-bold text-emerald-800 uppercase tracking-wider mb-1">
+                            Verfügbares Restguthaben
+                          </div>
+                          <div className="text-3xl font-black text-emerald-700">
+                            {studentRemainingSessions}
+                          </div>
+                          <div className="text-[11px] text-emerald-800 font-semibold mt-1">
+                            Sofort für Termine einlösbar
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Liste der gekauften Abos */}
+                      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                          <h3 className="font-bold text-slate-900 text-sm">
+                            Meine erworbenen Pakete &amp; Abos ({customerSubscriptions.length})
+                          </h3>
+                          <button
+                            type="button"
+                            onClick={() => setStoreViewMode('catalog')}
+                            className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs rounded-xl flex items-center gap-1.5 transition cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Weiteres Paket erwerben</span>
+                          </button>
+                        </div>
+
+                        <div className="divide-y divide-slate-100">
+                          {customerSubscriptions.map(sub => {
+                            const remaining = sub.total_sessions - sub.used_sessions;
+                            const percent = Math.min(100, Math.round((sub.used_sessions / sub.total_sessions) * 100));
+                            return (
+                              <div key={sub.id} className="p-5 space-y-4 hover:bg-slate-50/50 transition">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-slate-900 text-sm">{sub.package_name}</span>
+                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-100 text-slate-700">
+                                        {sub.order_id}
+                                      </span>
+                                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                        sub.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                                      }`}>
+                                        {sub.payment_status === 'paid' ? 'Bezahlt' : 'Zahlung offen'}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-3">
+                                      <span>Gekauft am: {sub.purchased_at.slice(0, 10)}</span>
+                                      <span>&bull;</span>
+                                      <span>Gültig bis: {sub.expires_at}</span>
+                                      <span>&bull;</span>
+                                      <span>Betrag: CHF {sub.price_paid.toFixed(2)}</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowReceiptModal(sub)}
+                                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl flex items-center gap-1.5 transition cursor-pointer"
+                                    >
+                                      <Receipt className="w-3.5 h-3.5" />
+                                      <span>MWST-Beleg</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowStudentRequestModal(true)}
+                                      className="px-3.5 py-1.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                                    >
+                                      <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                                      <span>Fahrstunde buchen</span>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Fortschrittsbalken */}
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-slate-600 font-medium">
+                                      Verbraucht: <strong>{sub.used_sessions}</strong> von {sub.total_sessions} Lektionen
+                                    </span>
+                                    <span className="font-bold text-emerald-700">
+                                      {remaining} Lektionen übrig ({100 - percent}%)
+                                    </span>
+                                  </div>
+                                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-amber-500 transition-all duration-300"
+                                      style={{ width: `${percent}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              )}
+
+              {/* ============================================================== */}
+              {/* SUBTAB: RECHNUNGEN & BELEGE                                    */}
+              {/* ============================================================== */}
+              {studentNavSubTab === 'invoices' && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-5 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">Meine Rechnungen &amp; Schweizer MWST-Belege</h3>
+                      <p className="text-xs text-slate-500">Übersicht aller bezahlten und offenen Buchungen inklusive QR-Rechnung</p>
+                    </div>
+                    <span className="text-xs bg-slate-100 text-slate-700 font-semibold px-3 py-1 rounded-xl">
+                      UID: CHE-384.192.834 MWST
+                    </span>
+                  </div>
+
+                  <div className="divide-y divide-slate-100">
+                    {customerSubscriptions.map(sub => (
+                      <div key={sub.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-sm">{sub.package_name}</span>
+                            <span className="font-mono text-slate-500">({sub.order_id})</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              sub.payment_status === 'paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {sub.payment_status === 'paid' ? 'Bezahlt ✓' : 'Zahlung offen'}
+                            </span>
+                          </div>
+                          <div className="text-slate-500 mt-1 flex items-center gap-3">
+                            <span>Datum: {sub.purchased_at.slice(0, 10)}</span>
+                            <span>&bull;</span>
+                            <span>Zahlungsart: {sub.payment_method === 'bank_transfer' ? 'Raiffeisen Banküberweisung' : 'QR-Rechnung'}</span>
+                            <span>&bull;</span>
+                            <span>inkl. 8.1% MWST: CHF {(sub.price_paid - sub.price_paid / 1.081).toFixed(2)}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 self-start sm:self-auto">
+                          <span className="text-base font-black text-slate-900">CHF {sub.price_paid.toFixed(2)}</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowReceiptModal(sub)}
+                            className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Receipt className="w-3.5 h-3.5" />
+                            <span>Beleg öffnen</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ============================================================== */}
+              {/* SUBTAB: RECHTLICHES & NACHWEISE                                */}
+              {/* ============================================================== */}
+              {studentNavSubTab === 'legal' && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-5 animate-in fade-in duration-200">
+                  <div className="pb-4 border-b border-slate-100">
+                    <h3 className="font-bold text-slate-900 text-sm">Rechtliches, AGB &amp; Schifffahrtsamts-Zulassung</h3>
+                    <p className="text-xs text-slate-500">Ausbildungsrichtlinien für Motorboot Kat. A auf dem Vierwaldstättersee</p>
+                  </div>
+
+                  <div className="space-y-4 text-xs text-slate-700 leading-relaxed">
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <Shield className="w-4 h-4 text-amber-700" />
+                        <span>Allgemeine Geschäftsbedingungen &amp; Mietvertragsbedingungen (AMB)</span>
+                      </div>
+                      <p>
+                        Mit Buchung einer Fahrstunde oder Miete werden die Sicherheitsregeln der Schifffahrtsämter Luzern und Nidwalden sowie die Stornierungsbedingungen (kostenfreie Stornierung bis 24h vor Terminbeginn) anerkannt.
+                      </p>
+                      <div className="pt-2 flex items-center gap-2">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          agbAccepted ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {agbAccepted ? 'Status: AGB bestätigt ✓' : 'Status: Noch nicht bestätigt'}
+                        </span>
+                        {!agbAccepted && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAgbAccepted(true);
+                              setMagicFeedback('AGB und Mietvertragsbedingungen erfolgreich bestätigt.');
+                              setTimeout(() => setMagicFeedback(null), 4000);
+                            }}
+                            className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-[11px] transition cursor-pointer"
+                          >
+                            Jetzt bestätigen
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                      <div className="font-bold text-slate-900">Schifffahrtsamt-Prüfung &amp; ASA-Stammdaten</div>
+                      <p>
+                        Für die praktische Schifffahrtsprüfung müssen die Theorieprüfung bestanden sein und die ASA-Daten (FABER, PIN, PID) im Profil hinterlegt sein.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+                  {/* Dashboard Footer (nur Copyrights) */}
+                  <footer className="mt-14 pt-6 pb-4 border-t border-slate-200/80 text-center text-xs text-slate-400">
+                    <p>&copy; 2026 Coaching-Boot / Nautic. Alle Rechte vorbehalten.</p>
+                  </footer>
 
                 </div>
 
               </div>
 
-              {/* MODAL 1: Terminanfrage stellen */}
+              {/* MODAL 1: Terminanfrage stellen (Im Stil des Fahrlehrer-Modals) */}
               {showStudentRequestModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-                  <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
-                    <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+                  <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200/80 my-8 space-y-5 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold shadow-xs">
                           <Calendar className="w-5 h-5 text-amber-700" />
                         </div>
                         <div>
                           <h3 className="font-bold text-slate-900 text-base">Terminanfrage einreichen</h3>
-                          <p className="text-xs text-slate-500">Wunschtermin für Fahrstunde oder Bootsmiete</p>
+                          <p className="text-xs text-slate-500">Wunschtermin für Praxisfahrstunde oder Bootsmiete</p>
                         </div>
                       </div>
                       <button
                         onClick={() => setShowStudentRequestModal(false)}
-                        className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                        className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-xl transition"
                       >
-                        ✕
+                        <X className="w-5 h-5" />
                       </button>
                     </div>
 
                     <form
                       onSubmit={e => {
                         e.preventDefault();
+                        const useBalance = newReqUseBalance && studentRemainingSessions > 0;
+                        if (useBalance) {
+                          setCustomerSubscriptions(prev => {
+                            let consumed = false;
+                            return prev.map(sub => {
+                              if (!consumed && sub.used_sessions < sub.total_sessions) {
+                                consumed = true;
+                                return { ...sub, used_sessions: sub.used_sessions + 1 };
+                              }
+                              return sub;
+                            });
+                          });
+                        }
+
                         const newApp: Appointment = {
                           id: Date.now(),
                           date: newReqDate,
@@ -2207,26 +4232,70 @@ export default function App() {
                           boat_name: 'Boesch 620 Bimini',
                           location_name: newReqLocation,
                           service_name: newReqService,
-                          price: 190.0,
+                          price: useBalance ? 0.0 : 190.0,
                           status: 'requested',
                           instructor_payout_amount: 97.5,
                           instructor_payout_status: 'open',
-                          instructor_payout_note: newReqNotes ? `Kunden-Anfrage: ${newReqNotes}` : 'Terminanfrage über Kunden-Dashboard'
+                          instructor_payout_note: newReqNotes
+                            ? `Kunden-Anfrage: ${newReqNotes}${useBalance ? ' (1 Lektion vom Guthaben abgezogen)' : ''}`
+                            : (useBalance ? '1 Lektion vom Guthaben abgezogen' : 'Terminanfrage über Kunden-Dashboard')
                         };
 
                         setAppointments(prev => [newApp, ...prev]);
                         setShowStudentRequestModal(false);
-                        setMagicFeedback(`Ihre Terminanfrage für ${newReqDate} wurde erfolgreich eingereicht! Die Flottenleitung prüft die Zuteilung.`);
+                        setMagicFeedback(
+                          useBalance
+                            ? `Ihre Terminanfrage für ${newReqDate} wurde eingereicht! 1 Lektion wurde von Ihrem Guthaben abgezogen (verbleibend: ${Math.max(0, studentRemainingSessions - 1)}).`
+                            : `Ihre Terminanfrage für ${newReqDate} wurde erfolgreich eingereicht! Die Flottenleitung prüft die Zuteilung.`
+                        );
                         setTimeout(() => setMagicFeedback(null), 6000);
                       }}
-                      className="mt-5 space-y-4 text-xs"
+                      className="space-y-4 text-xs"
                     >
+                      {/* Guthaben-Hinweis & Verrechnung */}
+                      {studentRemainingSessions > 0 ? (
+                        <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-start gap-3">
+                          <Award className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                          <div className="flex-1 space-y-1">
+                            <div className="font-bold text-emerald-950 text-xs">
+                              Aktives Lektionen-Guthaben verfügbar!
+                            </div>
+                            <p className="text-[11px] text-emerald-800 leading-normal">
+                              Sie besitzen noch <strong>{studentRemainingSessions} bezahlte Lektion(en)</strong>. Möchten Sie diesen Termin direkt von Ihrem Guthaben abbuchen?
+                            </p>
+                            <label className="flex items-center gap-2 pt-1 font-semibold text-emerald-900 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={newReqUseBalance}
+                                onChange={e => setNewReqUseBalance(e.target.checked)}
+                                className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                              />
+                              <span>1 Lektion vom Guthaben abbuchen (Kosten für diesen Termin: CHF 0.00)</span>
+                            </label>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-amber-50/70 rounded-xl border border-amber-200/80 flex items-center justify-between text-[11px]">
+                          <span className="text-amber-900">Kein aktives Abo-Guthaben vorhanden.</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowStudentRequestModal(false);
+                              setStudentNavSubTab('packages');
+                              setStoreViewMode('catalog');
+                            }}
+                            className="font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
+                          >
+                            Jetzt Abo im Store kaufen &rarr;
+                          </button>
+                        </div>
+                      )}
                       <div>
-                        <label className="font-bold text-slate-700 block mb-1">Ausbildungsleistung / Terminart *</label>
+                        <label className="font-semibold text-slate-700 block mb-1">Ausbildungsleistung / Terminart *</label>
                         <select
                           value={newReqService}
                           onChange={e => setNewReqService(e.target.value)}
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white transition"
                         >
                           <option value="Motorboot Kat. A (90 Min.)">Motorboot Kat. A (90 Min.) – CHF 190.00</option>
                           <option value="Intensiv-Doppelstunde (180 Min.)">Intensiv-Doppelstunde (180 Min.) – CHF 380.00</option>
@@ -2236,39 +4305,65 @@ export default function App() {
                         </select>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="font-bold text-slate-700 block mb-1">Wunschdatum *</label>
-                          <input
-                            type="date"
-                            value={newReqDate}
-                            onChange={e => setNewReqDate(e.target.value)}
-                            min="2026-03-20"
-                            required
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
-                          />
+                      {/* Datum & Zeitfenster mit Schnellauswahl */}
+                      <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-200/80 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="font-semibold text-slate-800 block mb-1">Wunschdatum *</label>
+                            <input
+                              type="date"
+                              value={newReqDate}
+                              onChange={e => setNewReqDate(e.target.value)}
+                              min="2026-03-20"
+                              required
+                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-amber-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="font-semibold text-slate-800 block mb-1">Zeitfenster</label>
+                            <select
+                              value={newReqTimeWindow}
+                              onChange={e => setNewReqTimeWindow(e.target.value)}
+                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-amber-500"
+                            >
+                              <option value="morning">Vormittag (09:00 - 10:30 Uhr)</option>
+                              <option value="afternoon">Nachmittag (14:00 - 15:30 Uhr)</option>
+                              <option value="evening">Abenddämmerung (17:30 - 19:00 Uhr)</option>
+                            </select>
+                          </div>
                         </div>
-                        <div>
-                          <label className="font-bold text-slate-700 block mb-1">Zeitfenster</label>
-                          <select
-                            value={newReqTimeWindow}
-                            onChange={e => setNewReqTimeWindow(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
-                          >
-                            <option value="morning">Vormittag (09:00 - 10:30 Uhr)</option>
-                            <option value="afternoon">Nachmittag (14:00 - 15:30 Uhr)</option>
-                            <option value="evening">Abenddämmerung (17:30 - 19:00 Uhr)</option>
-                          </select>
+
+                        {/* Schnellauswahl Chips */}
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-amber-200/60">
+                          <span className="text-[10px] text-amber-900 font-bold self-center">Schnellwahl:</span>
+                          {[
+                            { label: 'Vormittag (09–10:30)', v: 'morning' },
+                            { label: 'Nachmittag (14–15:30)', v: 'afternoon' },
+                            { label: 'Feierabend (17:30–19)', v: 'evening' }
+                          ].map(t => (
+                            <button
+                              key={t.v}
+                              type="button"
+                              onClick={() => setNewReqTimeWindow(t.v)}
+                              className={`px-2 py-0.5 rounded text-[10px] font-medium transition ${
+                                newReqTimeWindow === t.v
+                                  ? 'bg-amber-600 text-white font-bold'
+                                  : 'bg-white hover:bg-amber-100 border border-amber-200 text-amber-900'
+                              }`}
+                            >
+                              {t.label}
+                            </button>
+                          ))}
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="font-bold text-slate-700 block mb-1">Bevorzugter Standort</label>
+                          <label className="font-semibold text-slate-700 block mb-1">Bevorzugter Standort</label>
                           <select
                             value={newReqLocation}
                             onChange={e => setNewReqLocation(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
                           >
                             <option value="Luzern (Alpenquai)">Luzern (Alpenquai / Tribschen)</option>
                             <option value="Stansstad (Hafen)">Stansstad NW (Hafenanlage)</option>
@@ -2278,11 +4373,11 @@ export default function App() {
                           </select>
                         </div>
                         <div>
-                          <label className="font-bold text-slate-700 block mb-1">Wunsch-Coach</label>
+                          <label className="font-semibold text-slate-700 block mb-1">Wunsch-Coach</label>
                           <select
                             value={newReqCoach}
                             onChange={e => setNewReqCoach(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
                           >
                             <option value="Beat Vollenweider">Beat Vollenweider</option>
                             <option value="Marc Hürlimann">Marc Hürlimann</option>
@@ -2292,22 +4387,25 @@ export default function App() {
                         </div>
                       </div>
 
+                      {/* Notizen & Wünsche - Grösseres Textfeld */}
                       <div>
-                        <label className="font-bold text-slate-700 block mb-1">Besondere Wünsche / Notizen</label>
+                        <label className="font-semibold text-slate-700 block mb-1">
+                          Notizen &amp; Ausbildungsschwerpunkte
+                        </label>
                         <textarea
-                          rows={2}
+                          rows={4}
                           value={newReqNotes}
                           onChange={e => setNewReqNotes(e.target.value)}
-                          placeholder="z. B. Schwerpunkt auf Boxenmanöver rückwärts..."
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
+                          placeholder="z. B. Schwerpunkt auf Boxenmanöver rückwärts, Anlegen bei Seitenwind oder Vorbereitung auf die Schifffahrtsamts-Prüfung..."
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white transition"
                         />
                       </div>
 
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
                         <button
                           type="button"
                           onClick={() => setShowStudentRequestModal(false)}
-                          className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold"
+                          className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold rounded-xl hover:bg-slate-100 transition"
                         >
                           Abbrechen
                         </button>
@@ -2323,25 +4421,25 @@ export default function App() {
                 </div>
               )}
 
-              {/* MODAL 2: Schülerprofil bearbeiten */}
+              {/* MODAL 2: Schülerprofil bearbeiten (Im Stil des Fahrlehrer-Modals) */}
               {showStudentProfileModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-                  <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
-                    <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+                  <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200/80 my-8 space-y-5 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold shadow-xs">
                           <User className="w-5 h-5 text-amber-700" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-slate-900 text-base">Kundenprofil bearbeiten</h3>
-                          <p className="text-xs text-slate-500">Persönliche Angaben &amp; ASA Schifffahrtsamts-Daten</p>
+                          <h3 className="font-bold text-slate-900 text-base">Mein Schülerprofil bearbeiten</h3>
+                          <p className="text-xs text-slate-500">Persönliche Angaben &amp; Schifffahrtsamts-Stammdaten</p>
                         </div>
                       </div>
                       <button
                         onClick={() => setShowStudentProfileModal(false)}
-                        className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                        className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-xl transition"
                       >
-                        ✕
+                        <X className="w-5 h-5" />
                       </button>
                     </div>
 
@@ -2349,129 +4447,145 @@ export default function App() {
                       onSubmit={e => {
                         e.preventDefault();
                         setShowStudentProfileModal(false);
-                        setMagicFeedback('Ihr Profil wurde erfolgreich aktualisiert.');
+                        setMagicFeedback('Ihr Schülerprofil wurde erfolgreich aktualisiert.');
                         setTimeout(() => setMagicFeedback(null), 5000);
                       }}
-                      className="mt-5 space-y-3.5 text-xs"
+                      className="space-y-4 text-xs"
                     >
-                      <div className="grid grid-cols-2 gap-3">
+                      {/* BILD HINZUFÜGEN (KEINE PFLICHT) */}
+                      <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 flex items-center gap-4">
+                        <div className="relative group shrink-0">
+                          {studentProfile.avatar_url ? (
+                            <img
+                              src={studentProfile.avatar_url}
+                              alt="Profilbild"
+                              className="w-16 h-16 rounded-2xl object-cover ring-2 ring-amber-500/20 shadow-xs"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-800 text-white font-black text-xl flex items-center justify-center shadow-xs">
+                              {studentProfile.first_name?.[0] || 'R'}{studentProfile.last_name?.[0] || 'G'}
+                            </div>
+                          )}
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center shadow-xs">
+                            <Camera className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+
+                        <div className="flex-1 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-900 text-xs">Profilbild hinzufügen</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-600 font-medium">
+                              Keine Pflicht
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 leading-normal">
+                            Laden Sie optional ein Foto hoch oder hinterlegen Sie eine Bild-URL. Ihr Bild erleichtert dem Fahrlehrer die Erkennung am Steg.
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <input
+                              type="url"
+                              placeholder="Bild-URL (https://...)"
+                              value={studentProfile.avatar_url}
+                              onChange={e => setStudentProfile({ ...studentProfile, avatar_url: e.target.value })}
+                              className="px-2.5 py-1 text-[11px] bg-white border border-slate-300 rounded-lg flex-1 min-w-[140px] focus:ring-1 focus:ring-amber-500"
+                            />
+                            {studentProfile.avatar_url && (
+                              <button
+                                type="button"
+                                onClick={() => setStudentProfile({ ...studentProfile, avatar_url: '' })}
+                                className="text-[10px] text-rose-600 hover:text-rose-800 px-2 py-1 bg-white border border-rose-200 rounded-lg font-medium"
+                              >
+                                Entfernen
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* STAMMDATEN: Vorname, Nachname */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="font-bold text-slate-700 block mb-1">Vorname</label>
+                          <label className="font-semibold text-slate-700 block mb-1">Vorname *</label>
                           <input
                             type="text"
                             value={studentProfile.first_name}
                             onChange={e => setStudentProfile({ ...studentProfile, first_name: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
                             required
                           />
                         </div>
                         <div>
-                          <label className="font-bold text-slate-700 block mb-1">Nachname</label>
+                          <label className="font-semibold text-slate-700 block mb-1">Nachname *</label>
                           <input
                             type="text"
                             value={studentProfile.last_name}
                             onChange={e => setStudentProfile({ ...studentProfile, last_name: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
                             required
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="font-bold text-slate-700 block mb-1">E-Mail-Adresse</label>
+                        <label className="font-semibold text-slate-700 block mb-1">E-Mail-Adresse (gesperrt)</label>
                         <input
                           type="email"
                           value={studentProfile.email}
                           disabled
-                          className="w-full px-3 py-2 bg-slate-100 text-slate-500 border border-slate-200 rounded-xl text-xs font-medium"
+                          className="w-full px-3 py-2 bg-slate-100 text-slate-500 border border-slate-200 rounded-xl text-xs font-medium cursor-not-allowed"
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="font-bold text-slate-700 block mb-1">Mobiltelefonnummer *</label>
+                          <label className="font-semibold text-slate-700 block mb-1">Mobiltelefonnummer *</label>
                           <input
                             type="tel"
                             value={studentProfile.phone}
                             onChange={e => setStudentProfile({ ...studentProfile, phone: e.target.value })}
                             placeholder="+41 79 000 00 00"
                             required
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
                           />
                         </div>
                         <div>
-                          <label className="font-bold text-slate-700 block mb-1">Geburtsdatum *</label>
+                          <label className="font-semibold text-slate-700 block mb-1">Geburtsdatum *</label>
                           <input
                             type="date"
                             value={studentProfile.birthdate}
                             onChange={e => setStudentProfile({ ...studentProfile, birthdate: e.target.value })}
                             required
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
                           />
                         </div>
                       </div>
 
-                      {/* Schweizer Schifffahrtsamt: FABER:, PIN:, PID: */}
-                      <div className="grid grid-cols-3 gap-3">
-                        <div>
-                          <label className="font-bold text-slate-700 block mb-1">FABER: *</label>
-                          <input
-                            type="text"
-                            value={studentProfile.faber}
-                            onChange={e => setStudentProfile({ ...studentProfile, faber: e.target.value, license_number: e.target.value })}
-                            placeholder="z. B. 123.456.789"
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500"
-                          />
-                          <span className="text-[10px] text-slate-400 block mt-0.5">Fahrberechtigungs-Reg.</span>
-                        </div>
-                        <div>
-                          <label className="font-bold text-slate-700 block mb-1">PIN: *</label>
-                          <input
-                            type="text"
-                            value={studentProfile.pin}
-                            onChange={e => setStudentProfile({ ...studentProfile, pin: e.target.value })}
-                            placeholder="z. B. 7841"
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500"
-                          />
-                          <span className="text-[10px] text-slate-400 block mt-0.5">Persönliche Ident.-Nr.</span>
-                        </div>
-                        <div>
-                          <label className="font-bold text-slate-700 block mb-1">PID: *</label>
-                          <input
-                            type="text"
-                            value={studentProfile.pid}
-                            onChange={e => setStudentProfile({ ...studentProfile, pid: e.target.value })}
-                            placeholder="z. B. CHE-123.456.7"
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500"
-                          />
-                          <span className="text-[10px] text-slate-400 block mt-0.5">Personen-Identifikator</span>
-                        </div>
-                      </div>
-
+                      {/* Notfallkontakt */}
                       <div>
-                        <label className="font-bold text-slate-700 block mb-1">Notfallkontakt (Name &amp; Tel) *</label>
+                        <label className="font-semibold text-slate-700 block mb-1">Notfallkontakt (Name &amp; Telefonnummer) *</label>
                         <input
                           type="text"
                           value={studentProfile.emergency_contact}
                           onChange={e => setStudentProfile({ ...studentProfile, emergency_contact: e.target.value })}
-                          placeholder="z. B. Notfallkontakt, 079 000 00 00"
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500"
+                          placeholder="z. B. Partnerin, +41 79 111 22 33"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
                         />
                       </div>
 
+                      {/* Adresse */}
                       <div className="grid grid-cols-3 gap-3">
                         <div className="col-span-2">
-                          <label className="font-bold text-slate-700 block mb-1">Strasse &amp; Nr.</label>
+                          <label className="font-semibold text-slate-700 block mb-1">Strasse &amp; Nr.</label>
                           <input
                             type="text"
                             value={studentProfile.street}
                             onChange={e => setStudentProfile({ ...studentProfile, street: e.target.value })}
                             placeholder="Seestrasse 1"
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:bg-white"
                           />
                         </div>
                         <div>
-                          <label className="font-bold text-slate-700 block mb-1">PLZ &amp; Ort</label>
+                          <label className="font-semibold text-slate-700 block mb-1">PLZ &amp; Ort</label>
                           <input
                             type="text"
                             value={`${studentProfile.zip} ${studentProfile.city}`.trim()}
@@ -2484,27 +4598,529 @@ export default function App() {
                               });
                             }}
                             placeholder="6000 Luzern"
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:bg-white"
                           />
                         </div>
                       </div>
 
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                      {/* NOTIZEN & WÜNSCHE: GRÖSSERES TEXTFELD */}
+                      <div>
+                        <label className="font-semibold text-slate-700 block mb-1">
+                          Notizen &amp; Wünsche (grösseres Textfeld)
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={studentProfile.notes}
+                          onChange={e => setStudentProfile({ ...studentProfile, notes: e.target.value })}
+                          placeholder="Ihre Notizen, zeitliche Präferenzen (z. B. bevorzugt Nachmittage oder Wochenenden), besondere Wünsche an den Fahrlehrer oder Vorerfahrungen..."
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white transition"
+                        />
+                      </div>
+
+                      {/* AUFKLAPPBARER BEREICH AM SCHLUSS: THEORIE BESTANDEN (MIT DATUMSANGABE) */}
+                      <div className="border border-amber-300/80 rounded-2xl overflow-hidden bg-amber-50/40">
+                        <button
+                          type="button"
+                          onClick={() => setTheoryAccordionOpen(!theoryAccordionOpen)}
+                          className="w-full p-4 text-left flex items-center justify-between hover:bg-amber-100/50 transition cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-amber-200/80 text-amber-900 flex items-center justify-center font-bold">
+                              <CheckCircle2 className="w-4 h-4 text-amber-800" />
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-900 text-xs flex items-center gap-2">
+                                <span>Theorie Bestanden (mit Datumsangabe)</span>
+                                {studentProfile.theory_passed && (
+                                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                                    Bestanden
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-500">
+                                Schifffahrtsamt ASA: FABER, PIN, PID &amp; Prüfungsdatum
+                              </p>
+                            </div>
+                          </div>
+                          <span className={`text-slate-500 transform transition-transform duration-200 ${theoryAccordionOpen ? 'rotate-180' : ''}`}>
+                            ▼
+                          </span>
+                        </button>
+
+                        {theoryAccordionOpen && (
+                          <div className="p-4 pt-1 border-t border-amber-200/60 space-y-3.5 animate-in fade-in duration-150">
+                            <div className="bg-white p-3 rounded-xl border border-amber-200 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <label className="font-semibold text-slate-800 flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={studentProfile.theory_passed}
+                                    onChange={e => setStudentProfile({ ...studentProfile, theory_passed: e.target.checked })}
+                                    className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4"
+                                  />
+                                  <span>Theorieprüfung Schifffahrtsamt erfolgreich bestanden</span>
+                                </label>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                <div>
+                                  <label className="text-[11px] font-medium text-slate-600 block mb-1">
+                                    Datum Theorieprüfung (mit Datumsangabe):
+                                  </label>
+                                  <input
+                                    type="date"
+                                    value={studentProfile.theory_passed_date}
+                                    onChange={e => setStudentProfile({ ...studentProfile, theory_passed_date: e.target.value })}
+                                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-amber-500"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Schweizer Schifffahrtsamt: FABER:, PIN:, PID: */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="font-bold text-slate-800 block mb-1">FABER: *</label>
+                                <input
+                                  type="text"
+                                  value={studentProfile.faber}
+                                  onChange={e => setStudentProfile({ ...studentProfile, faber: e.target.value, license_number: e.target.value })}
+                                  placeholder="z. B. 123.456.789"
+                                  className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500"
+                                />
+                                <span className="text-[10px] text-slate-500 block mt-0.5">Fahrberechtigungs-Register</span>
+                              </div>
+                              <div>
+                                <label className="font-bold text-slate-800 block mb-1">PIN: *</label>
+                                <input
+                                  type="text"
+                                  value={studentProfile.pin}
+                                  onChange={e => setStudentProfile({ ...studentProfile, pin: e.target.value })}
+                                  placeholder="z. B. 7841"
+                                  className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500"
+                                />
+                                <span className="text-[10px] text-slate-500 block mt-0.5">Persönliche Ident.-Nr.</span>
+                              </div>
+                              <div>
+                                <label className="font-bold text-slate-800 block mb-1">PID: *</label>
+                                <input
+                                  type="text"
+                                  value={studentProfile.pid}
+                                  onChange={e => setStudentProfile({ ...studentProfile, pid: e.target.value })}
+                                  placeholder="z. B. CHE-123.456.7"
+                                  className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500"
+                                />
+                                <span className="text-[10px] text-slate-500 block mt-0.5">Personen-Identifikator</span>
+                              </div>
+                            </div>
+
+                            <p className="text-[11px] text-amber-900 bg-amber-100/60 p-2.5 rounded-lg border border-amber-200 leading-normal">
+                              Hinweis: Die ASA-Daten (FABER, PIN und PID) werden für die offizielle Prüfungsanmeldung bei den Schifffahrtsämtern Luzern (LU), Nidwalden (NW), Schwyz (SZ) und Uri (UR) benötigt.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
                         <button
                           type="button"
                           onClick={() => setShowStudentProfileModal(false)}
-                          className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold"
+                          className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold rounded-xl hover:bg-slate-100 transition"
                         >
                           Abbrechen
                         </button>
                         <button
                           type="submit"
-                          className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-md transition"
+                          className="px-6 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold rounded-xl shadow-md transition"
                         >
                           Profilangaben speichern &rarr;
                         </button>
                       </div>
                     </form>
+                  </div>
+                </div>
+              )}
+
+              {/* MODAL 3: Online-Checkout & Buchung (Store) */}
+              {checkoutService && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+                  <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200/80 my-8 space-y-5 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+                    
+                    {/* Header */}
+                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold shadow-xs">
+                          <ShoppingBag className="w-5 h-5 text-amber-700" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-base">Online-Checkout &amp; Buchung</h3>
+                          <p className="text-xs text-slate-500">Sofortige Lektionen-Gutschrift &bull; Schweizer MWST-Beleg</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setCheckoutService(null)}
+                        className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-xl transition cursor-pointer"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-4 text-xs">
+                      
+                      {/* Produkt-Zusammenfassung */}
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-start gap-3.5">
+                        <img
+                          src={checkoutService.image_url}
+                          alt={checkoutService.name}
+                          className="w-16 h-16 rounded-xl object-cover shrink-0"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-sm">{checkoutService.name}</span>
+                            {checkoutService.is_subscription && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                                {checkoutService.sessions_count}er Abo
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-slate-500 text-xs mt-1 line-clamp-2 leading-relaxed">
+                            {checkoutService.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Preis- & Tarifauswahl */}
+                      <div>
+                        <label className="font-semibold text-slate-800 block mb-2">Wähle deine Preis- &amp; Zeitstaffel *</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {checkoutService.price_options.map(opt => {
+                            const isSelected = checkoutSelectedOption?.id === opt.id;
+                            return (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => setCheckoutSelectedOptionId(opt.id)}
+                                className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
+                                  isSelected
+                                    ? 'border-amber-600 bg-amber-50/50 ring-2 ring-amber-500/20'
+                                    : 'border-slate-200 bg-white hover:bg-slate-50'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-slate-900 text-xs">
+                                    {opt.duration} Min. ({opt.sessions_count} {opt.sessions_count > 1 ? 'Einheiten' : 'Einheit'})
+                                  </span>
+                                  {isSelected && <Check className="w-4 h-4 text-amber-700" />}
+                                </div>
+                                <div className="mt-2 flex items-baseline justify-between">
+                                  <span className="text-base font-black text-slate-900">CHF {opt.price.toFixed(2)}</span>
+                                  {opt.sessions_count > 1 && (
+                                    <span className="text-[10px] text-emerald-700 font-semibold">
+                                      ~CHF {(opt.price / opt.sessions_count).toFixed(2)} / Lektion
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Hafen / Standort Wahl */}
+                      <div>
+                        <label className="font-semibold text-slate-800 block mb-1">Bevorzugter Einstiegs-Hafen</label>
+                        <select
+                          value={checkoutLocation}
+                          onChange={e => setCheckoutLocation(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
+                        >
+                          <option value="loc_luzern">Luzern (Alpenquai / Tribschen)</option>
+                          <option value="loc_stansstad">Stansstad NW (Hafenanlage)</option>
+                          <option value="loc_hergiswil">Hergiswil NW (Bootshafen)</option>
+                          <option value="loc_buochs">Buochs NW (Seefeld Pier)</option>
+                        </select>
+                      </div>
+
+                      {/* Rabattcode / Aktionscode Engine */}
+                      <div className="p-3.5 bg-amber-50/40 rounded-2xl border border-amber-200/80 space-y-2">
+                        <label className="font-semibold text-slate-800 block text-xs">
+                          Gutschein- oder Promo-Code einlösen
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <Tag className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                            <input
+                              type="text"
+                              value={checkoutPromoInput}
+                              onChange={e => setCheckoutPromoInput(e.target.value.toUpperCase())}
+                              placeholder="z. B. BOOT50 oder SOMMER2026"
+                              className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-xl font-mono text-xs font-bold uppercase tracking-wider focus:ring-2 focus:ring-amber-500"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleValidatePromo}
+                            className="px-4 py-2 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold rounded-xl text-xs transition cursor-pointer shrink-0"
+                          >
+                            Prüfen
+                          </button>
+                        </div>
+
+                        {checkoutPromoMsg && (
+                          <div
+                            className={`p-2 rounded-lg text-xs font-medium flex items-center gap-1.5 ${
+                              checkoutPromoMsg.type === 'success'
+                                ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                : 'bg-rose-100 text-rose-900 border border-rose-300'
+                            }`}
+                          >
+                            {checkoutPromoMsg.type === 'success' ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            ) : (
+                              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                            )}
+                            <span>{checkoutPromoMsg.text}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Preisaufstellung & MWST */}
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                        <div className="flex justify-between text-slate-600">
+                          <span>Zwischensumme:</span>
+                          <span>CHF {checkoutSubtotal.toFixed(2)}</span>
+                        </div>
+                        {checkoutDiscountAmount > 0 && (
+                          <div className="flex justify-between text-emerald-700 font-bold">
+                            <span>Aktionsrabatt ({checkoutPromoApplied?.code}):</span>
+                            <span>-CHF {checkoutDiscountAmount.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-200">
+                          <span>Gesamtbetrag (CHF):</span>
+                          <span>CHF {checkoutFinalTotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-[11px] text-slate-400">
+                          <span>Darin enthalten 8.1% Schweizer MWST:</span>
+                          <span>CHF {checkoutVatAmount.toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      {/* Schweizer Zahlungsarten */}
+                      <div className="space-y-3">
+                        <label className="font-semibold text-slate-800 block">Zahlungsart wählen *</label>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setCheckoutPaymentMethod('bank_transfer')}
+                            className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                              checkoutPaymentMethod === 'bank_transfer'
+                                ? 'border-amber-600 bg-amber-50/60 ring-2 ring-amber-500/20'
+                                : 'border-slate-200 bg-white hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="font-bold text-slate-900 text-xs">Banküberweisung</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Sofortige IBAN-Anzeige</div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setCheckoutPaymentMethod('qr_bill')}
+                            className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                              checkoutPaymentMethod === 'qr_bill'
+                                ? 'border-amber-600 bg-amber-50/60 ring-2 ring-amber-500/20'
+                                : 'border-slate-200 bg-white hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="font-bold text-slate-900 text-xs">QR-Rechnung</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">Swiss QR-Bill &amp; E-Banking</div>
+                          </button>
+                        </div>
+
+                        {/* Details Banküberweisung */}
+                        {checkoutPaymentMethod === 'bank_transfer' && (
+                          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-[11px]">
+                            <div className="font-bold text-slate-800">Bankverbindung für Überweisung:</div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-slate-600">
+                              <div><strong>Bank:</strong> Raiffeisenbank Luzern-Stans</div>
+                              <div><strong>Begünstigter:</strong> MY CoachingBoot GmbH, 6005 Luzern</div>
+                            </div>
+                            <div className="flex items-center gap-2 pt-1">
+                              <div className="font-mono text-xs font-bold text-slate-900 px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 flex-1 select-all">
+                                CH89 0076 2011 6238 5291 1
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard?.writeText('CH89 0076 2011 6238 5291 1');
+                                  setCopiedIban(true);
+                                  setTimeout(() => setCopiedIban(false), 3000);
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shrink-0 ${
+                                  copiedIban ? 'bg-emerald-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+                                }`}
+                              >
+                                {copiedIban ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                <span>{copiedIban ? 'Kopiert!' : 'IBAN kopieren'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Details QR-Rechnung */}
+                        {checkoutPaymentMethod === 'qr_bill' && (
+                          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-3 text-[11px]">
+                            <QrCode className="w-10 h-10 text-slate-700 shrink-0" />
+                            <div>
+                              <div className="font-bold text-slate-900">Schweizer QR-Rechnung aktiviert</div>
+                              <div className="text-slate-500">
+                                Nach Abschluss wird der QR-Beleg mit Referenz und Firmen-UID CHE-384.192.834 MWST direkt erzeugt und zum Download bereitgestellt.
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                    </div>
+
+                    {/* Footer Buttons */}
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setCheckoutService(null)}
+                        className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                      >
+                        Abbrechen
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCompleteOrder}
+                        className="px-5 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
+                      >
+                        <span>Bestellung abschliessen (CHF {checkoutFinalTotal.toFixed(2)})</span>
+                        <ChevronRight className="w-4 h-4 text-amber-400" />
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {/* MODAL 4: Schweizer MWST-Beleg / Quittung */}
+              {showReceiptModal && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+                  <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200/80 my-8 space-y-6 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+                    
+                    {/* Beleg Kopf */}
+                    <div className="flex items-start justify-between pb-4 border-b-2 border-slate-900">
+                      <div>
+                        <div className="font-black text-slate-900 text-lg uppercase tracking-tight">MY CoachingBoot GmbH</div>
+                        <div className="text-xs text-slate-500">Alpenquai 11 &bull; 6005 Luzern &bull; Schweiz</div>
+                        <div className="text-xs font-mono font-bold text-slate-700 mt-1">UID: CHE-384.192.834 MWST</div>
+                      </div>
+                      <button
+                        onClick={() => setShowReceiptModal(null)}
+                        className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-xl transition cursor-pointer"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Beleg Titel & Meta */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div>
+                        <h4 className="font-extrabold text-slate-900 text-base">Offizielle MWST-Quittung</h4>
+                        <div className="text-slate-500 mt-0.5">
+                          Bestell- &amp; Referenz-Nr.: <strong className="font-mono text-slate-900">{showReceiptModal.order_id}</strong>
+                        </div>
+                      </div>
+                      <div className="text-right sm:text-right text-slate-500">
+                        <div>Datum: {showReceiptModal.purchased_at}</div>
+                        <div>Gültig bis: {showReceiptModal.expires_at}</div>
+                      </div>
+                    </div>
+
+                    {/* Kunde Info */}
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                      <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Rechnungsempfänger:</div>
+                      <div className="font-bold text-slate-900">{studentProfile.first_name} {studentProfile.last_name}</div>
+                      <div className="text-slate-600">{studentProfile.email}</div>
+                    </div>
+
+                    {/* Positionen Tabelle */}
+                    <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                      <table className="w-full text-left">
+                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                          <tr>
+                            <th className="p-3">Position</th>
+                            <th className="p-3 text-center">Einheiten</th>
+                            <th className="p-3 text-right">Betrag CHF</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          <tr>
+                            <td className="p-3">
+                              <div className="font-bold text-slate-900">{showReceiptModal.package_name}</div>
+                              <div className="text-[11px] text-slate-500">Sofortgutschrift im Nautic-Kundenkonto</div>
+                            </td>
+                            <td className="p-3 text-center font-bold text-slate-900">
+                              {showReceiptModal.total_sessions}
+                            </td>
+                            <td className="p-3 text-right font-bold text-slate-900">
+                              CHF {showReceiptModal.price_paid.toFixed(2)}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Berechnungs-Total & MWST */}
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Netto-Betrag:</span>
+                        <span>CHF {(showReceiptModal.price_paid / 1.081).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Schweizer MWST (8.1%):</span>
+                        <span>CHF {(showReceiptModal.price_paid - showReceiptModal.price_paid / 1.081).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-200">
+                        <span>Gesamtbetrag CHF:</span>
+                        <span>CHF {showReceiptModal.price_paid.toFixed(2)}</span>
+                      </div>
+                      <div className="pt-1 flex items-center justify-between text-[11px]">
+                        <span className="text-slate-500">Zahlungsstatus:</span>
+                        <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                          {showReceiptModal.payment_status === 'paid' ? 'Bezahlt ✓' : 'Zahlung offen'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Footer CTAs */}
+                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Printer className="w-4 h-4 text-slate-600" />
+                        <span>Beleg drucken</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowReceiptModal(null);
+                          setShowStudentRequestModal(true);
+                        }}
+                        className="w-full sm:w-auto px-5 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Calendar className="w-4 h-4 text-amber-400" />
+                        <span>Direkt Fahrstunde im Kalender buchen &rarr;</span>
+                      </button>
+                    </div>
+
                   </div>
                 </div>
               )}

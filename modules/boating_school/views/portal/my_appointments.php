@@ -725,20 +725,80 @@ ob_start();
                 </div>
             </div>
 
+            <!-- Kalender-Abonnement (iCal / Webcal) Information -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 pb-3 border-bottom mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="p-2.5 bg-primary bg-opacity-10 text-primary rounded-3 d-inline-flex">
+                                <i class="bi bi-calendar2-check fs-4"></i>
+                            </span>
+                            <div>
+                                <h5 class="fw-bold text-dark mb-0">Termine im Smartphone-Kalender abonnieren</h5>
+                                <span class="text-muted small">Live-Synchronisation für Apple Kalender, Google Kalender &amp; Microsoft Outlook</span>
+                            </div>
+                        </div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5 small">
+                            <i class="bi bi-broadcast me-1"></i> iCal / Webcal Feed aktiv
+                        </span>
+                    </div>
+
+                    <p class="text-secondary small mb-3">
+                        Abonnieren Sie Ihren persönlichen Fahrstunden-Kalender. Alle gebuchten, verschobenen oder bestätigten Termine und Treffpunkte erscheinen automatisch in Echtzeit in Ihrem Kalender auf dem iPhone, Android-Smartphone oder Computer.
+                    </p>
+
+                    <div class="p-3 bg-light rounded-3 border d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2 mb-3">
+                        <div class="font-monospace small text-dark text-truncate bg-white px-3 py-2 rounded border flex-grow-1 user-select-all" id="calendarFeedUrl">
+                            webcal://<?= htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'dein.coaching-boot.ch') ?>/?route=bootschule/me/calendar.ics&token=<?= htmlspecialchars((string) ($token ?? '')) ?>
+                        </div>
+                        <button type="button" class="btn btn-dark rounded-3 px-3 py-2 btn-sm fw-bold shrink-0 shadow-sm" onclick="copyCalendarFeedUrl(this)">
+                            <i class="bi bi-clipboard me-1"></i> Kalender-Link kopieren
+                        </button>
+                    </div>
+
+                    <div class="row g-3 text-start small">
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <div class="fw-bold text-dark mb-1">🍏 Apple iOS / Mac</div>
+                                <div class="text-muted" style="font-size: 0.78rem;">
+                                    Kalender-App öffnen &rarr; <em>Ablage</em> &rarr; <em>Neues Kalenderabonnement</em> &rarr; Link einfügen &amp; Abonnieren.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <div class="fw-bold text-dark mb-1">📅 Google Kalender</div>
+                                <div class="text-muted" style="font-size: 0.78rem;">
+                                    <em>calendar.google.com</em> öffnen &rarr; Neben <em>Weitere Kalender</em> auf <strong>+</strong> &rarr; <em>Per URL</em> &rarr; Speichern.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <div class="fw-bold text-dark mb-1">📧 Microsoft Outlook</div>
+                                <div class="text-muted" style="font-size: 0.78rem;">
+                                    In Outlook auf <em>Kalender</em> &rarr; <em>Kalender hinzufügen</em> &rarr; <em>Aus dem Web abonnieren</em> &rarr; Link einfügen.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ============================================================== -->
-            <!-- MODAL 1: TERMINANFRAGE STELLEN                                  -->
+            <!-- MODAL 1: TERMINANFRAGE STELLEN (Fahrlehrer-Style)                -->
             <!-- ============================================================== -->
             <div class="modal fade" id="requestAppointmentModal" tabindex="-1" aria-labelledby="requestAppointmentModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
-                    <div class="modal-content rounded-4 border-0 shadow">
+                    <div class="modal-content rounded-4 border-0 shadow-lg">
                         <div class="modal-header border-bottom px-4 pt-4 pb-3">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="p-2 bg-primary bg-opacity-10 text-primary rounded-circle">
-                                    <i class="bi bi-calendar2-plus fs-5"></i>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="p-2.5 bg-warning bg-opacity-10 text-warning-emphasis rounded-3 d-inline-flex">
+                                    <i class="bi bi-calendar2-plus fs-4 text-warning"></i>
                                 </span>
                                 <div>
-                                    <h5 class="modal-title fw-bold text-dark" id="requestAppointmentModalLabel">Neue Terminanfrage stellen</h5>
-                                    <span class="text-muted small">Wunschtermin für Fahrstunde, Manövertraining oder Bootsmiete einreichen</span>
+                                    <h5 class="modal-title fw-bold text-dark mb-0" id="requestAppointmentModalLabel">Terminanfrage einreichen</h5>
+                                    <span class="text-muted small">Wunschtermin für Praxisfahrstunde oder Bootsmiete einreichen</span>
                                 </div>
                             </div>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
@@ -751,9 +811,9 @@ ob_start();
                                 <div class="row g-3">
                                     
                                     <!-- Leistung / Ausbildungsart -->
-                                    <div class="col-12 col-md-6">
+                                    <div class="col-12">
                                         <label class="form-label small fw-semibold text-dark mb-1">Ausbildungs- oder Mietleistung *</label>
-                                        <select name="service_id" class="form-select rounded-3" required>
+                                        <select name="service_id" class="form-select rounded-3 py-2" required>
                                             <?php if (!empty($availableServices)): ?>
                                                 <?php foreach ($availableServices as $srv): ?>
                                                     <option value="<?= (int) $srv['id'] ?>">
@@ -765,33 +825,30 @@ ob_start();
                                                 <option value="0">Motorboot Kat. A – Intensiv-Doppelstunde (180 Min.)</option>
                                                 <option value="0">Hafen- &amp; Boxen-Manövertraining (90 Min.)</option>
                                                 <option value="0">Prüfungsvorbereitung / Generalprobe</option>
-                                                <option value="0">Nachtfahrt &amp; Befeuerung Navigation</option>
                                                 <option value="0">Bootsmiete / Charter (Halbtag)</option>
                                             <?php endif; ?>
                                         </select>
                                     </div>
 
-                                    <!-- Wunschdatum -->
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-semibold text-dark mb-1">Wunschdatum *</label>
-                                        <input type="date" name="date" class="form-control rounded-3" required min="<?= date('Y-m-d') ?>" value="<?= date('Y-m-d', strtotime('+1 day')) ?>">
-                                    </div>
-
-                                    <!-- Bevorzugtes Zeitfenster -->
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-semibold text-dark mb-1">Bevorzugtes Zeitfenster</label>
-                                        <select name="time_preference" class="form-select rounded-3">
-                                            <option value="morning">Vormittag (09:00 – 10:30 Uhr)</option>
-                                            <option value="afternoon" selected>Nachmittag (14:00 – 15:30 Uhr)</option>
-                                            <option value="evening">Feierabend / Abend (17:30 – 19:00 Uhr)</option>
-                                            <option value="custom">Genaue Startzeit wählen &darr;</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Optionale spezifische Startzeit -->
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-semibold text-muted mb-1">Oder exakte Startzeit (optional)</label>
-                                        <input type="time" name="custom_time" class="form-control rounded-3" step="900" placeholder="z. B. 10:00">
+                                    <!-- Wunschdatum & Zeitfenster Card -->
+                                    <div class="col-12">
+                                        <div class="p-3 bg-warning bg-opacity-10 rounded-3 border border-warning border-opacity-25">
+                                            <div class="row g-3">
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label small fw-semibold text-dark mb-1">Wunschdatum *</label>
+                                                    <input type="date" name="date" class="form-control rounded-3" required min="<?= date('Y-m-d') ?>" value="<?= date('Y-m-d', strtotime('+1 day')) ?>">
+                                                </div>
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label small fw-semibold text-dark mb-1">Bevorzugtes Zeitfenster</label>
+                                                    <select name="time_preference" class="form-select rounded-3">
+                                                        <option value="morning">Vormittag (09:00 – 10:30 Uhr)</option>
+                                                        <option value="afternoon" selected>Nachmittag (14:00 – 15:30 Uhr)</option>
+                                                        <option value="evening">Feierabend / Abend (17:30 – 19:00 Uhr)</option>
+                                                        <option value="custom">Genaue Startzeit wählen &darr;</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <!-- Standort / Treffpunkt -->
@@ -843,18 +900,20 @@ ob_start();
                                         </div>
                                     </div>
 
-                                    <!-- Notizen / Wünsche an den Fahrlehrer -->
+                                    <!-- Notizen / Wünsche an den Fahrlehrer (Grösseres Textfeld) -->
                                     <div class="col-12">
-                                        <label class="form-label small fw-semibold text-dark mb-1">Notizen &amp; Ausbildungsschwerpunkte (optional)</label>
-                                        <textarea name="notes" rows="2" class="form-control rounded-3" placeholder="z. B. Möchte Bugstrahlruder, Vorwärts- und Rückwärtsanleger in die Boxe intensiv üben..."></textarea>
+                                        <label class="form-label small fw-semibold text-dark mb-1">
+                                            Notizen &amp; Ausbildungsschwerpunkte (optional)
+                                        </label>
+                                        <textarea name="notes" rows="4" class="form-control rounded-3" placeholder="z. B. Schwerpunkt auf Boxenmanöver rückwärts, Anlegen bei Seitenwind oder Prüfungsvorbereitung..."></textarea>
                                     </div>
 
                                 </div>
                             </div>
 
                             <div class="modal-footer border-top bg-light px-4 py-3">
-                                <button type="button" class="btn btn-secondary rounded-pill btn-sm px-3" data-bs-dismiss="modal">Abbrechen</button>
-                                <button type="submit" class="btn btn-primary rounded-pill btn-sm px-4 fw-semibold shadow-sm">
+                                <button type="button" class="btn btn-outline-secondary rounded-3 btn-sm px-3" data-bs-dismiss="modal">Abbrechen</button>
+                                <button type="submit" class="btn btn-dark rounded-3 btn-sm px-4 fw-bold shadow-sm">
                                     <i class="bi bi-send me-1"></i> Terminanfrage verbindlich absenden &rarr;
                                 </button>
                             </div>
@@ -864,18 +923,18 @@ ob_start();
             </div>
 
             <!-- ============================================================== -->
-            <!-- MODAL 2: MEIN PROFIL BEARBEITEN / VERVOLLSTÄNDIGEN              -->
+            <!-- MODAL 2: MEIN PROFIL BEARBEITEN (Fahrlehrer-Style mit Accordion) -->
             <!-- ============================================================== -->
             <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
-                    <div class="modal-content rounded-4 border-0 shadow">
+                    <div class="modal-content rounded-4 border-0 shadow-lg">
                         <div class="modal-header border-bottom px-4 pt-4 pb-3">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="p-2 bg-warning bg-opacity-10 text-dark rounded-circle">
-                                    <i class="bi bi-person-gear fs-5"></i>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="p-2.5 bg-warning bg-opacity-10 text-dark rounded-3 d-inline-flex">
+                                    <i class="bi bi-person-gear fs-4 text-warning"></i>
                                 </span>
                                 <div>
-                                    <h5 class="modal-title fw-bold text-dark" id="profileModalLabel">Mein Schülerprofil bearbeiten</h5>
+                                    <h5 class="modal-title fw-bold text-dark mb-0" id="profileModalLabel">Mein Schülerprofil bearbeiten</h5>
                                     <span class="text-muted small">Kontaktdaten &amp; Angaben für die Schifffahrtsamts-Prüfung</span>
                                 </div>
                             </div>
@@ -888,6 +947,25 @@ ob_start();
                             <div class="modal-body p-4">
                                 <div class="row g-3">
                                     
+                                    <!-- Profilbild hinzufügen (keine Pflicht) -->
+                                    <div class="col-12">
+                                        <div class="p-3 bg-light rounded-3 border d-flex align-items-center gap-3">
+                                            <div class="rounded-circle bg-secondary bg-opacity-25 text-dark fw-bold d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; font-size: 1.25rem;">
+                                                <?= strtoupper(substr((string) ($customer['first_name'] ?? 'R'), 0, 1) . substr((string) ($customer['last_name'] ?? 'G'), 0, 1)) ?>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="fw-bold text-dark small">Profilbild hinzufügen</span>
+                                                    <span class="badge bg-secondary-subtle text-secondary small">Keine Pflicht</span>
+                                                </div>
+                                                <p class="text-muted small mb-1" style="font-size: 0.75rem;">
+                                                    Freiwillig – erleichtert Ihrem Fahrlehrer das Wiedererkennen am Steg oder Schiff.
+                                                </p>
+                                                <input type="url" name="avatar_url" class="form-control form-control-sm rounded-2 font-monospace" placeholder="https://... (Foto-URL oder Avatar)" value="<?= htmlspecialchars((string) ($customer['avatar_url'] ?? '')) ?>">
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Vorname & Nachname (Info) -->
                                     <div class="col-12 col-md-6">
                                         <label class="form-label small fw-semibold text-muted mb-1">Vorname</label>
@@ -922,31 +1000,10 @@ ob_start();
                                         <div class="form-text" style="font-size: 0.72rem;">Vom Schifffahrtsamt für die Prüfungsanmeldung verlangt.</div>
                                     </div>
 
-                                    <!-- FABER: Fahrberechtigungs-Register -->
-                                    <div class="col-12 col-md-4">
-                                        <label class="form-label small fw-semibold text-dark mb-1">
-                                            FABER: <span class="text-danger">*</span>
-                                        </label>
-                                        <input type="text" name="faber" class="form-control rounded-3 font-monospace" placeholder="z. B. 123.456.789" required value="<?= htmlspecialchars((string) ($customer['faber'] ?? $customer['license_number'] ?? '')) ?>">
-                                        <div class="form-text" style="font-size: 0.70rem;">Fahrberechtigungs-Register Nr.</div>
-                                    </div>
-
-                                    <!-- PIN: Persönliche Identifikationsnummer -->
-                                    <div class="col-12 col-md-4">
-                                        <label class="form-label small fw-semibold text-dark mb-1">
-                                            PIN: <span class="text-danger">*</span>
-                                        </label>
-                                        <input type="text" name="pin" class="form-control rounded-3 font-monospace" placeholder="z. B. 7841" required value="<?= htmlspecialchars((string) ($customer['pin'] ?? '')) ?>">
-                                        <div class="form-text" style="font-size: 0.70rem;">Persönliche Identifikationsnummer</div>
-                                    </div>
-
-                                    <!-- PID: Personen-Identifikator -->
-                                    <div class="col-12 col-md-4">
-                                        <label class="form-label small fw-semibold text-dark mb-1">
-                                            PID: <span class="text-danger">*</span>
-                                        </label>
-                                        <input type="text" name="pid" class="form-control rounded-3 font-monospace" placeholder="z. B. CHE-123.456.7" required value="<?= htmlspecialchars((string) ($customer['pid'] ?? '')) ?>">
-                                        <div class="form-text" style="font-size: 0.70rem;">Personen-Identifikator (Schifffahrtsamt)</div>
+                                    <!-- Notfallkontakt -->
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small fw-semibold text-dark mb-1">Notfallkontakt (Name &amp; Telefonnummer)</label>
+                                        <input type="text" name="emergency_contact" class="form-control rounded-3" placeholder="z. B. Anna Muster, +41 78 987 65 43" value="<?= htmlspecialchars((string) ($customer['emergency_contact'] ?? '')) ?>">
                                     </div>
 
                                     <!-- Strasse & Nr. -->
@@ -969,30 +1026,97 @@ ob_start();
                                         </div>
                                     </div>
 
-                                    <!-- Notfallkontakt -->
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-semibold text-dark mb-1">Notfallkontakt (Name &amp; Telefonnummer)</label>
-                                        <input type="text" name="emergency_contact" class="form-control rounded-3" placeholder="z. B. Anna Muster, +41 78 987 65 43" value="<?= htmlspecialchars((string) ($customer['emergency_contact'] ?? '')) ?>">
+                                    <!-- Notizen & Wünsche: Grösseres Textfeld -->
+                                    <div class="col-12">
+                                        <label class="form-label small fw-semibold text-dark mb-1">Notizen &amp; Wünsche (grösseres Textfeld)</label>
+                                        <textarea name="notes" rows="4" class="form-control rounded-3" placeholder="Ihre Notizen, Ausbildungsziele, zeitliche Präferenzen oder Vorkenntnisse..."><?= htmlspecialchars((string) ($customer['notes'] ?? '')) ?></textarea>
                                     </div>
 
-                                    <!-- Persönliche Wünsche / Bemerkungen -->
-                                    <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-semibold text-dark mb-1">Notizen &amp; Wünsche</label>
-                                        <input type="text" name="notes" class="form-control rounded-3" placeholder="z. B. Bevorzugt Fahrstunden am Vormittag" value="<?= htmlspecialchars((string) ($customer['notes'] ?? '')) ?>">
+                                    <!-- AUFKLAPPBARER BEREICH AM SCHLUSS: THEORIE BESTANDEN (MIT DATUMSANGABE) -->
+                                    <div class="col-12">
+                                        <div class="accordion" id="theoryAccordion">
+                                            <div class="accordion-item rounded-3 border overflow-hidden">
+                                                <h2 class="accordion-header" id="headingTheory">
+                                                    <button class="accordion-button collapsed bg-light text-dark fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTheory" aria-expanded="false" aria-controls="collapseTheory">
+                                                        <i class="bi bi-patch-check-fill text-warning me-2 fs-5"></i>
+                                                        Theorie Bestanden (mit Datumsangabe)
+                                                        <?php if (!empty($customer['theory_passed'])): ?>
+                                                            <span class="badge bg-success ms-2 small">Bestanden</span>
+                                                        <?php endif; ?>
+                                                    </button>
+                                                </h2>
+                                                <div id="collapseTheory" class="accordion-collapse collapse" aria-labelledby="headingTheory" data-bs-parent="#theoryAccordion">
+                                                    <div class="accordion-body bg-white p-3 p-md-4">
+                                                        <div class="row g-3">
+                                                            <!-- Checkbox & Datumsangabe -->
+                                                            <div class="col-12 col-md-6">
+                                                                <div class="form-check pt-2">
+                                                                    <input class="form-check-input" type="checkbox" name="theory_passed" value="1" id="theoryPassedCheck" <?= !empty($customer['theory_passed']) ? 'checked' : '' ?>>
+                                                                    <label class="form-check-label fw-semibold text-dark" for="theoryPassedCheck">
+                                                                        Theorieprüfung Schifffahrtsamt bestanden
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-12 col-md-6">
+                                                                <label class="form-label small fw-semibold text-dark mb-1">
+                                                                    Datum Theorieprüfung (mit Datumsangabe)
+                                                                </label>
+                                                                <input type="date" name="theory_passed_at" class="form-control rounded-3" value="<?= htmlspecialchars((string) ($customer['theory_passed_at'] ?? '')) ?>">
+                                                            </div>
+
+                                                            <!-- FABER: Fahrberechtigungs-Register -->
+                                                            <div class="col-12 col-md-4">
+                                                                <label class="form-label small fw-semibold text-dark mb-1">
+                                                                    FABER: <span class="text-danger">*</span>
+                                                                </label>
+                                                                <input type="text" name="faber" class="form-control rounded-3 font-monospace" placeholder="z. B. 123.456.789" value="<?= htmlspecialchars((string) ($customer['faber'] ?? $customer['license_number'] ?? '')) ?>">
+                                                                <div class="form-text" style="font-size: 0.70rem;">Fahrberechtigungs-Register Nr.</div>
+                                                            </div>
+
+                                                            <!-- PIN: Persönliche Identifikationsnummer -->
+                                                            <div class="col-12 col-md-4">
+                                                                <label class="form-label small fw-semibold text-dark mb-1">
+                                                                    PIN: <span class="text-danger">*</span>
+                                                                </label>
+                                                                <input type="text" name="pin" class="form-control rounded-3 font-monospace" placeholder="z. B. 7841" value="<?= htmlspecialchars((string) ($customer['pin'] ?? '')) ?>">
+                                                                <div class="form-text" style="font-size: 0.70rem;">Persönliche Identifikationsnummer</div>
+                                                            </div>
+
+                                                            <!-- PID: Personen-Identifikator -->
+                                                            <div class="col-12 col-md-4">
+                                                                <label class="form-label small fw-semibold text-dark mb-1">
+                                                                    PID: <span class="text-danger">*</span>
+                                                                </label>
+                                                                <input type="text" name="pid" class="form-control rounded-3 font-monospace" placeholder="z. B. CHE-123.456.7" value="<?= htmlspecialchars((string) ($customer['pid'] ?? '')) ?>">
+                                                                <div class="form-text" style="font-size: 0.70rem;">Personen-Identifikator (Schifffahrtsamt)</div>
+                                                            </div>
+
+                                                            <div class="col-12">
+                                                                <div class="alert alert-light border small text-muted mb-0">
+                                                                    <i class="bi bi-info-circle me-1"></i>
+                                                                    Die ASA-Daten (FABER, PIN und PID) werden für die offizielle Prüfungsanmeldung bei den Schifffahrtsämtern Luzern (LU), Nidwalden (NW), Schwyz (SZ) und Uri (UR) benötigt.
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                 </div>
                             </div>
 
                             <div class="modal-footer border-top bg-light px-4 py-3">
-                                <button type="button" class="btn btn-secondary rounded-pill btn-sm px-3" data-bs-dismiss="modal">Abbrechen</button>
-                                <button type="submit" class="btn btn-warning text-dark rounded-pill btn-sm px-4 fw-bold shadow-sm">
+                                <button type="button" class="btn btn-outline-secondary rounded-3 btn-sm px-3" data-bs-dismiss="modal">Abbrechen</button>
+                                <button type="submit" class="btn btn-dark rounded-3 btn-sm px-4 fw-bold shadow-sm">
                                     <i class="bi bi-save me-1"></i> Profilangaben speichern &rarr;
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
+            </div>
             </div>
 
         <?php else: ?>
@@ -1039,6 +1163,34 @@ ob_start();
         }
     }, 1000);
 })();
+
+// Kalender-Feed URL in Zwischenablage kopieren
+function copyCalendarFeedUrl(btn) {
+    const el = document.getElementById('calendarFeedUrl');
+    if (!el) return;
+    const text = el.textContent.trim();
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function() {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2 text-success me-1"></i> Kopiert!';
+            btn.classList.remove('btn-dark');
+            btn.classList.add('btn-success');
+            setTimeout(function() {
+                btn.innerHTML = orig;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-dark');
+            }, 3000);
+        });
+    } else {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        alert('Kalender-Link in Zwischenablage kopiert!');
+    }
+}
 </script>
 
 <?php

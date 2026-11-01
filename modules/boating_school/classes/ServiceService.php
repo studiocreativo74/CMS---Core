@@ -99,4 +99,71 @@ final class ServiceService
     {
         return BoatingSchoolRepository::toggleServiceStatus($id);
     }
+
+    /**
+     * Klont ein Angebot samt allen hinterlegten Preisstufen (1-Click Duplikation).
+     */
+    public static function duplicate(int $id): int
+    {
+        return BoatingSchoolRepository::duplicateService($id);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getPriceOptions(int $serviceId): array
+    {
+        return BoatingSchoolRepository::getPriceOptions($serviceId);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $options
+     */
+    public static function savePriceOptions(int $serviceId, array $options): bool
+    {
+        return BoatingSchoolRepository::savePriceOptions($serviceId, $options);
+    }
+
+    /**
+     * Validiert einen Rabatt- oder Gutscheincode serverseitig.
+     *
+     * @return array{valid: bool, discount_amount: float, final_amount: float, message: string, promo: array<string, mixed>|null}
+     */
+    public static function validatePromo(string $code, float $orderAmount, ?int $serviceId = null): array
+    {
+        return BoatingSchoolRepository::validatePromoCode($code, $orderAmount, $serviceId);
+    }
+
+    /**
+     * Führt den Store-Checkout aus: Legt bs_customer_subscriptions an und zählt Gutscheinnutzung hoch.
+     *
+     * @param array<string, mixed> $data
+     * @return array{success: bool, order_id: string, subscription_id: int, message: string}
+     */
+    public static function checkout(array $data): array
+    {
+        $orderId = !empty($data['order_id']) ? (string) $data['order_id'] : ('CB-ORD-' . rand(100000, 999999));
+        $data['order_id'] = $orderId;
+        
+        $subId = BoatingSchoolRepository::createCustomerSubscription($data);
+        if ($subId <= 0) {
+            return [
+                'success'         => false,
+                'order_id'        => $orderId,
+                'subscription_id' => 0,
+                'message'         => 'Fehler beim Erstellen des Abonnements.',
+            ];
+        }
+
+        if (!empty($data['promo_code'])) {
+            BoatingSchoolRepository::recordPromoCodeUsage((string) $data['promo_code']);
+        }
+
+        return [
+            'success'         => true,
+            'order_id'        => $orderId,
+            'subscription_id' => $subId,
+            'message'         => 'Abonnement / Guthaben erfolgreich gebucht.',
+        ];
+    }
 }
