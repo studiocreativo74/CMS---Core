@@ -88,7 +88,13 @@ final class BoatingPermissions
 
         try {
             // Prüfen ob permissions-Tabelle existiert
-            $check = DB::fetchValue("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'permissions'");
+            $check = 0;
+            if (method_exists('DB', 'fetchValue')) {
+                $check = (int) DB::fetchValue("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'permissions'");
+            } else {
+                $row = DB::fetchOne("SELECT COUNT(*) AS c FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'permissions'");
+                $check = (int) ($row['c'] ?? 0);
+            }
             if ((int) $check === 0) {
                 return;
             }

@@ -51,10 +51,18 @@ class RateLimiter
         $cutoff = time() - $decaySeconds;
 
         try {
-            $count = (int) DB::fetchValue(
-                "SELECT COUNT(*) FROM `core_rate_limits` WHERE `rate_key` = :k AND `action` = :a AND `created_at` > :c",
-                ['k' => $key, 'a' => $action, 'c' => $cutoff]
-            );
+            if (method_exists('DB', 'fetchValue')) {
+                $count = (int) DB::fetchValue(
+                    "SELECT COUNT(*) FROM `core_rate_limits` WHERE `rate_key` = :k AND `action` = :a AND `created_at` > :c",
+                    ['k' => $key, 'a' => $action, 'c' => $cutoff]
+                );
+            } else {
+                $row = DB::fetchOne(
+                    "SELECT COUNT(*) AS c FROM `core_rate_limits` WHERE `rate_key` = :k AND `action` = :a AND `created_at` > :c",
+                    ['k' => $key, 'a' => $action, 'c' => $cutoff]
+                );
+                $count = (int) ($row['c'] ?? 0);
+            }
             return $count < $maxAttempts;
         } catch (\Throwable $e) {
             // Fallback auf Session

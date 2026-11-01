@@ -94,10 +94,18 @@ final class BoatingMigrationManager
     public static function tableExists(string $tableName): bool
     {
         try {
-            $count = (int) DB::fetchValue(
-                "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :tbl",
-                ['tbl' => $tableName]
-            );
+            if (method_exists('DB', 'fetchValue')) {
+                $count = (int) DB::fetchValue(
+                    "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :tbl",
+                    ['tbl' => $tableName]
+                );
+            } else {
+                $row = DB::fetchOne(
+                    "SELECT COUNT(*) AS c FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :tbl",
+                    ['tbl' => $tableName]
+                );
+                $count = (int) ($row['c'] ?? 0);
+            }
             return $count > 0;
         } catch (\Throwable $e) {
             return false;
@@ -110,10 +118,18 @@ final class BoatingMigrationManager
     public static function columnExists(string $tableName, string $columnName): bool
     {
         try {
-            $count = (int) DB::fetchValue(
-                "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :tbl AND COLUMN_NAME = :col",
-                ['tbl' => $tableName, 'col' => $columnName]
-            );
+            if (method_exists('DB', 'fetchValue')) {
+                $count = (int) DB::fetchValue(
+                    "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :tbl AND COLUMN_NAME = :col",
+                    ['tbl' => $tableName, 'col' => $columnName]
+                );
+            } else {
+                $row = DB::fetchOne(
+                    "SELECT COUNT(*) AS c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :tbl AND COLUMN_NAME = :col",
+                    ['tbl' => $tableName, 'col' => $columnName]
+                );
+                $count = (int) ($row['c'] ?? 0);
+            }
             return $count > 0;
         } catch (\Throwable $e) {
             return false;
@@ -156,12 +172,22 @@ final class BoatingMigrationManager
 
         // Fremdschlüssel hinzufügen falls noch nicht vorhanden
         try {
-            $fkExists = (int) DB::fetchValue("
-                SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
-                WHERE CONSTRAINT_SCHEMA = DATABASE()
-                  AND TABLE_NAME = 'bs_coach_timesheet_closures'
-                  AND CONSTRAINT_NAME = 'fk_bs_closure_inst'
-            ");
+            if (method_exists('DB', 'fetchValue')) {
+                $fkExists = (int) DB::fetchValue("
+                    SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+                    WHERE CONSTRAINT_SCHEMA = DATABASE()
+                      AND TABLE_NAME = 'bs_coach_timesheet_closures'
+                      AND CONSTRAINT_NAME = 'fk_bs_closure_inst'
+                ");
+            } else {
+                $row = DB::fetchOne("
+                    SELECT COUNT(*) AS c FROM information_schema.TABLE_CONSTRAINTS
+                    WHERE CONSTRAINT_SCHEMA = DATABASE()
+                      AND TABLE_NAME = 'bs_coach_timesheet_closures'
+                      AND CONSTRAINT_NAME = 'fk_bs_closure_inst'
+                ");
+                $fkExists = (int) ($row['c'] ?? 0);
+            }
             if ($fkExists === 0 && self::tableExists('bs_instructors')) {
                 DB::execute("
                     ALTER TABLE `bs_coach_timesheet_closures`
@@ -455,7 +481,13 @@ final class BoatingMigrationManager
             ");
 
             // Beispiel-Codes initial anlegen falls Tabelle noch leer
-            $count = (int) DB::fetchValue("SELECT COUNT(*) FROM `bs_promo_codes`");
+            $count = 0;
+            if (method_exists('DB', 'fetchValue')) {
+                $count = (int) DB::fetchValue("SELECT COUNT(*) FROM `bs_promo_codes`");
+            } else {
+                $row = DB::fetchOne("SELECT COUNT(*) AS c FROM `bs_promo_codes`");
+                $count = (int) ($row['c'] ?? 0);
+            }
             if ($count === 0) {
                 DB::execute("
                     INSERT INTO `bs_promo_codes` 

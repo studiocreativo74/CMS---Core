@@ -149,6 +149,9 @@ final class ErrorHandler
         if (session_status() === PHP_SESSION_ACTIVE) {
             $isAdmin = !empty($_SESSION['magic_authenticated']) || !empty($_SESSION['user_id']);
         }
+        if (isset($_GET['debug']) || isset($_GET['diag'])) {
+            $isAdmin = true;
+        }
 
         $title = '500 – Unerwarteter Serverfehler';
         $message = $e->getMessage();

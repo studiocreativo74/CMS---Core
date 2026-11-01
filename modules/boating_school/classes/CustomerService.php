@@ -260,7 +260,10 @@ class CustomerService
      */
     public static function getCustomerSubscriptions(int $customerId): array
     {
-        return BoatingSchoolRepository::getSubscriptionsByCustomerId($customerId);
+        if (class_exists('BoatingSchoolRepository') && method_exists('BoatingSchoolRepository', 'getSubscriptionsByCustomerId')) {
+            return BoatingSchoolRepository::getSubscriptionsByCustomerId($customerId);
+        }
+        return [];
     }
 
     /**
@@ -268,7 +271,7 @@ class CustomerService
      */
     public static function getSubscriptionsByCustomerId(int $customerId): array
     {
-        return BoatingSchoolRepository::getSubscriptionsByCustomerId($customerId);
+        return self::getCustomerSubscriptions($customerId);
     }
 
     /**
@@ -770,27 +773,5 @@ class CustomerService
             'errors'   => $errors,
         ];
     }
-
-    /**
-     * Liefert Abonnements eines Kunden
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public static function getCustomerSubscriptions(int $customerId): array
-    {
-        if (class_exists('BoatingSchoolRepository') && method_exists('BoatingSchoolRepository', 'getSubscriptionsByCustomerId')) {
-            return BoatingSchoolRepository::getSubscriptionsByCustomerId($customerId);
-        }
-        return [];
-    }
-
-    /**
-     * Alias für getCustomerSubscriptions
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public static function getSubscriptionsByCustomerId(int $customerId): array
-    {
-        return self::getCustomerSubscriptions($customerId);
-    }
 }
+

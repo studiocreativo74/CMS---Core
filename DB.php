@@ -102,6 +102,14 @@ class DB
         return $stmt->rowCount();
     }
 
+    public static function fetchValue(string $sql, array $params = []): mixed
+    {
+        $stmt = self::query($sql, $params);
+        $val  = $stmt->fetchColumn();
+
+        return $val === false ? null : $val;
+    }
+
     public static function lastInsertId(): string
     {
         return self::getConnection()->lastInsertId();
