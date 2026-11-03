@@ -56,7 +56,9 @@ import {
   Trash2,
   Edit3,
   Search,
-  Gift
+  Gift,
+  GripVertical,
+  AlertCircle
 } from 'lucide-react';
 
 // --- Datentypen & Mock-Daten der Bootsfahrschule & CMS ---
@@ -923,6 +925,111 @@ export default function App() {
   const [promoFormValidFrom, setPromoFormValidFrom] = useState<string>('2026-01-01');
   const [promoFormValidUntil, setPromoFormValidUntil] = useState<string>('2026-12-31');
   const [promoFormIsActive, setPromoFormIsActive] = useState<boolean>(true);
+
+  // --- STATE: DRAG & DROP FÜR DATENLISTEN ---
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+  const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
+  const [draggedCategory, setDraggedCategory] = useState<'service' | 'promo' | 'price_option' | null>(null);
+
+  // --- STATE: LÖSCH-BESTÄTIGUNGS-MODAL (SICHERHEITSABFRAGE) ---
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    itemName?: string;
+    confirmLabel?: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: 'Wirklich löschen?',
+    message: 'Diese Aktion kann nicht rückgängig gemacht werden.',
+    onConfirm: () => {}
+  });
+
+  const requestDelete = (opts: {
+    title?: string;
+    message: string;
+    itemName?: string;
+    confirmLabel?: string;
+    onConfirm: () => void;
+  }) => {
+    setDeleteConfirmModal({
+      isOpen: true,
+      title: opts.title || 'Löschen bestätigen',
+      message: opts.message,
+      itemName: opts.itemName,
+      confirmLabel: opts.confirmLabel || 'Ja, unwiderruflich löschen',
+      onConfirm: opts.onConfirm
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteConfirmModal(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // Drag & Drop Event Handler
+  const handleDragStart = (e: React.DragEvent, index: number, category: 'service' | 'promo' | 'price_option') => {
+    setDraggedItemIndex(index);
+    setDraggedCategory(category);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', `${category}:${index}`);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number, category: 'service' | 'promo' | 'price_option') => {
+    if (draggedCategory !== category) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverItemIndex !== index) {
+      setDragOverItemIndex(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number, category: 'service' | 'promo' | 'price_option') => {
+    e.preventDefault();
+    if (draggedCategory !== category || draggedItemIndex === null || draggedItemIndex === targetIndex) {
+      setDraggedItemIndex(null);
+      setDragOverItemIndex(null);
+      setDraggedCategory(null);
+      return;
+    }
+
+    if (category === 'service') {
+      setServices(prev => {
+        const updated = [...prev];
+        const [moved] = updated.splice(draggedItemIndex, 1);
+        updated.splice(targetIndex, 0, moved);
+        return updated;
+      });
+      setMagicFeedback('Reihenfolge der Angebote erfolgreich per Drag & Drop geändert.');
+      setTimeout(() => setMagicFeedback(null), 3000);
+    } else if (category === 'promo') {
+      setPromoCodes(prev => {
+        const updated = [...prev];
+        const [moved] = updated.splice(draggedItemIndex, 1);
+        updated.splice(targetIndex, 0, moved);
+        return updated;
+      });
+      setMagicFeedback('Reihenfolge der Gutscheincodes erfolgreich per Drag & Drop geändert.');
+      setTimeout(() => setMagicFeedback(null), 3000);
+    } else if (category === 'price_option') {
+      setServiceFormPriceOptions(prev => {
+        const updated = [...prev];
+        const [moved] = updated.splice(draggedItemIndex, 1);
+        updated.splice(targetIndex, 0, moved);
+        return updated.map((po, idx) => ({ ...po, sort_order: idx + 1 }));
+      });
+    }
+
+    setDraggedItemIndex(null);
+    setDragOverItemIndex(null);
+    setDraggedCategory(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItemIndex(null);
+    setDragOverItemIndex(null);
+    setDraggedCategory(null);
+  };
 
   // Auto-Redirect Timer Effekt: Zählt herunter und wechselt bei 0 automatisch auf Login
   useEffect(() => {
@@ -2143,9 +2250,13 @@ export default function App() {
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
                           {promoCodes.length} Codes
                         </span>
+                        <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <GripVertical className="w-3 h-3 text-slate-400" />
+                          Per Drag &amp; Drop sortierbar
+                        </span>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Codes anlegen, Rabatte steuern und Einlösekontingente überwachen.
+                        Codes anlegen, Rabatte steuern, Reihenfolge per Klick &amp; Ziehen anpassen und Kontingente überwachen.
                       </p>
                     </div>
 
@@ -2173,6 +2284,7 @@ export default function App() {
                     <table className="w-full text-left text-xs">
                       <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
                         <tr>
+                          <th className="p-3.5 w-10 text-center">Pos</th>
                           <th className="p-3.5">Code</th>
                           <th className="p-3.5">Rabattwert</th>
                           <th className="p-3.5">Bedingung</th>
@@ -2183,94 +2295,128 @@ export default function App() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {promoCodes.map(promo => (
-                          <tr key={promo.id} className="hover:bg-slate-50/80 transition">
-                            <td className="p-3.5">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono font-bold text-slate-900 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-lg text-xs">
-                                  {promo.code}
+                        {promoCodes.map((promo, idx) => {
+                          const isBeingDragged = draggedCategory === 'promo' && draggedItemIndex === idx;
+                          const isDragOver = draggedCategory === 'promo' && dragOverItemIndex === idx && draggedItemIndex !== idx;
+
+                          return (
+                            <tr
+                              key={promo.id}
+                              draggable={true}
+                              onDragStart={(e) => handleDragStart(e, idx, 'promo')}
+                              onDragOver={(e) => handleDragOver(e, idx, 'promo')}
+                              onDrop={(e) => handleDrop(e, idx, 'promo')}
+                              onDragEnd={handleDragEnd}
+                              className={`transition cursor-default ${
+                                isBeingDragged
+                                  ? 'opacity-30 bg-amber-50/70 border-dashed border-2 border-amber-400'
+                                  : isDragOver
+                                  ? 'bg-amber-50/60 ring-2 ring-amber-400 ring-inset'
+                                  : 'hover:bg-slate-50/80'
+                              }`}
+                            >
+                              <td className="p-3.5 text-center">
+                                <div
+                                  className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-800 p-1 rounded hover:bg-slate-200/60 inline-flex items-center justify-center transition"
+                                  title="Gutschein per Drag & Drop verschieben"
+                                >
+                                  <GripVertical className="w-4 h-4" />
+                                </div>
+                              </td>
+                              <td className="p-3.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-bold text-slate-900 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-lg text-xs">
+                                    {promo.code}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(promo.code);
+                                      setMagicFeedback(`Code "${promo.code}" kopiert!`);
+                                      setTimeout(() => setMagicFeedback(null), 3000);
+                                    }}
+                                    className="text-slate-400 hover:text-slate-700"
+                                    title="Code kopieren"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                {promo.description && (
+                                  <p className="text-[11px] text-slate-500 mt-0.5 max-w-xs truncate">{promo.description}</p>
+                                )}
+                              </td>
+                              <td className="p-3.5">
+                                <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                                  {promo.discount_type === 'percentage'
+                                    ? `-${promo.discount_value}%`
+                                    : `-CHF ${Number(promo.discount_value).toFixed(2)}`}
                                 </span>
+                              </td>
+                              <td className="p-3.5 text-slate-600">
+                                {promo.min_order_amount ? `Ab CHF ${promo.min_order_amount}.-` : 'Kein Mindestwert'}
+                              </td>
+                              <td className="p-3.5">
+                                <span className="font-semibold text-slate-800">{promo.used_count}</span>
+                                <span className="text-slate-400"> / {promo.max_uses ?? '∞'}</span>
+                              </td>
+                              <td className="p-3.5 text-slate-500">
+                                {promo.valid_until ? (
+                                  <span>bis {promo.valid_until}</span>
+                                ) : (
+                                  <span className="text-slate-400">Unbegrenzt</span>
+                                )}
+                              </td>
+                              <td className="p-3.5">
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    navigator.clipboard.writeText(promo.code);
-                                    setMagicFeedback(`Code "${promo.code}" kopiert!`);
-                                    setTimeout(() => setMagicFeedback(null), 3000);
+                                    setPromoCodes(prev =>
+                                      prev.map(p => (p.id === promo.id ? { ...p, is_active: !p.is_active } : p))
+                                    );
                                   }}
-                                  className="text-slate-400 hover:text-slate-700"
-                                  title="Code kopieren"
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition cursor-pointer ${
+                                    promo.is_active
+                                      ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                  }`}
                                 >
-                                  <Copy className="w-3.5 h-3.5" />
+                                  {promo.is_active ? 'Aktiv' : 'Inaktiv'}
                                 </button>
-                              </div>
-                              {promo.description && (
-                                <p className="text-[11px] text-slate-500 mt-0.5 max-w-xs truncate">{promo.description}</p>
-                              )}
-                            </td>
-                            <td className="p-3.5">
-                              <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                                {promo.discount_type === 'percentage'
-                                  ? `-${promo.discount_value}%`
-                                  : `-CHF ${Number(promo.discount_value).toFixed(2)}`}
-                              </span>
-                            </td>
-                            <td className="p-3.5 text-slate-600">
-                              {promo.min_order_amount ? `Ab CHF ${promo.min_order_amount}.-` : 'Kein Mindestwert'}
-                            </td>
-                            <td className="p-3.5">
-                              <span className="font-semibold text-slate-800">{promo.used_count}</span>
-                              <span className="text-slate-400"> / {promo.max_uses ?? '∞'}</span>
-                            </td>
-                            <td className="p-3.5 text-slate-500">
-                              {promo.valid_until ? (
-                                <span>bis {promo.valid_until}</span>
-                              ) : (
-                                <span className="text-slate-400">Unbegrenzt</span>
-                              )}
-                            </td>
-                            <td className="p-3.5">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setPromoCodes(prev =>
-                                    prev.map(p => (p.id === promo.id ? { ...p, is_active: !p.is_active } : p))
-                                  );
-                                }}
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition cursor-pointer ${
-                                  promo.is_active
-                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                                }`}
-                              >
-                                {promo.is_active ? 'Aktiv' : 'Inaktiv'}
-                              </button>
-                            </td>
-                            <td className="p-3.5 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => openEditPromoModal(promo)}
-                                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                                  title="Bearbeiten"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (window.confirm(`Gutscheincode "${promo.code}" wirklich löschen?`)) {
-                                      setPromoCodes(prev => prev.filter(p => p.id !== promo.id));
-                                    }
-                                  }}
-                                  className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
-                                  title="Löschen"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td className="p-3.5 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditPromoModal(promo)}
+                                    className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                                    title="Bearbeiten"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      requestDelete({
+                                        title: 'Gutscheincode löschen',
+                                        message: `Möchtest du den Gutscheincode "${promo.code}" wirklich unwiderruflich löschen? Kunden können ihn danach nicht mehr anwenden.`,
+                                        itemName: promo.code,
+                                        onConfirm: () => {
+                                          setPromoCodes(prev => prev.filter(p => p.id !== promo.id));
+                                          setMagicFeedback(`Gutscheincode "${promo.code}" wurde gelöscht.`);
+                                          setTimeout(() => setMagicFeedback(null), 3000);
+                                        }
+                                      });
+                                    }}
+                                    className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                    title="Löschen"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -2285,9 +2431,13 @@ export default function App() {
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                           {services.length} Angebote
                         </span>
+                        <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <GripVertical className="w-3 h-3 text-slate-400" />
+                          Per Drag &amp; Drop sortierbar
+                        </span>
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Kurse, Zeitoptionen (60/90 Min), Mehrfach-Abos und Bootsmieten verwalten.
+                        Kurse, Zeitoptionen (60/90 Min), Mehrfach-Abos und Bootsmieten verwalten &amp; Reihenfolge festlegen.
                       </p>
                     </div>
 
@@ -2315,6 +2465,7 @@ export default function App() {
                     <table className="w-full text-left text-xs">
                       <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
                         <tr>
+                          <th className="p-3.5 w-10 text-center">Pos</th>
                           <th className="p-3.5">Angebot &amp; Kategorie</th>
                           <th className="p-3.5">Kategorie / Art</th>
                           <th className="p-3.5">Preis- &amp; Zeitoptionen</th>
@@ -2324,83 +2475,129 @@ export default function App() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {services.slice(0, 6).map(srv => (
-                          <tr key={srv.id} className="hover:bg-slate-50/80 transition">
-                            <td className="p-3.5">
-                              <div className="flex items-center gap-3">
-                                <img
-                                  src={srv.image_url}
-                                  alt={srv.name}
-                                  className="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0"
-                                />
-                                <div>
-                                  <div className="font-bold text-slate-900">{srv.name}</div>
-                                  <div className="text-[11px] text-slate-500 truncate max-w-xs">{srv.target_audience}</div>
+                        {services.map((srv, idx) => {
+                          const isBeingDragged = draggedCategory === 'service' && draggedItemIndex === idx;
+                          const isDragOver = draggedCategory === 'service' && dragOverItemIndex === idx && draggedItemIndex !== idx;
+
+                          return (
+                            <tr
+                              key={srv.id}
+                              draggable={true}
+                              onDragStart={(e) => handleDragStart(e, idx, 'service')}
+                              onDragOver={(e) => handleDragOver(e, idx, 'service')}
+                              onDrop={(e) => handleDrop(e, idx, 'service')}
+                              onDragEnd={handleDragEnd}
+                              className={`transition cursor-default ${
+                                isBeingDragged
+                                  ? 'opacity-30 bg-amber-50/70 border-dashed border-2 border-amber-400'
+                                  : isDragOver
+                                  ? 'bg-amber-50/60 ring-2 ring-amber-400 ring-inset'
+                                  : 'hover:bg-slate-50/80'
+                              }`}
+                            >
+                              <td className="p-3.5 text-center">
+                                <div
+                                  className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-800 p-1 rounded hover:bg-slate-200/60 inline-flex items-center justify-center transition"
+                                  title="Angebot per Drag & Drop verschieben"
+                                >
+                                  <GripVertical className="w-4 h-4" />
                                 </div>
-                              </div>
-                            </td>
-                            <td className="p-3.5">
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                                {srv.category || srv.offer_type}
-                              </span>
-                            </td>
-                            <td className="p-3.5">
-                              <div className="flex flex-wrap gap-1">
-                                {srv.price_options.map(po => (
-                                  <span key={po.id} className="px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200 font-semibold text-[10px]">
-                                    CHF {po.price}.- ({po.duration} Min)
-                                  </span>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="p-3.5">
-                              {srv.is_subscription ? (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">
-                                  {srv.sessions_count}er Abo
+                              </td>
+                              <td className="p-3.5">
+                                <div className="flex items-center gap-3">
+                                  <img
+                                    src={srv.image_url}
+                                    alt={srv.name}
+                                    className="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0"
+                                  />
+                                  <div>
+                                    <div className="font-bold text-slate-900">{srv.name}</div>
+                                    <div className="text-[11px] text-slate-500 truncate max-w-xs">{srv.target_audience}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-3.5">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                  {srv.category || srv.offer_type}
                                 </span>
-                              ) : (
-                                <span className="text-slate-400 text-[11px]">Einzellektion</span>
-                              )}
-                            </td>
-                            <td className="p-3.5">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setServices(prev =>
-                                    prev.map(s => (s.id === srv.id ? { ...s, is_active: !s.is_active } : s))
-                                  );
-                                }}
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition cursor-pointer ${
-                                  srv.is_active
-                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                                }`}
-                              >
-                                {srv.is_active ? 'Aktiv' : 'Inaktiv'}
-                              </button>
-                            </td>
-                            <td className="p-3.5 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
+                              </td>
+                              <td className="p-3.5">
+                                <div className="flex flex-wrap gap-1">
+                                  {srv.price_options.map(po => (
+                                    <span key={po.id} className="px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200 font-semibold text-[10px]">
+                                      CHF {po.price}.- ({po.duration} Min)
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="p-3.5">
+                                {srv.is_subscription ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">
+                                    {srv.sessions_count}er Abo
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 text-[11px]">Einzellektion</span>
+                                )}
+                              </td>
+                              <td className="p-3.5">
                                 <button
                                   type="button"
-                                  onClick={() => handleDuplicateService(srv.id)}
-                                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                                  title="Duplizieren (1-Klick Klon)"
+                                  onClick={() => {
+                                    setServices(prev =>
+                                      prev.map(s => (s.id === srv.id ? { ...s, is_active: !s.is_active } : s))
+                                    );
+                                  }}
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition cursor-pointer ${
+                                    srv.is_active
+                                      ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                  }`}
                                 >
-                                  <Copy className="w-3.5 h-3.5" />
+                                  {srv.is_active ? 'Aktiv' : 'Inaktiv'}
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => openEditServiceModal(srv)}
-                                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-                                  title="Bearbeiten"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td className="p-3.5 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDuplicateService(srv.id)}
+                                    className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                                    title="Duplizieren (1-Klick Klon)"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditServiceModal(srv)}
+                                    className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                                    title="Bearbeiten"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      requestDelete({
+                                        title: 'Angebot löschen',
+                                        message: `Möchtest du das Angebot "${srv.name}" und alle hinterlegten Zeit- und Preisstufen wirklich unwiderruflich löschen?`,
+                                        itemName: srv.name,
+                                        onConfirm: () => {
+                                          setServices(prev => prev.filter(s => s.id !== srv.id));
+                                          setMagicFeedback(`Angebot "${srv.name}" wurde gelöscht.`);
+                                          setTimeout(() => setMagicFeedback(null), 3000);
+                                        }
+                                      });
+                                    }}
+                                    className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                    title="Löschen"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -2816,7 +3013,10 @@ export default function App() {
 
                 {/* Services Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {services.map(service => {
+                  {services.map((service, index) => {
+                    const isBeingDragged = draggedCategory === 'service' && draggedItemIndex === index;
+                    const isDragOver = draggedCategory === 'service' && dragOverItemIndex === index && draggedItemIndex !== index;
+
                     const typeBadgeClasses = {
                       bootsfahrschule: 'bg-sky-100 text-sky-800 border-sky-200',
                       coaching: 'bg-emerald-100 text-emerald-800 border-emerald-200',
@@ -2834,8 +3034,17 @@ export default function App() {
                     return (
                       <div
                         key={service.id}
+                        draggable={true}
+                        onDragStart={(e) => handleDragStart(e, index, 'service')}
+                        onDragOver={(e) => handleDragOver(e, index, 'service')}
+                        onDrop={(e) => handleDrop(e, index, 'service')}
+                        onDragEnd={handleDragEnd}
                         className={`bg-white rounded-2xl border shadow-xs overflow-hidden flex flex-col justify-between transition hover:shadow-md ${
-                          service.is_active ? 'border-slate-200' : 'border-slate-200 opacity-60 bg-slate-50'
+                          isBeingDragged
+                            ? 'opacity-30 border-dashed border-2 border-amber-500 scale-[0.98]'
+                            : isDragOver
+                            ? 'ring-2 ring-amber-500 ring-offset-2'
+                            : service.is_active ? 'border-slate-200' : 'border-slate-200 opacity-60 bg-slate-50'
                         }`}
                       >
                         <div>
@@ -2846,7 +3055,15 @@ export default function App() {
                               alt={service.name}
                               className="w-full h-full object-cover"
                             />
-                            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                            {/* Drag Handle Top Bar */}
+                            <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap">
+                              <div
+                                className="cursor-grab active:cursor-grabbing bg-white/95 backdrop-blur-md px-2 py-0.5 rounded-lg text-slate-700 hover:text-slate-900 flex items-center gap-1 text-[11px] font-bold border border-slate-200 shadow-xs"
+                                title="Position per Drag & Drop verschieben"
+                              >
+                                <GripVertical className="w-3.5 h-3.5 text-slate-400" />
+                                <span>#{index + 1}</span>
+                              </div>
                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-xs backdrop-blur-md bg-white/95 ${typeBadgeClasses}`}>
                                 {typeBadgeLabel}
                               </span>
@@ -2943,27 +3160,7 @@ export default function App() {
 
                             <button
                               type="button"
-                              onClick={() => {
-                                setEditingServiceId(service.id);
-                                setServiceFormName(service.name);
-                                setServiceFormDesc(service.description);
-                                setServiceFormType(service.offer_type);
-                                setServiceFormCategory(service.category || (service.offer_type === 'bootsfahrschule' ? 'Praxisunterricht (Motorboot Kat. A)' : service.offer_type === 'coaching' ? 'Spezial-Coaching' : service.offer_type === 'mieten' ? 'Bootsmiete / Charter' : 'Gutschein & Weiteres'));
-                                setServiceFormTarget(service.target_audience);
-                                setServiceFormImage(service.image_url);
-                                setServiceFormIsSubscription(service.is_subscription);
-                                setServiceFormSessionsCount(service.sessions_count);
-                                setServiceFormLocations(service.location_ids);
-                                setServiceFormPriceOptions(
-                                  service.price_options.map(po => ({
-                                    duration: po.duration,
-                                    price: po.price,
-                                    sessions_count: po.sessions_count,
-                                    sort_order: po.sort_order
-                                  }))
-                                );
-                                setShowServiceModal(true);
-                              }}
+                              onClick={() => openEditServiceModal(service)}
                               className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition"
                               title="Bearbeiten"
                             >
@@ -2973,13 +3170,18 @@ export default function App() {
                             <button
                               type="button"
                               onClick={() => {
-                                if (window.confirm(`Möchten Sie das Angebot "${service.name}" wirklich löschen?`)) {
-                                  setServices(prev => prev.filter(s => s.id !== service.id));
-                                  setMagicFeedback(`Angebot "${service.name}" gelöscht.`);
-                                  setTimeout(() => setMagicFeedback(null), 3000);
-                                }
+                                requestDelete({
+                                  title: 'Angebot löschen',
+                                  message: `Möchtest du das Angebot "${service.name}" und alle hinterlegten Zeit- und Preisstufen wirklich unwiderruflich löschen?`,
+                                  itemName: service.name,
+                                  onConfirm: () => {
+                                    setServices(prev => prev.filter(s => s.id !== service.id));
+                                    setMagicFeedback(`Angebot "${service.name}" wurde gelöscht.`);
+                                    setTimeout(() => setMagicFeedback(null), 3000);
+                                  }
+                                });
                               }}
-                              className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition"
+                              className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                               title="Löschen"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -3002,6 +3204,10 @@ export default function App() {
                       <h1 className="text-2xl font-bold text-slate-900">Gutschein- &amp; Promo-Code Engine</h1>
                       <span className="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-emerald-200">
                         {promoCodes.length} Rabattcodes aktiv
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1 border border-slate-200">
+                        <GripVertical className="w-3.5 h-3.5 text-slate-400" />
+                        Per Drag &amp; Drop sortierbar
                       </span>
                     </div>
                     <p className="text-slate-500 text-sm mt-1">
@@ -3037,6 +3243,7 @@ export default function App() {
                     <table className="w-full text-left text-sm text-slate-600">
                       <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
                         <tr>
+                          <th className="p-4 w-12 text-center">Pos</th>
                           <th className="p-4">Code</th>
                           <th className="p-4">Beschreibung</th>
                           <th className="p-4">Rabatt-Typ</th>
@@ -3049,13 +3256,39 @@ export default function App() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {promoCodes.map(promo => (
-                          <tr key={promo.id} className="hover:bg-slate-50 transition">
-                            <td className="p-4 font-mono font-bold text-slate-900 text-sm">
-                              <span className="bg-slate-100 text-slate-900 px-2.5 py-1 rounded-lg border border-slate-300">
-                                {promo.code}
-                              </span>
-                            </td>
+                        {promoCodes.map((promo, idx) => {
+                          const isBeingDragged = draggedCategory === 'promo' && draggedItemIndex === idx;
+                          const isDragOver = draggedCategory === 'promo' && dragOverItemIndex === idx && draggedItemIndex !== idx;
+
+                          return (
+                            <tr
+                              key={promo.id}
+                              draggable={true}
+                              onDragStart={(e) => handleDragStart(e, idx, 'promo')}
+                              onDragOver={(e) => handleDragOver(e, idx, 'promo')}
+                              onDrop={(e) => handleDrop(e, idx, 'promo')}
+                              onDragEnd={handleDragEnd}
+                              className={`transition cursor-default ${
+                                isBeingDragged
+                                  ? 'opacity-30 bg-emerald-50/70 border-dashed border-2 border-emerald-400'
+                                  : isDragOver
+                                  ? 'bg-emerald-50/60 ring-2 ring-emerald-400 ring-inset'
+                                  : 'hover:bg-slate-50'
+                              }`}
+                            >
+                              <td className="p-4 text-center">
+                                <div
+                                  className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-800 p-1 rounded hover:bg-slate-200/60 inline-flex items-center justify-center transition"
+                                  title="Gutscheincode per Drag & Drop verschieben"
+                                >
+                                  <GripVertical className="w-4 h-4" />
+                                </div>
+                              </td>
+                              <td className="p-4 font-mono font-bold text-slate-900 text-sm">
+                                <span className="bg-slate-100 text-slate-900 px-2.5 py-1 rounded-lg border border-slate-300">
+                                  {promo.code}
+                                </span>
+                              </td>
                             <td className="p-4 text-xs text-slate-700 font-medium max-w-xs">
                               {promo.description}
                             </td>
@@ -3130,11 +3363,18 @@ export default function App() {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (window.confirm(`Rabattcode "${promo.code}" wirklich löschen?`)) {
-                                      setPromoCodes(prev => prev.filter(p => p.id !== promo.id));
-                                    }
+                                    requestDelete({
+                                      title: 'Gutscheincode löschen',
+                                      message: `Möchtest du den Gutscheincode "${promo.code}" wirklich unwiderruflich löschen? Kunden können ihn danach nicht mehr anwenden.`,
+                                      itemName: promo.code,
+                                      onConfirm: () => {
+                                        setPromoCodes(prev => prev.filter(p => p.id !== promo.id));
+                                        setMagicFeedback(`Gutscheincode "${promo.code}" wurde gelöscht.`);
+                                        setTimeout(() => setMagicFeedback(null), 3000);
+                                      }
+                                    });
                                   }}
-                                  className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition"
+                                  className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                                   title="Löschen"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -3142,7 +3382,8 @@ export default function App() {
                               </div>
                             </td>
                           </tr>
-                        ))}
+                        );
+                      })}
                       </tbody>
                     </table>
                   </div>
@@ -3533,9 +3774,15 @@ export default function App() {
                     {/* Dynamische Preisoptionen */}
                     <div className="space-y-2 pt-2 border-t border-slate-100">
                       <div className="flex items-center justify-between">
-                        <label className="font-bold text-slate-900 text-xs">
-                          Preis- &amp; Zeitstufen (bs_service_price_options)
-                        </label>
+                        <div className="flex items-center gap-2">
+                          <label className="font-bold text-slate-900 text-xs">
+                            Preis- &amp; Zeitstufen (bs_service_price_options)
+                          </label>
+                          <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1 border border-slate-200">
+                            <GripVertical className="w-3 h-3 text-slate-400" />
+                            Drag &amp; Drop sortierbar
+                          </span>
+                        </div>
                         <button
                           type="button"
                           onClick={() => {
@@ -3544,7 +3791,7 @@ export default function App() {
                               { duration: 90, price: 195.0, sessions_count: serviceFormIsSubscription ? serviceFormSessionsCount : 1, sort_order: prev.length + 1 }
                             ]);
                           }}
-                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1"
+                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Option hinzufügen</span>
@@ -3552,43 +3799,69 @@ export default function App() {
                       </div>
 
                       <div className="space-y-2">
-                        {serviceFormPriceOptions.map((po, idx) => (
-                          <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-xl grid grid-cols-3 gap-3 items-center">
-                            <div>
-                              <label className="text-[10px] text-slate-500 block mb-0.5">Dauer (Minuten)</label>
-                              <select
-                                value={po.duration}
-                                onChange={e => {
-                                  const val = Number(e.target.value);
-                                  setServiceFormPriceOptions(prev => prev.map((p, i) => i === idx ? { ...p, duration: val } : p));
-                                }}
-                                className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold"
-                              >
-                                <option value="60">60 Min (1.0h)</option>
-                                <option value="90">90 Min (1.5h)</option>
-                                <option value="120">120 Min (2.0h)</option>
-                                <option value="180">180 Min (3.0h)</option>
-                                <option value="240">240 Min (Halbtag)</option>
-                                <option value="480">480 Min (Ganztag)</option>
-                              </select>
-                            </div>
+                        {serviceFormPriceOptions.map((po, idx) => {
+                          const isBeingDragged = draggedCategory === 'price_option' && draggedItemIndex === idx;
+                          const isDragOver = draggedCategory === 'price_option' && dragOverItemIndex === idx && draggedItemIndex !== idx;
 
-                            <div>
-                              <label className="text-[10px] text-slate-500 block mb-0.5">Preis in CHF *</label>
-                              <input
-                                type="number"
-                                step="5"
-                                value={po.price}
-                                onChange={e => {
-                                  const val = Number(e.target.value);
-                                  setServiceFormPriceOptions(prev => prev.map((p, i) => i === idx ? { ...p, price: val } : p));
-                                }}
-                                className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold"
-                              />
-                            </div>
+                          return (
+                            <div
+                              key={idx}
+                              draggable={true}
+                              onDragStart={(e) => handleDragStart(e, idx, 'price_option')}
+                              onDragOver={(e) => handleDragOver(e, idx, 'price_option')}
+                              onDrop={(e) => handleDrop(e, idx, 'price_option')}
+                              onDragEnd={handleDragEnd}
+                              className={`p-3 border rounded-xl grid grid-cols-12 gap-2.5 items-center transition cursor-default ${
+                                isBeingDragged
+                                  ? 'opacity-30 bg-amber-50/70 border-dashed border-2 border-amber-400'
+                                  : isDragOver
+                                  ? 'bg-amber-50/60 ring-2 ring-amber-400 ring-inset border-amber-300'
+                                  : 'bg-slate-50 border-slate-200'
+                              }`}
+                            >
+                              <div className="col-span-1 flex items-center justify-center">
+                                <div
+                                  className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-800 p-1 rounded hover:bg-slate-200/60 inline-flex items-center justify-center transition"
+                                  title="Stufe per Drag & Drop verschieben"
+                                >
+                                  <GripVertical className="w-4 h-4" />
+                                </div>
+                              </div>
 
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex-1">
+                              <div className="col-span-4">
+                                <label className="text-[10px] text-slate-500 block mb-0.5">Dauer (Minuten)</label>
+                                <select
+                                  value={po.duration}
+                                  onChange={e => {
+                                    const val = Number(e.target.value);
+                                    setServiceFormPriceOptions(prev => prev.map((p, i) => i === idx ? { ...p, duration: val } : p));
+                                  }}
+                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold"
+                                >
+                                  <option value="60">60 Min (1.0h)</option>
+                                  <option value="90">90 Min (1.5h)</option>
+                                  <option value="120">120 Min (2.0h)</option>
+                                  <option value="180">180 Min (3.0h)</option>
+                                  <option value="240">240 Min (Halbtag)</option>
+                                  <option value="480">480 Min (Ganztag)</option>
+                                </select>
+                              </div>
+
+                              <div className="col-span-3">
+                                <label className="text-[10px] text-slate-500 block mb-0.5">Preis in CHF *</label>
+                                <input
+                                  type="number"
+                                  step="5"
+                                  value={po.price}
+                                  onChange={e => {
+                                    const val = Number(e.target.value);
+                                    setServiceFormPriceOptions(prev => prev.map((p, i) => i === idx ? { ...p, price: val } : p));
+                                  }}
+                                  className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold"
+                                />
+                              </div>
+
+                              <div className="col-span-3">
                                 <label className="text-[10px] text-slate-500 block mb-0.5">Lektionen</label>
                                 <input
                                   type="number"
@@ -3601,18 +3874,32 @@ export default function App() {
                                   className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold"
                                 />
                               </div>
-                              {serviceFormPriceOptions.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => setServiceFormPriceOptions(prev => prev.filter((_, i) => i !== idx))}
-                                  className="text-rose-600 hover:text-rose-800 p-1.5 mt-3 rounded-lg hover:bg-rose-50"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              )}
+
+                              <div className="col-span-1 flex justify-end">
+                                {serviceFormPriceOptions.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      requestDelete({
+                                        title: 'Preisstufe entfernen',
+                                        message: `Möchtest du diese Preisstufe (${po.duration} Min. für CHF ${po.price}) wirklich entfernen?`,
+                                        itemName: `${po.duration} Min. für CHF ${po.price}`,
+                                        confirmLabel: 'Entfernen',
+                                        onConfirm: () => {
+                                          setServiceFormPriceOptions(prev => prev.filter((_, i) => i !== idx));
+                                        }
+                                      });
+                                    }}
+                                    className="text-rose-600 hover:text-rose-800 p-1.5 rounded-lg hover:bg-rose-50 transition cursor-pointer"
+                                    title="Preisstufe löschen"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -8541,6 +8828,74 @@ export default function App() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* GLOBAL DELETE CONFIRMATION MODAL (SICHERHEITSABFRAGE)          */}
+      {/* ============================================================== */}
+      {deleteConfirmModal.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center shrink-0 shadow-xs">
+                  <AlertTriangle className="w-6 h-6 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    {deleteConfirmModal.title}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Sicherheitsabfrage vor dem Löschen
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {deleteConfirmModal.message}
+                </p>
+
+                {deleteConfirmModal.itemName && (
+                  <div className="p-3 bg-rose-50/60 border border-rose-200 rounded-xl flex items-center gap-2">
+                    <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span className="text-xs font-bold text-rose-950 truncate font-mono">
+                      {deleteConfirmModal.itemName}
+                    </span>
+                  </div>
+                )}
+
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <span>
+                    Dieser Vorgang ist endgültig und kann nicht rückgängig gemacht werden.
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={closeDeleteModal}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    deleteConfirmModal.onConfirm();
+                    closeDeleteModal();
+                  }}
+                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>{deleteConfirmModal.confirmLabel || 'Ja, unwiderruflich löschen'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

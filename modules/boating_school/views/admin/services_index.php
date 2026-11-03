@@ -158,9 +158,10 @@ ob_start();
             </div>
         <?php else: ?>
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" id="servicesSortableTable">
                     <thead class="table-light small">
                         <tr>
+                            <th style="width: 44px;" class="text-center" title="Reihenfolge per Drag &amp; Drop ändern">Pos</th>
                             <th>Leistung / Kurs</th>
                             <th>Kürzel</th>
                             <th>Kategorie</th>
@@ -170,9 +171,14 @@ ob_start();
                             <th class="text-end" style="width: 140px;">Aktionen</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="servicesSortableBody">
                         <?php foreach ($services as $srv): ?>
-                            <tr>
+                            <tr class="draggable-row" draggable="true" data-id="<?= (int) $srv['id'] ?>" style="cursor: grab;">
+                                <td class="text-center px-1">
+                                    <div class="text-muted cursor-grab d-inline-flex align-items-center justify-content-center p-1 rounded hover-bg-light" title="Ziehen zum Sortieren">
+                                        <i class="bi bi-grip-vertical fs-5"></i>
+                                    </div>
+                                </td>
                                 <td>
                                     <div class="fw-bold text-dark">
                                         <?= htmlspecialchars((string) $srv['name'], ENT_QUOTES, 'UTF-8') ?>
@@ -213,7 +219,7 @@ ob_start();
                                 <td>
                                     <?php if ($canManage): ?>
                                         <form method="post" action="?route=admin/boating/services/toggle-status" class="d-inline">
-                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                                             <input type="hidden" name="id" value="<?= (int) $srv['id'] ?>">
                                             <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent" title="Status umschalten">
                                                 <?php if (!empty($srv['is_active'])): ?>
@@ -237,10 +243,10 @@ ob_start();
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <?php if ($canManage): ?>
-                                            <form method="post" action="?route=admin/boating/services/delete" class="d-inline" onsubmit="return confirm('Möchten Sie diese Leistung wirklich löschen?');">
+                                            <form method="post" action="?route=admin/boating/services/delete" class="d-inline delete-confirm-form" data-name="<?= htmlspecialchars((string) $srv['name'], ENT_QUOTES, 'UTF-8') ?>">
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                                                 <input type="hidden" name="id" value="<?= (int) $srv['id'] ?>">
-                                                <button type="submit" class="btn btn-outline-danger" title="Löschen">
+                                                <button type="button" class="btn btn-outline-danger btn-trigger-delete" title="Löschen">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
                                             </form>
@@ -346,6 +352,124 @@ ob_start();
         </div>
     </div>
 </div>
+<!-- Modal: Sicherheitsabfrage vor dem Löschen -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-body p-4 text-center">
+                <div class="rounded-circle bg-danger bg-opacity-10 text-danger d-inline-flex align-items-center justify-content-center mb-3" style="width: 52px; height: 52px;">
+                    <i class="bi bi-trash3-fill fs-4"></i>
+                </div>
+                <h6 class="fw-bold text-dark mb-1" id="deleteModalTitle">Leistung wirklich löschen?</h6>
+                <p class="text-muted small mb-3" id="deleteModalMessage">Möchten Sie dieses Angebot wirklich unwiderruflich löschen? Zugehörige Preisstufen werden ebenfalls entfernt.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-sm btn-light border px-3" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="button" class="btn btn-sm btn-danger fw-semibold px-3" id="confirmDeleteSubmitBtn">Ja, löschen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // 1. Sichere Lösch-Bestätigung (kein window.confirm)
+    let formToSubmit = null;
+    const deleteModalEl = document.getElementById('deleteConfirmModal');
+    const deleteModal = deleteModalEl && window.bootstrap ? new bootstrap.Modal(deleteModalEl) : null;
+    const deleteModalTitle = document.getElementById('deleteModalTitle');
+    const deleteModalMessage = document.getElementById('deleteModalMessage');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteSubmitBtn');
+
+    document.querySelectorAll('.btn-trigger-delete').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            formToSubmit = this.closest('form');
+            const itemName = formToSubmit ? formToSubmit.getAttribute('data-name') : 'dieses Element';
+            if (deleteModalTitle) deleteModalTitle.textContent = 'Leistung wirklich löschen?';
+            if (deleteModalMessage) {
+                deleteModalMessage.textContent = 'Möchten Sie das Angebot "' + itemName + '" wirklich unwiderruflich aus der Datenbank entfernen?';
+            }
+            if (deleteModal) {
+                deleteModal.show();
+            } else if (confirm('Möchten Sie "' + itemName + '" wirklich löschen?')) {
+                formToSubmit.submit();
+            }
+        });
+    });
+
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', function () {
+            if (formToSubmit) {
+                formToSubmit.submit();
+            }
+        });
+    }
+
+    // 2. Drag & Drop Reordering der Tabellen-Zeilen
+    const tbody = document.getElementById('servicesSortableBody');
+    if (!tbody) return;
+
+    let draggedRow = null;
+
+    tbody.querySelectorAll('.draggable-row').forEach(row => {
+        row.addEventListener('dragstart', function (e) {
+            draggedRow = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.id || '');
+            this.classList.add('table-warning', 'opacity-50');
+        });
+
+        row.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (this !== draggedRow) {
+                this.classList.add('table-active');
+                this.style.borderTop = '2px solid #0d6efd';
+            }
+        });
+
+        row.addEventListener('dragleave', function () {
+            this.classList.remove('table-active');
+            this.style.borderTop = '';
+        });
+
+        row.addEventListener('drop', function (e) {
+            e.preventDefault();
+            this.classList.remove('table-active');
+            this.style.borderTop = '';
+
+            if (draggedRow && draggedRow !== this) {
+                const rows = Array.from(tbody.querySelectorAll('.draggable-row'));
+                const draggedIndex = rows.indexOf(draggedRow);
+                const targetIndex = rows.indexOf(this);
+
+                if (draggedIndex < targetIndex) {
+                    this.after(draggedRow);
+                } else {
+                    this.before(draggedRow);
+                }
+
+                // Feedback Toast / Notification
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-info py-2 px-3 small position-fixed bottom-0 end-0 m-3 shadow-lg z-3 d-flex align-items-center gap-2';
+                alertDiv.innerHTML = '<i class="bi bi-check-circle-fill text-primary"></i> <span>Reihenfolge der Leistungen angepasst</span>';
+                document.body.appendChild(alertDiv);
+                setTimeout(() => alertDiv.remove(), 2500);
+            }
+        });
+
+        row.addEventListener('dragend', function () {
+            this.classList.remove('table-warning', 'opacity-50');
+            tbody.querySelectorAll('.draggable-row').forEach(r => {
+                r.classList.remove('table-active');
+                r.style.borderTop = '';
+            });
+            draggedRow = null;
+        });
+    });
+});
+</script>
 <?php endif; ?>
 
 <?php
