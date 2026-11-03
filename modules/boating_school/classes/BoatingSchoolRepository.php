@@ -1588,6 +1588,37 @@ final class BoatingSchoolRepository
         }
     }
 
+    public static function getPromoCodeById(int $id): ?array
+    {
+        if (!self::isTableCreated('bs_promo_codes') || $id <= 0) {
+            return null;
+        }
+        try {
+            $row = DB::fetchOne('SELECT * FROM `bs_promo_codes` WHERE `id` = :id LIMIT 1', ['id' => $id]);
+            return $row ?: null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    public static function togglePromoCodeStatus(int $id): bool
+    {
+        $promo = self::getPromoCodeById($id);
+        if (!$promo) {
+            return false;
+        }
+        $newStatus = empty($promo['is_active']) ? 1 : 0;
+        try {
+            DB::execute('UPDATE `bs_promo_codes` SET `is_active` = :status, `updated_at` = NOW() WHERE `id` = :id', [
+                'status' => $newStatus,
+                'id'     => $id,
+            ]);
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     /**
      * Validiert einen Rabattcode serverseitig nach allen Kriterien der Spezifikation.
      *

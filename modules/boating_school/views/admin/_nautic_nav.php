@@ -95,6 +95,12 @@ $subtitleText = $navSubtitle ?? 'Zentrales Management für Praxisfahrstunden, Bo
                                 <span>Leistungen &amp; Tarife</span>
                             </a>
                         </li>
+                        <li>
+                            <a class="dropdown-item rounded-2 py-2 d-flex align-items-center gap-2 <?= str_starts_with($routeClean, 'admin/boating/promos') ? 'active fw-bold' : '' ?>" href="?route=admin/boating/promos">
+                                <i class="bi bi-ticket-perforated text-success"></i>
+                                <span>Gutscheine &amp; Rabattcodes</span>
+                            </a>
+                        </li>
 
                         <li><hr class="dropdown-divider my-2"></li>
                         <li class="dropdown-header text-uppercase small fw-bold text-muted px-3 pt-1 pb-1" style="font-size: 0.70rem; letter-spacing: 0.05em;">

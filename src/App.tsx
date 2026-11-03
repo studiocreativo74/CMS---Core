@@ -876,8 +876,8 @@ export default function App() {
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>(INITIAL_PROMO_CODES);
   const [customerSubscriptions, setCustomerSubscriptions] = useState<CustomerSubscription[]>(INITIAL_CUSTOMER_SUBSCRIPTIONS);
 
-  // Admin Section Navigation: Payroll | Services & Tarife | Gutscheine & Codes | Account-Anfragen
-  const [adminSectionTab, setAdminSectionTab] = useState<'payroll' | 'services' | 'promos' | 'account_requests'>('payroll');
+  // Admin Section Navigation: Übersicht (All-in-One Command Center) | Payroll | Services & Tarife | Gutscheine & Codes | Account-Anfragen
+  const [adminSectionTab, setAdminSectionTab] = useState<'overview' | 'payroll' | 'services' | 'promos' | 'account_requests'>('overview');
 
   // Customer Store View State
   const [storeViewMode, setStoreViewMode] = useState<'catalog' | 'my_subscriptions'>('catalog');
@@ -1146,6 +1146,71 @@ export default function App() {
     setServices(prev => [clonedService, ...prev]);
     setMagicFeedback(`Angebot "${original.name}" wurde erfolgreich dupliziert.`);
     setTimeout(() => setMagicFeedback(null), 4000);
+  };
+
+  const openCreateServiceModal = () => {
+    setEditingServiceId(null);
+    setServiceFormName('');
+    setServiceFormDesc('');
+    setServiceFormType('bootsfahrschule');
+    setServiceFormCategory('Praxisunterricht (Motorboot Kat. A)');
+    setServiceFormTarget('Prüfungsvorbereitung Kat. A');
+    setServiceFormImage('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80');
+    setServiceFormIsSubscription(false);
+    setServiceFormSessionsCount(1);
+    setServiceFormLocations(['loc_luzern', 'loc_stansstad']);
+    setServiceFormPriceOptions([{ duration: 90, price: 195.0, sessions_count: 1, sort_order: 1 }]);
+    setShowServiceModal(true);
+  };
+
+  const openEditServiceModal = (service: ServiceOffer) => {
+    setEditingServiceId(service.id);
+    setServiceFormName(service.name);
+    setServiceFormDesc(service.description);
+    setServiceFormType(service.offer_type);
+    setServiceFormCategory(service.category || (service.offer_type === 'bootsfahrschule' ? 'Praxisunterricht (Motorboot Kat. A)' : service.offer_type === 'coaching' ? 'Spezial-Coaching' : service.offer_type === 'mieten' ? 'Bootsmiete / Charter' : 'Gutschein & Weiteres'));
+    setServiceFormTarget(service.target_audience);
+    setServiceFormImage(service.image_url);
+    setServiceFormIsSubscription(service.is_subscription);
+    setServiceFormSessionsCount(service.sessions_count);
+    setServiceFormLocations(service.location_ids);
+    setServiceFormPriceOptions(
+      service.price_options.map(po => ({
+        duration: po.duration,
+        price: po.price,
+        sessions_count: po.sessions_count,
+        sort_order: po.sort_order
+      }))
+    );
+    setShowServiceModal(true);
+  };
+
+  const openCreatePromoModal = () => {
+    setEditingPromoId(null);
+    setPromoFormCode('');
+    setPromoFormDesc('');
+    setPromoFormType('fixed');
+    setPromoFormValue(50);
+    setPromoFormMinOrder(300);
+    setPromoFormMaxUses(50);
+    setPromoFormValidFrom('2026-01-01');
+    setPromoFormValidUntil('2026-12-31');
+    setPromoFormIsActive(true);
+    setShowPromoModal(true);
+  };
+
+  const openEditPromoModal = (promo: PromoCode) => {
+    setEditingPromoId(promo.id);
+    setPromoFormCode(promo.code);
+    setPromoFormDesc(promo.description);
+    setPromoFormType(promo.discount_type);
+    setPromoFormValue(promo.discount_value);
+    setPromoFormMinOrder(promo.min_order_amount ?? '');
+    setPromoFormMaxUses(promo.max_uses ?? '');
+    setPromoFormValidFrom(promo.valid_from || '');
+    setPromoFormValidUntil(promo.valid_until || '');
+    setPromoFormIsActive(promo.is_active);
+    setShowPromoModal(true);
   };
 
   // Service Speichern (Neu / Bearbeiten)
@@ -1764,7 +1829,20 @@ export default function App() {
           <div className="space-y-6">
             {/* Admin Sub-Navigation */}
             <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAdminSectionTab('overview')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                    adminSectionTab === 'overview'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4 text-amber-400" />
+                  <span>0. Zentrale Übersicht &amp; Schnellaktionen</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setAdminSectionTab('payroll')}
@@ -1788,7 +1866,7 @@ export default function App() {
                   }`}
                 >
                   <ShoppingBag className="w-4 h-4" />
-                  <span>2. Dienstleistungen &amp; Tarife (Store)</span>
+                  <span>2. Dienstleistungen &amp; Tarife</span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                     adminSectionTab === 'services' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'
                   }`}>
@@ -1824,7 +1902,7 @@ export default function App() {
                   }`}
                 >
                   <UserCheck className="w-4 h-4" />
-                  <span>4. Account-Anfragen &amp; Freigaben</span>
+                  <span>4. Account-Anfragen</span>
                   {accountRequests.filter(r => r.status === 'pending').length > 0 && (
                     <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                       adminSectionTab === 'account_requests' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900'
@@ -1837,12 +1915,579 @@ export default function App() {
 
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <Shield className="w-4 h-4 text-slate-400" />
-                <span>Nautic Admin Core (MY CoachingBoot GmbH)</span>
+                <span>Nautic Admin Core</span>
               </div>
             </div>
 
-            {/* Hinweis-Banner für offene Account-Anfragen, falls vorhanden */}
-            {accountRequests.filter(r => r.status === 'pending').length > 0 && adminSectionTab !== 'account_requests' && (
+            {/* SUB-BEREICH 0: ZENTRALE ÜBERSICHT & SCHNELLAKTIONEN (ALL-IN-ONE COMMAND CENTER) */}
+            {adminSectionTab === 'overview' && (
+              <div className="space-y-6 animate-in fade-in duration-150">
+                {/* Header & Zentrales Schnellaktions-Menü */}
+                <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 p-6 rounded-3xl text-white shadow-md border border-slate-700/50 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                  <div>
+                    <div className="flex items-center gap-2.5 mb-2">
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Admin Kommandozentrale
+                      </span>
+                      <span className="text-xs text-slate-400">• Alle Aktionen an einem Ort</span>
+                    </div>
+                    <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight">
+                      Admin Dashboard &amp; Betriebsverwaltung
+                    </h1>
+                    <p className="text-slate-300 text-sm mt-1 max-w-2xl leading-relaxed">
+                      Verwalte Gutscheine, Tarife, Fahrlehrer-Honorare und Registrierungsfreigaben direkt hier, ohne zwischen Unterseiten wechseln zu müssen.
+                    </p>
+                  </div>
+
+                  {/* Schnellaktions-Buttons */}
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={openCreatePromoModal}
+                      className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm cursor-pointer hover:shadow-md"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>+ Neuer Gutschein / Code</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={openCreateServiceModal}
+                      className="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm cursor-pointer hover:shadow-md"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>+ Neue Leistung / Tarif</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setAdminSectionTab('payroll')}
+                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm cursor-pointer"
+                    >
+                      <Calendar className="w-4 h-4 text-sky-400" />
+                      <span>Kalender &amp; Disposition</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* KPI Cockpit Karten */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* KPI 1: Offene Honorare */}
+                  <div 
+                    onClick={() => setAdminSectionTab('payroll')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-sky-300 transition cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-2">
+                      <span>Offene Fahrlehrer-Honorare</span>
+                      <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center group-hover:scale-110 transition">
+                        <DollarSign className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="text-2xl font-black text-slate-900 tracking-tight">
+                      CHF {appointments
+                        .filter(a => a.status !== 'cancelled_customer' && a.instructor_payout_status !== 'paid')
+                        .reduce((acc, curr) => acc + (curr.instructor_payout_amount || 0), 0)
+                        .toFixed(2)}
+                    </div>
+                    <div className="text-[11px] text-sky-600 font-medium mt-1 flex items-center gap-1">
+                      <span>{appointments.filter(a => a.status !== 'cancelled_customer' && a.instructor_payout_status !== 'paid').length} Fahrstunden offen</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </div>
+                  </div>
+
+                  {/* KPI 2: Aktive Angebote */}
+                  <div 
+                    onClick={() => setAdminSectionTab('services')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-amber-300 transition cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-2">
+                      <span>Store-Angebote &amp; Tarife</span>
+                      <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition">
+                        <ShoppingBag className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="text-2xl font-black text-slate-900 tracking-tight">
+                      {services.filter(s => s.is_active).length} <span className="text-sm font-normal text-slate-400">/ {services.length} aktiv</span>
+                    </div>
+                    <div className="text-[11px] text-amber-600 font-medium mt-1 flex items-center gap-1">
+                      <span>{services.filter(s => s.is_subscription).length} Mehrfachkarten &amp; Abos</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </div>
+                  </div>
+
+                  {/* KPI 3: Gutscheine & Codes */}
+                  <div 
+                    onClick={() => setAdminSectionTab('promos')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-emerald-300 transition cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-2">
+                      <span>Gutscheine &amp; Rabattcodes</span>
+                      <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition">
+                        <Tag className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="text-2xl font-black text-slate-900 tracking-tight">
+                      {promoCodes.filter(p => p.is_active).length} <span className="text-sm font-normal text-slate-400">aktiv</span>
+                    </div>
+                    <div className="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                      <span>{promoCodes.reduce((s, p) => s + p.used_count, 0)}x erfolgreich eingelöst</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </div>
+                  </div>
+
+                  {/* KPI 4: Ausstehende Anfragen */}
+                  <div 
+                    onClick={() => setAdminSectionTab('account_requests')}
+                    className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-indigo-300 transition cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between text-slate-500 text-xs font-semibold mb-2">
+                      <span>Ausstehende Anfragen</span>
+                      <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition">
+                        <UserCheck className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <div className="text-2xl font-black text-slate-900 tracking-tight">
+                      {accountRequests.filter(r => r.status === 'pending').length}
+                    </div>
+                    <div className="text-[11px] text-indigo-600 font-medium mt-1 flex items-center gap-1">
+                      <span>{accountRequests.filter(r => r.status === 'pending').length > 0 ? 'Freigabe ausstehend' : 'Alle freigeschaltet'}</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* WIDGET 1: Ausstehende Account-Anfragen (Direkt-Aktionen) */}
+                {accountRequests.filter(r => r.status === 'pending').length > 0 && (
+                  <div className="bg-white rounded-2xl border-2 border-amber-300 shadow-sm overflow-hidden">
+                    <div className="p-4 bg-amber-50/80 border-b border-amber-200 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-amber-200 text-amber-900 flex items-center justify-center font-bold">
+                          <UserCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900">
+                            Ausstehende Account-Registrierungen ({accountRequests.filter(r => r.status === 'pending').length})
+                          </h3>
+                          <p className="text-xs text-slate-500">
+                            Direkt hier freischalten oder ablehnen, ohne die Seite zu verlassen.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAdminSectionTab('account_requests')}
+                        className="text-xs font-bold text-amber-900 hover:underline flex items-center gap-1"
+                      >
+                        <span>Vollansicht öffnen</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    <div className="divide-y divide-slate-100">
+                      {accountRequests
+                        .filter(r => r.status === 'pending')
+                        .map(req => (
+                          <div key={req.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/60 transition">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-sm text-slate-900">
+                                  {req.first_name} {req.last_name}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                                  Wunschrolle: {req.desired_role === 'student' ? 'Fahrschüler' : req.desired_role === 'instructor' ? 'Fahrlehrer' : req.desired_role === 'renter' ? 'Bootsmieter' : 'Administrator'}
+                                </span>
+                              </div>
+                              <div className="text-xs text-slate-500 flex flex-wrap items-center gap-3">
+                                <span><Mail className="w-3.5 h-3.5 inline mr-1 text-slate-400" />{req.email}</span>
+                                {req.phone && <span><Phone className="w-3.5 h-3.5 inline mr-1 text-slate-400" />{req.phone}</span>}
+                                <span><Clock className="w-3.5 h-3.5 inline mr-1 text-slate-400" />{req.created_at}</span>
+                              </div>
+                              {req.notes && (
+                                <p className="text-xs text-slate-600 bg-slate-50 p-2 rounded-lg italic border border-slate-100">
+                                  &laquo;{req.notes}&raquo;
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleApproveAccountRequest(req.id)}
+                                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Als {req.desired_role === 'student' ? 'Schüler' : req.desired_role === 'instructor' ? 'Fahrlehrer' : req.desired_role === 'renter' ? 'Mieter' : 'Admin'} freischalten</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRejectAccountRequest(req.id)}
+                                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition cursor-pointer"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                <span>Ablehnen</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* WIDGET 2: Gutscheine & Rabattcodes Direkt-Verwaltung */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base font-bold text-slate-900">Gutscheine &amp; Rabattcodes</h2>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {promoCodes.length} Codes
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Codes anlegen, Rabatte steuern und Einlösekontingente überwachen.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={openCreatePromoModal}
+                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Neuer Gutschein</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAdminSectionTab('promos')}
+                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>Alle anzeigen</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                        <tr>
+                          <th className="p-3.5">Code</th>
+                          <th className="p-3.5">Rabattwert</th>
+                          <th className="p-3.5">Bedingung</th>
+                          <th className="p-3.5">Einlösungen</th>
+                          <th className="p-3.5">Gültigkeit</th>
+                          <th className="p-3.5">Status</th>
+                          <th className="p-3.5 text-right">Aktionen</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {promoCodes.map(promo => (
+                          <tr key={promo.id} className="hover:bg-slate-50/80 transition">
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-bold text-slate-900 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-lg text-xs">
+                                  {promo.code}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(promo.code);
+                                    setMagicFeedback(`Code "${promo.code}" kopiert!`);
+                                    setTimeout(() => setMagicFeedback(null), 3000);
+                                  }}
+                                  className="text-slate-400 hover:text-slate-700"
+                                  title="Code kopieren"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              {promo.description && (
+                                <p className="text-[11px] text-slate-500 mt-0.5 max-w-xs truncate">{promo.description}</p>
+                              )}
+                            </td>
+                            <td className="p-3.5">
+                              <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                                {promo.discount_type === 'percentage'
+                                  ? `-${promo.discount_value}%`
+                                  : `-CHF ${Number(promo.discount_value).toFixed(2)}`}
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-slate-600">
+                              {promo.min_order_amount ? `Ab CHF ${promo.min_order_amount}.-` : 'Kein Mindestwert'}
+                            </td>
+                            <td className="p-3.5">
+                              <span className="font-semibold text-slate-800">{promo.used_count}</span>
+                              <span className="text-slate-400"> / {promo.max_uses ?? '∞'}</span>
+                            </td>
+                            <td className="p-3.5 text-slate-500">
+                              {promo.valid_until ? (
+                                <span>bis {promo.valid_until}</span>
+                              ) : (
+                                <span className="text-slate-400">Unbegrenzt</span>
+                              )}
+                            </td>
+                            <td className="p-3.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPromoCodes(prev =>
+                                    prev.map(p => (p.id === promo.id ? { ...p, is_active: !p.is_active } : p))
+                                  );
+                                }}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition cursor-pointer ${
+                                  promo.is_active
+                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                }`}
+                              >
+                                {promo.is_active ? 'Aktiv' : 'Inaktiv'}
+                              </button>
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => openEditPromoModal(promo)}
+                                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                  title="Bearbeiten"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (window.confirm(`Gutscheincode "${promo.code}" wirklich löschen?`)) {
+                                      setPromoCodes(prev => prev.filter(p => p.id !== promo.id));
+                                    }
+                                  }}
+                                  className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                                  title="Löschen"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* WIDGET 3: Dienstleistungen & Tarife (Storefront Angebote) */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base font-bold text-slate-900">Dienstleistungen &amp; Tarife (Store)</h2>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                          {services.length} Angebote
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Kurse, Zeitoptionen (60/90 Min), Mehrfach-Abos und Bootsmieten verwalten.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={openCreateServiceModal}
+                        className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Neues Angebot</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAdminSectionTab('services')}
+                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>Alle anzeigen</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                        <tr>
+                          <th className="p-3.5">Angebot &amp; Kategorie</th>
+                          <th className="p-3.5">Kategorie / Art</th>
+                          <th className="p-3.5">Preis- &amp; Zeitoptionen</th>
+                          <th className="p-3.5">Abo-Typ</th>
+                          <th className="p-3.5">Status</th>
+                          <th className="p-3.5 text-right">Aktionen</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {services.slice(0, 6).map(srv => (
+                          <tr key={srv.id} className="hover:bg-slate-50/80 transition">
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={srv.image_url}
+                                  alt={srv.name}
+                                  className="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0"
+                                />
+                                <div>
+                                  <div className="font-bold text-slate-900">{srv.name}</div>
+                                  <div className="text-[11px] text-slate-500 truncate max-w-xs">{srv.target_audience}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-3.5">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                {srv.category || srv.offer_type}
+                              </span>
+                            </td>
+                            <td className="p-3.5">
+                              <div className="flex flex-wrap gap-1">
+                                {srv.price_options.map(po => (
+                                  <span key={po.id} className="px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200 font-semibold text-[10px]">
+                                    CHF {po.price}.- ({po.duration} Min)
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="p-3.5">
+                              {srv.is_subscription ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">
+                                  {srv.sessions_count}er Abo
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 text-[11px]">Einzellektion</span>
+                              )}
+                            </td>
+                            <td className="p-3.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setServices(prev =>
+                                    prev.map(s => (s.id === srv.id ? { ...s, is_active: !s.is_active } : s))
+                                  );
+                                }}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition cursor-pointer ${
+                                  srv.is_active
+                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                }`}
+                              >
+                                {srv.is_active ? 'Aktiv' : 'Inaktiv'}
+                              </button>
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDuplicateService(srv.id)}
+                                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                  title="Duplizieren (1-Klick Klon)"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => openEditServiceModal(srv)}
+                                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+                                  title="Bearbeiten"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* WIDGET 4: Fahrlehrer-Timesheets & Offene Abrechnungen */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base font-bold text-slate-900">Fahrlehrer-Timesheets &amp; Honorare</h2>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200">
+                          März 2026
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Übersicht aller gefahrenen Einheiten und Auszahlungsstati.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleExportCsv('summary')}
+                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>CSV Export</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAdminSectionTab('payroll')}
+                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>Zur Payroll-Tabelle</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
+                        <tr>
+                          <th className="p-3.5">Datum &amp; Zeit</th>
+                          <th className="p-3.5">Fahrlehrer</th>
+                          <th className="p-3.5">Schüler</th>
+                          <th className="p-3.5">Boot</th>
+                          <th className="p-3.5">Dauer</th>
+                          <th className="p-3.5">Honorar</th>
+                          <th className="p-3.5">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {appointments.slice(0, 5).map(apt => (
+                          <tr key={apt.id} className="hover:bg-slate-50/80 transition">
+                            <td className="p-3.5 font-medium text-slate-900">
+                              {apt.date} <span className="text-slate-400 font-normal">{apt.start_time} - {apt.end_time}</span>
+                            </td>
+                            <td className="p-3.5 font-semibold text-slate-800">{apt.instructor_name}</td>
+                            <td className="p-3.5 text-slate-700">{apt.customer_name}</td>
+                            <td className="p-3.5 text-slate-600">{apt.boat_name}</td>
+                            <td className="p-3.5 text-slate-600">{apt.duration_minutes} Min</td>
+                            <td className="p-3.5 font-bold text-slate-900">CHF {(apt.instructor_payout_amount || 0).toFixed(2)}</td>
+                            <td className="p-3.5">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                apt.instructor_payout_status === 'paid'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : apt.instructor_payout_status === 'exported'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-rose-100 text-rose-800'
+                              }`}>
+                                {apt.instructor_payout_status === 'paid' ? 'Bezahlt' : apt.instructor_payout_status === 'exported' ? 'Übergeben' : 'Offen'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* Hinweis-Banner für offene Account-Anfragen, falls in anderen Tabs */}
+            {accountRequests.filter(r => r.status === 'pending').length > 0 && adminSectionTab !== 'account_requests' && adminSectionTab !== 'overview' && (
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-amber-200 text-amber-900 flex items-center justify-center font-bold shrink-0">

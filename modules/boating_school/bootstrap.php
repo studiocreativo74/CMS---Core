@@ -170,7 +170,7 @@ if (isset($router) && $router !== null) {
     // =========================================================================
     // 1. DASHBOARD
     // =========================================================================
-    $registerGet('', static function () use ($checkPermission): void {
+    $dashboardHandler = static function () use ($checkPermission): void {
         $checkPermission(false);
 
         $tablesCreated = BoatingSchoolRepository::areAllTablesCreated();
@@ -178,21 +178,18 @@ if (isset($router) && $router !== null) {
         $recentBoats = BoatingSchoolRepository::getBoats(null, 5, 0);
         $recentInstructors = BoatingSchoolRepository::getInstructors(null, 5, 0);
         $recentCustomers = BoatingSchoolRepository::getCustomers(null, 5, 0);
+        $recentPromos = BoatingSchoolRepository::getPromoCodes();
+        $recentServices = ServiceService::getAll([], 6, 0);
+        $pendingRequests = class_exists('NauticAccountRequestService') 
+            ? (method_exists('NauticAccountRequestService', 'getPendingRequests') ? NauticAccountRequestService::getPendingRequests() : NauticAccountRequestService::getAll('pending')) 
+            : [];
+        $availableCategories = ServiceService::getAllAvailableCategories();
 
         require __DIR__ . '/views/admin/dashboard.php';
-    });
+    };
 
-    $registerGet('dashboard', static function () use ($checkPermission): void {
-        $checkPermission(false);
-
-        $tablesCreated = BoatingSchoolRepository::areAllTablesCreated();
-        $stats = BoatingSchoolRepository::getDashboardStats();
-        $recentBoats = BoatingSchoolRepository::getBoats(null, 5, 0);
-        $recentInstructors = BoatingSchoolRepository::getInstructors(null, 5, 0);
-        $recentCustomers = BoatingSchoolRepository::getCustomers(null, 5, 0);
-
-        require __DIR__ . '/views/admin/dashboard.php';
-    });
+    $registerGet('', $dashboardHandler);
+    $registerGet('dashboard', $dashboardHandler);
 
     // =========================================================================
     // 2. BOOTE (bs_boats)
@@ -729,6 +726,100 @@ if (isset($router) && $router !== null) {
         BoatingSchoolService::log('service_deleted', ['service_id' => $id]);
         $_SESSION['flash_success'] = 'Leistung wurde gelöscht.';
         header('Location: ?route=admin/boating/services');
+        exit;
+    });
+
+    // =========================================================================
+    // 4b. GUTSCHEINE & RABATTCODES (bs_promo_codes)
+    // =========================================================================
+    $registerGet('promos', static function () use ($checkPermission): void {
+        $checkPermission(false);
+
+        $filters = [
+            'search'    => trim((string) ($_GET['search'] ?? '')),
+            'is_active' => isset($_GET['is_active']) && $_GET['is_active'] !== '' ? (string) $_GET['is_active'] : null,
+        ];
+
+        $promos = BoatingSchoolRepository::getPromoCodes($filters);
+        $totalPromos = count($promos);
+
+        require __DIR__ . '/views/admin/promos_index.php';
+    });
+
+    $registerPost('promos/create', static function () use ($checkPermission): void {
+        $checkPermission(true);
+
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_error'] = 'Ungültiges Sicherheitstoken (CSRF).';
+            header('Location: ?route=admin/boating/promos');
+            exit;
+        }
+
+        $code = strtoupper(trim((string) ($_POST['code'] ?? '')));
+        if ($code === '') {
+            $_SESSION['flash_error'] = 'Bitte geben Sie einen Rabattcode ein.';
+            header('Location: ?route=admin/boating/promos');
+            exit;
+        }
+
+        $data = [
+            'code'             => $code,
+            'description'      => trim((string) ($_POST['description'] ?? '')),
+            'discount_type'    => in_array($_POST['discount_type'] ?? '', ['percentage', 'fixed'], true) ? $_POST['discount_type'] : 'percentage',
+            'discount_value'   => !empty($_POST['discount_value']) ? (float) $_POST['discount_value'] : 0.00,
+            'min_order_amount' => !empty($_POST['min_order_amount']) ? (float) $_POST['min_order_amount'] : null,
+            'max_uses'         => !empty($_POST['max_uses']) ? (int) $_POST['max_uses'] : null,
+            'valid_from'       => !empty($_POST['valid_from']) ? trim((string) $_POST['valid_from']) : null,
+            'valid_until'      => !empty($_POST['valid_until']) ? trim((string) $_POST['valid_until']) : null,
+            'is_active'        => !empty($_POST['is_active']) ? 1 : 0,
+        ];
+
+        try {
+            $id = BoatingSchoolRepository::createPromoCode($data);
+            if ($id > 0) {
+                BoatingSchoolService::log('promo_created', ['promo_id' => $id, 'code' => $code]);
+                $_SESSION['flash_success'] = 'Rabattcode "' . $code . '" wurde erfolgreich angelegt.';
+            } else {
+                $_SESSION['flash_error'] = 'Rabattcode konnte nicht erstellt werden (evtl. existiert der Code bereits).';
+            }
+        } catch (\Throwable $e) {
+            $_SESSION['flash_error'] = 'Fehler beim Erstellen des Rabattcodes: ' . $e->getMessage();
+        }
+
+        header('Location: ?route=admin/boating/promos');
+        exit;
+    });
+
+    $registerPost('promos/toggle-status', static function () use ($checkPermission): void {
+        $checkPermission(true);
+
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_error'] = 'Ungültiges Sicherheitstoken (CSRF).';
+            header('Location: ?route=admin/boating/promos');
+            exit;
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+        BoatingSchoolRepository::togglePromoCodeStatus($id);
+        $_SESSION['flash_success'] = 'Status des Rabattcodes wurde umgeschaltet.';
+        header('Location: ?route=admin/boating/promos');
+        exit;
+    });
+
+    $registerPost('promos/delete', static function () use ($checkPermission): void {
+        $checkPermission(true);
+
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_error'] = 'Ungültiges Sicherheitstoken (CSRF).';
+            header('Location: ?route=admin/boating/promos');
+            exit;
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+        BoatingSchoolRepository::deletePromoCode($id);
+        BoatingSchoolService::log('promo_deleted', ['promo_id' => $id]);
+        $_SESSION['flash_success'] = 'Rabattcode wurde gelöscht.';
+        header('Location: ?route=admin/boating/promos');
         exit;
     });
 

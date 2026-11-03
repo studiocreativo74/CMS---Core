@@ -157,6 +157,16 @@ final class NauticAccountRequestService
     }
 
     /**
+     * Liefert alle ausstehenden ('pending') Registrierungsanfragen.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getPendingRequests(): array
+    {
+        return self::getAll('pending');
+    }
+
+    /**
      * Ermittelt die Anzahl ausstehender ('pending') Registrierungsanfragen.
      */
     public static function getPendingCount(): int

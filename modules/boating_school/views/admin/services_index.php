@@ -87,6 +87,21 @@ ob_start();
     </div>
 </div>
 
+<!-- Sub-Tabs: Angebote vs Gutscheine -->
+<div class="mb-4">
+    <div class="bg-white p-1.5 rounded-3 border shadow-xs d-inline-flex gap-1">
+        <a href="?route=admin/boating/services" class="btn btn-sm btn-primary fw-bold px-3 py-1.5 rounded-2 d-flex align-items-center gap-1.5 shadow-xs">
+            <i class="bi bi-tag-fill"></i>
+            <span>1. Leistungen &amp; Tarife</span>
+            <span class="badge bg-white text-primary ms-1"><?= $totalServices ?></span>
+        </a>
+        <a href="?route=admin/boating/promos" class="btn btn-sm btn-light text-secondary fw-semibold px-3 py-1.5 rounded-2 d-flex align-items-center gap-1.5">
+            <i class="bi bi-ticket-perforated text-success"></i>
+            <span>2. Gutscheine &amp; Rabattcodes</span>
+        </a>
+    </div>
+</div>
+
 <!-- Filter-Leiste -->
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-3">
