@@ -17,6 +17,7 @@ $title = 'Leistung bearbeiten: ' . $serviceName;
 $currentRoute = 'admin/boating/services';
 $canManage = BoatingSchoolService::canManage();
 $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
+$availableCategories = class_exists('ServiceService') ? ServiceService::getAllAvailableCategories() : [];
 
 ob_start();
 ?>
@@ -83,27 +84,31 @@ ob_start();
                             <input type="text" name="code" class="form-control" value="<?= htmlspecialchars((string) ($service['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="z. B. PRAX-MOT-90">
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label small fw-semibold">Kategorie</label>
-                            <select name="category" class="form-select">
-                                <option value="practical" <?= ($service['category'] ?? '') === 'practical' ? 'selected' : '' ?>>Praxisunterricht (practical)</option>
-                                <option value="theory" <?= ($service['category'] ?? '') === 'theory' ? 'selected' : '' ?>>Theoriekurs (theory)</option>
-                                <option value="rental" <?= ($service['category'] ?? '') === 'rental' ? 'selected' : '' ?>>Bootsmiete (rental)</option>
-                                <option value="exam" <?= ($service['category'] ?? '') === 'exam' ? 'selected' : '' ?>>Prüfungsfahrt (exam)</option>
-                                <option value="package" <?= ($service['category'] ?? '') === 'package' ? 'selected' : '' ?>>Pauschale / Paket (package)</option>
-                                <option value="other" <?= ($service['category'] ?? '') === 'other' ? 'selected' : '' ?>>Sonstiges (other)</option>
-                            </select>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold">
+                                Kategorie / Leistungsart <span class="text-danger">*</span>
+                                <span class="text-muted fw-normal ms-1">(beliebig bearbeitbar oder aus Liste wählen)</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="text" name="category" id="editServiceCategory" list="editServiceCategoryList" class="form-control" value="<?= htmlspecialchars((string) ($service['category'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="z. B. Praxisunterricht, VIP-Coaching, Bootsmiete..." required>
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Vorschläge anzeigen"></button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="max-height: 240px; overflow-y: auto;">
+                                    <?php foreach ($availableCategories as $catKey => $catLabel): ?>
+                                        <li>
+                                            <a class="dropdown-item py-1.5 small" href="javascript:void(0)" onclick="document.getElementById('editServiceCategory').value = <?= htmlspecialchars(json_encode($catLabel), ENT_QUOTES, 'UTF-8') ?>">
+                                                <?= htmlspecialchars($catLabel, ENT_QUOTES, 'UTF-8') ?>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                            <datalist id="editServiceCategoryList">
+                                <?php foreach ($availableCategories as $catKey => $catLabel): ?>
+                                    <option value="<?= htmlspecialchars($catLabel, ENT_QUOTES, 'UTF-8') ?>">
+                                <?php endforeach; ?>
+                            </datalist>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-semibold">Bootstyp</label>
-                            <select name="boat_type" class="form-select">
-                                <option value="any" <?= (($service['boat_type'] ?? '') === 'any' || empty($service['boat_type'])) ? 'selected' : '' ?>>Alle / Beliebig (any)</option>
-                                <option value="motor" <?= ($service['boat_type'] ?? '') === 'motor' ? 'selected' : '' ?>>Motorboot (motor)</option>
-                                <option value="sail" <?= ($service['boat_type'] ?? '') === 'sail' ? 'selected' : '' ?>>Segelboot (sail)</option>
-                                <option value="rib" <?= ($service['boat_type'] ?? '') === 'rib' ? 'selected' : '' ?>>RIB / Festrumpfschlauchboot (rib)</option>
-                                <option value="electric" <?= ($service['boat_type'] ?? '') === 'electric' ? 'selected' : '' ?>>Elektroboot (electric)</option>
-                            </select>
-                        </div>
+                        <input type="hidden" name="boat_type" value="<?= htmlspecialchars((string) ($service['boat_type'] ?? 'any'), ENT_QUOTES, 'UTF-8') ?>">
                         <div class="col-md-4">
                             <label class="form-label small fw-semibold">Dauer (in Minuten)</label>
                             <input type="number" name="duration_minutes" class="form-control" value="<?= !empty($service['duration_minutes']) ? (int) $service['duration_minutes'] : 60 ?>" min="15" step="15">

@@ -186,6 +186,7 @@ export interface ServiceOffer {
   name: string;
   description: string;
   offer_type: 'bootsfahrschule' | 'coaching' | 'mieten' | 'anderes';
+  category?: string;
   target_audience: string;
   image_url: string;
   is_active: boolean;
@@ -900,6 +901,7 @@ export default function App() {
   const [serviceFormName, setServiceFormName] = useState<string>('');
   const [serviceFormDesc, setServiceFormDesc] = useState<string>('');
   const [serviceFormType, setServiceFormType] = useState<ServiceOffer['offer_type']>('bootsfahrschule');
+  const [serviceFormCategory, setServiceFormCategory] = useState<string>('Praxisunterricht (Motorboot Kat. A)');
   const [serviceFormTarget, setServiceFormTarget] = useState<string>('');
   const [serviceFormImage, setServiceFormImage] = useState<string>('');
   const [serviceFormIsSubscription, setServiceFormIsSubscription] = useState<boolean>(false);
@@ -1159,6 +1161,7 @@ export default function App() {
             name: serviceFormName.trim(),
             description: serviceFormDesc.trim(),
             offer_type: serviceFormType,
+            category: serviceFormCategory.trim() || 'Praxisunterricht',
             target_audience: serviceFormTarget.trim(),
             image_url: serviceFormImage.trim() || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
             is_subscription: serviceFormIsSubscription,
@@ -1183,6 +1186,7 @@ export default function App() {
         name: serviceFormName.trim(),
         description: serviceFormDesc.trim(),
         offer_type: serviceFormType,
+        category: serviceFormCategory.trim() || 'Praxisunterricht',
         target_audience: serviceFormTarget.trim(),
         image_url: serviceFormImage.trim() || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
         is_active: true,
@@ -2118,6 +2122,7 @@ export default function App() {
                         setServiceFormName('');
                         setServiceFormDesc('');
                         setServiceFormType('bootsfahrschule');
+                        setServiceFormCategory('Praxisunterricht (Motorboot Kat. A)');
                         setServiceFormTarget('Prüfungsvorbereitung Kat. A');
                         setServiceFormImage('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80');
                         setServiceFormIsSubscription(false);
@@ -2298,6 +2303,7 @@ export default function App() {
                                 setServiceFormName(service.name);
                                 setServiceFormDesc(service.description);
                                 setServiceFormType(service.offer_type);
+                                setServiceFormCategory(service.category || (service.offer_type === 'bootsfahrschule' ? 'Praxisunterricht (Motorboot Kat. A)' : service.offer_type === 'coaching' ? 'Spezial-Coaching' : service.offer_type === 'mieten' ? 'Bootsmiete / Charter' : 'Gutschein & Weiteres'));
                                 setServiceFormTarget(service.target_audience);
                                 setServiceFormImage(service.image_url);
                                 setServiceFormIsSubscription(service.is_subscription);
@@ -2738,17 +2744,41 @@ export default function App() {
                       </div>
 
                       <div>
-                        <label className="font-semibold text-slate-700 block mb-1">Kategorie / Angebotstyp *</label>
-                        <select
-                          value={serviceFormType}
-                          onChange={e => setServiceFormType(e.target.value as any)}
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="font-semibold text-slate-700">Kategorie / Leistungstyp *</label>
+                          <span className="text-[10px] text-slate-400">Frei bearbeitbar</span>
+                        </div>
+                        <input
+                          type="text"
+                          list="serviceCategoryDatalist"
+                          value={serviceFormCategory}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setServiceFormCategory(val);
+                            const lower = val.toLowerCase();
+                            if (lower.includes('fahrschule') || lower.includes('praxis') || lower.includes('theorie') || lower.includes('prüfung') || lower.includes('manöver')) {
+                              setServiceFormType('bootsfahrschule');
+                            } else if (lower.includes('coaching') || lower.includes('skipper') || lower.includes('nacht')) {
+                              setServiceFormType('coaching');
+                            } else if (lower.includes('miete') || lower.includes('charter')) {
+                              setServiceFormType('mieten');
+                            } else {
+                              setServiceFormType('anderes');
+                            }
+                          }}
+                          placeholder="z. B. Praxisunterricht, VIP-Coaching, Bootsmiete..."
+                          required
                           className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-amber-500"
-                        >
-                          <option value="bootsfahrschule">Bootsfahrschule Kat. A (Blau)</option>
-                          <option value="coaching">Spezial-Coaching (Grün)</option>
-                          <option value="mieten">Bootsmiete / Charter (Gelb)</option>
-                          <option value="anderes">Gutschein &amp; Weiteres (Lila)</option>
-                        </select>
+                        />
+                        <datalist id="serviceCategoryDatalist">
+                          <option value="Praxisunterricht (Motorboot Kat. A)" />
+                          <option value="Segelausbildung Kat. D" />
+                          <option value="Theoriekurs & Prüfungsfahrt" />
+                          <option value="Spezial-Skipper Coaching & Nachtfahrt" />
+                          <option value="Bootsmiete / Charter" />
+                          <option value="Gutschein & Wertkarte" />
+                          <option value="Hafenmanöver & Boxtraining" />
+                        </datalist>
                       </div>
 
                       <div>

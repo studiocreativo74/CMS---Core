@@ -47,6 +47,28 @@ final class ServiceService
         return self::CATEGORIES;
     }
 
+    /**
+     * Liefert alle verfügbaren Kategorien dynamisch: Standard-Kategorien + alle in der Datenbank existierenden.
+     *
+     * @return array<string, string>
+     */
+    public static function getAllAvailableCategories(): array
+    {
+        $categories = self::CATEGORIES;
+        if (class_exists('BoatingSchoolRepository')) {
+            $existing = BoatingSchoolRepository::getDistinctCategories();
+            foreach ($existing as $cat) {
+                $trimmed = trim((string) $cat);
+                if ($trimmed !== '' && !isset($categories[$trimmed])) {
+                    $categories[$trimmed] = class_exists('BoatingSchoolService') 
+                        ? BoatingSchoolService::getCategoryLabel($trimmed) 
+                        : $trimmed;
+                }
+            }
+        }
+        return $categories;
+    }
+
     public static function getBoatTypes(): array
     {
         return self::BOAT_TYPES;

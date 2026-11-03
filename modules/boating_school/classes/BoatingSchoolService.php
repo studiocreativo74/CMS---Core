@@ -413,14 +413,20 @@ final class BoatingSchoolService
      */
     public static function getCategoryLabel(string $category): string
     {
-        return match ($category) {
+        $trimmed = trim($category);
+        if ($trimmed === '') {
+            return 'Allgemein';
+        }
+
+        return match (strtolower($trimmed)) {
             'practical' => 'Praxisfahrstunde',
             'theory'    => 'Theoriekurs',
             'rental'    => 'Bootsmiete / Charter',
             'exam'      => 'Prüfungsfahrt',
             'package'   => 'Pauschale / Ausbildungspaket',
+            'coaching'  => 'Spezial-Coaching',
             'other'     => 'Sonstiges',
-            default     => ucfirst($category),
+            default     => $trimmed,
         };
     }
 

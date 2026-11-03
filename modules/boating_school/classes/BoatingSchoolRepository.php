@@ -639,6 +639,26 @@ final class BoatingSchoolRepository
         }
     }
 
+    /**
+     * Liefert alle unterschiedlichen in bs_services verwendeten Kategorien.
+     *
+     * @return array<int, string>
+     */
+    public static function getDistinctCategories(): array
+    {
+        if (!self::isTableCreated('bs_services')) {
+            return [];
+        }
+
+        try {
+            $rows = DB::fetchAll("SELECT DISTINCT `category` FROM `bs_services` WHERE `category` IS NOT NULL AND `category` != '' ORDER BY `category` ASC");
+            return array_column($rows, 'category');
+        } catch (\Throwable $e) {
+            error_log('BoatingSchoolRepository::getDistinctCategories Fehler: ' . $e->getMessage());
+            return [];
+        }
+    }
+
     public static function getServiceById(int $id): ?array
     {
         if (!self::isTableCreated('bs_services') || $id <= 0) {
@@ -665,7 +685,7 @@ final class BoatingSchoolRepository
             'name'             => trim((string) ($data['name'] ?? '')),
             'code'             => !empty($data['code']) ? trim((string) $data['code']) : null,
             'category'         => !empty($data['category']) ? trim((string) $data['category']) : 'practical',
-            'boat_type'        => !empty($data['boat_type']) ? trim((string) $data['boat_type']) : null,
+            'boat_type'        => !empty($data['boat_type']) ? trim((string) $data['boat_type']) : 'any',
             'duration_minutes' => isset($data['duration_minutes']) && $data['duration_minutes'] !== '' ? (int) $data['duration_minutes'] : 60,
             'price'            => isset($data['price']) ? (float) $data['price'] : 0.00,
             'tax_rate'         => isset($data['tax_rate']) ? (float) $data['tax_rate'] : 0.00,
@@ -700,7 +720,7 @@ final class BoatingSchoolRepository
                 'name'             => trim((string) ($data['name'] ?? '')),
                 'code'             => !empty($data['code']) ? trim((string) $data['code']) : null,
                 'category'         => !empty($data['category']) ? trim((string) $data['category']) : 'practical',
-                'boat_type'        => !empty($data['boat_type']) ? trim((string) $data['boat_type']) : null,
+                'boat_type'        => !empty($data['boat_type']) ? trim((string) $data['boat_type']) : 'any',
                 'duration_minutes' => isset($data['duration_minutes']) && $data['duration_minutes'] !== '' ? (int) $data['duration_minutes'] : 60,
                 'price'            => isset($data['price']) ? (float) $data['price'] : 0.00,
                 'tax_rate'         => isset($data['tax_rate']) ? (float) $data['tax_rate'] : 0.00,

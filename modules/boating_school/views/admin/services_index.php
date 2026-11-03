@@ -19,6 +19,7 @@ $title = 'Leistungen & Tarife - Nautic';
 $currentRoute = 'admin/boating/services';
 $canManage = BoatingSchoolService::canManage();
 $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
+$availableCategories = class_exists('ServiceService') ? ServiceService::getAllAvailableCategories() : [];
 
 ob_start();
 ?>
@@ -91,7 +92,7 @@ ob_start();
     <div class="card-body p-3">
         <form method="get" class="row g-2 align-items-center">
             <input type="hidden" name="route" value="admin/boating/services">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
                     <input type="text" name="search" class="form-control" placeholder="Suchbegriff (Name, Kürzel)..." value="<?= htmlspecialchars((string) ($filters['search'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
@@ -100,22 +101,11 @@ ob_start();
             <div class="col-md-3">
                 <select name="category" class="form-select form-select-sm">
                     <option value="">Alle Kategorien</option>
-                    <option value="practical" <?= ($filters['category'] ?? '') === 'practical' ? 'selected' : '' ?>>Praxisunterricht (practical)</option>
-                    <option value="theory" <?= ($filters['category'] ?? '') === 'theory' ? 'selected' : '' ?>>Theoriekurs (theory)</option>
-                    <option value="rental" <?= ($filters['category'] ?? '') === 'rental' ? 'selected' : '' ?>>Bootsmiete (rental)</option>
-                    <option value="exam" <?= ($filters['category'] ?? '') === 'exam' ? 'selected' : '' ?>>Prüfungsfahrt (exam)</option>
-                    <option value="package" <?= ($filters['category'] ?? '') === 'package' ? 'selected' : '' ?>>Pauschale / Paket (package)</option>
-                    <option value="other" <?= ($filters['category'] ?? '') === 'other' ? 'selected' : '' ?>>Sonstiges (other)</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select name="boat_type" class="form-select form-select-sm">
-                    <option value="">Alle Bootstypen</option>
-                    <option value="any" <?= ($filters['boat_type'] ?? '') === 'any' ? 'selected' : '' ?>>Beliebig / any</option>
-                    <option value="motor" <?= ($filters['boat_type'] ?? '') === 'motor' ? 'selected' : '' ?>>Motorboot (motor)</option>
-                    <option value="sail" <?= ($filters['boat_type'] ?? '') === 'sail' ? 'selected' : '' ?>>Segelboot (sail)</option>
-                    <option value="rib" <?= ($filters['boat_type'] ?? '') === 'rib' ? 'selected' : '' ?>>RIB (rib)</option>
-                    <option value="electric" <?= ($filters['boat_type'] ?? '') === 'electric' ? 'selected' : '' ?>>Elektroboot (electric)</option>
+                    <?php foreach ($availableCategories as $catKey => $catLabel): ?>
+                        <option value="<?= htmlspecialchars((string) $catKey, ENT_QUOTES, 'UTF-8') ?>" <?= (($filters['category'] ?? '') === (string) $catKey || ($filters['category'] ?? '') === (string) $catLabel) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars((string) $catLabel, ENT_QUOTES, 'UTF-8') ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-2">
@@ -125,9 +115,9 @@ ob_start();
                     <option value="0" <?= ($filters['is_active'] ?? '') === '0' ? 'selected' : '' ?>>Inaktiv</option>
                 </select>
             </div>
-            <div class="col-md-2 d-flex gap-1">
+            <div class="col-md-3 d-flex gap-1">
                 <button type="submit" class="btn btn-sm btn-secondary flex-grow-1">Filtern</button>
-                <?php if (!empty($filters['search']) || !empty($filters['category']) || !empty($filters['boat_type']) || (isset($filters['is_active']) && $filters['is_active'] !== '')): ?>
+                <?php if (!empty($filters['search']) || !empty($filters['category']) || (isset($filters['is_active']) && $filters['is_active'] !== '')): ?>
                     <a href="?route=admin/boating/services" class="btn btn-sm btn-outline-secondary" title="Zurücksetzen">
                         <i class="bi bi-x-lg"></i>
                     </a>
@@ -159,7 +149,6 @@ ob_start();
                             <th>Leistung / Kurs</th>
                             <th>Kürzel</th>
                             <th>Kategorie</th>
-                            <th>Bootstyp</th>
                             <th>Dauer</th>
                             <th>Preis</th>
                             <th>Status</th>
@@ -190,13 +179,6 @@ ob_start();
                                     <span class="badge bg-light text-dark border">
                                         <?= htmlspecialchars(BoatingSchoolService::getCategoryLabel((string) ($srv['category'] ?? '')), ENT_QUOTES, 'UTF-8') ?>
                                     </span>
-                                </td>
-                                <td>
-                                    <?php if (!empty($srv['boat_type'])): ?>
-                                        <?= BoatingSchoolService::getBoatTypeBadge((string) $srv['boat_type']) ?>
-                                    <?php else: ?>
-                                        <span class="text-muted small">Flexibel / Alle</span>
-                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if (!empty($srv['duration_minutes'])): ?>
@@ -285,27 +267,31 @@ ob_start();
                             <input type="text" name="code" class="form-control" placeholder="z. B. PRAX-MOT-90">
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label small fw-semibold">Kategorie</label>
-                            <select name="category" class="form-select">
-                                <option value="practical">Praxisunterricht (practical)</option>
-                                <option value="theory">Theoriekurs (theory)</option>
-                                <option value="rental">Bootsmiete (rental)</option>
-                                <option value="exam">Prüfungsfahrt (exam)</option>
-                                <option value="package">Pauschale / Paket (package)</option>
-                                <option value="other">Sonstiges (other)</option>
-                            </select>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-semibold">
+                                Kategorie / Leistungsart <span class="text-danger">*</span>
+                                <span class="text-muted fw-normal ms-1">(beliebig bearbeitbar oder aus Liste wählen)</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="text" name="category" id="createServiceCategory" list="createServiceCategoryList" class="form-control" placeholder="z. B. Praxisunterricht, VIP-Coaching, Bootsmiete..." required>
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Vorschläge anzeigen"></button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="max-height: 240px; overflow-y: auto;">
+                                    <?php foreach ($availableCategories as $catKey => $catLabel): ?>
+                                        <li>
+                                            <a class="dropdown-item py-1.5 small" href="javascript:void(0)" onclick="document.getElementById('createServiceCategory').value = <?= htmlspecialchars(json_encode($catLabel), ENT_QUOTES, 'UTF-8') ?>">
+                                                <?= htmlspecialchars($catLabel, ENT_QUOTES, 'UTF-8') ?>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                            <datalist id="createServiceCategoryList">
+                                <?php foreach ($availableCategories as $catKey => $catLabel): ?>
+                                    <option value="<?= htmlspecialchars($catLabel, ENT_QUOTES, 'UTF-8') ?>">
+                                <?php endforeach; ?>
+                            </datalist>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-semibold">Bootstyp</label>
-                            <select name="boat_type" class="form-select">
-                                <option value="any">Alle / Beliebig (any)</option>
-                                <option value="motor">Motorboot (motor)</option>
-                                <option value="sail">Segelboot (sail)</option>
-                                <option value="rib">RIB / Festrumpfschlauchboot (rib)</option>
-                                <option value="electric">Elektroboot (electric)</option>
-                            </select>
-                        </div>
+                        <input type="hidden" name="boat_type" value="any">
                         <div class="col-md-4">
                             <label class="form-label small fw-semibold">Dauer (in Minuten)</label>
                             <input type="number" name="duration_minutes" class="form-control" value="60" min="15" step="15">
