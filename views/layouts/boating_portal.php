@@ -137,6 +137,7 @@ unset($_SESSION['flash_portal_success'], $_SESSION['flash_portal_error'], $_SESS
 </head>
 <body>
     <!-- Top-Navigation -->
+    <?php if (empty($useSidebarLayout)): ?>
     <nav class="navbar navbar-expand-lg navbar-dark portal-navbar sticky-top">
         <div class="container">
             <a class="navbar-brand navbar-brand-logo" href="?route=bootschule">
@@ -249,6 +250,12 @@ unset($_SESSION['flash_portal_success'], $_SESSION['flash_portal_error'], $_SESS
             &copy; <?= date('Y') ?> <?= htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8') ?>. Alle Rechte vorbehalten.
         </div>
     </footer>
+    <?php else: ?>
+    <!-- Full-screen Sidebar Layout -->
+    <main class="portal-main-fluid p-0 m-0" style="min-height: 100vh; background-color: #f8fafc;">
+        <?= $content ?>
+    </main>
+    <?php endif; ?>
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

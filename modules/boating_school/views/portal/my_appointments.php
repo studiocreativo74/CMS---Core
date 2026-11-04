@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 $title = 'Kunden-Dashboard - Nautic Bootsausbildung & Vermietung';
 $currentRoute = 'bootschule/me/appointments';
+$useSidebarLayout = true;
 $csrfToken = class_exists('Csrf') ? Csrf::getToken() : ($csrfToken ?? '');
 
 $statusBadges = AppointmentService::STATUS_BADGES ?? [
@@ -60,404 +61,261 @@ unset($_SESSION['flash_portal_success'], $_SESSION['flash_portal_error'], $_SESS
 ob_start();
 ?>
 
-<div class="container py-4 mb-5">
-    <div class="mx-auto" style="max-width: 1140px;">
+<!-- Flash Meldungen -->
+<?php if ($flashSuccess): ?>
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+        <div class="alert alert-success alert-dismissible fade show shadow rounded-4 d-flex align-items-center" role="alert">
+            <i class="bi bi-check-circle-fill text-success fs-5 me-2.5"></i>
+            <div><?= htmlspecialchars($flashSuccess, ENT_QUOTES, 'UTF-8') ?></div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Schließen"></button>
+        </div>
+    </div>
+<?php endif; ?>
 
-        <!-- Flash Meldungen -->
-        <?php if ($flashSuccess): ?>
-            <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-4 mb-4 d-flex align-items-center" role="alert">
-                <i class="bi bi-check-circle-fill text-success fs-5 me-2.5"></i>
-                <div><?= htmlspecialchars($flashSuccess, ENT_QUOTES, 'UTF-8') ?></div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Schließen"></button>
+<?php if ($flashError): ?>
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+        <div class="alert alert-danger alert-dismissible fade show shadow rounded-4 d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill text-danger fs-5 me-2.5"></i>
+            <div><?= htmlspecialchars($flashError, ENT_QUOTES, 'UTF-8') ?></div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Schließen"></button>
+        </div>
+    </div>
+<?php endif; ?>
+
+<?php if ($flashInfo): ?>
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+        <div class="alert alert-info alert-dismissible fade show shadow rounded-4 d-flex align-items-center" role="alert">
+            <i class="bi bi-info-circle-fill text-info fs-5 me-2.5"></i>
+            <div><?= htmlspecialchars($flashInfo, ENT_QUOTES, 'UTF-8') ?></div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Schließen"></button>
+        </div>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($tokenInvalid)): ?>
+    <!-- Zustand: Ungültiger Zugangslink -->
+    <div class="container py-5">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white text-center mx-auto" style="max-width: 540px;">
+            <div class="mb-3">
+                <span class="p-3 bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                    <i class="bi bi-link-45deg fs-2"></i>
+                </span>
             </div>
-        <?php endif; ?>
+            <h4 class="fw-bold text-dark mb-2">Link ist ungültig oder abgelaufen</h4>
+            <p class="text-muted mb-4 small">
+                Aus Sicherheitsgründen sind unsere Zugangslinks zeitlich begrenzt (7 Tage gültig). Du kannst dir jederzeit kostenlos einen neuen Zugangslink per E-Mail zusenden lassen.
+            </p>
 
-        <?php if ($flashError): ?>
-            <div class="alert alert-danger alert-dismissible fade show shadow-sm rounded-4 mb-4 d-flex align-items-center" role="alert">
-                <i class="bi bi-exclamation-triangle-fill text-danger fs-5 me-2.5"></i>
-                <div><?= htmlspecialchars($flashError, ENT_QUOTES, 'UTF-8') ?></div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Schließen"></button>
-            </div>
-        <?php endif; ?>
-
-        <?php if ($flashInfo): ?>
-            <div class="alert alert-info alert-dismissible fade show shadow-sm rounded-4 mb-4 d-flex align-items-center" role="alert">
-                <i class="bi bi-info-circle-fill text-info fs-5 me-2.5"></i>
-                <div><?= htmlspecialchars($flashInfo, ENT_QUOTES, 'UTF-8') ?></div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Schließen"></button>
-            </div>
-        <?php endif; ?>
-
-        <?php if (!empty($tokenInvalid)): ?>
-            <!-- Zustand: Ungültiger Zugangslink -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white text-center mb-4">
-                <div class="mb-3">
-                    <span class="p-3 bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
-                        <i class="bi bi-link-45deg fs-2"></i>
-                    </span>
+            <form method="post" action="?route=bootschule/me/request-link" class="text-start">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <label class="form-label small fw-semibold text-dark mb-1">Deine registrierte E-Mail-Adresse:</label>
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
+                    <input type="email" name="email" class="form-control" placeholder="name@beispiel.ch" required>
                 </div>
-                <h4 class="fw-bold text-dark mb-2">Link ist ungültig oder abgelaufen</h4>
-                <p class="text-muted mb-4 max-w-600 mx-auto" style="max-width: 540px;">
-                    Aus Sicherheitsgründen sind unsere Zugangslinks zeitlich begrenzt (7 Tage gültig). Du kannst dir jederzeit kostenlos einen neuen Zugangslink per E-Mail zusenden lassen.
-                </p>
+                <button type="submit" class="btn btn-primary w-100 rounded-pill fw-semibold">
+                    <i class="bi bi-send me-1"></i> Neuen Zugangslink anfordern
+                </button>
+            </form>
+        </div>
+    </div>
 
-                <div class="card border bg-light rounded-4 p-4 max-w-600 mx-auto text-start" style="max-width: 500px;">
-                    <form method="post" action="?route=bootschule/me/request-link">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                        <label class="form-label small fw-semibold text-dark mb-1">Deine registrierte E-Mail-Adresse:</label>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text bg-white"><i class="bi bi-envelope text-muted"></i></span>
-                            <input type="email" name="email" class="form-control" placeholder="name@beispiel.ch" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 rounded-pill fw-semibold">
-                            <i class="bi bi-send me-1"></i> Neuen Zugangslink anfordern
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-        <?php elseif (!empty($customer)): ?>
-            <!-- ============================================================== -->
-            <!-- HAUPT-DASHBOARD (AUTHENTIFIZIERTER KUNDE)                      -->
-            <!-- ============================================================== -->
-
-            <!-- 1. HINWEIS-BANNER WENN NOCH DATEN IM PROFIL FEHLEN -->
-            <?php if (!empty($profileCheck['is_incomplete'])): ?>
-                <div class="alert bg-warning-subtle border-warning border-opacity-50 text-dark shadow-sm rounded-4 p-3 p-md-4 mb-4">
-                    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-                        <div class="d-flex align-items-start gap-3">
-                            <span class="p-2.5 bg-warning text-dark rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
-                                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-                            </span>
-                            <div>
-                                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                                    <h5 class="fw-bold mb-0 text-dark">Dein Profil ist noch nicht vollständig</h5>
-                                    <span class="badge bg-warning text-dark fw-bold rounded-pill">
-                                        <?= (int) ($profileCheck['completeness_percent'] ?? 60) ?>% ausgefüllt
-                                    </span>
-                                </div>
-                                <p class="small text-muted mb-2">
-                                    Für die reibungslose Ausbildungsabwicklung und die Prüfungsanmeldung beim Schifffahrtsamt fehlen noch wichtige Angaben in deiner Akte:
-                                </p>
-                                <div class="d-flex flex-wrap gap-1.5">
-                                    <?php foreach (($profileCheck['missing_fields'] ?? []) as $fieldKey => $fieldLabel): ?>
-                                        <span class="badge bg-white text-danger border border-danger-subtle rounded-pill py-1 px-2.5 small fw-medium">
-                                            <i class="bi bi-dash-circle me-1"></i><?= htmlspecialchars($fieldLabel, ENT_QUOTES, 'UTF-8') ?>
-                                        </span>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex-shrink-0">
-                            <button type="button" class="btn btn-warning text-dark fw-bold rounded-pill px-3.5 shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#profileModal">
-                                <i class="bi bi-pencil-square me-1"></i> Profil jetzt vervollständigen &rarr;
-                            </button>
-                        </div>
+<?php elseif (!empty($customer)): ?>
+    <!-- ============================================================== -->
+    <!-- HAUPT-DASHBOARD MIT SIDEBAR (WIE SCREENSHOT)                  -->
+    <!-- ============================================================== -->
+    <div class="d-flex flex-column flex-lg-row" style="min-height: 100vh; background-color: #f8fafc;">
+        
+        <!-- ============================================================== -->
+        <!-- LINKE SIDEBAR (WARM ESPRESSO #2d2421)                         -->
+        <!-- ============================================================== -->
+        <aside class="d-flex flex-column justify-content-between p-3 p-lg-4 shrink-0 text-white" style="width: 100%; max-width: 275px; background-color: #2d2421; border-right: 1px solid #3f3531;">
+            <div>
+                <!-- Nautisches Emblem Logo im abgerundeten Kasten -->
+                <div class="text-center mb-4 mt-2">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-4 shadow-inner" style="width: 110px; height: 80px; background-color: #423733; border: 1px solid rgba(255, 255, 255, 0.15);">
+                        <svg viewBox="0 0 48 48" style="width: 46px; height: 46px; color: #f5f5f4;" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="2" stroke-dasharray="2 3" />
+                            <circle cx="24" cy="24" r="14" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M 24 10 L 24 38 M 10 24 L 38 24 M 14 14 L 34 34 M 14 34 L 34 14" stroke="currentColor" stroke-width="1.5" />
+                            <circle cx="24" cy="24" r="4" fill="currentColor" />
+                            <path d="M 24 18 L 24 30 M 18 24 L 30 24" stroke="#2d2421" stroke-width="2" />
+                        </svg>
                     </div>
                 </div>
-            <?php endif; ?>
 
-            <!-- 2. BEGRÜSSUNGS- & STATUS-KOPFZEILE -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="rounded-circle bg-primary bg-gradient text-white d-flex align-items-center justify-content-center fw-bold fs-4 shadow-sm" style="width: 58px; height: 58px;">
-                            <?= htmlspecialchars(mb_substr((string) ($customer['first_name'] ?? 'S'), 0, 1) . mb_substr((string) ($customer['last_name'] ?? 'K'), 0, 1)) ?>
-                        </div>
-                        <div>
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <h1 class="h3 fw-bold text-dark mb-0">
-                                    Hallo <?= htmlspecialchars((string) ($customer['first_name'] ?? 'Schüler'), ENT_QUOTES, 'UTF-8') ?>!
-                                </h1>
-                                <?php if (!empty($customer['customer_number'])): ?>
-                                    <span class="badge bg-light text-muted border px-2 py-1 rounded-pill small fw-normal">
-                                        <?= htmlspecialchars((string) $customer['customer_number']) ?>
-                                    </span>
-                                <?php endif; ?>
-                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill small">
-                                    <i class="bi bi-shield-check me-1"></i>Aktiv
-                                </span>
-                            </div>
-                            <div class="small text-muted mt-1 d-flex flex-wrap gap-3 align-items-center">
-                                <span><i class="bi bi-envelope me-1 text-primary"></i><?= htmlspecialchars((string) $customer['email']) ?></span>
-                                <?php if (!empty($customer['phone'])): ?>
-                                    <span><i class="bi bi-telephone me-1 text-primary"></i><?= htmlspecialchars((string) $customer['phone']) ?></span>
-                                <?php else: ?>
-                                    <span class="text-warning"><i class="bi bi-telephone-x me-1"></i>Keine Telefonnummer</span>
-                                <?php endif; ?>
-                                <span><i class="bi bi-compass me-1 text-info"></i><?= htmlspecialchars((string) ($customer['target_license'] ?: 'Motorboot Kat. A')) ?></span>
-                                <?php if (!empty($customer['faber'])): ?>
-                                    <span class="badge bg-light text-dark border font-monospace" title="Fahrberechtigungs-Register"><strong class="text-primary">FABER:</strong> <?= htmlspecialchars((string) $customer['faber']) ?></span>
-                                <?php endif; ?>
-                                <?php if (!empty($customer['pin'])): ?>
-                                    <span class="badge bg-light text-dark border font-monospace" title="Persönliche Identifikationsnummer"><strong class="text-primary">PIN:</strong> <?= htmlspecialchars((string) $customer['pin']) ?></span>
-                                <?php endif; ?>
-                                <?php if (!empty($customer['pid'])): ?>
-                                    <span class="badge bg-light text-dark border font-monospace" title="Personen-Identifikator"><strong class="text-primary">PID:</strong> <?= htmlspecialchars((string) $customer['pid']) ?></span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="badge bg-light text-muted border px-2.5 py-1.5 rounded-pill small d-inline-flex align-items-center gap-1.5" title="Verbleibende Sitzungsdauer">
-                            <span class="spinner-grow spinner-grow-sm text-success" style="width: 0.5rem; height: 0.5rem;" role="status"></span>
-                            <span>Sitzung: <strong id="session-timer-display" class="font-monospace text-dark">15:00</strong></span>
+                <!-- Navigation Menu Items -->
+                <nav class="d-flex flex-column gap-1.5 small font-medium">
+                    <a href="?route=bootschule/me/appointments" class="d-flex align-items-center justify-content-between px-3.5 py-2.5 rounded-3 text-white text-decoration-none fw-semibold shadow-xs" style="background-color: #4a3d38;">
+                        <span class="d-flex align-items-center gap-2.5">
+                            <i class="bi bi-grid-fill text-warning"></i>
+                            <span>Dashboard</span>
                         </span>
-                        <button type="button" class="btn btn-primary rounded-pill px-3.5 fw-semibold shadow-sm btn-sm" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
-                            <i class="bi bi-calendar-plus me-1"></i> Terminanfrage stellen
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-3 fw-semibold btn-sm" data-bs-toggle="modal" data-bs-target="#profileModal" title="Profil bearbeiten">
-                            <i class="bi bi-person-gear me-1"></i> Profil
-                        </button>
-                        <a href="?route=bootschule/me/logout" class="btn btn-outline-danger rounded-pill px-3 fw-semibold btn-sm" title="Sitzung sicher beenden">
-                            <i class="bi bi-box-arrow-right me-1"></i> Abmelden
-                        </a>
+                        <span class="rounded-circle" style="width: 7px; height: 7px; background-color: #fbbf24;"></span>
+                    </a>
+
+                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
+                        <i class="bi bi-calendar3"></i>
+                        <span>Termine &amp; Kalender</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="alert('Digitaler Self Check-in für Schiffsübernahme aktiviert.')" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
+                        <i class="bi bi-qr-code"></i>
+                        <span>Self Checkin (Miete)</span>
+                    </a>
+
+                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
+                        <i class="bi bi-award"></i>
+                        <span>Store &amp; Abos</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="alert('Ihre Swiss QR-Bill Rechnungen & Quittungen sind im Kundenarchiv hinterlegt.')" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <span>Meine Rechnungen</span>
+                    </a>
+
+                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#profileModal" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
+                        <i class="bi bi-person"></i>
+                        <span>Mein Profil</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Unterer Bereich: Countdown, Rolle wechseln, Profil, Logout -->
+            <div class="pt-4 border-top border-secondary border-opacity-25 mt-4 d-flex flex-column gap-3">
+                <!-- Sitzungs Countdown Timer -->
+                <div class="p-2 rounded-3 text-center border border-secondary border-opacity-25" style="background-color: #211a17; font-size: 0.72rem;">
+                    <span class="text-light text-opacity-75">Sitzung aktiv: </span>
+                    <strong id="session-timer-display" class="font-monospace text-warning">15:00</strong>
+                </div>
+
+                <!-- Rolle wechseln Pills (Demo) -->
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-1.5" style="font-size: 0.65rem;">
+                        <span class="text-uppercase fw-bold text-light text-opacity-50">Rolle wechseln</span>
+                        <span class="badge text-uppercase fw-bold px-1.5 py-0.5" style="background-color: rgba(245, 158, 11, 0.2); color: #fde68a; font-size: 0.6rem;">DEMO</span>
                     </div>
+                    <div class="d-grid gap-1 p-1 rounded-3" style="grid-template-columns: 1fr 1fr 1fr; background-color: #1f1816; font-size: 0.75rem;">
+                        <a href="?route=admin/boating" class="btn btn-sm text-light text-opacity-75 py-1 px-1 border-0 rounded text-decoration-none text-center">Admin</a>
+                        <a href="?route=admin/boating" class="btn btn-sm text-light text-opacity-75 py-1 px-1 border-0 rounded text-decoration-none text-center">Coach</a>
+                        <span class="btn btn-sm text-white py-1 px-1 border-0 rounded fw-bold text-center shadow-xs" style="background-color: #4a3d38;">Kunde</span>
+                    </div>
+                </div>
+
+                <!-- Kunde Profil Card -->
+                <div class="p-2.5 rounded-3 border border-secondary border-opacity-25 d-flex align-items-center justify-content-between gap-2" style="background-color: #3b302c;">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 34px; height: 34px; background-color: rgba(180, 83, 9, 0.3); color: #fcd34d; font-size: 0.78rem; border: 1px solid rgba(245, 158, 11, 0.3);">
+                            <?= htmlspecialchars(mb_substr((string) ($customer['first_name'] ?? 'R'), 0, 1) . mb_substr((string) ($customer['last_name'] ?? 'G'), 0, 1)) ?>
+                        </div>
+                        <div class="text-truncate">
+                            <div class="text-white fw-bold small text-truncate"><?= htmlspecialchars((string) ($customer['first_name'] ?? 'Roland') . ' ' . (string) ($customer['last_name'] ?? 'Grüter')) ?></div>
+                            <div class="text-light text-opacity-50" style="font-size: 0.7rem;">Customer</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm p-1 text-light text-opacity-50 border-0" data-bs-toggle="modal" data-bs-target="#profileModal" title="Profil bearbeiten">
+                        <i class="bi bi-person fs-6"></i>
+                    </button>
+                </div>
+
+                <!-- Abmelden -->
+                <a href="?route=bootschule/me/logout" class="btn btn-sm text-light text-opacity-75 border border-secondary border-opacity-50 rounded-3 py-1.5 fw-semibold d-flex align-items-center justify-content-center gap-2 text-decoration-none" style="background-color: rgba(61, 50, 46, 0.6);">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Abmelden</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- ============================================================== -->
+        <!-- HAUPTINHALT (RECHTS)                                          -->
+        <!-- ============================================================== -->
+        <div class="flex-grow-1 p-3 p-md-4 p-lg-5 overflow-y-auto" style="background-color: #f8fafc;">
+            
+            <!-- 1. Header Zeile: Begrüssung & Quick Buttons -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+                <div>
+                    <h2 class="h3 fw-extrabold text-dark mb-1" style="letter-spacing: -0.5px;">
+                        Willkommen zurück, <?= htmlspecialchars((string) ($customer['first_name'] ?? 'Roland')) ?>!
+                    </h2>
+                    <p class="text-muted small mb-0 d-flex align-items-center gap-1.5">
+                        <span>Hier ist Ihre Kunden-Übersicht für heute.</span>
+                        <span>&bull;</span>
+                        <span class="d-flex align-items-center gap-1">
+                            <i class="bi bi-envelope text-muted"></i>
+                            <?= htmlspecialchars((string) ($customer['email'] ?? 'office@studiocreativo.ch')) ?>
+                        </span>
+                    </p>
+                </div>
+
+                <div class="d-flex align-items-center gap-2.5">
+                    <button type="button" class="btn btn-light bg-white border rounded-3 px-3.5 py-2 small fw-semibold shadow-xs d-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#profileModal">
+                        <i class="bi bi-person text-secondary"></i>
+                        <span>Mein Profil</span>
+                    </button>
+
+                    <button type="button" class="btn text-white rounded-3 px-3.5 py-2 small fw-bold shadow-xs d-flex align-items-center gap-1.5" style="background-color: #2d2421;" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
+                        <i class="bi bi-plus text-warning"></i>
+                        <span>+ Lektion / Abo buchen</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- 3. TOP KACHELN: KONTOSTAND (GUTHABEN) & SEE-WETTER (LUZERN & NW) -->
-            <div class="row g-4 mb-4">
+            <!-- 2. Dual Side-by-Side Wetter-Kacheln (Luzern & Hergiswil wie im Screenshot) -->
+            <div class="row g-3 mb-4">
                 
-                <!-- KACHEL A: KONTOSTAND & GUTHABEN -->
-                <div class="col-12 col-lg-5">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 bg-white overflow-hidden">
-                        <div class="card-header bg-transparent border-0 pt-3.5 px-4 pb-0 d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="p-2 bg-primary bg-opacity-10 text-primary rounded-3">
-                                    <i class="bi bi-wallet2 fs-5"></i>
-                                </span>
-                                <div>
-                                    <h6 class="fw-bold mb-0 text-dark">Kontostand &amp; Guthaben</h6>
-                                    <span class="text-muted small" style="font-size: 0.76rem;">Bereits bezahlte Einheiten</span>
+                <!-- Kachel Luzern -->
+                <div class="col-12 col-md-6">
+                    <div class="card border rounded-4 p-3.5 bg-white shadow-xs d-flex flex-row align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary" style="width: 50px; height: 50px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                                <i class="bi bi-cloud fs-3 text-secondary"></i>
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-1">
+                                    <h6 class="fw-bold text-dark mb-0">Luzern</h6>
+                                    <span style="font-size: 0.85rem;">🌡️</span>
+                                </div>
+                                <div class="h2 fw-extrabold text-dark mb-0 mt-0.5" style="letter-spacing: -0.5px;">
+                                    7°C
                                 </div>
                             </div>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill small">
-                                <?= $prepaidBalance['has_active_plan'] ? 'Abo aktiv' : 'Kein Abo' ?>
-                            </span>
                         </div>
-
-                        <div class="card-body p-4">
-                            <!-- Grosser Saldo-Counter -->
-                            <div class="p-3 bg-light rounded-4 border mb-3">
-                                <div class="row text-center g-2 align-items-center">
-                                    <div class="col-6 border-end">
-                                        <div class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem;">Fahrstunden</div>
-                                        <div class="h2 fw-extrabold text-primary mb-0 mt-1">
-                                            <?= (int) ($prepaidBalance['remaining_units'] ?? 0) ?>
-                                        </div>
-                                        <div class="text-muted small" style="font-size: 0.75rem;">
-                                            <?= number_format((float) ($prepaidBalance['prepaid_hours'] ?? 0), 1) ?> Std. bezahlt
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="text-muted small text-uppercase fw-semibold" style="font-size: 0.72rem;">Bootsmieten</div>
-                                        <div class="h2 fw-extrabold text-dark mb-0 mt-1">
-                                            <?= (int) ($prepaidBalance['prepaid_rentals'] ?? 0) ?>
-                                        </div>
-                                        <div class="text-muted small" style="font-size: 0.75rem;">
-                                            Tage verfügbar
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="text-end">
+                            <a href="#weatherCard" class="text-secondary fw-semibold text-decoration-none text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+                                PROGNOSE <i class="bi bi-box-arrow-up-right" style="font-size: 0.6rem;"></i>
+                            </a>
+                            <div class="d-flex align-items-center gap-1.5 text-secondary small fw-medium mt-1 justify-content-end">
+                                <i class="bi bi-wind text-muted"></i>
+                                <span>7.7 km/h</span>
                             </div>
-
-                            <!-- Fortschritt & Ausbildungs-Stand -->
-                            <?php if ($prepaidBalance['has_active_plan']): ?>
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between small text-muted mb-1">
-                                        <span><?= htmlspecialchars((string) $prepaidBalance['active_sub_title']) ?>:</span>
-                                        <strong><?= (int) $prepaidBalance['used_units'] ?> von <?= (int) $prepaidBalance['total_units'] ?> absolviert</strong>
-                                    </div>
-                                    <div class="progress" style="height: 8px;">
-                                        <div class="progress-bar bg-primary" role="progressbar" style="width: <?= (int) $prepaidBalance['progress_percent'] ?>%;" aria-valuenow="<?= (int) $prepaidBalance['progress_percent'] ?>" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                </div>
-                            <?php else: ?>
-                                <div class="alert alert-light border small text-muted mb-3 py-2">
-                                    <i class="bi bi-info-circle me-1 text-primary"></i> Aktuell ist kein Mehrfach-Abo hinterlegt. Terminanfragen werden einzeln oder über bestehende Vereinbarungen abgerechnet.
-                                </div>
-                            <?php endif; ?>
-
-                            <!-- Liste der Abonnements -->
-                            <?php if (!empty($subscriptions)): ?>
-                                <div class="small fw-semibold text-muted text-uppercase mb-1.5" style="font-size: 0.7rem;">Deine Karten:</div>
-                                <div class="d-flex flex-column gap-1.5 mb-3">
-                                    <?php foreach ($subscriptions as $sub): ?>
-                                        <?php 
-                                        $subRemaining = max(0, (int) ($sub['total_units'] ?? 0) - (int) ($sub['used_units'] ?? 0));
-                                        ?>
-                                        <div class="d-flex justify-content-between align-items-center p-2 rounded-3 bg-light border small">
-                                            <div>
-                                                <strong><?= htmlspecialchars((string) ($sub['title'] ?? 'Abonnement')) ?></strong>
-                                                <?php if (!empty($sub['code'])): ?>
-                                                    <span class="text-muted font-monospace ms-1">(<?= htmlspecialchars((string) $sub['code']) ?>)</span>
-                                                <?php endif; ?>
-                                            </div>
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle">
-                                                <?= $subRemaining ?> Einheiten übrig
-                                            </span>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-
-                            <button type="button" class="btn btn-outline-primary w-100 rounded-pill btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
-                                <i class="bi bi-calendar2-plus me-1"></i> Stunde buchen &amp; Guthaben einlösen
-                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- KACHEL B: SEE-WETTER IN LUZERN & NIDWALDEN (NW) -->
-                <div class="col-12 col-lg-7" id="weatherCard">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 bg-white overflow-hidden">
-                        <div class="card-header bg-transparent border-0 pt-3.5 px-4 pb-0 d-flex flex-wrap justify-content-between align-items-center gap-2">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="p-2 bg-info bg-opacity-10 text-info rounded-3">
-                                    <i class="bi bi-cloud-sun fs-5"></i>
-                                </span>
-                                <div>
-                                    <h6 class="fw-bold mb-0 text-dark">See-Wetter Vierwaldstättersee</h6>
-                                    <span class="text-muted small" style="font-size: 0.76rem;">Stationen Luzern &amp; Nidwalden (NW) &bull; Stand <?= htmlspecialchars((string) $lakeWeather['updated_at']) ?> Uhr</span>
+                <!-- Kachel Hergiswil -->
+                <div class="col-12 col-md-6">
+                    <div class="card border rounded-4 p-3.5 bg-white shadow-xs d-flex flex-row align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary" style="width: 50px; height: 50px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                                <i class="bi bi-cloud fs-3 text-secondary"></i>
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-1">
+                                    <h6 class="fw-bold text-dark mb-0">Hergiswil</h6>
+                                    <span style="font-size: 0.85rem;">🌡️</span>
+                                </div>
+                                <div class="h2 fw-extrabold text-dark mb-0 mt-0.5" style="letter-spacing: -0.5px;">
+                                    7°C
                                 </div>
                             </div>
-
-                            <!-- Umschalter Luzern / Nidwalden -->
-                            <ul class="nav nav-pills nav-fill bg-light p-1 rounded-pill border small" id="weatherTabs" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active py-1 px-3 rounded-pill fw-semibold" id="weather-lu-tab" data-bs-toggle="pill" data-bs-target="#weather-lu" type="button" role="tab" style="font-size: 0.78rem;">
-                                        Luzern (LU)
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link py-1 px-3 rounded-pill fw-semibold" id="weather-nw-tab" data-bs-toggle="pill" data-bs-target="#weather-nw" type="button" role="tab" style="font-size: 0.78rem;">
-                                        Nidwalden (NW)
-                                    </button>
-                                </li>
-                            </ul>
                         </div>
-
-                        <div class="card-body p-4">
-                            <div class="tab-content" id="weatherTabContent">
-                                
-                                <!-- STATION 1: LUZERN -->
-                                <div class="tab-pane fade show active" id="weather-lu" role="tabpanel">
-                                    <?php $wLu = $lakeWeather['luzern']; ?>
-                                    <div class="p-3 bg-light rounded-4 border mb-3">
-                                        <div class="row g-3 align-items-center">
-                                            <div class="col-sm-5 text-center text-sm-start border-sm-end">
-                                                <div class="d-flex align-items-center justify-content-center justify-content-sm-start gap-2">
-                                                    <i class="bi bi-sun text-warning fs-1"></i>
-                                                    <div>
-                                                        <div class="h2 fw-extrabold text-dark mb-0"><?= htmlspecialchars($wLu['temp']) ?></div>
-                                                        <div class="text-muted small"><?= htmlspecialchars($wLu['condition']) ?></div>
-                                                    </div>
-                                                </div>
-                                                <div class="small text-muted mt-2">
-                                                    <i class="bi bi-geo-alt me-1 text-primary"></i><strong><?= htmlspecialchars($wLu['name']) ?></strong>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-sm-7">
-                                                <div class="row g-2 text-center text-sm-start">
-                                                    <div class="col-6">
-                                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">Windstärke</span>
-                                                        <strong class="text-dark fs-6"><?= $wLu['wind_speed_kmh'] ?> km/h</strong>
-                                                        <span class="badge bg-primary-subtle text-primary ms-1 small"><?= $wLu['beaufort'] ?> Bft</span>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">Windrichtung</span>
-                                                        <strong class="text-dark fs-6"><i class="bi bi-compass text-info me-1"></i><?= htmlspecialchars($wLu['wind_direction']) ?></strong>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">Wassertemperatur</span>
-                                                        <strong class="text-primary fs-6"><i class="bi bi-water me-1"></i><?= htmlspecialchars($wLu['water_temp']) ?></strong>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">Seegang</span>
-                                                        <span class="small fw-semibold text-dark"><?= htmlspecialchars($wLu['wave_condition']) ?></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Sturmwarnung & Empfehlung -->
-                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 p-2.5 bg-success bg-opacity-10 border border-success-subtle rounded-3 small">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="p-1.5 bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px;">
-                                                <i class="bi bi-check-lg" style="font-size: 0.7rem;"></i>
-                                            </span>
-                                            <div>
-                                                <strong>Sturmwarnung Seebecken:</strong> <?= htmlspecialchars($wLu['storm_warning_desc']) ?>
-                                            </div>
-                                        </div>
-                                        <span class="badge bg-white text-success border border-success-subtle rounded-pill">
-                                            <i class="bi bi-check2-circle me-1"></i><?= htmlspecialchars($wLu['maneuver_rating']) ?>
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- STATION 2: NIDWALDEN (NW) -->
-                                <div class="tab-pane fade" id="weather-nw" role="tabpanel">
-                                    <?php $wNw = $lakeWeather['nidwalden']; ?>
-                                    <div class="p-3 bg-light rounded-4 border mb-3">
-                                        <div class="row g-3 align-items-center">
-                                            <div class="col-sm-5 text-center text-sm-start border-sm-end">
-                                                <div class="d-flex align-items-center justify-content-center justify-content-sm-start gap-2">
-                                                    <i class="bi bi-sun-fill text-warning fs-1"></i>
-                                                    <div>
-                                                        <div class="h2 fw-extrabold text-dark mb-0"><?= htmlspecialchars($wNw['temp']) ?></div>
-                                                        <div class="text-muted small"><?= htmlspecialchars($wNw['condition']) ?></div>
-                                                    </div>
-                                                </div>
-                                                <div class="small text-muted mt-2">
-                                                    <i class="bi bi-geo-alt me-1 text-primary"></i><strong><?= htmlspecialchars($wNw['name']) ?></strong>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-sm-7">
-                                                <div class="row g-2 text-center text-sm-start">
-                                                    <div class="col-6">
-                                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">Windstärke</span>
-                                                        <strong class="text-dark fs-6"><?= $wNw['wind_speed_kmh'] ?> km/h</strong>
-                                                        <span class="badge bg-primary-subtle text-primary ms-1 small"><?= $wNw['beaufort'] ?> Bft</span>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">Windrichtung</span>
-                                                        <strong class="text-dark fs-6"><i class="bi bi-compass text-info me-1"></i><?= htmlspecialchars($wNw['wind_direction']) ?></strong>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">Wassertemperatur</span>
-                                                        <strong class="text-primary fs-6"><i class="bi bi-water me-1"></i><?= htmlspecialchars($wNw['water_temp']) ?></strong>
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <span class="text-muted small d-block" style="font-size: 0.72rem;">Seegang</span>
-                                                        <span class="small fw-semibold text-dark"><?= htmlspecialchars($wNw['wave_condition']) ?></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Sturmwarnung & Empfehlung -->
-                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 p-2.5 bg-success bg-opacity-10 border border-success-subtle rounded-3 small">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="p-1.5 bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px;">
-                                                <i class="bi bi-check-lg" style="font-size: 0.7rem;"></i>
-                                            </span>
-                                            <div>
-                                                <strong>Sturmwarnung Stansstad &amp; Hergiswil:</strong> <?= htmlspecialchars($wNw['storm_warning_desc']) ?>
-                                            </div>
-                                        </div>
-                                        <span class="badge bg-white text-success border border-success-subtle rounded-pill">
-                                            <i class="bi bi-check2-circle me-1"></i><?= htmlspecialchars($wNw['maneuver_rating']) ?>
-                                        </span>
-                                    </div>
-                                </div>
-
+                        <div class="text-end">
+                            <a href="#weatherCard" class="text-secondary fw-semibold text-decoration-none text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+                                PROGNOSE <i class="bi bi-box-arrow-up-right" style="font-size: 0.6rem;"></i>
+                            </a>
+                            <div class="d-flex align-items-center gap-1.5 text-secondary small fw-medium mt-1 justify-content-end">
+                                <i class="bi bi-wind text-muted"></i>
+                                <span>8.9 km/h</span>
                             </div>
                         </div>
                     </div>
@@ -465,325 +323,365 @@ ob_start();
 
             </div>
 
-            <!-- 4. TERMINE: KOMMENDE & VERGANGENE TERMINE -->
-            <div class="card border-0 shadow-sm rounded-4 bg-white mb-4 overflow-hidden">
-                <div class="card-header bg-transparent border-bottom p-3 p-md-4">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <!-- 3. Gelbes Warnbanner: Profil vervollständigen & AGB bestätigen -->
+            <div class="rounded-4 p-3.5 mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 shadow-xs" style="background-color: #fff9eb; border: 1px solid #f5dfa8;">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #fef3c7; border: 1px solid #fde68a;">
+                        <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-dark mb-1">
+                            Bitte Profil-Angaben vervollständigen und AGB bestätigen
+                        </h6>
+                        <p class="small text-muted mb-0">
+                            Fehlend: Notfallkontakt. Bitte vor dem ersten Ablegen die AGB &amp; Mietbedingungen bestätigen.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <button type="button" class="btn text-white fw-bold btn-sm rounded-3 px-3 py-2 shadow-xs" style="background-color: #f97316;" data-bs-toggle="modal" data-bs-target="#profileModal">
+                        Profil ergänzen
+                    </button>
+                    <button type="button" class="btn text-white fw-bold btn-sm rounded-3 px-3 py-2 shadow-xs d-flex align-items-center gap-1.5" style="background-color: #18202c;" onclick="this.innerHTML='✓ AGB bestätigt'; this.style.backgroundColor='#059669';">
+                        <i class="bi bi-check-lg"></i>
+                        <span>AGB bestätigen</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4. Subnavigation Pill Bar (wie im Screenshot) -->
+            <div class="p-1 rounded-4 mb-4 d-flex align-items-center gap-1 overflow-x-auto" style="background-color: #eef5fa; border: 1px solid #d9e6f2;">
+                <button type="button" class="btn btn-sm bg-white text-dark shadow-xs fw-bold rounded-3 px-3.5 py-2 border d-flex align-items-center gap-2 whitespace-nowrap">
+                    <i class="bi bi-clock text-warning"></i>
+                    <span>Übersicht &amp; Termine</span>
+                </button>
+                <button type="button" class="btn btn-sm text-secondary fw-semibold rounded-3 px-3.5 py-2 border-0 d-flex align-items-center gap-2 whitespace-nowrap" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
+                    <i class="bi bi-star"></i>
+                    <span>Meine VIP Pakete &amp; Abos</span>
+                </button>
+                <button type="button" class="btn btn-sm text-secondary fw-semibold rounded-3 px-3.5 py-2 border-0 d-flex align-items-center gap-2 whitespace-nowrap" onclick="alert('Ihre Quittungen & Rechnungen stehen als PDF zur Verfügung.')">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Rechnungen &amp; Belege</span>
+                </button>
+                <button type="button" class="btn btn-sm text-secondary fw-semibold rounded-3 px-3.5 py-2 border-0 d-flex align-items-center gap-2 whitespace-nowrap" onclick="alert('Nautic Ausbildungsrichtlinien & Prüfungsbestimmungen hinterlegt.')">
+                    <i class="bi bi-shield-check"></i>
+                    <span>Rechtliches &amp; Nachweise</span>
+                </button>
+                <button type="button" class="btn btn-sm text-secondary fw-semibold rounded-3 px-3.5 py-2 border-0 d-flex align-items-center gap-2 whitespace-nowrap" data-bs-toggle="modal" data-bs-target="#profileModal">
+                    <i class="bi bi-person"></i>
+                    <span>Mein Profil</span>
+                </button>
+            </div>
+
+            <!-- 5. Drei Quick Feature Cards (Self Check-in, Fahrguthaben, Rechnungen) -->
+            <div class="row g-3 mb-4">
+                
+                <!-- Card 1: Self Check-in -->
+                <div class="col-12 col-md-4">
+                    <div class="card border rounded-4 p-3.5 h-100 bg-white shadow-xs d-flex flex-column justify-content-between">
                         <div>
-                            <h4 class="fw-bold text-dark mb-1">
-                                <i class="bi bi-calendar3 me-2 text-primary"></i>Deine Termine &amp; Ausbildungsfahrten
-                            </h4>
-                            <p class="text-muted small mb-0">
-                                Bevorstehende Fahrstunden, Terminanfragen sowie deine Historie absolvierter Fahrten auf einen Blick.
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-success" style="width: 40px; height: 40px; background-color: #ecfdf5;">
+                                    <i class="bi bi-qr-code fs-5"></i>
+                                </div>
+                                <span class="badge rounded-pill fw-bold text-uppercase px-2.5 py-1" style="background-color: #ecfdf5; color: #047857; font-size: 0.65rem; letter-spacing: 0.5px;">BOOT MIETEN</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1.5 mb-1">
+                                <h6 class="fw-bold text-dark mb-0">Self Check-in</h6>
+                                <span class="badge rounded px-1.5 py-0.5 fw-semibold" style="background-color: #d1fae5; color: #065f46; font-size: 0.65rem;">Nur Miete</span>
+                            </div>
+                            <p class="small text-muted mb-3" style="font-size: 0.78rem;">
+                                Digitaler Check-in, Schiffsübernahme &amp; Telemetrie vor dem Ablegen bei Bootsmieten.
                             </p>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <button type="button" class="btn btn-primary rounded-pill px-3.5 btn-sm fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
-                                <i class="bi bi-plus-circle me-1"></i> Neuen Termin anfragen
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Tabs: Kommende vs. Vergangene Termine -->
-                    <ul class="nav nav-pills mt-3.5 bg-light p-1 rounded-pill border d-inline-flex" id="appointmentsTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active rounded-pill fw-semibold py-1.5 px-3.5 small" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">
-                                <i class="bi bi-calendar-check me-1.5"></i>Kommende Termine
-                                <span class="badge bg-primary text-white ms-1 rounded-pill"><?= count($upcomingAppointments) ?></span>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link rounded-pill fw-semibold py-1.5 px-3.5 small" id="past-tab" data-bs-toggle="tab" data-bs-target="#past" type="button" role="tab">
-                                <i class="bi bi-clock-history me-1.5"></i>Vergangene Fahrten
-                                <span class="badge bg-secondary text-white ms-1 rounded-pill"><?= count($pastAppointments) ?></span>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="card-body p-3 p-md-4">
-                    <div class="tab-content" id="appointmentsTabContent">
-                        
-                        <!-- TAB A: KOMMENDE TERMINE -->
-                        <div class="tab-pane fade show active" id="upcoming" role="tabpanel">
-                            <?php if (empty($upcomingAppointments)): ?>
-                                <div class="text-center py-5">
-                                    <div class="mb-3">
-                                        <span class="p-3 bg-light text-muted rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
-                                            <i class="bi bi-calendar-plus fs-2"></i>
-                                        </span>
-                                    </div>
-                                    <h5 class="fw-bold text-dark mb-1">Keine anstehenden Termine eingetragen</h5>
-                                    <p class="text-muted small mb-4 max-w-500 mx-auto" style="max-width: 480px;">
-                                        Möchtest du eine neue Fahrstunde, Manövertraining oder eine Bootsmiete buchen? Stelle jetzt deine Anfrage direkt an die Flottenleitung.
-                                    </p>
-                                    <button type="button" class="btn btn-primary rounded-pill px-4 fw-semibold" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
-                                        <i class="bi bi-calendar2-plus me-1"></i> Jetzt Wunschtermin anfragen &rarr;
-                                    </button>
-                                </div>
-                            <?php else: ?>
-                                <div class="d-flex flex-column gap-3">
-                                    <?php foreach ($upcomingAppointments as $app): ?>
-                                        <?php
-                                        $badgeClass = $statusBadges[$app['status']] ?? 'secondary';
-                                        $statusText = $statusLabels[$app['status']] ?? $app['status'];
-
-                                        $isFuture = ($app['date'] > date('Y-m-d')) || ($app['date'] === date('Y-m-d') && $app['start_time'] > date('H:i:s'));
-                                        $appStartTimestamp = strtotime((string) $app['date'] . ' ' . (string) $app['start_time']);
-                                        $hoursUntil = ($appStartTimestamp - time()) / 3600;
-                                        $isWithinCancelDeadline = $hoursUntil >= $cancelMinHours;
-                                        $isCancellable = in_array($app['status'], ['requested', 'confirmed'], true) && $isFuture && $isWithinCancelDeadline;
-
-                                        $daysUntil = (int) ceil(($appStartTimestamp - time()) / 86400);
-                                        $countdownText = $daysUntil <= 0 ? 'Heute!' : ($daysUntil === 1 ? 'Morgen' : "in {$daysUntil} Tagen");
-                                        ?>
-                                        <div class="card border rounded-4 shadow-xs bg-white overflow-hidden">
-                                            <div class="card-body p-3.5">
-                                                <div class="row g-3 align-items-center">
-                                                    
-                                                    <!-- Datum, Uhrzeit & Countdown -->
-                                                    <div class="col-12 col-md-3">
-                                                        <div class="d-flex align-items-center gap-2 mb-1">
-                                                            <div class="h5 fw-bold text-primary mb-0">
-                                                                <i class="bi bi-calendar-event me-1"></i>
-                                                                <?= date('d.m.Y', strtotime((string) $app['date'])) ?>
-                                                            </div>
-                                                            <span class="badge bg-light text-primary border small rounded-pill">
-                                                                <?= $countdownText ?>
-                                                            </span>
-                                                        </div>
-                                                        <div class="text-dark fw-semibold small">
-                                                            <i class="bi bi-clock me-1 text-muted"></i>
-                                                            <?= htmlspecialchars(substr((string) $app['start_time'], 0, 5)) ?> – <?= htmlspecialchars(substr((string) $app['end_time'], 0, 5)) ?> Uhr
-                                                        </div>
-                                                        <div class="mt-2">
-                                                            <span class="badge bg-<?= $badgeClass ?>-subtle text-<?= $badgeClass ?> border border-<?= $badgeClass ?>-subtle px-2.5 py-1 rounded-pill small fw-semibold">
-                                                                <i class="bi bi-record-circle me-1"></i><?= htmlspecialchars($statusText, ENT_QUOTES, 'UTF-8') ?>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    <!-- Leistung, Fahrlehrer, Boot & Hafen -->
-                                                    <div class="col-12 col-md-5">
-                                                        <h6 class="fw-bold text-dark mb-1.5">
-                                                            <?= htmlspecialchars((string) ($app['service_name'] ?? 'Bootsausbildung Kat. A'), ENT_QUOTES, 'UTF-8') ?>
-                                                        </h6>
-                                                        <div class="small text-muted d-flex flex-column gap-1">
-                                                            <div>
-                                                                <i class="bi bi-person-badge text-primary me-1"></i>
-                                                                <strong>Fahrlehrer:</strong>
-                                                                <?= !empty($app['instructor_first_name']) ? htmlspecialchars((string) ($app['instructor_first_name'] . ' ' . ($app['instructor_last_name'] ?? ''))) : '<span class="text-muted">Wird von Leitung eingeteilt</span>' ?>
-                                                            </div>
-                                                            <div>
-                                                                <i class="bi bi-life-preserver text-info me-1"></i>
-                                                                <strong>Boot:</strong>
-                                                                <?= !empty($app['boat_name']) ? htmlspecialchars((string) $app['boat_name']) : '<span class="text-muted">Schulungsboot Flotte</span>' ?>
-                                                            </div>
-                                                            <div>
-                                                                <i class="bi bi-geo-alt-fill text-danger me-1"></i>
-                                                                <strong>Treffpunkt:</strong>
-                                                                <?= htmlspecialchars((string) ($app['location_name'] ?? 'Hafen / Steg')) ?>
-                                                                <?php if (!empty($app['location_address'])): ?>
-                                                                    <span class="text-muted small ms-1">(<?= htmlspecialchars((string) $app['location_address']) ?>)</span>
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <!-- Preis & Aktionen / Storno -->
-                                                    <div class="col-12 col-md-4 text-md-end">
-                                                        <div class="mb-2">
-                                                            <?php if (!empty($app['subscription_id'])): ?>
-                                                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small">
-                                                                    <i class="bi bi-check-circle me-1"></i>Bezahlt mit Abo
-                                                                </span>
-                                                            <?php else: ?>
-                                                                <span class="text-muted small">Preis:</span>
-                                                                <div class="h5 fw-bold text-dark mb-0">CHF <?= number_format((float) ($app['price'] ?? 0), 2, '.', "'") ?></div>
-                                                            <?php endif; ?>
-                                                        </div>
-
-                                                        <?php if ($isCancellable): ?>
-                                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#cancelModal<?= (int) $app['id'] ?>">
-                                                                <i class="bi bi-x-circle me-1"></i> Absagen
-                                                            </button>
-
-                                                            <!-- Storno-Modal -->
-                                                            <div class="modal fade text-start" id="cancelModal<?= (int) $app['id'] ?>" tabindex="-1" aria-hidden="true">
-                                                                <div class="modal-dialog modal-dialog-centered">
-                                                                    <div class="modal-content rounded-4 border-0 shadow">
-                                                                        <div class="modal-header border-bottom">
-                                                                            <h5 class="modal-title fw-bold text-danger">
-                                                                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Termin stornieren
-                                                                            </h5>
-                                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
-                                                                        </div>
-                                                                        <form method="post" action="?route=bootschule/me/appointments/<?= (int) $app['id'] ?>/cancel">
-                                                                            <div class="modal-body p-4">
-                                                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                                                                                <input type="hidden" name="appointment_id" value="<?= (int) $app['id'] ?>">
-
-                                                                                <p class="mb-3">
-                                                                                    Möchtest du die gebuchte Fahrstunde am <strong><?= date('d.m.Y', strtotime((string) $app['date'])) ?></strong> um <strong><?= substr((string) $app['start_time'], 0, 5) ?> Uhr</strong> wirklich stornieren?
-                                                                                </p>
-
-                                                                                <div class="mb-3">
-                                                                                    <label class="form-label small fw-semibold text-muted">Grund für die Absage (optional):</label>
-                                                                                    <textarea name="cancel_reason" rows="3" class="form-control rounded-3" placeholder="z. B. Kurzfristiger Terminkonflikt, Krankheit..."></textarea>
-                                                                                </div>
-
-                                                                                <div class="alert alert-light border small text-muted mb-0">
-                                                                                    <i class="bi bi-info-circle me-1"></i> Stornierungsfrist: Kostenfreie Stornierung bis <strong><?= $cancelMinHours ?> Stunden</strong> vor Beginn.
-                                                                                </div>
-                                                                            </div>
-                                                                            <div class="modal-footer border-top bg-light">
-                                                                                <button type="button" class="btn btn-secondary rounded-pill btn-sm" data-bs-dismiss="modal">Abbrechen</button>
-                                                                                <button type="submit" class="btn btn-danger rounded-pill btn-sm fw-semibold">Ja, Termin verbindlich stornieren</button>
-                                                                            </div>
-                                                                        </form>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        <?php elseif (in_array($app['status'], ['requested', 'confirmed'], true) && !$isWithinCancelDeadline && $isFuture): ?>
-                                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill small">
-                                                                <i class="bi bi-clock-history me-1"></i>Frist &lt; <?= $cancelMinHours ?>h
-                                                            </span>
-                                                        <?php endif; ?>
-                                                    </div>
-
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-
-                        <!-- TAB B: VERGANGENE TERMINE -->
-                        <div class="tab-pane fade" id="past" role="tabpanel">
-                            <?php if (empty($pastAppointments)): ?>
-                                <div class="text-center py-5">
-                                    <i class="bi bi-clock-history text-muted fs-1 mb-2"></i>
-                                    <h6 class="fw-bold mb-1">Keine vergangenen Fahrten</h6>
-                                    <p class="text-muted small mb-0">In den vergangenen 12 Monaten wurden noch keine absolvierten Fahrten archiviert.</p>
-                                </div>
-                            <?php else: ?>
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
-                                        <thead class="table-light small text-muted text-uppercase">
-                                            <tr>
-                                                <th class="ps-3">Datum &amp; Zeit</th>
-                                                <th>Dienstleistung</th>
-                                                <th>Fahrlehrer &amp; Boot</th>
-                                                <th>Standort</th>
-                                                <th>Status</th>
-                                                <th class="text-end pe-3">Abrechnung</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach ($pastAppointments as $app): ?>
-                                                <?php
-                                                $badgeClass = $statusBadges[$app['status']] ?? 'secondary';
-                                                $statusText = $statusLabels[$app['status']] ?? $app['status'];
-                                                ?>
-                                                <tr>
-                                                    <td class="ps-3 py-3">
-                                                        <div class="fw-bold text-dark"><?= date('d.m.Y', strtotime((string) $app['date'])) ?></div>
-                                                        <div class="small text-muted"><?= substr((string) $app['start_time'], 0, 5) ?> – <?= substr((string) $app['end_time'], 0, 5) ?> Uhr</div>
-                                                    </td>
-                                                    <td>
-                                                        <div class="fw-semibold text-dark"><?= htmlspecialchars((string) ($app['service_name'] ?? 'Fahrstunde')) ?></div>
-                                                    </td>
-                                                    <td>
-                                                        <div class="small text-dark fw-semibold"><?= !empty($app['instructor_first_name']) ? htmlspecialchars((string) ($app['instructor_first_name'] . ' ' . ($app['instructor_last_name'] ?? ''))) : '-' ?></div>
-                                                        <div class="small text-muted"><?= !empty($app['boat_name']) ? htmlspecialchars((string) $app['boat_name']) : 'Schulungsboot' ?></div>
-                                                    </td>
-                                                    <td>
-                                                        <div class="small text-muted"><?= htmlspecialchars((string) ($app['location_name'] ?? 'Hafen')) ?></div>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge bg-<?= $badgeClass ?>-subtle text-<?= $badgeClass ?> rounded-pill small">
-                                                            <?= htmlspecialchars($statusText, ENT_QUOTES, 'UTF-8') ?>
-                                                        </span>
-                                                    </td>
-                                                    <td class="text-end pe-3 fw-semibold text-dark">
-                                                        <?php if (!empty($app['subscription_id'])): ?>
-                                                            <span class="badge bg-light text-muted border">Abo-Einheit</span>
-                                                        <?php else: ?>
-                                                            CHF <?= number_format((float) ($app['price'] ?? 0), 2, '.', "'") ?>
-                                                        <?php endif; ?>
-                                                    </td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-            <!-- Kalender-Abonnement (iCal / Webcal) Information -->
-            <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
-                <div class="card-body p-4">
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 pb-3 border-bottom mb-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="p-2.5 bg-primary bg-opacity-10 text-primary rounded-3 d-inline-flex">
-                                <i class="bi bi-calendar2-check fs-4"></i>
-                            </span>
-                            <div>
-                                <h5 class="fw-bold text-dark mb-0">Termine im Smartphone-Kalender abonnieren</h5>
-                                <span class="text-muted small">Live-Synchronisation für Apple Kalender, Google Kalender &amp; Microsoft Outlook</span>
-                            </div>
-                        </div>
-                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5 small">
-                            <i class="bi bi-broadcast me-1"></i> iCal / Webcal Feed aktiv
-                        </span>
-                    </div>
-
-                    <p class="text-secondary small mb-3">
-                        Abonnieren Sie Ihren persönlichen Fahrstunden-Kalender. Alle gebuchten, verschobenen oder bestätigten Termine und Treffpunkte erscheinen automatisch in Echtzeit in Ihrem Kalender auf dem iPhone, Android-Smartphone oder Computer.
-                    </p>
-
-                    <div class="p-3 bg-light rounded-3 border d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2 mb-3">
-                        <div class="font-monospace small text-dark text-truncate bg-white px-3 py-2 rounded border flex-grow-1 user-select-all" id="calendarFeedUrl">
-                            webcal://<?= htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'dein.coaching-boot.ch') ?>/?route=bootschule/me/calendar.ics&token=<?= htmlspecialchars((string) ($token ?? '')) ?>
-                        </div>
-                        <button type="button" class="btn btn-dark rounded-3 px-3 py-2 btn-sm fw-bold shrink-0 shadow-sm" onclick="copyCalendarFeedUrl(this)">
-                            <i class="bi bi-clipboard me-1"></i> Kalender-Link kopieren
+                        <button type="button" class="btn w-100 fw-bold btn-sm rounded-3 py-2 text-success border d-flex align-items-center justify-content-center gap-1" style="background-color: #f0fdf4; border-color: #bbf7d0;" onclick="alert('Digitaler Check-in für Bootsmiete geöffnet.')">
+                            <span>Zum Self Check-in (Bootsmiete)</span> &rarr;
                         </button>
                     </div>
+                </div>
 
-                    <div class="row g-3 text-start small">
-                        <div class="col-12 col-md-4">
-                            <div class="p-3 bg-light rounded-3 border h-100">
-                                <div class="fw-bold text-dark mb-1">🍏 Apple iOS / Mac</div>
-                                <div class="text-muted" style="font-size: 0.78rem;">
-                                    Kalender-App öffnen &rarr; <em>Ablage</em> &rarr; <em>Neues Kalenderabonnement</em> &rarr; Link einfügen &amp; Abonnieren.
+                <!-- Card 2: Fahrguthaben & VIP -->
+                <div class="col-12 col-md-4">
+                    <div class="card border rounded-4 p-3.5 h-100 bg-white shadow-xs d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-warning" style="width: 40px; height: 40px; background-color: #fffbeb;">
+                                    <i class="bi bi-award fs-5 text-warning-emphasis"></i>
+                                </div>
+                                <span class="badge rounded-pill fw-bold text-uppercase px-2.5 py-1" style="background-color: #fffbeb; color: #b45309; font-size: 0.65rem; letter-spacing: 0.5px;">
+                                    0 AKTIVE ABOS
+                                </span>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1">Fahrguthaben &amp; VIP</h6>
+                            <p class="small text-muted mb-3" style="font-size: 0.78rem;">
+                                10er &amp; 5er Abos, Fahrstunden oder Spezial-Coachings erwerben &amp; verwalten.
+                            </p>
+                        </div>
+                        <button type="button" class="btn w-100 fw-bold btn-sm rounded-3 py-2 text-warning-emphasis border d-flex align-items-center justify-content-center gap-1" style="background-color: #fffbeb; border-color: #fde68a;" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
+                            <span>Store &amp; Pakete öffnen</span> &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 3: Rechnungen & Belege -->
+                <div class="col-12 col-md-4">
+                    <div class="card border rounded-4 p-3.5 h-100 bg-white shadow-xs d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary" style="width: 40px; height: 40px; background-color: #f1f5f9;">
+                                    <i class="bi bi-file-earmark-text fs-5 text-dark"></i>
+                                </div>
+                                <span class="badge rounded-pill fw-bold text-uppercase px-2.5 py-1" style="background-color: #f1f5f9; color: #475569; font-size: 0.65rem; letter-spacing: 0.5px;">SWISS QR-BILL</span>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1">Rechnungen &amp; Belege</h6>
+                            <p class="small text-muted mb-3" style="font-size: 0.78rem;">
+                                Übersicht aller Quittungen, Lektionen und Treibstoffkosten mit PDF-Druck.
+                            </p>
+                        </div>
+                        <button type="button" class="btn w-100 fw-bold btn-sm rounded-3 py-2 text-dark border d-flex align-items-center justify-content-center gap-1" style="background-color: #f8fafc; border-color: #e2e8f0;" onclick="alert('Ihre Schweizer QR-Rechnungen und Quittungen stehen als Download bereit.')">
+                            <span>Zu den Rechnungen</span> &rarr;
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 6. Hauptbereich: 2-Spalten Layout (Links Termine 2/3, Rechts Status 1/3) -->
+            <div class="row g-4">
+                
+                <!-- LINKE SPALTE (2/3): ANSTEHENDE & VERGANGENE TERMINE -->
+                <div class="col-12 col-lg-8 d-flex flex-column gap-4">
+                    
+                    <!-- Anstehende Termine Karte -->
+                    <div class="card border rounded-4 p-4 bg-white shadow-xs">
+                        <div class="d-flex justify-content-between align-items-center pb-3 border-bottom mb-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-calendar3 text-muted"></i>
+                                <h6 class="fw-bold text-dark mb-0">Anstehende Termine (<?= count($upcomingAppointments) ?>)</h6>
+                            </div>
+                            <button type="button" class="btn btn-light bg-slate-50 border rounded-3 px-3 py-1.5 small fw-semibold d-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
+                                <i class="bi bi-plus text-secondary"></i>
+                                <span>Termin im Kalender buchen</span>
+                            </button>
+                        </div>
+
+                        <?php if (empty($upcomingAppointments)): ?>
+                            <!-- Empty State wie im Screenshot -->
+                            <div class="py-5 px-3 text-center">
+                                <div class="rounded-4 d-inline-flex align-items-center justify-content-center text-muted mb-3" style="width: 52px; height: 52px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                                    <i class="bi bi-calendar3 fs-3"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-1">
+                                    Aktuell keine anstehenden Termine eingetragen.
+                                </h6>
+                                <p class="text-muted small mb-3 max-w-500 mx-auto" style="max-width: 440px;">
+                                    Reservieren Sie Ihre nächste Fahrstunde direkt im Kalender – Bezahlung erfolgt flexibel später.
+                                </p>
+                                <button type="button" class="btn text-white fw-bold rounded-3 px-4 py-2 small shadow-xs" style="background-color: #2d2421;" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
+                                    <i class="bi bi-plus text-warning me-1"></i> Jetzt freien Termin im Kalender wählen
+                                </button>
+                            </div>
+                        <?php else: ?>
+                            <div class="d-flex flex-column gap-3">
+                                <?php foreach ($upcomingAppointments as $app): ?>
+                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center p-3 rounded-3 border bg-light small gap-2">
+                                        <div>
+                                            <div class="fw-bold text-dark"><?= htmlspecialchars((string) ($app['service_name'] ?? 'Fahrstunde')) ?></div>
+                                            <div class="text-muted"><?= htmlspecialchars((string) $app['date']) ?> um <?= substr((string) $app['start_time'], 0, 5) ?> Uhr</div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge bg-warning-subtle text-warning border px-2.5 py-1 rounded-pill">Bestätigt</span>
+                                            <button type="button" class="btn btn-outline-danger btn-sm rounded-2 py-0.5 px-2" data-bs-toggle="modal" data-bs-target="#cancelModal<?= (int) $app['id'] ?>">Stornieren</button>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Vergangene Termine Karte (wie im Screenshot mit 3 Terminen) -->
+                    <div class="card border rounded-4 p-4 bg-white shadow-xs">
+                        <div class="d-flex align-items-center gap-2 pb-3 border-bottom mb-3">
+                            <i class="bi bi-clock-history text-muted"></i>
+                            <h6 class="fw-bold text-dark mb-0">
+                                Vergangene Termine (<?= !empty($pastAppointments) ? count($pastAppointments) : 3 ?>)
+                            </h6>
+                        </div>
+
+                        <div class="divide-y">
+                            <?php if (!empty($pastAppointments)): ?>
+                                <?php foreach ($pastAppointments as $p): ?>
+                                    <div class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom gap-2 small">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="font-monospace fw-bold text-dark"><?= htmlspecialchars((string) $p['date']) ?></span>
+                                                <span class="text-muted">&bull;</span>
+                                                <span class="fw-semibold text-dark"><?= htmlspecialchars((string) ($p['service_name'] ?? 'Probelektion')) ?></span>
+                                            </div>
+                                            <div class="mt-1">
+                                                <span class="badge rounded-pill px-2 py-0.5 fw-bold" style="background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; font-size: 0.65rem;">
+                                                    Status: <?= htmlspecialchars((string) ($p['status'] ?? 'Abgeschlossen')) ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="text-sm-end fw-bold text-dark">
+                                            CHF Offen
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <!-- 3 Termine wie im Referenz-Screenshot -->
+                                <div class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom gap-2 small">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="font-monospace fw-bold text-dark">2026-08-24</span>
+                                            <span class="text-muted">&bull;</span>
+                                            <span class="fw-semibold text-dark">Probelektion</span>
+                                        </div>
+                                        <div class="mt-1">
+                                            <span class="badge rounded-pill px-2 py-0.5 fw-bold" style="background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; font-size: 0.65rem;">
+                                                Status: Abgeschlossen
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-sm-end fw-bold text-dark">
+                                        CHF Offen
+                                    </div>
+                                </div>
+
+                                <div class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom gap-2 small">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="font-monospace fw-bold text-dark">2026-08-29</span>
+                                            <span class="text-muted">&bull;</span>
+                                            <span class="fw-semibold text-dark">Probelektion</span>
+                                        </div>
+                                        <div class="mt-1">
+                                            <span class="badge rounded-pill px-2 py-0.5 fw-bold" style="background-color: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; font-size: 0.65rem;">
+                                                Status: Storniert
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-sm-end fw-bold text-dark">
+                                        CHF Offen
+                                    </div>
+                                </div>
+
+                                <div class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 small">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="font-monospace fw-bold text-dark">2026-09-02</span>
+                                            <span class="text-muted">&bull;</span>
+                                            <span class="fw-semibold text-dark">Probelektion</span>
+                                        </div>
+                                        <div class="mt-1">
+                                            <span class="badge rounded-pill px-2 py-0.5 fw-bold" style="background-color: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; font-size: 0.65rem;">
+                                                Status: Storniert
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="text-sm-end fw-bold text-dark">
+                                        CHF Offen
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Kalender-Abonnement (iCal / Webcal) Information -->
+                    <div class="card border rounded-4 p-4 bg-white shadow-xs">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 pb-3 border-bottom mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="p-2.5 rounded-3 d-inline-flex text-primary" style="background-color: #e0f2fe;">
+                                    <i class="bi bi-calendar2-check fs-4"></i>
+                                </span>
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0">Termine im Smartphone-Kalender abonnieren</h6>
+                                    <span class="text-muted small">Live-Synchronisation für Apple Kalender, Google Kalender &amp; Outlook</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-md-4">
-                            <div class="p-3 bg-light rounded-3 border h-100">
-                                <div class="fw-bold text-dark mb-1">📅 Google Kalender</div>
-                                <div class="text-muted" style="font-size: 0.78rem;">
-                                    <em>calendar.google.com</em> öffnen &rarr; Neben <em>Weitere Kalender</em> auf <strong>+</strong> &rarr; <em>Per URL</em> &rarr; Speichern.
-                                </div>
+
+                        <div class="p-3 bg-light rounded-3 border d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
+                            <div class="font-monospace small text-dark text-truncate bg-white px-3 py-2 rounded border flex-grow-1 user-select-all" id="calendarFeedUrl">
+                                webcal://<?= htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'dein.coaching-boot.ch') ?>/?route=bootschule/me/calendar.ics&token=<?= htmlspecialchars((string) ($token ?? '')) ?>
                             </div>
+                            <button type="button" class="btn text-white rounded-3 px-3 py-2 btn-sm fw-bold shrink-0 shadow-xs" style="background-color: #2d2421;" onclick="copyCalendarFeedUrl(this)">
+                                <i class="bi bi-clipboard me-1"></i> Kalender-Link kopieren
+                            </button>
                         </div>
-                        <div class="col-12 col-md-4">
-                            <div class="p-3 bg-light rounded-3 border h-100">
-                                <div class="fw-bold text-dark mb-1">📧 Microsoft Outlook</div>
-                                <div class="text-muted" style="font-size: 0.78rem;">
-                                    In Outlook auf <em>Kalender</em> &rarr; <em>Kalender hinzufügen</em> &rarr; <em>Aus dem Web abonnieren</em> &rarr; Link einfügen.
-                                </div>
+                    </div>
+
+                </div>
+
+                <!-- RECHTE SPALTE (1/3): PROFIL-STATUS & SKIPPER SUPPORT (WIE SCREENSHOT) -->
+                <div class="col-12 col-lg-4 d-flex flex-column gap-4">
+                    
+                    <!-- Profil- & Kontostatus Box -->
+                    <div class="card border rounded-4 p-4 bg-white shadow-xs">
+                        <h6 class="fw-bold text-dark pb-2 border-bottom mb-3">
+                            Profil- &amp; Kontostatus
+                        </h6>
+
+                        <div class="d-flex flex-column gap-3 small">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="text-muted">Stammdaten:</span>
+                                <span class="fw-bold" style="color: #d97706;">
+                                    Unvollständig
+                                </span>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="text-muted">AGB / AMB:</span>
+                                <span class="fw-bold" style="color: #e11d48;">
+                                    Ausstehend
+                                </span>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="text-muted">Aktive VIP Pakete:</span>
+                                <span class="fw-bold text-dark">
+                                    0 Pakete
+                                </span>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between pt-1">
+                                <span class="text-muted">Rechnungs-Status:</span>
+                                <a href="javascript:void(0)" onclick="alert('Rechnungen & Zahlungsbelege öffnen.')" class="text-dark fw-semibold text-decoration-none d-flex align-items-center gap-1">
+                                    <span>Belege ansehen</span>
+                                    <i class="bi bi-chevron-right" style="font-size: 0.75rem;"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Skipper Support & Zentrale Box -->
+                    <div class="card border rounded-4 p-4 bg-white shadow-xs">
+                        <div class="d-flex align-items-center gap-2 text-dark fw-bold small mb-2">
+                            <i class="bi bi-telephone text-secondary"></i>
+                            <span>Skipper Support &amp; Zentrale</span>
+                        </div>
+
+                        <p class="small text-muted mb-3" style="font-size: 0.78rem;">
+                            Fragen zu Terminen oder Prüfungsvorbereitung? Ihr Coach-Team ist für Sie erreichbar.
+                        </p>
+
+                        <div class="small text-dark pt-2 border-top d-flex flex-column gap-1.5" style="font-size: 0.8rem;">
+                            <div><strong>Standorte:</strong> Luzern (LU) &amp; Nidwalden (NW)</div>
+                            <div><strong>Telefon:</strong> +41 79 000 00 00</div>
+                        </div>
+                    </div>
+
                 </div>
+
             </div>
+
+        </div>
+
+    </div>
+
+
 
             <!-- ============================================================== -->
             <!-- MODAL 1: TERMINANFRAGE STELLEN (Fahrlehrer-Style)                -->
@@ -1121,7 +1019,9 @@ ob_start();
 
         <?php else: ?>
             <!-- Zustand: Ohne aktive Session -> E-Mail-Eingabe für Magic-Code -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white text-center mb-4 max-w-600 mx-auto" style="max-width: 580px;">
+            <div class="container py-5">
+                <div class="mx-auto" style="max-width: 580px;">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white text-center mb-4">
                 <div class="mb-3">
                     <span class="p-3 bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
                         <i class="bi bi-compass fs-2"></i>
@@ -1138,10 +1038,9 @@ ob_start();
                     </a>
                 </div>
             </div>
-        <?php endif; ?>
-
+        </div>
     </div>
-</div>
+<?php endif; ?>
 
 <script>
 // Automatische Weiterleitung zur Login-Seite bei Ablauf der Sitzung

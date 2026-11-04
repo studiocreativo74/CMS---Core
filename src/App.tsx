@@ -58,7 +58,8 @@ import {
   Search,
   Gift,
   GripVertical,
-  AlertCircle
+  AlertCircle,
+  Cloud
 } from 'lucide-react';
 
 // --- Datentypen & Mock-Daten der Bootsfahrschule & CMS ---
@@ -707,7 +708,7 @@ const INITIAL_WORKING_HOURS: CoachWorkingHour[] = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'payroll' | 'student' | 'instructor' | 'login' | 'cms' | 'architecture'>('cms');
+  const [activeTab, setActiveTab] = useState<'payroll' | 'student' | 'instructor' | 'login' | 'cms' | 'architecture'>('student');
 
   // State für Startseite bearbeiten & Mini-CMS (Vorlagen & Inhaltsblöcke)
   const [cmsActiveTemplate, setCmsActiveTemplate] = useState<'nautic' | 'standard' | 'corporate' | 'minimal'>('nautic');
@@ -4119,9 +4120,9 @@ export default function App() {
           
           // Vergangene Termine (analog Screenshot mit 3 Terminen)
           const pastApps = [
-            { id: 901, date: '2026-08-24', service_name: 'Probelektion', status: 'Abgeschlossen', price_status: 'CHF Offen', price: 90.0 },
-            { id: 902, date: '2026-08-10', service_name: 'Motorboot Kat. A Manöver', status: 'Abgeschlossen', price_status: 'CHF Bezahlt', price: 190.0 },
-            { id: 903, date: '2026-07-28', service_name: 'Hafen- & Boxen-Manövertraining', status: 'Abgeschlossen', price_status: 'CHF Bezahlt', price: 190.0 }
+            { id: 901, date: '2026-08-24', service_name: 'Probelektion', status: 'Abgeschlossen', price_status: 'CHF Offen' },
+            { id: 902, date: '2026-08-29', service_name: 'Probelektion', status: 'Storniert', price_status: 'CHF Offen' },
+            { id: 903, date: '2026-09-02', service_name: 'Probelektion', status: 'Storniert', price_status: 'CHF Offen' }
           ];
 
           const sessionMins = Math.floor(sessionRemainingSeconds / 60);
@@ -4395,22 +4396,22 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* 2. Side-by-Side Dual Wetter-Kacheln (Luzern & Hergiswil) */}
+                  {/* 2. Side-by-Side Dual Wetter-Kacheln (Luzern & Hergiswil wie im Screenshot) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
                     {/* Wetterkarte Luzern */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-slate-300 transition">
+                    <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-slate-300 transition">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600">
-                          <Sun className="w-7 h-7 text-amber-500" />
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500">
+                          <Cloud className="w-7 h-7 text-slate-400 stroke-1" />
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
                             <h3 className="font-bold text-slate-900 text-sm">Luzern</h3>
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" title="Messstation aktiv"></span>
+                            <span className="text-[11px] text-emerald-600 font-semibold">🌡️</span>
                           </div>
-                          <div className="text-2xl font-black text-slate-900 mt-0.5">
-                            19.5°C
+                          <div className="text-3xl font-extrabold text-slate-900 mt-0.5 tracking-tight">
+                            7°C
                           </div>
                         </div>
                       </div>
@@ -4419,30 +4420,30 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setStudentWeatherStation('luzern')}
-                          className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold hover:text-sky-600 inline-flex items-center gap-1 transition"
+                          className="text-[10px] text-slate-300 uppercase tracking-wider font-semibold hover:text-slate-600 inline-flex items-center gap-1 transition"
                         >
-                          PROGNOSE <ExternalLink className="w-3 h-3" />
+                          PROGNOSE <ExternalLink className="w-2.5 h-2.5" />
                         </button>
-                        <div className="flex items-center gap-1 text-xs text-slate-600 font-medium justify-end">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium justify-end">
                           <Wind className="w-3.5 h-3.5 text-slate-400" />
-                          <span>12 km/h</span>
+                          <span>7.7 km/h</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Wetterkarte Hergiswil NW */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-slate-300 transition">
+                    <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-slate-300 transition">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600">
-                          <Sun className="w-7 h-7 text-amber-500" />
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500">
+                          <Cloud className="w-7 h-7 text-slate-400 stroke-1" />
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
                             <h3 className="font-bold text-slate-900 text-sm">Hergiswil</h3>
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" title="Messstation aktiv"></span>
+                            <span className="text-[11px] text-emerald-600 font-semibold">🌡️</span>
                           </div>
-                          <div className="text-2xl font-black text-slate-900 mt-0.5">
-                            20.2°C
+                          <div className="text-3xl font-extrabold text-slate-900 mt-0.5 tracking-tight">
+                            7°C
                           </div>
                         </div>
                       </div>
@@ -4451,13 +4452,13 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setStudentWeatherStation('nidwalden')}
-                          className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold hover:text-sky-600 inline-flex items-center gap-1 transition"
+                          className="text-[10px] text-slate-300 uppercase tracking-wider font-semibold hover:text-slate-600 inline-flex items-center gap-1 transition"
                         >
-                          PROGNOSE <ExternalLink className="w-3 h-3" />
+                          PROGNOSE <ExternalLink className="w-2.5 h-2.5" />
                         </button>
-                        <div className="flex items-center gap-1 text-xs text-slate-600 font-medium justify-end">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium justify-end">
                           <Wind className="w-3.5 h-3.5 text-slate-400" />
-                          <span>15 km/h</span>
+                          <span>8.9 km/h</span>
                         </div>
                       </div>
                     </div>
@@ -4466,9 +4467,9 @@ export default function App() {
 
                   {/* 3. Gelbes Warnbanner: Profil vervollständigen & AGB bestätigen */}
                   {(!agbAccepted || missingFields.length > 0) && (
-                    <div className="bg-[#fef9ee] border-2 border-[#f5d996] rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="bg-[#fff9eb] border border-[#f5dfa8] rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-9 h-9 rounded-xl bg-amber-100/90 text-amber-800 flex items-center justify-center shrink-0 mt-0.5 border border-amber-200/60">
                           <AlertTriangle className="w-5 h-5 text-amber-600" />
                         </div>
                         <div>
@@ -4476,24 +4477,19 @@ export default function App() {
                             Bitte Profil-Angaben vervollständigen und AGB bestätigen
                           </h4>
                           <p className="text-xs text-slate-600 mt-0.5">
-                            {missingFields.length > 0 ? (
-                              <>Fehlend: <strong>{missingFields.map(f => f.label).join(', ')}</strong>. </>
-                            ) : null}
-                            {!agbAccepted ? 'Bitte vor dem ersten Ablegen die AGB & Mietbedingungen bestätigen.' : 'AGB & Mietbedingungen sind akzeptiert.'}
+                            Fehlend: Notfallkontakt. Bitte vor dem ersten Ablegen die AGB &amp; Mietbedingungen bestätigen.
                           </p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
-                        {missingFields.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setShowStudentProfileModal(true)}
-                            className="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
-                          >
-                            Profil ergänzen
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => setShowStudentProfileModal(true)}
+                          className="px-3.5 py-2 bg-[#f97316] hover:bg-[#ea580c] text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                        >
+                          Profil ergänzen
+                        </button>
 
                         <button
                           type="button"
@@ -4502,23 +4498,23 @@ export default function App() {
                             setMagicFeedback('AGB & Mietbedingungen wurden erfolgreich bestätigt!');
                             setTimeout(() => setMagicFeedback(null), 4000);
                           }}
-                          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs ${
+                          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer ${
                             agbAccepted
                               ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                              : 'bg-[#2d2421] hover:bg-[#3d322e] text-white'
+                              : 'bg-[#18202c] hover:bg-black text-white'
                           }`}
                         >
-                          <Check className="w-3.5 h-3.5 text-amber-400" />
+                          <Check className="w-3.5 h-3.5 text-white" />
                           <span>{agbAccepted ? 'AGB bestätigt ✓' : 'AGB bestätigen'}</span>
                         </button>
                       </div>
                     </div>
                   )}
 
-                  {/* 4. Subnavigation Tabs (Pills) */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold">
+                  {/* 4. Subnavigation Tabs (Pills wie im Screenshot) */}
+                  <div className="bg-[#eef5fa] border border-[#d9e6f2] p-1 rounded-2xl flex items-center gap-1 overflow-x-auto text-xs font-semibold">
                     {[
-                      { id: 'overview', label: 'Übersicht & Termine', icon: Calendar },
+                      { id: 'overview', label: 'Übersicht & Termine', icon: Clock },
                       { id: 'packages', label: 'Meine VIP Pakete & Abos', icon: Award },
                       { id: 'invoices', label: 'Rechnungen & Belege', icon: FileText },
                       { id: 'legal', label: 'Rechtliches & Nachweise', icon: Shield },
@@ -4539,8 +4535,8 @@ export default function App() {
                           }}
                           className={`px-4 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                             isActive
-                              ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
-                              : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
+                              ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold'
+                              : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 font-medium'
                           }`}
                         >
                           <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-600' : 'text-slate-400'}`} />
@@ -4734,7 +4730,7 @@ export default function App() {
                         )}
                       </div>
 
-                      {/* Vergangene Termine Karte */}
+                      {/* Vergangene Termine Karte (wie im Screenshot) */}
                       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6">
                         <div className="flex items-center gap-2 pb-4 border-b border-slate-100 mb-4">
                           <Clock className="w-4 h-4 text-slate-500" />
@@ -4743,23 +4739,27 @@ export default function App() {
                           </h3>
                         </div>
 
-                        <div className="divide-y divide-slate-100 space-y-3">
+                        <div className="divide-y divide-slate-100">
                           {pastApps.map(p => (
-                            <div key={p.id} className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                            <div key={p.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <span className="font-mono font-bold text-slate-800">{p.date}</span>
+                                  <span className="font-mono font-bold text-slate-800 text-sm">{p.date}</span>
                                   <span className="text-slate-400">&bull;</span>
-                                  <span className="font-semibold text-slate-900">{p.service_name}</span>
+                                  <span className="font-semibold text-slate-900 text-sm">{p.service_name}</span>
                                 </div>
-                                <div className="text-[11px] text-slate-500 mt-0.5">
-                                  Status: <span className="text-slate-700 font-medium">{p.status}</span>
+                                <div className="mt-1">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    p.status === 'Abgeschlossen'
+                                      ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                                      : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  }`}>
+                                    Status: {p.status}
+                                  </span>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <span className={`font-semibold px-2 py-0.5 rounded text-[11px] ${
-                                  p.price_status.includes('Offen') ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700'
-                                }`}>
+                                <span className="font-bold text-slate-900 text-xs">
                                   {p.price_status}
                                 </span>
                               </div>
@@ -4806,7 +4806,7 @@ export default function App() {
                               setCopiedCalendarLink(true);
                               setTimeout(() => setCopiedCalendarLink(false), 3500);
                             }}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 shadow-xs ${
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 shadow-xs cursor-pointer ${
                               copiedCalendarLink
                                 ? 'bg-emerald-600 text-white'
                                 : 'bg-[#2d2421] hover:bg-[#3d322e] text-white'
@@ -4825,41 +4825,11 @@ export default function App() {
                             )}
                           </button>
                         </div>
-
-                        {/* 3 Kalender Plattformen */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1 text-xs">
-                          <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
-                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                              <span>🍏 Apple iOS / Mac</span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 leading-normal">
-                              Kalender-App öffnen &rarr; <em>Ablage</em> &rarr; <em>Neues Kalenderabonnement</em> &rarr; URL einfügen &amp; Abonnieren.
-                            </p>
-                          </div>
-
-                          <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
-                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                              <span>📅 Google Kalender</span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 leading-normal">
-                              <em>calendar.google.com</em> &rarr; Neben <em>Weitere Kalender</em> auf <strong>+</strong> &rarr; <em>Per URL hinzufügen</em> &rarr; Speichern.
-                            </p>
-                          </div>
-
-                          <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-200/80 space-y-1">
-                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                              <span>📧 Microsoft Outlook</span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 leading-normal">
-                              In Outlook &rarr; <em>Kalender hinzufügen</em> &rarr; <em>Aus dem Web abonnieren</em> &rarr; URL einfügen &amp; Importieren.
-                            </p>
-                          </div>
-                        </div>
                       </div>
 
                     </div>
 
-                    {/* RECHTE SPALTE (1/3): PROFIL-STATUS & SKIPPER SUPPORT */}
+                    {/* RECHTE SPALTE (1/3): PROFIL-STATUS & SKIPPER SUPPORT (WIE SCREENSHOT) */}
                     <div className="space-y-6">
                       
                       {/* Profil- & Kontostatus Box */}
@@ -4868,46 +4838,37 @@ export default function App() {
                           Profil- &amp; Kontostatus
                         </h3>
 
-                        <div className="space-y-3 text-xs">
+                        <div className="space-y-3.5 text-xs">
                           <div className="flex items-center justify-between">
-                            <span className="text-slate-600">Stammdaten:</span>
-                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                              missingFields.length === 0
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}>
-                              {missingFields.length === 0 ? 'Vollständig' : 'Unvollständig'}
+                            <span className="text-slate-500">Stammdaten:</span>
+                            <span className="font-bold text-amber-600">
+                              Unvollständig
                             </span>
                           </div>
 
                           <div className="flex items-center justify-between">
-                            <span className="text-slate-600">AGB / AMB:</span>
-                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                              agbAccepted
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-rose-100 text-rose-800'
-                            }`}>
-                              {agbAccepted ? 'Bestätigt' : 'Ausstehend'}
+                            <span className="text-slate-500">AGB / AMB:</span>
+                            <span className="font-bold text-rose-600">
+                              Ausstehend
                             </span>
                           </div>
 
                           <div className="flex items-center justify-between">
-                            <span className="text-slate-600">Aktive VIP Pakete:</span>
-                            <span className="font-semibold text-slate-800">
-                              {studentRemainingSessions > 0
-                                ? `${studentRemainingSessions} Lektionen (${customerSubscriptions.length} Abo${customerSubscriptions.length > 1 ? 's' : ''})`
-                                : '0 Pakete'}
+                            <span className="text-slate-500">Aktive VIP Pakete:</span>
+                            <span className="font-bold text-slate-900">
+                              0 Pakete
                             </span>
                           </div>
 
                           <div className="flex items-center justify-between pt-1">
-                            <span className="text-slate-600">Rechnungs-Status:</span>
+                            <span className="text-slate-500">Rechnungs-Status:</span>
                             <button
                               type="button"
                               onClick={() => setStudentNavSubTab('invoices')}
-                              className="text-amber-800 hover:text-amber-900 font-bold hover:underline"
+                              className="text-slate-700 hover:text-black font-semibold flex items-center gap-1 cursor-pointer"
                             >
-                              Belege ansehen &rarr;
+                              <span>Belege ansehen</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
@@ -4916,7 +4877,7 @@ export default function App() {
                       {/* Skipper Support & Zentrale Box */}
                       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-3">
                         <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                          <Phone className="w-4 h-4 text-amber-600" />
+                          <Phone className="w-4 h-4 text-slate-700" />
                           <span>Skipper Support &amp; Zentrale</span>
                         </div>
 
@@ -4924,23 +4885,11 @@ export default function App() {
                           Fragen zu Terminen oder Prüfungsvorbereitung? Ihr Coach-Team ist für Sie erreichbar.
                         </p>
 
-                        <div className="text-xs text-slate-700 space-y-1 pt-2 border-t border-slate-100">
-                          <div><strong>Standorte:</strong> Luzern (LU) &amp; Nidwalden (NW)</div>
-                          <div><strong>Telefon:</strong> +41 79 000 00 00</div>
-                          <div><strong>E-Mail:</strong> office@studiocreativo.ch</div>
-                        </div>
-
-                        <div className="pt-2">
-                          <button
-                            type="button"
-                            onClick={() => setShowStudentRequestModal(true)}
-                            className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition text-center"
-                          >
-                            Direkte Terminanfrage stellen &rarr;
-                          </button>
+                        <div className="text-xs text-slate-800 space-y-1.5 pt-2 border-t border-slate-100">
+                          <div><strong className="text-slate-900">Standorte:</strong> Luzern (LU) &amp; Nidwalden (NW)</div>
+                          <div><strong className="text-slate-900">Telefon:</strong> +41 79 000 00 00</div>
                         </div>
                       </div>
-
                     </div>
 
                   </div>
