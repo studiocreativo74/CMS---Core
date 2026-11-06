@@ -228,6 +228,7 @@ class CustomerService
             'city'           => !empty($data['city']) ? trim((string) $data['city']) : null,
             'type'           => !empty($data['type']) ? trim((string) $data['type']) : 'student',
             'target_license' => !empty($data['target_license']) ? trim((string) $data['target_license']) : null,
+            'allergies'      => !empty($data['allergies']) ? trim((string) $data['allergies']) : null,
             'notes'          => !empty($data['notes']) ? trim((string) $data['notes']) : 'Online-Registrierung über Buchungsportal',
             'is_active'      => 1,
         ];

@@ -59,653 +59,73 @@ import {
   Gift,
   GripVertical,
   AlertCircle,
-  Cloud
+  Cloud,
+  Fuel,
+  Gauge,
+  Anchor,
+  KeyRound,
+  Play,
+  StopCircle,
+  CheckSquare,
+  Square,
+  Maximize2,
+  Video,
+  BookOpen,
+  Film,
+  HelpCircle,
+  Volume2,
+  Pause,
+  RotateCcw,
+  FileDown,
+  GraduationCap,
+  PlayCircle
 } from 'lucide-react';
 
-// --- Datentypen & Mock-Daten der Bootsfahrschule & CMS ---
+// --- Modulare Typen & Mock-Daten (Architektur-Refactoring) ---
+export * from './types/index.ts';
+export * from './data/mockData.ts';
 
-interface Instructor {
-  id: number;
-  name: string;
-  title: string;
-  email: string;
-  phone: string;
-  public_mobile: string;
-  is_mobile_public: boolean;
-  color_code: string;
-  pay_rate_type: 'per_hour' | 'per_appointment';
-  pay_rate_amount: number;
-  payroll_external_code: string;
-  license_number: string;
-  // HR Details
-  ahv_number?: string;
-  bank_iban?: string;
-  bank_name?: string;
-  bank_city?: string;
-  address?: string;
-  hourly_rate?: number;
-}
+import type {
+  Instructor,
+  Appointment,
+  CoachAvailability,
+  CoachWorkingHour,
+  AccountRequest,
+  ServicePriceOption,
+  ServiceOffer,
+  CustomerSubscription,
+  PromoCode,
+  Boat,
+  BoatCheckin,
+  BoatCheckout,
+  ElearningVideo,
+  ElearningChart,
+  ElearningQuizQuestion,
+  CmsBlock
+} from './types/index.ts';
 
-interface Appointment {
-  id: number;
-  date: string;
-  start_time: string;
-  end_time: string;
-  duration_minutes: number;
-  service_name: string;
-  boat_name: string;
-  location_name: string;
-  customer_id: number;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  instructor_id: number;
-  instructor_name: string;
-  status: 'requested' | 'confirmed' | 'completed' | 'cancelled_customer';
-  price: number;
-  instructor_payout_amount: number;
-  instructor_payout_status: 'open' | 'exported' | 'paid';
-  instructor_payout_note: string;
-}
+import {
+  INITIAL_ACCOUNT_REQUESTS,
+  INITIAL_SERVICES,
+  INITIAL_PROMO_CODES,
+  INITIAL_CUSTOMER_SUBSCRIPTIONS,
+  INITIAL_ELEARNING_VIDEOS,
+  INITIAL_ELEARNING_CHARTS,
+  INITIAL_ELEARNING_QUIZ,
+  INITIAL_BOATS,
+  INITIAL_BOAT_CHECKINS,
+  INITIAL_BOAT_CHECKOUTS,
+  INITIAL_CMS_BLOCKS,
+  INITIAL_INSTRUCTORS,
+  INITIAL_APPOINTMENTS,
+  INITIAL_AVAILABILITIES,
+  INITIAL_WORKING_HOURS
+} from './data/mockData.ts';
 
-interface CoachAvailability {
-  id: number;
-  instructor_id: number;
-  date: string;
-  start_time?: string;
-  end_time?: string;
-  type: 'vacation' | 'sick' | 'military' | 'unavailable' | 'available';
-  note: string;
-}
+import { ElearningSection } from './components/elearning/ElearningSection.tsx';
+import { VideoPlayerModal } from './components/elearning/VideoPlayerModal.tsx';
+import { ChartZoomModal } from './components/elearning/ChartZoomModal.tsx';
 
-interface CoachWorkingHour {
-  id: number;
-  instructor_id: number;
-  date: string;
-  start_time: string;
-  end_time: string;
-  break_minutes: number;
-  total_hours: number;
-  rate_amount: number;
-  total_amount: number;
-  category: 'lesson' | 'exam' | 'admin' | 'maintenance' | 'other';
-  status: 'draft' | 'submitted' | 'approved' | 'exported';
-  note: string;
-}
-
-interface AccountRequest {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  desired_role: 'instructor' | 'student' | 'renter' | 'admin';
-  assigned_profile?: 'instructor' | 'student' | 'renter' | 'admin';
-  status: 'pending' | 'approved' | 'rejected';
-  created_at: string;
-  approved_at?: string;
-  admin_notes?: string;
-  notes: string;
-}
-
-const INITIAL_ACCOUNT_REQUESTS: AccountRequest[] = [
-  {
-    id: 1,
-    first_name: 'Stefan',
-    last_name: 'Brunner',
-    email: 'stefan.brunner@see-experience.ch',
-    phone: '+41 79 555 12 34',
-    desired_role: 'instructor',
-    status: 'pending',
-    created_at: '2026-03-24 14:15',
-    notes: 'Inhaber Motorboot Kat. A & Segelpatent Kat. D seit 2018. Bewerbung als Wochenend-Fahrcoach.'
-  },
-  {
-    id: 2,
-    first_name: 'Elena',
-    last_name: 'Moser',
-    email: 'elena.moser@bluewin.ch',
-    phone: '+41 78 444 88 99',
-    desired_role: 'student',
-    status: 'pending',
-    created_at: '2026-03-24 16:30',
-    notes: 'Möchte Motorbootprüfung Kat. A absolvieren. Theorieprüfung Schifffahrtsamt bereits bestanden.'
-  }
-];
-
-// --- MODUL: STORE, ANGEBOTE & GUTSCHEINE (Spezifikation) ---
-
-export interface ServicePriceOption {
-  id: number;
-  service_id: number;
-  duration: number; // Minuten pro Einheit (z. B. 60, 90, 120, 180 Min)
-  price: number; // Preis in CHF
-  sessions_count: number; // 1 bei Einzellektion, 5 bei 5er Abo, 10 bei 10er Abo
-  sort_order: number;
-}
-
-export interface ServiceOffer {
-  id: number;
-  name: string;
-  description: string;
-  offer_type: 'bootsfahrschule' | 'coaching' | 'mieten' | 'anderes';
-  category?: string;
-  target_audience: string;
-  image_url: string;
-  is_active: boolean;
-  is_subscription: boolean;
-  sessions_count: number;
-  location_ids: string[]; // ["loc_luzern", "loc_stansstad", "loc_hergiswil", ...]
-  price_options: ServicePriceOption[];
-}
-
-export interface CustomerSubscription {
-  id: number;
-  customer_id: number;
-  service_id: number;
-  package_name: string;
-  total_sessions: number;
-  used_sessions: number;
-  purchased_at: string;
-  expires_at: string;
-  price_paid: number;
-  payment_method: 'bank_transfer' | 'invoice' | 'qr_bill';
-  payment_status: 'open' | 'paid';
-  order_id: string;
-  location_name?: string;
-  created_at?: string;
-}
-
-export interface PromoCode {
-  id: number;
-  code: string;
-  description: string;
-  discount_type: 'percentage' | 'fixed';
-  discount_value: number; // 10.00 (%) oder 50.00 (CHF)
-  min_order_amount: number | null;
-  max_uses: number | null;
-  used_count: number;
-  valid_from: string | null;
-  valid_until: string | null;
-  is_active: boolean;
-  applicable_service_ids?: number[] | null;
-}
-
-export const INITIAL_SERVICES: ServiceOffer[] = [
-  {
-    id: 1,
-    name: '10er VIP Abo Motorboot Kat. A (Luzern & NW)',
-    description: 'Das Rundum-Sorglos-Paket für Ihre amtliche Schiffsführerprüfung Kat. A. Beinhaltet 10 intensive Praxisfahrstunden à 90 Minuten, Hafen- & Boxenmanöver, Boje über Bord sowie Prüfungsbegleitung. Inklusive Treibstoff und Versicherung.',
-    offer_type: 'bootsfahrschule',
-    target_audience: 'Prüfungsvorbereitung Kat. A',
-    image_url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
-    is_active: true,
-    is_subscription: true,
-    sessions_count: 10,
-    location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil'],
-    price_options: [
-      { id: 101, service_id: 1, duration: 90, price: 1800.0, sessions_count: 10, sort_order: 1 }
-    ]
-  },
-  {
-    id: 2,
-    name: '5er Abo Hafen- & Boxentraining Kat. A',
-    description: 'Gezieltes Manövertraining für höchste Präzision: Rückwärts einparken in enge Boxen, Anlegen bei Seitenwind, Festmachen an Bojen und Verhalten bei Wellengang.',
-    offer_type: 'bootsfahrschule',
-    target_audience: 'Fortgeschrittene & Prüfungsendspurt',
-    image_url: 'https://images.unsplash.com/photo-1569263979104-865ab7cd8d17?auto=format&fit=crop&w=800&q=80',
-    is_active: true,
-    is_subscription: true,
-    sessions_count: 5,
-    location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil'],
-    price_options: [
-      { id: 102, service_id: 2, duration: 90, price: 925.0, sessions_count: 5, sort_order: 1 }
-    ]
-  },
-  {
-    id: 3,
-    name: 'Motorboot Einzellektion Kat. A',
-    description: 'Flexible Praxisausbildung auf modernen Fahrschulbooten mit Doppelsteuerstand. Wählen Sie Ihre gewünschte Lektionsdauer frei nach Bedarf.',
-    offer_type: 'bootsfahrschule',
-    target_audience: 'Alle Ausbildungsstufen & Schnupperer',
-    image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
-    is_active: true,
-    is_subscription: false,
-    sessions_count: 1,
-    location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil', 'loc_buochs'],
-    price_options: [
-      { id: 103, service_id: 3, duration: 60, price: 135.0, sessions_count: 1, sort_order: 1 },
-      { id: 104, service_id: 3, duration: 90, price: 195.0, sessions_count: 1, sort_order: 2 },
-      { id: 105, service_id: 3, duration: 120, price: 260.0, sessions_count: 1, sort_order: 3 }
-    ]
-  },
-  {
-    id: 4,
-    name: 'Spezial-Skipper Coaching & Nachtfahrt',
-    description: 'Für Patentinhaber und Skipper, die ihre Sicherheit bei Dunkelheit, Radar- und GPS-Navigation oder bei schwierigen Wetterlagen vertiefen möchten.',
-    offer_type: 'coaching',
-    target_audience: 'Inhaber Schiffsführerausweis',
-    image_url: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=800&q=80',
-    is_active: true,
-    is_subscription: false,
-    sessions_count: 1,
-    location_ids: ['loc_luzern', 'loc_stansstad', 'loc_buochs'],
-    price_options: [
-      { id: 106, service_id: 4, duration: 120, price: 290.0, sessions_count: 1, sort_order: 1 },
-      { id: 107, service_id: 4, duration: 180, price: 390.0, sessions_count: 1, sort_order: 2 }
-    ]
-  },
-  {
-    id: 5,
-    name: 'Exklusiver Wertgutschein Nautic',
-    description: 'Verschenken Sie unvergessliche Erlebnisse auf dem Vierwaldstättersee. Einlösbar für alle Ausbildungen, Coachings oder Bootsmieten.',
-    offer_type: 'anderes',
-    target_audience: 'Geschenk für Bootssportler & Paare',
-    image_url: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=800&q=80',
-    is_active: true,
-    is_subscription: false,
-    sessions_count: 1,
-    location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil', 'loc_buochs', 'loc_ennetbuergen'],
-    price_options: [
-      { id: 108, service_id: 5, duration: 60, price: 100.0, sessions_count: 1, sort_order: 1 },
-      { id: 109, service_id: 5, duration: 90, price: 250.0, sessions_count: 1, sort_order: 2 },
-      { id: 110, service_id: 5, duration: 120, price: 500.0, sessions_count: 1, sort_order: 3 }
-    ]
-  },
-  {
-    id: 6,
-    name: 'Bootsmiete Boesch 620 Bimini',
-    description: 'Erleben Sie Schweizer Edel-Mahagoni auf dem Vierwaldstättersee. Inklusive Sicherheitsausrüstung, Badeleiter, Sonnenverdeck und Self-Check-in.',
-    offer_type: 'mieten',
-    target_audience: 'Patentierte Skipper & Familien',
-    image_url: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=800&q=80',
-    is_active: true,
-    is_subscription: false,
-    sessions_count: 1,
-    location_ids: ['loc_luzern', 'loc_hergiswil'],
-    price_options: [
-      { id: 111, service_id: 6, duration: 240, price: 480.0, sessions_count: 1, sort_order: 1 },
-      { id: 112, service_id: 6, duration: 480, price: 850.0, sessions_count: 1, sort_order: 2 }
-    ]
-  }
-];
-
-export const INITIAL_PROMO_CODES: PromoCode[] = [
-  {
-    id: 1,
-    code: 'BOOT50',
-    description: 'CHF 50.- Willkommens-Rabatt für neue Fahrschüler',
-    discount_type: 'fixed',
-    discount_value: 50.0,
-    min_order_amount: 300.0,
-    max_uses: 50,
-    used_count: 4,
-    valid_from: '2026-01-01',
-    valid_until: '2026-12-31',
-    is_active: true
-  },
-  {
-    id: 2,
-    code: 'SOMMER2026',
-    description: '10% Sommer-Aktion auf alle Abos & Coachings',
-    discount_type: 'percentage',
-    discount_value: 10.0,
-    min_order_amount: 200.0,
-    max_uses: null,
-    used_count: 14,
-    valid_from: '2026-03-01',
-    valid_until: '2026-09-30',
-    is_active: true
-  },
-  {
-    id: 3,
-    code: 'VIPNAUTIC',
-    description: '15% VIP-Aktionsrabatt für 10er Pakete',
-    discount_type: 'percentage',
-    discount_value: 15.0,
-    min_order_amount: 500.0,
-    max_uses: 20,
-    used_count: 12,
-    valid_from: '2026-02-01',
-    valid_until: '2026-12-31',
-    is_active: true
-  }
-];
-
-export const INITIAL_CUSTOMER_SUBSCRIPTIONS: CustomerSubscription[] = [
-  {
-    id: 1,
-    customer_id: 1,
-    service_id: 1,
-    package_name: '10er VIP Abo Motorboot Kat. A (Luzern & NW)',
-    total_sessions: 10,
-    used_sessions: 2,
-    purchased_at: '2026-03-01 10:15:00',
-    expires_at: '2027-03-01',
-    price_paid: 1800.0,
-    payment_method: 'bank_transfer',
-    payment_status: 'paid',
-    order_id: 'CB-ORD-849201',
-    location_name: 'Luzern & Stansstad'
-  }
-];
-
-export interface CmsBlock {
-  id: number;
-  type: 'hero' | 'features' | 'two_column' | 'cta' | 'text';
-  title: string;
-  subtitle: string;
-  content: string;
-  sort_order: number;
-  is_visible: boolean;
-  extra?: any;
-}
-
-export const INITIAL_CMS_BLOCKS: CmsBlock[] = [
-  {
-    id: 1,
-    type: 'hero',
-    title: 'Leinen los! Deine Bootsfahrschule & Charter am See',
-    subtitle: 'Professionelle Ausbildung für Motorboot Kat. A & Segeln Kat. D sowie exklusive Bootsvermietung',
-    content: 'Lerne das Bootfahren von Grund auf bei erfahrenen und lizenzierten Skippern. Flexible Ausbildungszeiten von Montag bis Sonntag, transparenter Ausbildungsstand und direkte Terminbuchung.',
-    sort_order: 10,
-    is_visible: true,
-    extra: { btn_text: 'Zum Magic-Link Login', btn_link: '#magic-section' }
-  },
-  {
-    id: 2,
-    type: 'features',
-    title: 'Unser Angebot auf dem Wasser',
-    subtitle: 'Von den ersten Manövern bis zum amtlichen Schiffsführerausweis und Wochenend-Charter',
-    content: '',
-    sort_order: 20,
-    is_visible: true,
-    extra: {
-      items: [
-        { title: 'Motorboot Kat. A', text: 'Intensive Prüfungsvorbereitung, Hafenmanöver, An- und Ablegen, Mann-über-Bord und Knotenkunde mit hoher Erfolgsquote.' },
-        { title: 'Segelausbildung Kat. D', text: 'Von den Segelgrundlagen bis zur Regatta-Taktik. Praxisnahe Ausbildung bei jedem Wind auf dem See.' },
-        { title: 'Flottenvermietung & Charter', text: 'Gepflegte Boote (Boesch, Axopar) für Ausflüge, Sonnenuntergangs-Cruises oder private Events mieten.' },
-        { title: 'Crew & Schüler Portal', text: 'Passwortloser Magic-Link Zugang: Alle Fahrstunden, Ausbildungskarten, Termine und Abrechnungen auf einen Blick.' }
-      ]
-    }
-  },
-  {
-    id: 3,
-    type: 'two_column',
-    title: 'Warum Nautic Bootsfahrschule?',
-    subtitle: 'Sicherheit, modernste Technik und persönliche Betreuung',
-    content: 'Unsere Ausbildungsflotte erfüllt höchste Sicherheitsstandards und wird laufend gewartet. Mit flexiblen Ausbildungszeiten von Montag bis Sonntag passen wir uns deinem Terminkalender an.\n\nAlle Fahrlehrer sind staatlich lizenziert und bringen jahrelange Erfahrung auf Schweizer Seen mit.',
-    sort_order: 30,
-    is_visible: true,
-    extra: {
-      col2_title: 'Transparenz & Direkte Buchung',
-      col2_content: 'Keine versteckten Gebühren: Treibstoff, Versicherung und Prüfungsbegleitung sind transparent kalkuliert.\n\nPrüfungsstandorte: Schifffahrtsamt Zürich, Luzern und St. Gallen.'
-    }
-  },
-  {
-    id: 4,
-    type: 'cta',
-    title: 'Bereit für das Skipper-Patent?',
-    subtitle: 'Fordere jetzt dein persönliches Konto an oder logge dich direkt per Magic-Link ein.',
-    content: 'Als Schüler oder Crew-Mitglied benötigst du kein Passwort. Gib einfach deine E-Mail-Adresse ein und starte sofort.',
-    sort_order: 40,
-    is_visible: true,
-    extra: { btn_text: 'Jetzt per Magic-Link einloggen', btn_link: '#magic-section' }
-  }
-];
-
-const INITIAL_INSTRUCTORS: Instructor[] = [
-  {
-    id: 1,
-    name: 'Beat Vollenweider',
-    title: 'Chef-Fahrcoach & Prüfungsexperte',
-    email: 'beat@bootschule-see.ch',
-    phone: '+41 79 345 67 89',
-    public_mobile: '+41 79 345 67 89',
-    is_mobile_public: true,
-    color_code: '#0284c7',
-    pay_rate_type: 'per_hour',
-    pay_rate_amount: 65.0,
-    payroll_external_code: 'PERS-101',
-    license_number: 'CH-FL-2894',
-    ahv_number: '756.8492.3012.44',
-    bank_iban: 'CH89 0070 0110 0002 4491 8',
-    bank_name: 'Zürcher Kantonalbank',
-    bank_city: 'Zürich',
-    address: 'Seestrasse 104, 8700 Küsnacht',
-    hourly_rate: 65.0
-  },
-  {
-    id: 2,
-    name: 'Corinne Meier',
-    title: 'Dipl. Bootsfahrlehrerin Kat. A & D',
-    email: 'corinne@bootschule-see.ch',
-    phone: '+41 78 612 90 44',
-    public_mobile: '+41 78 612 90 44',
-    is_mobile_public: true,
-    color_code: '#10b981',
-    pay_rate_type: 'per_hour',
-    pay_rate_amount: 60.0,
-    payroll_external_code: 'PERS-102',
-    license_number: 'CH-FL-3419',
-    ahv_number: '756.9182.4921.18',
-    bank_iban: 'CH12 0023 0001 8920 3819 1',
-    bank_name: 'UBS Switzerland AG',
-    bank_city: 'Rapperswil',
-    address: 'Hafenweg 14, 8640 Rapperswil',
-    hourly_rate: 60.0
-  },
-  {
-    id: 3,
-    name: 'Marc Steiner',
-    title: 'Fahrcoach & Segelinstruktor',
-    email: 'marc@bootschule-see.ch',
-    phone: '+41 76 555 81 20',
-    public_mobile: '+41 76 555 81 20',
-    is_mobile_public: false,
-    color_code: '#8b5cf6',
-    pay_rate_type: 'per_appointment',
-    pay_rate_amount: 95.0,
-    payroll_external_code: 'PERS-103',
-    license_number: 'CH-FL-4102',
-    ahv_number: '756.7721.9023.67',
-    bank_iban: 'CH65 0900 0000 4829 1928 3',
-    bank_name: 'PostFinance',
-    bank_city: 'Bern',
-    address: 'Lindenhofstrasse 8, 8001 Zürich',
-    hourly_rate: 60.0
-  }
-];
-
-const INITIAL_APPOINTMENTS: Appointment[] = [
-  {
-    id: 101,
-    date: '2026-03-02',
-    start_time: '09:00:00',
-    end_time: '10:30:00',
-    duration_minutes: 90,
-    service_name: 'Motorboot Fahrstunde Kat. A',
-    boat_name: 'Boesch 620 Riviera',
-    location_name: 'Steg 3 (Tiefenbrunnen)',
-    customer_id: 1,
-    customer_name: 'Lukas Berner',
-    customer_email: 'lukas.berner@swiss-pilot.ch',
-    customer_phone: '+41 79 400 11 22',
-    instructor_id: 1,
-    instructor_name: 'Beat Vollenweider',
-    status: 'completed',
-    price: 195.0,
-    instructor_payout_amount: 97.5,
-    instructor_payout_status: 'open',
-    instructor_payout_note: 'Standard 90 Min (1.5h à CHF 65)'
-  },
-  {
-    id: 102,
-    date: '2026-03-04',
-    start_time: '14:00:00',
-    end_time: '16:00:00',
-    duration_minutes: 120,
-    service_name: 'Hafenmanöver Intensivtraining',
-    boat_name: 'Nautique 210',
-    location_name: 'Steg 1 (Bürkliplatz)',
-    customer_id: 2,
-    customer_name: 'Sophie Keller',
-    customer_email: 'sophie.keller@keller-arch.ch',
-    customer_phone: '+41 78 890 33 44',
-    instructor_id: 1,
-    instructor_name: 'Beat Vollenweider',
-    status: 'completed',
-    price: 260.0,
-    instructor_payout_amount: 130.0,
-    instructor_payout_status: 'open',
-    instructor_payout_note: '2.0h à CHF 65'
-  },
-  {
-    id: 103,
-    date: '2026-03-08',
-    start_time: '10:00:00',
-    end_time: '11:30:00',
-    duration_minutes: 90,
-    service_name: 'Motorboot Fahrstunde Kat. A',
-    boat_name: 'Boesch 620 Riviera',
-    location_name: 'Steg 3 (Tiefenbrunnen)',
-    customer_id: 3,
-    customer_name: 'Patrick Odermatt',
-    customer_email: 'p.odermatt@outlook.com',
-    customer_phone: '+41 79 123 99 88',
-    instructor_id: 2,
-    instructor_name: 'Corinne Meier',
-    status: 'completed',
-    price: 195.0,
-    instructor_payout_amount: 90.0,
-    instructor_payout_status: 'exported',
-    instructor_payout_note: '1.5h à CHF 60 (Lohnlauf März 1)'
-  },
-  {
-    id: 104,
-    date: '2026-03-10',
-    start_time: '13:00:00',
-    end_time: '15:00:00',
-    duration_minutes: 120,
-    service_name: 'Segelausbildung Kat. D Praxis',
-    boat_name: 'Surprise Segelboot',
-    location_name: 'Hafen Enge',
-    customer_id: 1,
-    customer_name: 'Lukas Berner',
-    customer_email: 'lukas.berner@swiss-pilot.ch',
-    customer_phone: '+41 79 400 11 22',
-    instructor_id: 3,
-    instructor_name: 'Marc Steiner',
-    status: 'completed',
-    price: 240.0,
-    instructor_payout_amount: 95.0,
-    instructor_payout_status: 'paid',
-    instructor_payout_note: 'Pauschale pro Termin à CHF 95'
-  },
-  {
-    id: 105,
-    date: '2026-03-16',
-    start_time: '15:00:00',
-    end_time: '16:30:00',
-    duration_minutes: 90,
-    service_name: 'Prüfungsvorbereitung Boje über Bord',
-    boat_name: 'Boesch 620 Riviera',
-    location_name: 'Steg 3 (Tiefenbrunnen)',
-    customer_id: 1,
-    customer_name: 'Lukas Berner',
-    customer_email: 'lukas.berner@swiss-pilot.ch',
-    customer_phone: '+41 79 400 11 22',
-    instructor_id: 1,
-    instructor_name: 'Beat Vollenweider',
-    status: 'confirmed',
-    price: 195.0,
-    instructor_payout_amount: 97.5,
-    instructor_payout_status: 'open',
-    instructor_payout_note: 'Geplante Fahrt'
-  },
-  {
-    id: 106,
-    date: '2026-03-20',
-    start_time: '09:00:00',
-    end_time: '11:00:00',
-    duration_minutes: 120,
-    service_name: 'Amtliche Führerprüfung Kat. A',
-    boat_name: 'Boesch 620 Riviera',
-    location_name: 'Schifffahrtsamt Oberrieden',
-    customer_id: 1,
-    customer_name: 'Lukas Berner',
-    customer_email: 'lukas.berner@swiss-pilot.ch',
-    customer_phone: '+41 79 400 11 22',
-    instructor_id: 1,
-    instructor_name: 'Beat Vollenweider',
-    status: 'confirmed',
-    price: 280.0,
-    instructor_payout_amount: 130.0,
-    instructor_payout_status: 'open',
-    instructor_payout_note: 'Begleitung Prüfung'
-  }
-];
-
-const INITIAL_AVAILABILITIES: CoachAvailability[] = [
-  {
-    id: 1,
-    instructor_id: 1,
-    date: '2026-03-24',
-    start_time: '08:00:00',
-    end_time: '17:00:00',
-    type: 'vacation',
-    note: 'Sperrzeit Frühlingsferien'
-  },
-  {
-    id: 2,
-    instructor_id: 1,
-    date: '2026-03-28',
-    start_time: '08:00:00',
-    end_time: '12:00:00',
-    type: 'unavailable',
-    note: 'Zahnarzttermin Küsnacht'
-  },
-  {
-    id: 3,
-    instructor_id: 2,
-    date: '2026-03-12',
-    start_time: '12:00:00',
-    end_time: '15:00:00',
-    type: 'unavailable',
-    note: 'Weiterbildung Nothelfer am Wasser'
-  }
-];
-
-const INITIAL_WORKING_HOURS: CoachWorkingHour[] = [
-  {
-    id: 1,
-    instructor_id: 1,
-    date: '2026-03-05',
-    start_time: '08:00:00',
-    end_time: '11:30:00',
-    break_minutes: 30,
-    total_hours: 3.0,
-    rate_amount: 65.0,
-    total_amount: 195.0,
-    category: 'maintenance',
-    status: 'approved',
-    note: 'Saison-Einwasserung & Sicherheitscheck Boesch 620'
-  },
-  {
-    id: 2,
-    instructor_id: 1,
-    date: '2026-03-11',
-    start_time: '13:30:00',
-    end_time: '15:30:00',
-    break_minutes: 0,
-    total_hours: 2.0,
-    rate_amount: 65.0,
-    total_amount: 130.0,
-    category: 'admin',
-    status: 'submitted',
-    note: 'Terminkoordination & Dossierprüfung Schifffahrtsamt'
-  }
-];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'payroll' | 'student' | 'instructor' | 'login' | 'cms' | 'architecture'>('student');
@@ -838,8 +258,76 @@ export default function App() {
   const [showStudentRequestModal, setShowStudentRequestModal] = useState<boolean>(false);
   const [studentAppointmentTab, setStudentAppointmentTab] = useState<'upcoming' | 'past'>('upcoming');
   const [agbAccepted, setAgbAccepted] = useState<boolean>(false);
-  const [studentNavSubTab, setStudentNavSubTab] = useState<'overview' | 'packages' | 'invoices' | 'legal' | 'profile'>('overview');
-  const [studentSidebarNav, setStudentSidebarNav] = useState<'dashboard' | 'calendar' | 'checkin' | 'store' | 'invoices' | 'profile'>('dashboard');
+  const [studentNavSubTab, setStudentNavSubTab] = useState<'overview' | 'checkin' | 'packages' | 'elearning' | 'invoices' | 'legal' | 'profile'>('overview');
+  const [studentSidebarNav, setStudentSidebarNav] = useState<'dashboard' | 'calendar' | 'checkin' | 'store' | 'elearning' | 'invoices' | 'legal' | 'profile'>('dashboard');
+
+  // --- STATE: DIGITALES LERNPAKET & E-LEARNING (1-JAHRES-ABO) ---
+  const [elearningVideos] = useState<ElearningVideo[]>(INITIAL_ELEARNING_VIDEOS);
+  const [elearningCharts] = useState<ElearningChart[]>(INITIAL_ELEARNING_CHARTS);
+  const [elearningCategoryFilter, setElearningCategoryFilter] = useState<'all' | 'maneuver' | 'safety' | 'physics' | 'knots' | 'navigation'>('all');
+  const [elearningActiveTab, setElearningActiveTab] = useState<'videos' | 'charts' | 'quiz' | 'downloads'>('videos');
+  const [activeVideoModal, setActiveVideoModal] = useState<ElearningVideo | null>(null);
+  const [activeVideoPlaying, setActiveVideoPlaying] = useState<boolean>(false);
+  const [activeVideoProgress, setActiveVideoProgress] = useState<number>(35); // 35% default progress
+  const [activeVideoSpeed, setActiveVideoSpeed] = useState<number>(1);
+  const [activeVideoVolume, setActiveVideoVolume] = useState<number>(85);
+  const [completedVideoIds, setCompletedVideoIds] = useState<number[]>([1, 4]); // 2 initial completed
+  const [activeChartModal, setActiveChartModal] = useState<ElearningChart | null>(null);
+  const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
+  const [quizSubmitted, setQuizSubmitted] = useState<boolean>(false);
+  const [demoElearningAccessOverride, setDemoElearningAccessOverride] = useState<boolean | null>(null);
+
+  // --- STATE: BOOTSFLOTTE, SELF CHECK-IN & NMEA 2000 TELEMETRIE ---
+  const [boats, setBoats] = useState<Boat[]>(INITIAL_BOATS);
+  const [boatCheckins, setBoatCheckins] = useState<BoatCheckin[]>(INITIAL_BOAT_CHECKINS);
+  const [boatCheckouts, setBoatCheckouts] = useState<BoatCheckout[]>(INITIAL_BOAT_CHECKOUTS);
+
+  // Aktive Miet-Session & Live-Timer
+  const [activeCheckinSession, setActiveCheckinSession] = useState<BoatCheckin | null>(null);
+  const [liveRentalSeconds, setLiveRentalSeconds] = useState<number>(0);
+  const [checkinStep, setCheckinStep] = useState<'step1_checkin' | 'phase2_active' | 'step3_checkout' | 'phase4_protocol'>('step1_checkin');
+  const [selectedRentalApptId, setSelectedRentalApptId] = useState<number>(107);
+
+  // Formular-State Schritt 1: Self Check-in (Vor dem Ablegen)
+  const [checkinFitness, setCheckinFitness] = useState<boolean>(true);
+  const [checkinLicense, setCheckinLicense] = useState<boolean>(true);
+  const [checkinSafety, setCheckinSafety] = useState<boolean>(true);
+  const [checkinEmergencyContact, setCheckinEmergencyContact] = useState<boolean>(true);
+  const [checkinBoatCondition, setCheckinBoatCondition] = useState<'perfect' | 'report_damage'>('perfect');
+  const [checkinDamageNotes, setCheckinDamageNotes] = useState<string>('');
+  const [checkinDamagePhotos, setCheckinDamagePhotos] = useState<string[]>([]);
+
+  // Formular-State Schritt 3: Self Check-out & Rückgabe
+  const [checkoutFuelStatus, setCheckoutFuelStatus] = useState<'full' | 'refueled' | 'needs_fuel' | 'not_full'>('needs_fuel');
+  const [checkoutRefueledLiters, setCheckoutRefueledLiters] = useState<number>(0);
+  const [checkoutFuelReceiptPhoto, setCheckoutFuelReceiptPhoto] = useState<string | null>(null);
+  const [checkoutFuelGaugePhoto, setCheckoutFuelGaugePhoto] = useState<string | null>(null);
+  const [checkoutCleanliness, setCheckoutCleanliness] = useState<'clean' | 'moderate' | 'dirty'>('clean');
+  const [checkoutReturnCondition, setCheckoutReturnCondition] = useState<'perfect' | 'report_damage'>('perfect');
+  const [checkoutDamageNotes, setCheckoutDamageNotes] = useState<string>('');
+  const [checkoutDamagePhotos, setCheckoutDamagePhotos] = useState<string[]>([]);
+  const [checkoutMooringSecured, setCheckoutMooringSecured] = useState<boolean>(true);
+  const [checkoutKeysReturned, setCheckoutKeysReturned] = useState<boolean>(true);
+  const [checkoutEquipmentChecked, setCheckoutEquipmentChecked] = useState<boolean>(true);
+
+  // Letztes Rückgabeprotokoll für Phase 4
+  const [latestCheckoutProtocol, setLatestCheckoutProtocol] = useState<BoatCheckout | null>(INITIAL_BOAT_CHECKOUTS[0]);
+
+  // Vollbild Foto-Modal
+  const [previewPhotoModal, setPreviewPhotoModal] = useState<{ url: string; title: string } | null>(null);
+
+  // Live-Timer für aktive Ausfahrt
+  useEffect(() => {
+    let interval: any = null;
+    if (activeCheckinSession && checkinStep === 'phase2_active') {
+      interval = setInterval(() => {
+        setLiveRentalSeconds(prev => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeCheckinSession, checkinStep]);
 
   // Automatische Sitzungsdauer & Auto-Redirect bei Ablauf (15 Min = 900 Sek)
   const [sessionRemainingSeconds, setSessionRemainingSeconds] = useState<number>(900);
@@ -862,15 +350,16 @@ export default function App() {
     pid: '',
     license_number: '',
     emergency_contact: '',
+    allergies: 'Keine bekannten Allergien',
     notes: 'Bevorzugt Nachmittagstermine. Fokus auf Hafenmanöver und Anlegen in die Boxe rückwärts.'
   });
   const [theoryAccordionOpen, setTheoryAccordionOpen] = useState<boolean>(false);
   const [copiedCalendarLink, setCopiedCalendarLink] = useState<boolean>(false);
-  const [newReqService, setNewReqService] = useState('Motorboot Kat. A (90 Min.)');
+  const [newReqService, setNewReqService] = useState('10er VIP Abo Motorboot Kat. A (Luzern & NW)');
   const [newReqDate, setNewReqDate] = useState('2026-04-02');
   const [newReqTimeWindow, setNewReqTimeWindow] = useState('afternoon');
   const [newReqLocation, setNewReqLocation] = useState('Luzern (Alpenquai)');
-  const [newReqCoach, setNewReqCoach] = useState('Beat Vollenweider');
+  const [newReqCoach, setNewReqCoach] = useState('Beliebiger Coach');
   const [newReqUseBalance, setNewReqUseBalance] = useState(false);
   const [newReqNotes, setNewReqNotes] = useState('');
 
@@ -879,12 +368,12 @@ export default function App() {
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>(INITIAL_PROMO_CODES);
   const [customerSubscriptions, setCustomerSubscriptions] = useState<CustomerSubscription[]>(INITIAL_CUSTOMER_SUBSCRIPTIONS);
 
-  // Admin Section Navigation: Übersicht (All-in-One Command Center) | Payroll | Services & Tarife | Gutscheine & Codes | Account-Anfragen
-  const [adminSectionTab, setAdminSectionTab] = useState<'overview' | 'payroll' | 'services' | 'promos' | 'account_requests'>('overview');
+  // Admin Section Navigation: Übersicht (All-in-One Command Center) | Payroll | Services & Tarife | Gutscheine & Codes | Account-Anfragen | Flotte & Telemetrie
+  const [adminSectionTab, setAdminSectionTab] = useState<'overview' | 'payroll' | 'services' | 'promos' | 'account_requests' | 'fleet'>('overview');
 
   // Customer Store View State
   const [storeViewMode, setStoreViewMode] = useState<'catalog' | 'my_subscriptions'>('catalog');
-  const [storeFilter, setStoreFilter] = useState<'all' | 'subscriptions' | 'bootsfahrschule' | 'coaching' | 'anderes' | 'mieten'>('all');
+  const [storeFilter, setStoreFilter] = useState<'all' | 'subscriptions' | 'digital' | 'bootsfahrschule' | 'coaching' | 'anderes' | 'mieten'>('all');
   const [storeSearch, setStoreSearch] = useState<string>('');
 
   // Checkout Modal State
@@ -1030,6 +519,206 @@ export default function App() {
     setDraggedItemIndex(null);
     setDragOverItemIndex(null);
     setDraggedCategory(null);
+  };
+
+  // --- FUNKTIONEN: DIGITALER SELF CHECK-IN & CHECK-OUT (BOOTSVERMIETUNG) ---
+
+  const formatRentalTimer = (totalSeconds: number): string => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    const hStr = hours < 10 ? `0${hours}` : `${hours}`;
+    const mStr = mins < 10 ? `0${mins}` : `${mins}`;
+    const sStr = secs < 10 ? `0${secs}` : `${secs}`;
+    return `${hStr}h ${mStr}m ${sStr}s`;
+  };
+
+  const handleCompleteCheckin = () => {
+    if (!checkinFitness || !checkinLicense || !checkinSafety || !checkinEmergencyContact) {
+      alert('Bitte bestätigen Sie alle 4 Pflichtprüfungen (0.0‰ Alkohol, Ausweis, Sicherheitsausrüstung, Notfallkontakt).');
+      return;
+    }
+
+    const targetAppt = appointments.find(a => a.id === selectedRentalApptId) || appointments.find(a => a.service_name.includes('Miete') || a.service_name.includes('Boesch')) || appointments[0];
+    const targetBoat = boats.find(b => b.name === targetAppt.boat_name) || boats[0];
+
+    const checkinCode = `CB-CHK-${Math.floor(10000 + Math.random() * 90000)}`;
+    const telemetrySessionId = `TEL-${Math.floor(100000 + Math.random() * 900000)}-${Date.now().toString().slice(-4)}`;
+
+    const newCheckin: BoatCheckin = {
+      id: Date.now(),
+      appointment_id: targetAppt.id,
+      customer_id: targetAppt.customer_id,
+      boat_id: targetBoat.id,
+      boat_name: targetBoat.name,
+      checked_in_at: new Date().toISOString(),
+      check_in_code: checkinCode,
+      fitness_confirmed: checkinFitness,
+      license_confirmed: checkinLicense,
+      safety_confirmed: checkinSafety,
+      emergency_contact_confirmed: checkinEmergencyContact,
+      boat_condition_confirmed: checkinBoatCondition === 'perfect',
+      boat_damage_reported: checkinBoatCondition === 'report_damage',
+      boat_damage_photos: [...checkinDamagePhotos],
+      boat_damage_notes: checkinDamageNotes,
+      telemetry_session_id: telemetrySessionId,
+      external_script_triggered: true,
+      external_script_message: `NMEA 2000 Gateway CAN-ID 0x28 (250kbps) gestartet. Signal empfangen.`
+    };
+
+    setBoatCheckins(prev => [newCheckin, ...prev]);
+    setActiveCheckinSession(newCheckin);
+    setLiveRentalSeconds(1);
+
+    // Boot auf 'occupied' setzen
+    setBoats(prev => prev.map(b => b.id === targetBoat.id ? {
+      ...b,
+      status: 'occupied',
+      current_session: {
+        session_id: telemetrySessionId,
+        check_in_code: checkinCode,
+        customer_id: targetAppt.customer_id,
+        customer_name: targetAppt.customer_name,
+        customer_phone: targetAppt.customer_phone,
+        appointment_id: targetAppt.id,
+        start_time: new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }),
+        start_engine_hours: 142.5
+      }
+    } : b));
+
+    setCheckinStep('phase2_active');
+    setMagicFeedback(`Check-in #${checkinCode} erfolgreich! Boot ${targetBoat.name} ist besetzt. NMEA 2000 Telemetrie-Aufzeichnung läuft.`);
+    setTimeout(() => setMagicFeedback(null), 5000);
+  };
+
+  const handleCompleteCheckout = () => {
+    if (!checkoutMooringSecured || !checkoutKeysReturned || !checkoutEquipmentChecked) {
+      alert('Bitte bestätigen Sie die 3 Sicherungsprüfungen (Vertäut & Hauptschalter AUS, Schlüssel im Safe, Ausrüstung vollzählig).');
+      return;
+    }
+
+    const boat = boats.find(b => b.id === (activeCheckinSession?.boat_id || 1)) || boats[0];
+    const durationMinutes = Math.max(20, Math.round(liveRentalSeconds / 60)) || 75;
+    const engineHours = Number((durationMinutes / 60).toFixed(1));
+    const fuelUsedLiters = Number((engineHours * boat.hourly_consumption).toFixed(1));
+    const avgLitersPerHour = engineHours > 0 ? Number((fuelUsedLiters / engineHours).toFixed(1)) : boat.hourly_consumption;
+
+    let fuelCostTotal = 0;
+    if (checkoutFuelStatus === 'needs_fuel' || checkoutFuelStatus === 'not_full') {
+      fuelCostTotal = Number((fuelUsedLiters * 2.25).toFixed(2));
+    } else if (checkoutFuelStatus === 'refueled' && checkoutRefueledLiters < fuelUsedLiters) {
+      fuelCostTotal = Number(((fuelUsedLiters - checkoutRefueledLiters) * 2.25).toFixed(2));
+    }
+
+    const newCheckout: BoatCheckout = {
+      id: Date.now(),
+      check_in_id: activeCheckinSession?.id || 1,
+      appointment_id: activeCheckinSession?.appointment_id || 107,
+      customer_id: activeCheckinSession?.customer_id || 1,
+      boat_id: boat.id,
+      boat_name: boat.name,
+      checked_out_at: new Date().toISOString(),
+      duration_minutes: durationMinutes,
+      fuel_status: checkoutFuelStatus,
+      liters_refueled: checkoutRefueledLiters,
+      fuel_receipt_photo: checkoutFuelReceiptPhoto || undefined,
+      fuel_gauge_photo: checkoutFuelGaugePhoto || undefined,
+      sensor_fuel_liters_used: fuelUsedLiters,
+      sensor_engine_hours: engineHours,
+      fuel_cost_total: fuelCostTotal,
+      fuel_price_per_liter: 2.25,
+      return_condition_confirmed: checkoutReturnCondition === 'perfect',
+      return_damage_reported: checkoutReturnCondition === 'report_damage',
+      return_damage_photos: [...checkoutDamagePhotos],
+      return_damage_notes: checkoutDamageNotes,
+      cleanliness_rating: checkoutCleanliness,
+      mooring_secured: checkoutMooringSecured,
+      keys_returned: checkoutKeysReturned,
+      equipment_checked: checkoutEquipmentChecked,
+      external_script_queried: true,
+      external_script_data: {
+        fuel_liters_used: fuelUsedLiters,
+        engine_hours: engineHours,
+        avg_rpm: 2180,
+        max_rpm: 3450,
+        coolant_temp_c: 82.0,
+        battery_v: 14.2,
+        nmea_signature: `NMEA2K-${Date.now().toString(16).toUpperCase()}-SHA256`
+      }
+    };
+
+    setBoatCheckouts(prev => [newCheckout, ...prev]);
+    setLatestCheckoutProtocol(newCheckout);
+
+    // Boot wieder auf 'available' setzen
+    setBoats(prev => prev.map(b => b.id === boat.id ? {
+      ...b,
+      status: 'available',
+      current_session: null
+    } : b));
+
+    // Termin als completed markieren
+    setAppointments(prev => prev.map(a => a.id === newCheckout.appointment_id ? { ...a, status: 'completed' } : a));
+
+    setActiveCheckinSession(null);
+    setCheckinStep('phase4_protocol');
+    setMagicFeedback(`Rückgabe erfolgreich abgeschlossen! Treibstoff gemessen: ${fuelUsedLiters} L (CHF ${fuelCostTotal.toFixed(2)}). Boot ${boat.name} ist wieder verfügbar.`);
+    setTimeout(() => setMagicFeedback(null), 5000);
+  };
+
+  const handleAdminForceCheckout = (boatId: number) => {
+    const boat = boats.find(b => b.id === boatId);
+    if (!boat) return;
+
+    requestDelete({
+      title: 'Admin-Override: Boot-Freigabe erzwingen?',
+      message: `Möchten Sie die aktive Miet-Session für "${boat.name}" (${boat.registration}) sofort zwangsweise beenden und das Boot wieder für die Flotte freigeben?`,
+      itemName: boat.name,
+      confirmLabel: 'Ja, sofort freigeben',
+      onConfirm: () => {
+        const fakeCheckout: BoatCheckout = {
+          id: Date.now(),
+          check_in_id: 999,
+          appointment_id: boat.current_session?.appointment_id || 107,
+          customer_id: boat.current_session?.customer_id || 1,
+          boat_id: boat.id,
+          boat_name: boat.name,
+          checked_out_at: new Date().toISOString(),
+          duration_minutes: 60,
+          fuel_status: 'needs_fuel',
+          liters_refueled: 0,
+          sensor_fuel_liters_used: boat.hourly_consumption,
+          sensor_engine_hours: 1.0,
+          fuel_cost_total: Number((boat.hourly_consumption * 2.25).toFixed(2)),
+          fuel_price_per_liter: 2.25,
+          return_condition_confirmed: true,
+          return_damage_reported: false,
+          return_damage_photos: [],
+          return_damage_notes: 'Manuelle Zwangsfreigabe durch Flotten-Admin via Admin Command Center.',
+          cleanliness_rating: 'clean',
+          mooring_secured: true,
+          keys_returned: true,
+          equipment_checked: true,
+          external_script_queried: true
+        };
+
+        setBoatCheckouts(prev => [fakeCheckout, ...prev]);
+
+        setBoats(prev => prev.map(b => b.id === boatId ? {
+          ...b,
+          status: 'available',
+          current_session: null
+        } : b));
+
+        if (activeCheckinSession && activeCheckinSession.boat_id === boatId) {
+          setActiveCheckinSession(null);
+          setCheckinStep('step1_checkin');
+        }
+
+        setMagicFeedback(`Boot "${boat.name}" wurde durch Admin-Override freigegeben.`);
+        setTimeout(() => setMagicFeedback(null), 4000);
+      }
+    });
   };
 
   // Auto-Redirect Timer Effekt: Zählt herunter und wechselt bei 0 automatisch auf Login
@@ -1218,6 +907,7 @@ export default function App() {
     return services.filter(service => {
       if (!service.is_active) return false;
       if (storeFilter === 'subscriptions' && !service.is_subscription) return false;
+      if (storeFilter === 'digital' && service.offer_type !== 'digital') return false;
       if (storeFilter === 'bootsfahrschule' && service.offer_type !== 'bootsfahrschule') return false;
       if (storeFilter === 'coaching' && service.offer_type !== 'coaching') return false;
       if (storeFilter === 'anderes' && service.offer_type !== 'anderes') return false;
@@ -1232,6 +922,27 @@ export default function App() {
       return true;
     });
   }, [services, storeFilter, storeSearch]);
+
+  // Digitales Paket / 1-Jahres-Abo Status
+  const digitalSubscription = useMemo(() => {
+    return customerSubscriptions.find(sub => 
+      sub.customer_id === 1 && 
+      (sub.is_digital_elearning || sub.package_name.toLowerCase().includes('theorie') || sub.package_name.toLowerCase().includes('digital') || sub.service_id === 7)
+    );
+  }, [customerSubscriptions]);
+
+  const hasDigitalAccess = useMemo(() => {
+    if (demoElearningAccessOverride !== null) return demoElearningAccessOverride;
+    if (!digitalSubscription) return false;
+    const expDate = new Date(digitalSubscription.expires_at).getTime();
+    return expDate > Date.now();
+  }, [digitalSubscription, demoElearningAccessOverride]);
+
+  const daysRemainingDigital = useMemo(() => {
+    if (!digitalSubscription) return 0;
+    const diff = new Date(digitalSubscription.expires_at).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }, [digitalSubscription]);
 
   // 1-Click Duplikation: Klont Service + Preisstufen mit (Kopie)
   const handleDuplicateService = (id: number) => {
@@ -1509,18 +1220,24 @@ export default function App() {
     if (!checkoutService || !checkoutSelectedOption) return;
 
     const orderId = `CB-ORD-${Math.floor(100000 + Math.random() * 900000)}`;
-    const sessions = checkoutSelectedOption.sessions_count || (checkoutService.is_subscription ? checkoutService.sessions_count : 1);
+    const isDigital = checkoutService.offer_type === 'digital';
+    const sessions = isDigital ? 365 : (checkoutSelectedOption.sessions_count || (checkoutService.is_subscription ? checkoutService.sessions_count : 1));
 
     const now = new Date();
     const purchasedAt = now.toISOString().replace('T', ' ').substring(0, 19);
-    const expireYear = now.getFullYear() + 1;
+    const expireYearsToAdd = isDigital && checkoutSelectedOption.duration === 730 ? 2 : 1;
+    const expireYear = now.getFullYear() + expireYearsToAdd;
     const expiresAt = `${expireYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const pkgName = isDigital
+      ? `${checkoutService.name} (${expireYearsToAdd === 2 ? '2-Jahres-Abo' : '1-Jahres-Abo'})`
+      : `${checkoutService.name} (${checkoutSelectedOption.duration} Min)`;
 
     const newSub: CustomerSubscription = {
       id: Date.now(),
       customer_id: 1,
       service_id: checkoutService.id,
-      package_name: `${checkoutService.name} (${checkoutSelectedOption.duration} Min)`,
+      package_name: pkgName,
       total_sessions: sessions,
       used_sessions: 0,
       purchased_at: purchasedAt,
@@ -1529,10 +1246,12 @@ export default function App() {
       payment_method: checkoutPaymentMethod,
       payment_status: 'paid',
       order_id: orderId,
-      location_name: locationLabels[checkoutLocation] || 'Luzern'
+      location_name: isDigital ? 'Online Academy (Schweizweit)' : (locationLabels[checkoutLocation] || 'Luzern'),
+      is_digital_elearning: isDigital
     };
 
     setCustomerSubscriptions(prev => [newSub, ...prev]);
+    setDemoElearningAccessOverride(null);
 
     // Wenn Rabattcode genutzt, Zähler inkrementieren
     if (checkoutPromoApplied) {
@@ -1543,7 +1262,11 @@ export default function App() {
 
     setCheckoutService(null);
     setShowReceiptModal(newSub);
-    setMagicFeedback(`Vielen Dank! Ihre Bestellung ${orderId} wurde erfolgreich verbucht. Das Guthaben von ${sessions} Lektion(en) steht Ihnen sofort zur Verfügung.`);
+    if (isDigital) {
+      setMagicFeedback(`Gratulation! Ihre Bestellung ${orderId} wurde erfolgreich verbucht. Ihr 1-Jahres-Abo für die Nautic Academy (Lehrfilme, Bildtafeln & Prüfungstrainer) ist ab sofort für 365 Tage aktiv!`);
+    } else {
+      setMagicFeedback(`Vielen Dank! Ihre Bestellung ${orderId} wurde erfolgreich verbucht. Das Guthaben von ${sessions} Lektion(en) steht Ihnen sofort zur Verfügung.`);
+    }
     setTimeout(() => setMagicFeedback(null), 6000);
   };
 
@@ -1857,73 +1580,80 @@ export default function App() {
             </div>
           </div>
 
-          {/* Module Tabs */}
-          <nav className="flex space-x-1 sm:space-x-2">
-            <button
-              onClick={() => setActiveTab('payroll')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                activeTab === 'payroll' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span className="hidden md:inline">1. Admin Payroll &amp; Reports</span>
-              <span className="md:hidden">Payroll</span>
-            </button>
+          {/* Module Tabs - im Schüler / Kunden-Dashboard im Header entfernen */}
+          {activeTab !== 'student' ? (
+            <nav className="flex space-x-1 sm:space-x-2">
+              <button
+                onClick={() => setActiveTab('payroll')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  activeTab === 'payroll' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span className="hidden md:inline">1. Admin Payroll &amp; Reports</span>
+                <span className="md:hidden">Payroll</span>
+              </button>
 
-            <button
-              onClick={() => setActiveTab('student')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                activeTab === 'student' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              <span className="hidden md:inline">2. Kunden-Dashboard</span>
-              <span className="md:hidden">Dashboard</span>
-            </button>
+              <button
+                onClick={() => setActiveTab('student')}
+                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-800"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden md:inline">2. Kunden-Dashboard</span>
+                <span className="md:hidden">Dashboard</span>
+              </button>
 
-            <button
-              onClick={() => setActiveTab('instructor')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                activeTab === 'instructor' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <User className="w-4 h-4" />
-              <span className="hidden md:inline">3. Fahrlehrer-Portal &amp; Monatsabschluss</span>
-              <span className="md:hidden">Fahrlehrer</span>
-            </button>
+              <button
+                onClick={() => setActiveTab('instructor')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  activeTab === 'instructor' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <User className="w-4 h-4" />
+                <span className="hidden md:inline">3. Fahrlehrer-Portal &amp; Monatsabschluss</span>
+                <span className="md:hidden">Fahrlehrer</span>
+              </button>
 
-            <button
-              onClick={() => setActiveTab('login')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                activeTab === 'login' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <LogIn className="w-4 h-4" />
-              <span className="hidden md:inline">4. Nautic Logonseite (SVG Logo)</span>
-              <span className="md:hidden">Logon</span>
-            </button>
+              <button
+                onClick={() => setActiveTab('login')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  activeTab === 'login' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <LogIn className="w-4 h-4" />
+                <span className="hidden md:inline">4. Nautic Logonseite (SVG Logo)</span>
+                <span className="md:hidden">Logon</span>
+              </button>
 
-            <button
-              onClick={() => setActiveTab('cms')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                activeTab === 'cms' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <LayoutTemplate className="w-4 h-4" />
-              <span className="hidden md:inline">5. Startseite &amp; Mini-CMS</span>
-              <span className="md:hidden">CMS</span>
-            </button>
+              <button
+                onClick={() => setActiveTab('cms')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  activeTab === 'cms' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <LayoutTemplate className="w-4 h-4" />
+                <span className="hidden md:inline">5. Startseite &amp; Mini-CMS</span>
+                <span className="md:hidden">CMS</span>
+              </button>
 
-            <button
-              onClick={() => setActiveTab('architecture')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                activeTab === 'architecture' ? 'bg-slate-800 text-sky-400 border border-sky-500/30' : 'text-slate-300 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <Layers className="w-4 h-4" />
-              <span className="hidden lg:inline">Backend &amp; Schema</span>
-            </button>
-          </nav>
+              <button
+                onClick={() => setActiveTab('architecture')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  activeTab === 'architecture' ? 'bg-slate-800 text-sky-400 border border-sky-500/30' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                <span className="hidden lg:inline">Backend &amp; Schema</span>
+              </button>
+            </nav>
+          ) : (
+            <div className="flex items-center gap-3">
+              <span className="text-xs bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full font-semibold border border-amber-400/30 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                Kunden-Portal (Roland Grüter)
+              </span>
+            </div>
+          )}
         </div>
       </header>
 
@@ -2016,6 +1746,24 @@ export default function App() {
                       adminSectionTab === 'account_requests' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900'
                     }`}>
                       {accountRequests.filter(r => r.status === 'pending').length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdminSectionTab('fleet')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                    adminSectionTab === 'fleet'
+                      ? 'bg-cyan-700 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <Ship className="w-4 h-4" />
+                  <span>5. Flotte &amp; Telemetrie</span>
+                  {boats.filter(b => b.status === 'occupied').length > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-amber-400 text-slate-900 animate-pulse">
+                      {boats.filter(b => b.status === 'occupied').length} auf See
                     </span>
                   )}
                 </button>
@@ -2681,6 +2429,319 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* 4. Live-Flottenstatus & NMEA 2000 Telemetrie (Bootsmieten) */}
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-cyan-50 text-cyan-700 flex items-center justify-center font-bold">
+                        <Ship className="w-5 h-5 text-cyan-700" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-extrabold text-slate-900 text-lg">
+                            Live-Flottenstatus &amp; NMEA 2000 Telemetrie
+                          </h3>
+                          <span className="text-[10px] bg-cyan-100 text-cyan-800 font-bold px-2 py-0.5 rounded-full uppercase">
+                            ECHTZEIT-ÜBERWACHUNG
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Status aller Sport- &amp; Mietboote, Live-Fahrtzeit auf See, NMEA 2000 Sensoren &amp; Admin-Override zur Sofortfreigabe.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-slate-500 font-medium">Treibstofftarif:</span>
+                      <strong className="text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 font-mono">
+                        CHF 2.25 / Liter
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* 4 Boote Karten Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {boats.map(boat => {
+                      const isOccupied = boat.status === 'occupied';
+                      const isMaint = boat.status === 'maintenance';
+
+                      return (
+                        <div
+                          key={boat.id}
+                          className={`rounded-2xl border p-4 flex flex-col justify-between transition ${
+                            isOccupied
+                              ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-300 shadow-sm'
+                              : isMaint
+                              ? 'bg-rose-50/60 border-rose-200'
+                              : 'bg-white border-slate-200 shadow-xs hover:border-slate-300'
+                          }`}
+                        >
+                          <div>
+                            {/* Bild & Status Badge */}
+                            <div className="relative h-28 w-full rounded-xl overflow-hidden mb-3 bg-slate-100">
+                              <img
+                                src={boat.image_url}
+                                alt={boat.name}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute top-2 right-2">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shadow-xs flex items-center gap-1 ${
+                                  isOccupied
+                                    ? 'bg-amber-500 text-slate-950 font-black animate-pulse'
+                                    : isMaint
+                                    ? 'bg-rose-600 text-white'
+                                    : 'bg-emerald-600 text-white'
+                                }`}>
+                                  {isOccupied && <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping"></span>}
+                                  {isOccupied ? 'BESETZT (AUF SEE)' : isMaint ? 'WARTUNG' : 'FREI AM STEG'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Bootsdetails */}
+                            <h4 className="font-extrabold text-slate-900 text-sm">{boat.name}</h4>
+                            <div className="text-[11px] text-slate-500 font-mono mt-0.5">{boat.registration} &bull; {boat.type}</div>
+                            <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span className="truncate">{boat.berth}</span>
+                            </div>
+
+                            {/* Details wenn besetzt */}
+                            {isOccupied && (
+                              <div className="mt-3 p-2.5 bg-amber-100/70 rounded-xl border border-amber-200 text-xs space-y-1">
+                                <div className="flex items-center justify-between text-amber-950 font-bold">
+                                  <span>Skipper:</span>
+                                  <span>{boat.current_session?.customer_name || 'Roland Grüter'}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-amber-900 text-[11px]">
+                                  <span>Live-Fahrtzeit:</span>
+                                  <strong className="font-mono text-amber-950">
+                                    {formatRentalTimer(liveRentalSeconds > 0 ? liveRentalSeconds : 1420)}
+                                  </strong>
+                                </div>
+                                <div className="text-[10px] text-amber-800 font-mono pt-1 border-t border-amber-200/80">
+                                  Telemetrie: 2&apos;250 RPM &bull; 82.5°C &bull; 12.5 L/h
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Details wenn frei */}
+                            {!isOccupied && !isMaint && (
+                              <div className="mt-3 p-2 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600 space-y-0.5">
+                                <div className="flex justify-between">
+                                  <span>Tankstand:</span>
+                                  <strong className="text-emerald-700 font-mono">{boat.current_fuel_percent}% ({boat.fuel_capacity} L)</strong>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Ø Verbrauch:</span>
+                                  <span className="font-mono">{boat.hourly_consumption} L/h</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Aktionen je nach Status */}
+                          <div className="mt-4 pt-2 border-t border-slate-100">
+                            {isOccupied ? (
+                              <button
+                                type="button"
+                                onClick={() => handleAdminForceCheckout(boat.id)}
+                                className="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                                title="Admin-Override: Beendet die Ausfahrt sofort und gibt das Boot frei (z. B. wenn Kundenakku leer)"
+                              >
+                                <StopCircle className="w-3.5 h-3.5" />
+                                <span>Admin-Override: Sofort freigeben</span>
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    // Simulation: Boot als besetzt markieren
+                                    setBoats(prev => prev.map(b => b.id === boat.id ? {
+                                      ...b,
+                                      status: 'occupied',
+                                      current_session: {
+                                        session_id: `TEL-${Math.floor(100000 + Math.random() * 900000)}-${Date.now().toString().slice(-4)}`,
+                                        check_in_code: `CB-CHK-${Math.floor(10000 + Math.random() * 90000)}`,
+                                        customer_id: 1,
+                                        customer_name: 'Roland Grüter',
+                                        customer_phone: '+41 79 000 00 00',
+                                        appointment_id: 107,
+                                        start_time: '14:00',
+                                        start_engine_hours: 142.5
+                                      }
+                                    } : b));
+                                    setLiveRentalSeconds(1);
+                                    setMagicFeedback(`Boot "${boat.name}" als besetzt (auf See) gesetzt.`);
+                                    setTimeout(() => setMagicFeedback(null), 3000);
+                                  }}
+                                  className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition cursor-pointer text-center"
+                                >
+                                  Test: Als besetzt markieren
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* SUB-BEREICH 5: FLOTTE & TELEMETRIE (VOLLANSICHT) */}
+            {adminSectionTab === 'fleet' && (
+              <div className="space-y-6 animate-in fade-in duration-150">
+                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-cyan-100 text-cyan-800 flex items-center justify-center font-bold">
+                        <Ship className="w-5 h-5 text-cyan-700" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-extrabold text-slate-900">
+                          Flottenmanagement, Bootsvermietung &amp; NMEA 2000 Telemetrie
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Übersicht aller Schulungs- &amp; Mietboote, Telemetrie-Gateways, Treibstoffabrechnungen und Audit-Trails.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMagicFeedback('Flottenstatus & NMEA 2000 Sensoren synchronisiert.');
+                          setTimeout(() => setMagicFeedback(null), 3000);
+                        }}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-200 cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Sensoren aktualisieren</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Flottenübersicht Tabelle */}
+                  <div className="overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                          <th className="p-3.5">Boot / Modell</th>
+                          <th className="p-3.5">Immatrikulation</th>
+                          <th className="p-3.5">Liegeplatz &amp; Steg</th>
+                          <th className="p-3.5">Status</th>
+                          <th className="p-3.5">Tankstand / Ø L/h</th>
+                          <th className="p-3.5">Gateway-ID</th>
+                          <th className="p-3.5 text-right">Aktion</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {boats.map(boat => (
+                          <tr key={boat.id} className="hover:bg-slate-50/80 transition">
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-3">
+                                <img src={boat.image_url} alt={boat.name} className="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0" />
+                                <div>
+                                  <div className="font-bold text-slate-900">{boat.name}</div>
+                                  <div className="text-[11px] text-slate-500">{boat.type}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-3.5 font-mono font-semibold text-slate-800">{boat.registration}</td>
+                            <td className="p-3.5 text-slate-600">{boat.berth}</td>
+                            <td className="p-3.5">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                boat.status === 'occupied'
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                  : boat.status === 'maintenance'
+                                  ? 'bg-rose-100 text-rose-800'
+                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              }`}>
+                                {boat.status === 'occupied' ? 'Besetzt auf See' : boat.status === 'maintenance' ? 'Wartung' : 'Verfügbar'}
+                              </span>
+                            </td>
+                            <td className="p-3.5">
+                              <div className="font-semibold text-slate-900">{boat.current_fuel_percent}% ({boat.fuel_capacity} L)</div>
+                              <div className="text-[10px] text-slate-500 font-mono">Ø {boat.hourly_consumption} L/h</div>
+                            </td>
+                            <td className="p-3.5 font-mono text-[11px] text-slate-600">{boat.telemetry_gateway_id}</td>
+                            <td className="p-3.5 text-right">
+                              {boat.status === 'occupied' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleAdminForceCheckout(boat.id)}
+                                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-bold transition shadow-xs cursor-pointer"
+                                >
+                                  Override
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setBoats(prev => prev.map(b => b.id === boat.id ? { ...b, status: b.status === 'available' ? 'maintenance' : 'available' } : b));
+                                  }}
+                                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-semibold transition cursor-pointer"
+                                >
+                                  {boat.status === 'maintenance' ? 'Freigeben' : 'Auf Wartung'}
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Kürzliche Check-outs & Telemetrie-Abrechnungen */}
+                  <div className="pt-4 border-t border-slate-100">
+                    <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                      <FileCheck className="w-4 h-4 text-emerald-600" />
+                      <span>Kürzliche Rückgabeprotokolle &amp; Telemetrie-Abrechnungen ({boatCheckouts.length})</span>
+                    </h3>
+
+                    <div className="space-y-2">
+                      {boatCheckouts.map((chk, i) => (
+                        <div key={chk.id || i} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900">{chk.boat_name}</span>
+                              <span className="font-mono text-[11px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded font-semibold">PRT-2026-{String(chk.id).slice(-4)}</span>
+                              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.2 rounded-full">Rücknahme abgeschlossen</span>
+                            </div>
+                            <div className="text-slate-500 mt-1 flex flex-wrap items-center gap-3 text-[11px]">
+                              <span>Dauer: {chk.duration_minutes} Min</span>
+                              <span>&bull;</span>
+                              <span>Treibstoff gemessen: {chk.sensor_fuel_liters_used} Liter</span>
+                              <span>&bull;</span>
+                              <span>Kosten: CHF {chk.fuel_cost_total.toFixed(2)}</span>
+                              <span>&bull;</span>
+                              <span>Sauberkeit: {chk.cleanliness_rating}</span>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLatestCheckoutProtocol(chk);
+                              setActiveTab('student');
+                              setStudentSidebarNav('checkin');
+                              setStudentNavSubTab('checkin');
+                              setCheckinStep('phase4_protocol');
+                            }}
+                            className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-lg border border-slate-200 font-semibold text-xs transition cursor-pointer"
+                          >
+                            Protokoll öffnen
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -3022,6 +3083,7 @@ export default function App() {
                       bootsfahrschule: 'bg-sky-100 text-sky-800 border-sky-200',
                       coaching: 'bg-emerald-100 text-emerald-800 border-emerald-200',
                       mieten: 'bg-amber-100 text-amber-800 border-amber-200',
+                      digital: 'bg-indigo-100 text-indigo-800 border-indigo-200',
                       anderes: 'bg-purple-100 text-purple-800 border-purple-200'
                     }[service.offer_type];
 
@@ -3029,6 +3091,7 @@ export default function App() {
                       bootsfahrschule: 'Bootsfahrschule Kat. A',
                       coaching: 'Spezial-Coaching',
                       mieten: 'Bootsmiete / Charter',
+                      digital: 'Digitales Paket (1-Jahres-Abo)',
                       anderes: 'Gutschein & Weiteres'
                     }[service.offer_type];
 
@@ -3495,6 +3558,12 @@ export default function App() {
                                       "{req.notes}"
                                     </p>
                                   )}
+                                  {req.allergies && (
+                                    <div className="flex items-center gap-1 text-[11px] text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 mt-1 truncate" title={req.allergies}>
+                                      <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+                                      <span className="font-medium">Allergien: {req.allergies}</span>
+                                    </div>
+                                  )}
                                 </td>
                                 <td className="py-3.5 px-4">
                                   {req.status === 'pending' ? (
@@ -3643,7 +3712,9 @@ export default function App() {
                             const val = e.target.value;
                             setServiceFormCategory(val);
                             const lower = val.toLowerCase();
-                            if (lower.includes('fahrschule') || lower.includes('praxis') || lower.includes('theorie') || lower.includes('prüfung') || lower.includes('manöver')) {
+                            if (lower.includes('digital') || lower.includes('e-learning') || lower.includes('videopaket') || lower.includes('online')) {
+                              setServiceFormType('digital');
+                            } else if (lower.includes('fahrschule') || lower.includes('praxis') || lower.includes('theorie') || lower.includes('prüfung') || lower.includes('manöver')) {
                               setServiceFormType('bootsfahrschule');
                             } else if (lower.includes('coaching') || lower.includes('skipper') || lower.includes('nacht')) {
                               setServiceFormType('coaching');
@@ -3653,12 +3724,13 @@ export default function App() {
                               setServiceFormType('anderes');
                             }
                           }}
-                          placeholder="z. B. Praxisunterricht, VIP-Coaching, Bootsmiete..."
+                          placeholder="z. B. Praxisunterricht, VIP-Coaching, Bootsmiete, Digitales Paket..."
                           required
                           className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-amber-500"
                         />
                         <datalist id="serviceCategoryDatalist">
                           <option value="Praxisunterricht (Motorboot Kat. A)" />
+                          <option value="Digitales Paket & E-Learning (1-Jahres-Abo)" />
                           <option value="Segelausbildung Kat. D" />
                           <option value="Theoriekurs & Prüfungsfahrt" />
                           <option value="Spezial-Skipper Coaching & Nachtfahrt" />
@@ -4159,7 +4231,7 @@ export default function App() {
                           setStudentSidebarNav('dashboard');
                           setStudentNavSubTab('overview');
                         }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition ${
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
                           studentSidebarNav === 'dashboard'
                             ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
@@ -4169,40 +4241,52 @@ export default function App() {
                           <LayoutDashboard className="w-4 h-4 text-amber-400" />
                           <span>Dashboard</span>
                         </div>
-                        <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                        {studentSidebarNav === 'dashboard' && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                        )}
                       </button>
 
                       <button
                         type="button"
                         onClick={() => {
                           setStudentSidebarNav('calendar');
+                          setStudentNavSubTab('overview');
                           setShowStudentRequestModal(true);
                         }}
-                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
                           studentSidebarNav === 'calendar'
-                            ? 'bg-[#4a3d38] text-white font-semibold'
+                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
                         }`}
                       >
-                        <Calendar className="w-4 h-4" />
-                        <span>Termine &amp; Kalender</span>
+                        <div className="flex items-center gap-3">
+                          <Calendar className="w-4 h-4" />
+                          <span>Termine &amp; Kalender</span>
+                        </div>
+                        {studentSidebarNav === 'calendar' && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                        )}
                       </button>
 
                       <button
                         type="button"
                         onClick={() => {
                           setStudentSidebarNav('checkin');
-                          setMagicFeedback('Self Check-in Portal: Schiffsbeschau & Schlüsselkasten-Code aktiviert.');
-                          setTimeout(() => setMagicFeedback(null), 4000);
+                          setStudentNavSubTab('checkin');
                         }}
-                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
-                          studentSidebarNav === 'checkin'
-                            ? 'bg-[#4a3d38] text-white font-semibold'
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                          studentSidebarNav === 'checkin' || studentNavSubTab === 'checkin'
+                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
                         }`}
                       >
-                        <QrCode className="w-4 h-4" />
-                        <span>Self Checkin (Miete)</span>
+                        <div className="flex items-center gap-3">
+                          <QrCode className="w-4 h-4 text-emerald-400" />
+                          <span>Self Checkin (Miete)</span>
+                        </div>
+                        {(studentSidebarNav === 'checkin' || studentNavSubTab === 'checkin') && (
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        )}
                       </button>
 
                       <button
@@ -4211,14 +4295,45 @@ export default function App() {
                           setStudentSidebarNav('store');
                           setStudentNavSubTab('packages');
                         }}
-                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
                           studentSidebarNav === 'store'
-                            ? 'bg-[#4a3d38] text-white font-semibold'
+                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
                         }`}
                       >
-                        <Award className="w-4 h-4" />
-                        <span>Store &amp; Abos</span>
+                        <div className="flex items-center gap-3">
+                          <Award className="w-4 h-4" />
+                          <span>Store &amp; Abos</span>
+                        </div>
+                        {studentSidebarNav === 'store' && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStudentSidebarNav('elearning');
+                          setStudentNavSubTab('elearning');
+                        }}
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                          studentSidebarNav === 'elearning' || studentNavSubTab === 'elearning'
+                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
+                            : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Play className="w-4 h-4 text-cyan-400" />
+                          <span>E-Learning &amp; Videos</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-cyan-950/80 text-cyan-300 border border-cyan-700/50 uppercase">
+                            1 JAHR
+                          </span>
+                          {(studentSidebarNav === 'elearning' || studentNavSubTab === 'elearning') && (
+                            <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                          )}
+                        </div>
                       </button>
 
                       <button
@@ -4227,23 +4342,61 @@ export default function App() {
                           setStudentSidebarNav('invoices');
                           setStudentNavSubTab('invoices');
                         }}
-                        className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
                           studentSidebarNav === 'invoices'
-                            ? 'bg-[#4a3d38] text-white font-semibold'
+                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
                         }`}
                       >
-                        <FileText className="w-4 h-4" />
-                        <span>Meine Rechnungen</span>
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-4 h-4" />
+                          <span>Meine Rechnungen</span>
+                        </div>
+                        {studentSidebarNav === 'invoices' && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                        )}
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => setShowStudentProfileModal(true)}
-                        className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-stone-300 hover:bg-[#3d322e] hover:text-white transition"
+                        onClick={() => {
+                          setStudentSidebarNav('legal');
+                          setStudentNavSubTab('legal');
+                        }}
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                          studentSidebarNav === 'legal'
+                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
+                            : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                        }`}
                       >
-                        <User className="w-4 h-4" />
-                        <span>Mein Profil</span>
+                        <div className="flex items-center gap-3">
+                          <Shield className="w-4 h-4" />
+                          <span>Rechtliches &amp; Nachweise</span>
+                        </div>
+                        {studentSidebarNav === 'legal' && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStudentSidebarNav('profile');
+                          setShowStudentProfileModal(true);
+                        }}
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                          studentSidebarNav === 'profile'
+                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
+                            : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <User className="w-4 h-4" />
+                          <span>Mein Profil</span>
+                        </div>
+                        {studentSidebarNav === 'profile' && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                        )}
                       </button>
                     </nav>
                   </div>
@@ -4511,46 +4664,11 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* 4. Subnavigation Tabs (Pills wie im Screenshot) */}
-                  <div className="bg-[#eef5fa] border border-[#d9e6f2] p-1 rounded-2xl flex items-center gap-1 overflow-x-auto text-xs font-semibold">
-                    {[
-                      { id: 'overview', label: 'Übersicht & Termine', icon: Clock },
-                      { id: 'packages', label: 'Meine VIP Pakete & Abos', icon: Award },
-                      { id: 'invoices', label: 'Rechnungen & Belege', icon: FileText },
-                      { id: 'legal', label: 'Rechtliches & Nachweise', icon: Shield },
-                      { id: 'profile', label: 'Mein Profil', icon: User }
-                    ].map(tab => {
-                      const Icon = tab.icon;
-                      const isActive = studentNavSubTab === tab.id;
-                      return (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          onClick={() => {
-                            if (tab.id === 'profile') {
-                              setShowStudentProfileModal(true);
-                            } else {
-                              setStudentNavSubTab(tab.id as any);
-                            }
-                          }}
-                          className={`px-4 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-                            isActive
-                              ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold'
-                              : 'text-slate-500 hover:text-slate-800 hover:bg-white/50 font-medium'
-                          }`}
-                        >
-                          <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-600' : 'text-slate-400'}`} />
-                          <span>{tab.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* 5. Subtab-Content: Übersicht & Termine */}
+                  {/* Subtab-Content: Übersicht & Termine (Navigation erfolgt über die linke Seiten-Navi) */}
                   {studentNavSubTab === 'overview' && (
                     <>
-                      {/* 3 Feature Quick-Action Cards (Self Check-in, Fahrguthaben, Rechnungen) */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* 4 Feature Quick-Action Cards (Self Check-in, Fahrguthaben, E-Learning, Rechnungen) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     
                     {/* Kachel 1: Self Check-in */}
                     <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
@@ -4577,10 +4695,10 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => {
-                          setMagicFeedback('Self Check-in aktiv: Schiffsübernahme & Bootsdokumente für Boesch 620 geöffnet.');
-                          setTimeout(() => setMagicFeedback(null), 4000);
+                          setStudentSidebarNav('checkin');
+                          setStudentNavSubTab('checkin');
                         }}
-                        className="w-full py-2 bg-emerald-50/60 hover:bg-emerald-100/70 text-emerald-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-emerald-200/60"
+                        className="w-full py-2 bg-emerald-50/60 hover:bg-emerald-100/70 text-emerald-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-emerald-200/60 cursor-pointer"
                       >
                         <span>Zum Self Check-in (Bootsmiete)</span>
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -4618,7 +4736,46 @@ export default function App() {
                       </button>
                     </div>
 
-                    {/* Kachel 3: Rechnungen & Belege */}
+                    {/* Kachel 3: E-Learning & Lehrfilme (1-Jahres-Abo) */}
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+                      <div>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
+                            <Play className="w-5 h-5" />
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                            hasDigitalAccess ? 'bg-cyan-100 text-cyan-800' : 'bg-slate-100 text-slate-700'
+                          }`}>
+                            {hasDigitalAccess ? `${daysRemainingDigital} TAGE AKTIV` : '1-JAHRES-ABO'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-bold text-slate-900 text-sm">Nautic E-Learning</h4>
+                          <span className="text-[10px] bg-cyan-100 text-cyan-800 px-1.5 py-0.2 rounded font-semibold">
+                            Videos &amp; Tafeln
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                          {hasDigitalAccess
+                            ? 'Vollzugriff: 6 HD-Lehrfilme, Bildtafeln & ASA-Theorietrainer freigeschaltet.'
+                            : 'Offizielles digitales Lernpaket mit Lehrfilmen, Bildtafeln & Theorietrainer.'}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStudentSidebarNav('elearning');
+                          setStudentNavSubTab('elearning');
+                        }}
+                        className="w-full py-2 bg-cyan-50/70 hover:bg-cyan-100 text-cyan-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-cyan-200 cursor-pointer"
+                      >
+                        <span>{hasDigitalAccess ? 'Zum E-Learning Hub' : 'Digitales Paket öffnen'}</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Kachel 4: Rechnungen & Belege */}
                     <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
                       <div>
                         <div className="flex items-start justify-between mb-3">
@@ -4638,7 +4795,7 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => setStudentNavSubTab('invoices')}
-                        className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-300"
+                        className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-300 cursor-pointer"
                       >
                         <span>Zu den Rechnungen</span>
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -4716,6 +4873,20 @@ export default function App() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <span className="font-bold text-slate-800">CHF {app.price.toFixed(2)}</span>
+                                  {(app.service_name.includes('Miete') || app.service_name.includes('Charter')) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedRentalApptId(app.id);
+                                        setStudentSidebarNav('checkin');
+                                        setStudentNavSubTab('checkin');
+                                      }}
+                                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer"
+                                    >
+                                      <QrCode className="w-3.5 h-3.5" />
+                                      <span>Self Check-in</span>
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => setCancelModalAppointment(app)}
@@ -4860,6 +5031,13 @@ export default function App() {
                             </span>
                           </div>
 
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-500">Allergien:</span>
+                            <span className="font-semibold text-slate-800 truncate max-w-[140px]" title={studentProfile.allergies || 'Keine erfasst'}>
+                              {studentProfile.allergies ? studentProfile.allergies : 'Keine erfasst'}
+                            </span>
+                          </div>
+
                           <div className="flex items-center justify-between pt-1">
                             <span className="text-slate-500">Rechnungs-Status:</span>
                             <button
@@ -4951,6 +5129,7 @@ export default function App() {
                           {[
                             { id: 'all', label: 'Alle Angebote' },
                             { id: 'subscriptions', label: 'VIP & Abos' },
+                            { id: 'digital', label: 'E-Learning (1-Jahres-Abo)' },
                             { id: 'bootsfahrschule', label: 'Fahrschule' },
                             { id: 'coaching', label: 'Coaching' },
                             { id: 'mieten', label: 'Bootsmiete' },
@@ -5003,7 +5182,7 @@ export default function App() {
                                   <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                                     {srv.is_subscription && (
                                       <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-500 text-white uppercase tracking-wider shadow-sm">
-                                        {srv.sessions_count}er Mehrfachkarte
+                                        {srv.offer_type === 'digital' ? '365 Tage Abo' : `${srv.sessions_count}er Mehrfachkarte`}
                                       </span>
                                     )}
                                     <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-black/60 backdrop-blur-sm text-white uppercase tracking-wider">
@@ -5013,6 +5192,8 @@ export default function App() {
                                         ? 'Coaching'
                                         : srv.offer_type === 'mieten'
                                         ? 'Miete'
+                                        : srv.offer_type === 'digital'
+                                        ? 'Digitales E-Learning'
                                         : 'Gutschein'}
                                     </span>
                                   </div>
@@ -5182,14 +5363,28 @@ export default function App() {
                                       <Receipt className="w-3.5 h-3.5" />
                                       <span>MWST-Beleg</span>
                                     </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setShowStudentRequestModal(true)}
-                                      className="px-3.5 py-1.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition cursor-pointer"
-                                    >
-                                      <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                                      <span>Fahrstunde buchen</span>
-                                    </button>
+                                    {sub.is_digital_elearning ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setStudentSidebarNav('elearning');
+                                          setStudentNavSubTab('elearning');
+                                        }}
+                                        className="px-3.5 py-1.5 bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                                      >
+                                        <Play className="w-3.5 h-3.5 text-cyan-200" />
+                                        <span>E-Learning öffnen</span>
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowStudentRequestModal(true)}
+                                        className="px-3.5 py-1.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                                      >
+                                        <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                                        <span>Fahrstunde buchen</span>
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
 
@@ -5197,16 +5392,24 @@ export default function App() {
                                 <div className="space-y-1.5">
                                   <div className="flex items-center justify-between text-xs">
                                     <span className="text-slate-600 font-medium">
-                                      Verbraucht: <strong>{sub.used_sessions}</strong> von {sub.total_sessions} Lektionen
+                                      {sub.is_digital_elearning ? (
+                                        <>Laufzeit: <strong>1-Jahres-Abo (365 Tage)</strong> &bull; Online-Campus uneingeschränkt</>
+                                      ) : (
+                                        <>Verbraucht: <strong>{sub.used_sessions}</strong> von {sub.total_sessions} Lektionen</>
+                                      )}
                                     </span>
                                     <span className="font-bold text-emerald-700">
-                                      {remaining} Lektionen übrig ({100 - percent}%)
+                                      {sub.is_digital_elearning ? (
+                                        `Noch ${Math.max(0, Math.ceil((new Date(sub.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} Tage aktiv`
+                                      ) : (
+                                        `${remaining} Lektionen übrig (${100 - percent}%)`
+                                      )}
                                     </span>
                                   </div>
                                   <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
                                     <div
-                                      className="h-full bg-amber-500 transition-all duration-300"
-                                      style={{ width: `${percent}%` }}
+                                      className={`h-full transition-all duration-300 ${sub.is_digital_elearning ? 'bg-cyan-500' : 'bg-amber-500'}`}
+                                      style={{ width: sub.is_digital_elearning ? '100%' : `${percent}%` }}
                                     />
                                   </div>
                                 </div>
@@ -5326,968 +5529,1142 @@ export default function App() {
                 </div>
               )}
 
-                  {/* Dashboard Footer (nur Copyrights) */}
-                  <footer className="mt-14 pt-6 pb-4 border-t border-slate-200/80 text-center text-xs text-slate-400">
-                    <p>&copy; 2026 Coaching-Boot / Nautic. Alle Rechte vorbehalten.</p>
-                  </footer>
-
-                </div>
-
-              </div>
-
-              {/* MODAL 1: Terminanfrage stellen (Im Stil des Fahrlehrer-Modals) */}
-              {showStudentRequestModal && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-                  <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200/80 my-8 space-y-5 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
-                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold shadow-xs">
-                          <Calendar className="w-5 h-5 text-amber-700" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-slate-900 text-base">Terminanfrage einreichen</h3>
-                          <p className="text-xs text-slate-500">Wunschtermin für Praxisfahrstunde oder Bootsmiete</p>
-                        </div>
+              {/* ============================================================== */}
+              {/* SUBTAB: DIGITALER SELF CHECK-IN & CHECK-OUT (BOOTSMIETE)       */}
+              {/* ============================================================== */}
+              {(studentNavSubTab === 'checkin' || studentSidebarNav === 'checkin') && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  
+                  {/* Top Dark Tech Header Banner */}
+                  <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 p-6 rounded-3xl text-white shadow-md border border-slate-700/60 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1.5">
+                          <Ship className="w-3.5 h-3.5" />
+                          Exklusiv für Bootsmieten
+                        </span>
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-300 border border-sky-400/30 flex items-center gap-1.5">
+                          <Gauge className="w-3.5 h-3.5" />
+                          NMEA 2000 Boots-Telemetrie aktiv
+                        </span>
                       </div>
-                      <button
-                        onClick={() => setShowStudentRequestModal(false)}
-                        className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-xl transition"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
+                      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                        Digitaler Self Check-in &amp; Check-out
+                      </h2>
+                      <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
+                        Rechtliche Absicherung (0.0‰, Kat. A Ausweis, Notfallkontakt), elektronische Schiffsübernahme, NMEA 2000 Telemetrie-Schnittstelle &amp; minutengenaue Treibstoffabrechnung.
+                      </p>
                     </div>
 
-                    <form
-                      onSubmit={e => {
-                        e.preventDefault();
-                        const useBalance = newReqUseBalance && studentRemainingSessions > 0;
-                        if (useBalance) {
-                          setCustomerSubscriptions(prev => {
-                            let consumed = false;
-                            return prev.map(sub => {
-                              if (!consumed && sub.used_sessions < sub.total_sessions) {
-                                consumed = true;
-                                return { ...sub, used_sessions: sub.used_sessions + 1 };
-                              }
-                              return sub;
-                            });
-                          });
-                        }
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                      <a
+                        href="tel:+41790000000"
+                        className="px-4 py-2.5 bg-rose-600/90 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm"
+                        title="Direkter Kontakt zum Hafenmeister &amp; Steg-Support"
+                      >
+                        <Phone className="w-4 h-4" />
+                        <span>Hafenmeister &amp; Notruf</span>
+                      </a>
+                    </div>
+                  </div>
 
-                        const newApp: Appointment = {
-                          id: Date.now(),
-                          date: newReqDate,
-                          start_time: newReqTimeWindow === 'morning' ? '09:00:00' : newReqTimeWindow === 'afternoon' ? '14:00:00' : '17:30:00',
-                          end_time: newReqTimeWindow === 'morning' ? '10:30:00' : newReqTimeWindow === 'afternoon' ? '15:30:00' : '19:00:00',
-                          duration_minutes: 90,
-                          customer_id: 1,
-                          customer_name: `${studentProfile.first_name} ${studentProfile.last_name}`,
-                          customer_email: studentProfile.email,
-                          customer_phone: studentProfile.phone,
-                          instructor_id: 1,
-                          instructor_name: newReqCoach,
-                          boat_name: 'Boesch 620 Bimini',
-                          location_name: newReqLocation,
-                          service_name: newReqService,
-                          price: useBalance ? 0.0 : 190.0,
-                          status: 'requested',
-                          instructor_payout_amount: 97.5,
-                          instructor_payout_status: 'open',
-                          instructor_payout_note: newReqNotes
-                            ? `Kunden-Anfrage: ${newReqNotes}${useBalance ? ' (1 Lektion vom Guthaben abgezogen)' : ''}`
-                            : (useBalance ? '1 Lektion vom Guthaben abgezogen' : 'Terminanfrage über Kunden-Dashboard')
-                        };
-
-                        setAppointments(prev => [newApp, ...prev]);
-                        setShowStudentRequestModal(false);
-                        setMagicFeedback(
-                          useBalance
-                            ? `Ihre Terminanfrage für ${newReqDate} wurde eingereicht! 1 Lektion wurde von Ihrem Guthaben abgezogen (verbleibend: ${Math.max(0, studentRemainingSessions - 1)}).`
-                            : `Ihre Terminanfrage für ${newReqDate} wurde erfolgreich eingereicht! Die Flottenleitung prüft die Zuteilung.`
-                        );
-                        setTimeout(() => setMagicFeedback(null), 6000);
-                      }}
-                      className="space-y-4 text-xs"
+                  {/* Flow-Phasen Navigator Pills */}
+                  <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center gap-1.5 text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setCheckinStep('step1_checkin')}
+                      className={`px-4 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer ${
+                        checkinStep === 'step1_checkin'
+                          ? 'bg-[#2d2421] text-white shadow-sm'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      }`}
                     >
-                      {/* Guthaben-Hinweis & Verrechnung */}
-                      {studentRemainingSessions > 0 ? (
-                        <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-start gap-3">
-                          <Award className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                          <div className="flex-1 space-y-1">
-                            <div className="font-bold text-emerald-950 text-xs">
-                              Aktives Lektionen-Guthaben verfügbar!
+                      <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[11px]">1</span>
+                      <span>Vorab-Check-in</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCheckinStep('phase2_active')}
+                      className={`px-4 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer ${
+                        checkinStep === 'phase2_active'
+                          ? 'bg-amber-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      }`}
+                    >
+                      <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[11px]">2</span>
+                      <span>Aktive Ausfahrt (Live)</span>
+                      {activeCheckinSession && (
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCheckinStep('step3_checkout')}
+                      className={`px-4 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer ${
+                        checkinStep === 'step3_checkout'
+                          ? 'bg-sky-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      }`}
+                    >
+                      <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[11px]">3</span>
+                      <span>Check-out &amp; Rückgabe</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCheckinStep('phase4_protocol')}
+                      className={`px-4 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer ${
+                        checkinStep === 'phase4_protocol'
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      }`}
+                    >
+                      <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[11px]">4</span>
+                      <span>Digitales Rückgabeprotokoll</span>
+                    </button>
+                  </div>
+
+                  {/* ============================================================== */}
+                  {/* SCHRITT 1: SELF CHECK-IN (VOR DEM ABLEGEN)                     */}
+                  {/* ============================================================== */}
+                  {checkinStep === 'step1_checkin' && (
+                    <div className="space-y-6">
+                      
+                      {/* Boot- & Buchungsauswahl */}
+                      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full uppercase">
+                                GEPLANTER MIET-TERMIN
+                              </span>
+                              <span className="text-xs text-slate-400">&bull;</span>
+                              <span className="text-xs font-semibold text-slate-600">Dienstag, 24. März 2026 (14:00 - 18:00 Uhr)</span>
                             </div>
-                            <p className="text-[11px] text-emerald-800 leading-normal">
-                              Sie besitzen noch <strong>{studentRemainingSessions} bezahlte Lektion(en)</strong>. Möchten Sie diesen Termin direkt von Ihrem Guthaben abbuchen?
+                            <h3 className="text-xl font-extrabold text-slate-900 mt-1">
+                              Boesch 620 Bimini &bull; Schweizer Edel-Mahagoni
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              Liegeplatz: Steg 1, Box 4 (Hergiswil NW) &bull; Immatrikulation: CH-LU-84920 &bull; Tankvolumen: 160 L
                             </p>
-                            <label className="flex items-center gap-2 pt-1 font-semibold text-emerald-900 cursor-pointer">
+                          </div>
+
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs shrink-0 space-y-1">
+                            <div className="flex items-center justify-between gap-4 text-slate-600">
+                              <span>Schlüsseltresor:</span>
+                              <strong className="text-slate-900">Tresorbox #4</strong>
+                            </div>
+                            <div className="flex items-center justify-between gap-4 text-slate-600">
+                              <span>Treibstoffpreis:</span>
+                              <strong className="text-emerald-700">CHF 2.25 / Liter</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 4 Pflicht-Bestätigungen (Recht & Sicherheit) */}
+                        <div className="space-y-3 pt-2">
+                          <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <Shield className="w-4 h-4 text-emerald-600" />
+                            <span>1. Rechtliche Absicherung &amp; Fahrtauglichkeitsprüfung (4 Pflichtprüfungen)</span>
+                          </h4>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                            
+                            {/* Check 1: 0.0 Promille */}
+                            <label className={`p-4 rounded-xl border transition flex items-start gap-3 cursor-pointer ${
+                              checkinFitness ? 'bg-emerald-50/60 border-emerald-300 text-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}>
                               <input
                                 type="checkbox"
-                                checked={newReqUseBalance}
-                                onChange={e => setNewReqUseBalance(e.target.checked)}
-                                className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                                checked={checkinFitness}
+                                onChange={e => setCheckinFitness(e.target.checked)}
+                                className="mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
                               />
-                              <span>1 Lektion vom Guthaben abbuchen (Kosten für diesen Termin: CHF 0.00)</span>
+                              <div>
+                                <strong className="block font-bold text-slate-900">0.0‰ Alkohol &amp; Fahrtauglichkeit</strong>
+                                <span className="text-[11px] text-slate-500 leading-relaxed block mt-0.5">
+                                  Ich bestätige an Eides statt, voll fahrtauglich zu sein und 0.0‰ Blutalkohol zu haben (gemäss Art. 41 BSG und Null-Toleranz-Gesetzgebung).
+                                </span>
+                              </div>
+                            </label>
+
+                            {/* Check 2: Führerausweis */}
+                            <label className={`p-4 rounded-xl border transition flex items-start gap-3 cursor-pointer ${
+                              checkinLicense ? 'bg-emerald-50/60 border-emerald-300 text-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={checkinLicense}
+                                onChange={e => setCheckinLicense(e.target.checked)}
+                                className="mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                              />
+                              <div>
+                                <strong className="block font-bold text-slate-900">Schiffsführerausweis Kat. A &amp; ID</strong>
+                                <span className="text-[11px] text-slate-500 leading-relaxed block mt-0.5">
+                                  Ich besitze den amtlichen Schiffsführerausweis Kat. A und führe das Originaldokument während der gesamten Fahrt an Bord mit.
+                                </span>
+                              </div>
+                            </label>
+
+                            {/* Check 3: Ausrüstung & Schuhe */}
+                            <label className={`p-4 rounded-xl border transition flex items-start gap-3 cursor-pointer ${
+                              checkinSafety ? 'bg-emerald-50/60 border-emerald-300 text-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={checkinSafety}
+                                onChange={e => setCheckinSafety(e.target.checked)}
+                                className="mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                              />
+                              <div>
+                                <strong className="block font-bold text-slate-900">Sicherheitsausrüstung &amp; Schuhe</strong>
+                                <span className="text-[11px] text-slate-500 leading-relaxed block mt-0.5">
+                                  Rettungswesten für alle Insassen, Notpaddel, Anker, Schöpfer sowie rutschfeste Schuhe sind an Bord vorhanden und einsatzbereit.
+                                </span>
+                              </div>
+                            </label>
+
+                            {/* Check 4: Notfallkontakt & Seewetter */}
+                            <label className={`p-4 rounded-xl border transition flex items-start gap-3 cursor-pointer ${
+                              checkinEmergencyContact ? 'bg-emerald-50/60 border-emerald-300 text-slate-900' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={checkinEmergencyContact}
+                                onChange={e => setCheckinEmergencyContact(e.target.checked)}
+                                className="mt-0.5 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                              />
+                              <div>
+                                <strong className="block font-bold text-slate-900">Notfallkontakt &amp; Seewetter-Briefing</strong>
+                                <span className="text-[11px] text-slate-500 leading-relaxed block mt-0.5">
+                                  Notfallkontakt ist verifiziert und das aktuelle Sturmwarnungs-Briefing (Blinkfeuer 40/90 U/min) für den See wurde zur Kenntnis genommen.
+                                </span>
+                              </div>
+                            </label>
+
+                          </div>
+                        </div>
+
+                        {/* Abschnitt 2: Bootszustand & Tankprüfung bei Übernahme */}
+                        <div className="pt-4 border-t border-slate-100 space-y-4">
+                          <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <Camera className="w-4 h-4 text-sky-600" />
+                            <span>2. Bootszustand &amp; Tankprüfung bei Schiffsübernahme</span>
+                          </h4>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <label className={`p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
+                              checkinBoatCondition === 'perfect' ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-300' : 'bg-white border-slate-200'
+                            }`}>
+                              <input
+                                type="radio"
+                                name="checkin_condition"
+                                checked={checkinBoatCondition === 'perfect'}
+                                onChange={() => setCheckinBoatCondition('perfect')}
+                                className="mt-0.5 text-emerald-600"
+                              />
+                              <div>
+                                <strong className="font-bold text-slate-900">Vollgetankt &amp; unbeschädigt</strong>
+                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                  Das Boot ist sauber, vollgetankt (100%) und weist keine neuen Vorschäden auf.
+                                </p>
+                              </div>
+                            </label>
+
+                            <label className={`p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
+                              checkinBoatCondition === 'report_damage' ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-300' : 'bg-white border-slate-200'
+                            }`}>
+                              <input
+                                type="radio"
+                                name="checkin_condition"
+                                checked={checkinBoatCondition === 'report_damage'}
+                                onChange={() => setCheckinBoatCondition('report_damage')}
+                                className="mt-0.5 text-amber-600"
+                              />
+                              <div>
+                                <strong className="font-bold text-slate-900">Vorschaden / abweichenden Tankstand melden</strong>
+                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                  Vorhandene Kratzer, Mängel oder Tankabweichung vor dem Ablegen mit Foto dokumentieren.
+                                </p>
+                              </div>
+                            </label>
+                          </div>
+
+                          {/* Foto-Upload & Notizen bei Vorschäden */}
+                          {checkinBoatCondition === 'report_damage' && (
+                            <div className="p-4 bg-amber-50/40 rounded-2xl border border-amber-200/80 space-y-3 animate-in fade-in">
+                              <label className="block text-xs font-bold text-slate-900">
+                                Beschreibung des Vorschadens / Bemerkung:
+                              </label>
+                              <textarea
+                                rows={2}
+                                value={checkinDamageNotes}
+                                onChange={e => setCheckinDamageNotes(e.target.value)}
+                                placeholder="z. B. Leichter Oberflächenkratzer Steuerbord am Bug ca. 10cm, Tankuhr zeigt 85%..."
+                                className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs"
+                              />
+
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-bold text-slate-900">Fotos von Vorschäden / Tankstand hinzufügen:</span>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setCheckinDamagePhotos(prev => [
+                                          ...prev,
+                                          'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=600&q=80'
+                                        ]);
+                                      }}
+                                      className="text-[10px] text-amber-700 hover:text-amber-900 font-semibold underline cursor-pointer"
+                                    >
+                                      + Muster-Kratzer einfügen
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setCheckinDamagePhotos(prev => [
+                                          ...prev,
+                                          'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=600&q=80'
+                                        ]);
+                                      }}
+                                      className="text-[10px] text-sky-700 hover:text-sky-900 font-semibold underline cursor-pointer"
+                                    >
+                                      + Muster-Tankuhr einfügen
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-3">
+                                  <label className="w-24 h-24 border-2 border-dashed border-slate-300 hover:border-amber-500 rounded-xl flex flex-col items-center justify-center text-slate-500 hover:text-amber-700 bg-white transition cursor-pointer">
+                                    <Camera className="w-5 h-5 mb-1 text-slate-400" />
+                                    <span className="text-[10px] font-bold">Foto laden</span>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      multiple
+                                      className="hidden"
+                                      onChange={e => {
+                                        const files = e.target.files;
+                                        if (files && files.length > 0) {
+                                          Array.from(files).forEach(file => {
+                                            const r = new FileReader();
+                                            r.onload = ev => {
+                                              if (ev.target?.result) {
+                                                setCheckinDamagePhotos(prev => [...prev, ev.target!.result as string]);
+                                              }
+                                            };
+                                            r.readAsDataURL(file);
+                                          });
+                                        }
+                                      }}
+                                    />
+                                  </label>
+
+                                  {checkinDamagePhotos.map((photoUrl, idx) => (
+                                    <div key={idx} className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-200 shadow-xs group">
+                                      <img
+                                        src={photoUrl}
+                                        alt={`Vorschaden ${idx + 1}`}
+                                        className="w-full h-full object-cover cursor-pointer"
+                                        onClick={() => setPreviewPhotoModal({ url: photoUrl, title: `Vorschadens-Foto #${idx + 1}` })}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => setCheckinDamagePhotos(prev => prev.filter((_, i) => i !== idx))}
+                                        className="absolute top-1 right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center opacity-80 hover:opacity-100 transition shadow-xs"
+                                        title="Foto entfernen"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                      <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] text-center py-0.5 pointer-events-none">
+                                        Foto #{idx + 1}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Check-in Abschluss Button */}
+                        <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="text-xs text-slate-500 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span>Signalübertragung an NMEA 2000 Gateway wird beim Klick automatisch ausgelöst.</span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handleCompleteCheckin}
+                            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer hover:shadow-lg"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Check-in abschliessen &amp; Ablegen</span>
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+                  )}
+
+                  {/* ============================================================== */}
+                  {/* PHASE 2: AKTIVE AUSFAHRT (AUF DEM SEE)                         */}
+                  {/* ============================================================== */}
+                  {checkinStep === 'phase2_active' && (
+                    <div className="space-y-6">
+                      
+                      {/* Live Pulsing Banner */}
+                      <div className="bg-gradient-to-r from-amber-600 via-amber-700 to-orange-700 p-6 rounded-3xl text-white shadow-lg space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shrink-0">
+                              <Ship className="w-6 h-6 animate-pulse" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-amber-300 animate-ping"></span>
+                                <span className="text-xs font-bold uppercase tracking-wider text-amber-200">
+                                  MIETBOOT AKTIV BESETZT (AUF DEM WASSER)
+                                </span>
+                              </div>
+                              <h3 className="text-2xl font-black tracking-tight mt-0.5">
+                                Boesch 620 Bimini &bull; Ausfahrt läuft
+                              </h3>
+                            </div>
+                          </div>
+
+                          {/* Digitaler Fahrtzeittimer */}
+                          <div className="bg-black/40 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 text-center sm:text-right shrink-0">
+                            <div className="text-[10px] text-amber-200 font-bold uppercase tracking-wider flex items-center justify-center sm:justify-end gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-amber-300" />
+                              <span>Live-Fahrtzeit</span>
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-mono font-black text-white tracking-tight mt-0.5">
+                              {formatRentalTimer(liveRentalSeconds > 0 ? liveRentalSeconds : 1420)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/20 text-xs text-amber-100">
+                          <div>
+                            <strong>Check-in Code:</strong> <span className="font-mono">{activeCheckinSession?.check_in_code || 'CB-CHK-48291'}</span>
+                          </div>
+                          <div>
+                            <strong>Telemetrie-Session:</strong> <span className="font-mono">{activeCheckinSession?.telemetry_session_id || 'TEL-481920-312'}</span>
+                          </div>
+                          <div>
+                            <strong>Skipper:</strong> {studentProfile.first_name} {studentProfile.last_name}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Dark High-Tech Telemetrie Dashboard */}
+                      <div className="bg-[#12161f] rounded-3xl p-6 text-white border border-slate-800 shadow-xl space-y-5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/30">
+                              <Gauge className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-white text-base">NMEA 2000 Boots-Telemetrie &amp; Sensordaten</h4>
+                              <p className="text-xs text-slate-400">Live-Aufzeichnung über Bordnetzwerk &bull; Gateway: NMEA2K-BSH-620-BIMINI</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span className="text-xs font-mono text-emerald-400 font-bold">CAN-Bus 250 kbps OK</span>
+                          </div>
+                        </div>
+
+                        {/* Sensor Metriken Grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+                            <div className="text-[10px] uppercase font-bold text-slate-400">Motordrehzahl</div>
+                            <div className="text-xl font-mono font-black text-white mt-1">2&apos;250 <span className="text-xs font-normal text-slate-400">RPM</span></div>
+                            <div className="text-[10px] text-emerald-400 mt-0.5">Marschfahrt</div>
+                          </div>
+
+                          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+                            <div className="text-[10px] uppercase font-bold text-slate-400">Kühlwasser</div>
+                            <div className="text-xl font-mono font-black text-white mt-1">82.5 <span className="text-xs font-normal text-slate-400">°C</span></div>
+                            <div className="text-[10px] text-emerald-400 mt-0.5">Betriebstemperatur OK</div>
+                          </div>
+
+                          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+                            <div className="text-[10px] uppercase font-bold text-slate-400">Bordnetz-Spannung</div>
+                            <div className="text-xl font-mono font-black text-white mt-1">14.2 <span className="text-xs font-normal text-slate-400">V</span></div>
+                            <div className="text-[10px] text-emerald-400 mt-0.5">Lichtmaschine lädt</div>
+                          </div>
+
+                          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+                            <div className="text-[10px] uppercase font-bold text-slate-400">Momentanverbrauch</div>
+                            <div className="text-xl font-mono font-black text-amber-400 mt-1">12.5 <span className="text-xs font-normal text-slate-400">L/h</span></div>
+                            <div className="text-[10px] text-amber-400 mt-0.5">Sensor kalibriert</div>
+                          </div>
+                        </div>
+
+                        {/* GPS-Position & Seebecken */}
+                        <div className="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center gap-2 text-slate-300">
+                            <MapPin className="w-4 h-4 text-sky-400 shrink-0" />
+                            <span><strong>Position:</strong> 46°59&apos;02.1&quot;N 8°18&apos;45.3&quot;E (Seebecken Hergiswil / Bürgenstock)</span>
+                          </div>
+                          <div className="text-slate-400 text-[11px]">
+                            Geschwindigkeit über Grund: <strong>14.2 Knoten (26.3 km/h)</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Notfall & Check-out Action Card */}
+                      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-sm">Zurück am Steg in Hergiswil?</h4>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Sobald das Boot sicher vertäut und der Motor aus ist, führen Sie den Check-out durch.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setCheckinStep('step3_checkout')}
+                          className="px-6 py-3 bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer hover:shadow-lg"
+                        >
+                          <Anchor className="w-4 h-4" />
+                          <span>Boot angelegt: Check-out starten</span>
+                        </button>
+                      </div>
+
+                    </div>
+                  )}
+
+                  {/* ============================================================== */}
+                  {/* SCHRITT 3: SELF CHECK-OUT & RÜCKGABE (NACH DEM ANLEGEN)        */}
+                  {/* ============================================================== */}
+                  {checkinStep === 'step3_checkout' && (
+                    <div className="space-y-6">
+                      
+                      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
+                        <div className="pb-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <h3 className="text-xl font-extrabold text-slate-900">
+                              Schritt 3: Schiffsrückgabe &amp; Endabnahme am Steg
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              Treibstoffstand, Schadensprüfung, Sauberkeit und Sicherungs-Checkliste vor Verlassen des Stegs.
+                            </p>
+                          </div>
+                          <div className="text-xs bg-slate-100 px-3 py-1.5 rounded-xl font-semibold text-slate-700">
+                            Boot: Boesch 620 Bimini
+                          </div>
+                        </div>
+
+                        {/* 1. Treibstoff & Tankanzeige */}
+                        <div className="space-y-3">
+                          <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <Fuel className="w-4 h-4 text-amber-600" />
+                            <span>1. Treibstoff &amp; Kraftstoff-Abrechnung</span>
+                          </h4>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <label className={`p-4 rounded-xl border flex flex-col justify-between cursor-pointer transition ${
+                              checkoutFuelStatus === 'needs_fuel' ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-300' : 'bg-white border-slate-200'
+                            }`}>
+                              <div className="flex items-start gap-2.5 mb-2">
+                                <input
+                                  type="radio"
+                                  name="checkout_fuel"
+                                  checked={checkoutFuelStatus === 'needs_fuel'}
+                                  onChange={() => setCheckoutFuelStatus('needs_fuel')}
+                                  className="mt-0.5 text-amber-600"
+                                />
+                                <div>
+                                  <strong className="font-bold text-slate-900">Automatische Telemetrie</strong>
+                                  <span className="text-[10px] text-amber-800 font-bold block mt-0.5">Empfohlen</span>
+                                </div>
+                              </div>
+                              <p className="text-[11px] text-slate-500">
+                                Exakte Liter-Abrechnung über NMEA 2000 Sensor zum Tarif von CHF 2.25/Liter.
+                              </p>
+                            </label>
+
+                            <label className={`p-4 rounded-xl border flex flex-col justify-between cursor-pointer transition ${
+                              checkoutFuelStatus === 'refueled' ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-300' : 'bg-white border-slate-200'
+                            }`}>
+                              <div className="flex items-start gap-2.5 mb-2">
+                                <input
+                                  type="radio"
+                                  name="checkout_fuel"
+                                  checked={checkoutFuelStatus === 'refueled'}
+                                  onChange={() => setCheckoutFuelStatus('refueled')}
+                                  className="mt-0.5 text-emerald-600"
+                                />
+                                <div>
+                                  <strong className="font-bold text-slate-900">Selbst nachgetankt</strong>
+                                  <span className="text-[10px] text-emerald-800 font-bold block mt-0.5">Vollgetankt</span>
+                                </div>
+                              </div>
+                              <p className="text-[11px] text-slate-500">
+                                Am Bootstankstelle vollgetankt. Eingabe der Liter + Foto der Quittung.
+                              </p>
+                            </label>
+
+                            <label className={`p-4 rounded-xl border flex flex-col justify-between cursor-pointer transition ${
+                              checkoutFuelStatus === 'not_full' ? 'bg-slate-100 border-slate-300 ring-1 ring-slate-400' : 'bg-white border-slate-200'
+                            }`}>
+                              <div className="flex items-start gap-2.5 mb-2">
+                                <input
+                                  type="radio"
+                                  name="checkout_fuel"
+                                  checked={checkoutFuelStatus === 'not_full'}
+                                  onChange={() => setCheckoutFuelStatus('not_full')}
+                                  className="mt-0.5 text-slate-700"
+                                />
+                                <div>
+                                  <strong className="font-bold text-slate-900">Nicht nachgetankt</strong>
+                                  <span className="text-[10px] text-slate-600 font-bold block mt-0.5">Pauschal-Tanken</span>
+                                </div>
+                              </div>
+                              <p className="text-[11px] text-slate-500">
+                                Nachtank-Service durch Nautic gegen Verrechnung gemäss Telemetrie.
+                              </p>
+                            </label>
+                          </div>
+
+                          {/* Extra Inputs je nach Tankstatus */}
+                          {checkoutFuelStatus === 'refueled' && (
+                            <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-200 space-y-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                <label className="text-xs font-bold text-slate-900">
+                                  Getankte Treibstoffmenge (Liter):
+                                </label>
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  min="0"
+                                  value={checkoutRefueledLiters || ''}
+                                  onChange={e => setCheckoutRefueledLiters(Number(e.target.value))}
+                                  placeholder="z. B. 15.0"
+                                  className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold w-32"
+                                />
+                              </div>
+
+                              <div className="flex items-center gap-3 text-xs">
+                                <label className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer flex items-center gap-1.5">
+                                  <Camera className="w-3.5 h-3.5" />
+                                  <span>Foto Tankquittung / Zapfsäule hochladen</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={e => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        const r = new FileReader();
+                                        r.onload = ev => setCheckoutFuelReceiptPhoto(ev.target?.result as string);
+                                        r.readAsDataURL(file);
+                                      }
+                                    }}
+                                  />
+                                </label>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setCheckoutFuelReceiptPhoto('https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=600&q=80')}
+                                  className="text-[10px] text-emerald-800 underline font-semibold cursor-pointer"
+                                >
+                                  + Muster-Quittung einfügen
+                                </button>
+                              </div>
+
+                              {checkoutFuelReceiptPhoto && (
+                                <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-300">
+                                  <img
+                                    src={checkoutFuelReceiptPhoto}
+                                    alt="Tankquittung"
+                                    className="w-full h-full object-cover cursor-pointer"
+                                    onClick={() => setPreviewPhotoModal({ url: checkoutFuelReceiptPhoto, title: 'Tankquittung' })}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setCheckoutFuelReceiptPhoto(null)}
+                                    className="absolute top-1 right-1 w-4 h-4 bg-rose-600 text-white rounded-full flex items-center justify-center text-[10px]"
+                                  >
+                                    &times;
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 2. Schäden & Sauberkeit */}
+                        <div className="pt-4 border-t border-slate-100 space-y-4">
+                          <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <Shield className="w-4 h-4 text-sky-600" />
+                            <span>2. Schäden &amp; Sauberkeitsbewertung</span>
+                          </h4>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <label className={`p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
+                              checkoutReturnCondition === 'perfect' ? 'bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-300' : 'bg-white border-slate-200'
+                            }`}>
+                              <input
+                                type="radio"
+                                name="checkout_condition"
+                                checked={checkoutReturnCondition === 'perfect'}
+                                onChange={() => setCheckoutReturnCondition('perfect')}
+                                className="mt-0.5 text-emerald-600"
+                              />
+                              <div>
+                                <strong className="font-bold text-slate-900">Keine Mängel &amp; sauber übergeben</strong>
+                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                  Keine Grundberührung, keine Kratzer am Rumpf, Boot in einwandfreiem Zustand.
+                                </p>
+                              </div>
+                            </label>
+
+                            <label className={`p-4 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
+                              checkoutReturnCondition === 'report_damage' ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-300' : 'bg-white border-slate-200'
+                            }`}>
+                              <input
+                                type="radio"
+                                name="checkout_condition"
+                                checked={checkoutReturnCondition === 'report_damage'}
+                                onChange={() => setCheckoutReturnCondition('report_damage')}
+                                className="mt-0.5 text-amber-600"
+                              />
+                              <div>
+                                <strong className="font-bold text-slate-900">Neuen Schaden oder Mangel melden</strong>
+                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                  Dokumentation von Vorfällen oder Beschädigungen mit Foto-Upload.
+                                </p>
+                              </div>
+                            </label>
+                          </div>
+
+                          {/* Sauberkeitsbewertung 3 Stufen */}
+                          <div>
+                            <label className="text-xs font-bold text-slate-700 block mb-2">Sauberkeit des Bootes:</label>
+                            <div className="grid grid-cols-3 gap-2">
+                              {[
+                                { key: 'clean', label: 'Sauber & Gepflegt', color: 'emerald' },
+                                { key: 'moderate', label: 'Leicht verschmutzt', color: 'amber' },
+                                { key: 'dirty', label: 'Stark verschmutzt', color: 'rose' }
+                              ].map(cl => (
+                                <button
+                                  key={cl.key}
+                                  type="button"
+                                  onClick={() => setCheckoutCleanliness(cl.key as any)}
+                                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                                    checkoutCleanliness === cl.key
+                                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                                  }`}
+                                >
+                                  {cl.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Mangel melden Formular */}
+                          {checkoutReturnCondition === 'report_damage' && (
+                            <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-200 space-y-3">
+                              <label className="text-xs font-bold text-slate-900 block">Beschreibung des Schadens:</label>
+                              <textarea
+                                rows={2}
+                                value={checkoutDamageNotes}
+                                onChange={e => setCheckoutDamageNotes(e.target.value)}
+                                placeholder="z. B. Leichte Scheuerstelle am Hecksteuerbord nach Bojenmanöver..."
+                                className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs"
+                              />
+
+                              <div className="flex items-center gap-3">
+                                <label className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer flex items-center gap-1.5 text-xs">
+                                  <Camera className="w-3.5 h-3.5" />
+                                  <span>Schadensfoto hinzufügen</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={e => {
+                                      const files = e.target.files;
+                                      if (files) {
+                                        Array.from(files).forEach(f => {
+                                          const r = new FileReader();
+                                          r.onload = ev => {
+                                            if (ev.target?.result) setCheckoutDamagePhotos(prev => [...prev, ev.target!.result as string]);
+                                          };
+                                          r.readAsDataURL(f);
+                                        });
+                                      }
+                                    }}
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => setCheckoutDamagePhotos(prev => [...prev, 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=600&q=80'])}
+                                  className="text-[10px] text-amber-700 underline font-semibold cursor-pointer"
+                                >
+                                  + Muster-Schadensfoto
+                                </button>
+                              </div>
+
+                              {checkoutDamagePhotos.length > 0 && (
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                  {checkoutDamagePhotos.map((p, i) => (
+                                    <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200">
+                                      <img src={p} alt="Schaden" className="w-full h-full object-cover" onClick={() => setPreviewPhotoModal({ url: p, title: `Rückgabe-Schaden #${i + 1}` })} />
+                                      <button type="button" onClick={() => setCheckoutDamagePhotos(prev => prev.filter((_, idx) => idx !== i))} className="absolute top-0.5 right-0.5 w-4 h-4 bg-rose-600 text-white rounded-full flex items-center justify-center text-[9px]">&times;</button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 3. Schiffsicherungs-Checkliste */}
+                        <div className="pt-4 border-t border-slate-100 space-y-3">
+                          <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <Anchor className="w-4 h-4 text-emerald-600" />
+                            <span>3. Sicherungs-Checkliste am Steg (3 Pflichtpunkte)</span>
+                          </h4>
+
+                          <div className="space-y-2 text-xs">
+                            <label className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition ${
+                              checkoutMooringSecured ? 'bg-emerald-50/60 border-emerald-300 text-slate-900' : 'bg-white border-slate-200 text-slate-600'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={checkoutMooringSecured}
+                                onChange={e => setCheckoutMooringSecured(e.target.checked)}
+                                className="w-4 h-4 text-emerald-600 rounded"
+                              />
+                              <span>
+                                <strong>Boot ordnungsgemäss vertäut:</strong> Vorleine, Achterleine und Spring belegt, Fender gesetzt und Batterie-Hauptschalter auf AUS.
+                              </span>
+                            </label>
+
+                            <label className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition ${
+                              checkoutKeysReturned ? 'bg-emerald-50/60 border-emerald-300 text-slate-900' : 'bg-white border-slate-200 text-slate-600'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={checkoutKeysReturned}
+                                onChange={e => setCheckoutKeysReturned(e.target.checked)}
+                                className="w-4 h-4 text-emerald-600 rounded"
+                              />
+                              <span>
+                                <strong>Schlüssel &amp; Quickstop deponiert:</strong> Bootsschlüssel und Quickstop-Leine im Schlüsseltresor deponiert und Zahlencode verstellt.
+                              </span>
+                            </label>
+
+                            <label className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition ${
+                              checkoutEquipmentChecked ? 'bg-emerald-50/60 border-emerald-300 text-slate-900' : 'bg-white border-slate-200 text-slate-600'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={checkoutEquipmentChecked}
+                                onChange={e => setCheckoutEquipmentChecked(e.target.checked)}
+                                className="w-4 h-4 text-emerald-600 rounded"
+                              />
+                              <span>
+                                <strong>Ausrüstung vollzählig an Bord:</strong> Rettungswesten, Anker, Bootshaken, Paddel und Schiffspapiere gesichert.
+                              </span>
                             </label>
                           </div>
                         </div>
-                      ) : (
-                        <div className="p-3 bg-amber-50/70 rounded-xl border border-amber-200/80 flex items-center justify-between text-[11px]">
-                          <span className="text-amber-900">Kein aktives Abo-Guthaben vorhanden.</span>
+
+                        {/* Rückgabe abschliessen Button */}
+                        <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="text-xs text-slate-500 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+                            <span>Beim Abschluss wird der Telemetrie-Endstand abgerufen und das Boot für die Flotte freigegeben.</span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handleCompleteCheckout}
+                            className="px-6 py-3 bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer hover:shadow-lg"
+                          >
+                            <FileCheck className="w-4 h-4" />
+                            <span>Rückgabe abschliessen &amp; Protokoll erstellen</span>
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+                  )}
+
+                  {/* ============================================================== */}
+                  {/* PHASE 4: DIGITALES RÜCKGABEPROTOKOLL & ABRECHNUNG               */}
+                  {/* ============================================================== */}
+                  {checkinStep === 'phase4_protocol' && (
+                    <div className="space-y-6">
+                      
+                      {/* Offizielles Rückgabeprotokoll */}
+                      <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6 print:border-none print:shadow-none">
+                        
+                        {/* Kopfzeile */}
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-slate-200">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-xs flex items-center gap-1.5">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Schiffsrückgabe erfolgreich abgeschlossen
+                              </span>
+                              <span className="font-mono text-xs text-slate-400">
+                                PRT-2026-00481
+                              </span>
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                              Digitales Schiffsübergabe- &amp; Rückgabeprotokoll
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-1">
+                              Nautic Bootsvermietung &bull; Vierwaldstättersee (Luzern &amp; Nidwalden) &bull; Audit-ID: #AUD-849201
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => window.print()}
+                              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-200 print:hidden cursor-pointer"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span>Drucken / PDF</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Stammdaten 2-Spalten Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+                            <h5 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] text-slate-500">Miet- &amp; Bootsparameter</h5>
+                            <div className="flex justify-between py-1 border-b border-slate-200/60">
+                              <span className="text-slate-500">Boot / Modell:</span>
+                              <strong className="text-slate-900">{latestCheckoutProtocol?.boat_name || 'Boesch 620 Bimini'}</strong>
+                            </div>
+                            <div className="flex justify-between py-1 border-b border-slate-200/60">
+                              <span className="text-slate-500">Immatrikulation:</span>
+                              <strong className="text-slate-900">CH-LU-84920</strong>
+                            </div>
+                            <div className="flex justify-between py-1 border-b border-slate-200/60">
+                              <span className="text-slate-500">Liegeplatz:</span>
+                              <strong className="text-slate-900">Steg 1, Box 4 (Hergiswil NW)</strong>
+                            </div>
+                            <div className="flex justify-between py-1">
+                              <span className="text-slate-500">Status nach Übergabe:</span>
+                              <strong className="text-emerald-700">Freigegeben für nächste Fahrt ✓</strong>
+                            </div>
+                          </div>
+
+                          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+                            <h5 className="font-bold text-slate-900 uppercase tracking-wider text-[10px] text-slate-500">Skipper &amp; Mietdauer</h5>
+                            <div className="flex justify-between py-1 border-b border-slate-200/60">
+                              <span className="text-slate-500">Verantwortlicher Skipper:</span>
+                              <strong className="text-slate-900">{studentProfile.first_name} {studentProfile.last_name}</strong>
+                            </div>
+                            <div className="flex justify-between py-1 border-b border-slate-200/60">
+                              <span className="text-slate-500">Führerausweis Kat. A:</span>
+                              <strong className="text-slate-900">Geprüft &amp; verifiziert (0.0‰)</strong>
+                            </div>
+                            <div className="flex justify-between py-1 border-b border-slate-200/60">
+                              <span className="text-slate-500">Ausfahrtsdauer:</span>
+                              <strong className="text-slate-900">{latestCheckoutProtocol?.duration_minutes || 75} Minuten ({((latestCheckoutProtocol?.duration_minutes || 75) / 60).toFixed(1)} Std.)</strong>
+                            </div>
+                            <div className="flex justify-between py-1">
+                              <span className="text-slate-500">Sauberkeitsgrad:</span>
+                              <strong className="text-emerald-700">Sauber &amp; ordentlich ✓</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* High-Tech NMEA 2000 Sensor-Abrechnungs-Widget (Dark Tech Card) */}
+                        <div className="bg-[#12161f] rounded-3xl p-6 text-white border border-slate-800 shadow-lg space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+                                <Fuel className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-white text-base">Automatische Kraftstoff-Abrechnung (NMEA 2000)</h4>
+                                <p className="text-xs text-slate-400">Verbrauchssensor-Abfrage beim Anlegen &bull; Session #TEL-481920-312</p>
+                              </div>
+                            </div>
+                            <div className="px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-xs font-mono font-bold">
+                              Kryptographisch signiert (SHA256)
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center sm:text-left">
+                            <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+                              <div className="text-[10px] uppercase font-bold text-slate-400">Gemessener Verbrauch</div>
+                              <div className="text-2xl font-mono font-black text-white mt-1">
+                                {latestCheckoutProtocol?.sensor_fuel_liters_used || 14.8} <span className="text-xs font-normal text-slate-400">Liter</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">Durchflusssensor #0x28</div>
+                            </div>
+
+                            <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+                              <div className="text-[10px] uppercase font-bold text-slate-400">Treibstofftarif</div>
+                              <div className="text-2xl font-mono font-black text-white mt-1">
+                                CHF 2.25 <span className="text-xs font-normal text-slate-400">/ Liter</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">Bleifrei 98 Bootsbenzin</div>
+                            </div>
+
+                            <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+                              <div className="text-[10px] uppercase font-bold text-slate-400">Ø Stundenverbrauch</div>
+                              <div className="text-2xl font-mono font-black text-cyan-400 mt-1">
+                                11.8 <span className="text-xs font-normal text-slate-400">L / h</span>
+                              </div>
+                              <div className="text-[10px] text-cyan-400 mt-0.5">Effiziente Fahrt</div>
+                            </div>
+
+                            <div className="bg-gradient-to-br from-amber-950/60 to-amber-900/40 p-4 rounded-2xl border border-amber-600/50">
+                              <div className="text-[10px] uppercase font-bold text-amber-300">Treibstoffkosten Total</div>
+                              <div className="text-2xl font-mono font-black text-amber-300 mt-1">
+                                CHF {(latestCheckoutProtocol?.fuel_cost_total || 33.30).toFixed(2)}
+                              </div>
+                              <div className="text-[10px] text-amber-200 mt-0.5">Verrechnung via Kundenkonto</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Dokumentations-Fotos (Vorher / Nachher) */}
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2">
+                            <Camera className="w-4 h-4 text-slate-500" />
+                            <span>Fotodokumentation &amp; Belege (Klick für Großansicht)</span>
+                          </h4>
+
+                          <div className="flex flex-wrap gap-3">
+                            <div
+                              onClick={() => setPreviewPhotoModal({
+                                url: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=800&q=80',
+                                title: 'Schiffsübergabe Boesch 620 Bimini am Steg 1 Hergiswil'
+                              })}
+                              className="w-32 h-24 rounded-2xl overflow-hidden border border-slate-200 shadow-xs relative cursor-pointer group"
+                            >
+                              <img
+                                src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=400&q=80"
+                                alt="Boot am Steg"
+                                className="w-full h-full object-cover group-hover:scale-105 transition"
+                              />
+                              <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] text-center py-0.5">
+                                Vertäut am Steg
+                              </div>
+                            </div>
+
+                            <div
+                              onClick={() => setPreviewPhotoModal({
+                                url: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=800&q=80',
+                                title: 'Tankanzeige & Instrumentenpanel Boesch 620'
+                              })}
+                              className="w-32 h-24 rounded-2xl overflow-hidden border border-slate-200 shadow-xs relative cursor-pointer group"
+                            >
+                              <img
+                                src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=400&q=80"
+                                alt="Tankanzeige"
+                                className="w-full h-full object-cover group-hover:scale-105 transition"
+                              />
+                              <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] text-center py-0.5">
+                                Instrumente &amp; Tank
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Audit-Trail & Rechtliche Bestätigung */}
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1.5 text-slate-600">
+                          <div className="font-bold text-slate-900">Lückenloser Revisions- &amp; Prüfpfad (Audit-Trail)</div>
+                          <p className="text-[11px] leading-relaxed">
+                            Dieses elektronische Protokoll wurde gemäss den AGB &amp; Mietbedingungen von Nautic erstellt.
+                            Signalempfang Telemetrie: <strong>24.03.2026 14:02:18</strong> &bull; Rücknahmequittierung: <strong>24.03.2026 15:17:42</strong> &bull; Schiffsführer: <strong>Roland Grüter</strong>.
+                          </p>
+                        </div>
+
+                        {/* Aktionen am Ende */}
+                        <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 print:hidden">
                           <button
                             type="button"
                             onClick={() => {
-                              setShowStudentRequestModal(false);
-                              setStudentNavSubTab('packages');
-                              setStoreViewMode('catalog');
+                              setCheckinStep('step1_checkin');
+                              setStudentSidebarNav('dashboard');
+                              setStudentNavSubTab('overview');
                             }}
-                            className="font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
+                            className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition cursor-pointer"
                           >
-                            Jetzt Abo im Store kaufen &rarr;
-                          </button>
-                        </div>
-                      )}
-                      <div>
-                        <label className="font-semibold text-slate-700 block mb-1">Ausbildungsleistung / Terminart *</label>
-                        <select
-                          value={newReqService}
-                          onChange={e => setNewReqService(e.target.value)}
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white transition"
-                        >
-                          <option value="Motorboot Kat. A (90 Min.)">Motorboot Kat. A (90 Min.) – CHF 190.00</option>
-                          <option value="Intensiv-Doppelstunde (180 Min.)">Intensiv-Doppelstunde (180 Min.) – CHF 380.00</option>
-                          <option value="Hafen- & Boxen-Manövertraining">Hafen- &amp; Boxen-Manövertraining (90 Min.) – CHF 190.00</option>
-                          <option value="Prüfungsvorbereitung / Generalprobe">Prüfungsvorbereitung / Generalprobe – CHF 210.00</option>
-                          <option value="Bootsmiete / Charter (Halbtag)">Bootsmiete / Charter (Halbtag) – CHF 350.00</option>
-                        </select>
-                      </div>
-
-                      {/* Datum & Zeitfenster mit Schnellauswahl */}
-                      <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-200/80 space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div>
-                            <label className="font-semibold text-slate-800 block mb-1">Wunschdatum *</label>
-                            <input
-                              type="date"
-                              value={newReqDate}
-                              onChange={e => setNewReqDate(e.target.value)}
-                              min="2026-03-20"
-                              required
-                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-amber-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="font-semibold text-slate-800 block mb-1">Zeitfenster</label>
-                            <select
-                              value={newReqTimeWindow}
-                              onChange={e => setNewReqTimeWindow(e.target.value)}
-                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-amber-500"
-                            >
-                              <option value="morning">Vormittag (09:00 - 10:30 Uhr)</option>
-                              <option value="afternoon">Nachmittag (14:00 - 15:30 Uhr)</option>
-                              <option value="evening">Abenddämmerung (17:30 - 19:00 Uhr)</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Schnellauswahl Chips */}
-                        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-amber-200/60">
-                          <span className="text-[10px] text-amber-900 font-bold self-center">Schnellwahl:</span>
-                          {[
-                            { label: 'Vormittag (09–10:30)', v: 'morning' },
-                            { label: 'Nachmittag (14–15:30)', v: 'afternoon' },
-                            { label: 'Feierabend (17:30–19)', v: 'evening' }
-                          ].map(t => (
-                            <button
-                              key={t.v}
-                              type="button"
-                              onClick={() => setNewReqTimeWindow(t.v)}
-                              className={`px-2 py-0.5 rounded text-[10px] font-medium transition ${
-                                newReqTimeWindow === t.v
-                                  ? 'bg-amber-600 text-white font-bold'
-                                  : 'bg-white hover:bg-amber-100 border border-amber-200 text-amber-900'
-                              }`}
-                            >
-                              {t.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">Bevorzugter Standort</label>
-                          <select
-                            value={newReqLocation}
-                            onChange={e => setNewReqLocation(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
-                          >
-                            <option value="Luzern (Alpenquai)">Luzern (Alpenquai / Tribschen)</option>
-                            <option value="Stansstad (Hafen)">Stansstad NW (Hafenanlage)</option>
-                            <option value="Hergiswil (Hafen)">Hergiswil NW (Bootshafen)</option>
-                            <option value="Buochs (Seefeld)">Buochs NW (Seefeld Pier)</option>
-                            <option value="Ennetbürgen">Ennetbürgen (Bürgenstock-Bucht)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">Wunsch-Coach</label>
-                          <select
-                            value={newReqCoach}
-                            onChange={e => setNewReqCoach(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
-                          >
-                            <option value="Beat Vollenweider">Beat Vollenweider</option>
-                            <option value="Marc Hürlimann">Marc Hürlimann</option>
-                            <option value="Sandra Meier">Sandra Meier</option>
-                            <option value="Beliebiger verfügbarer Coach">Beliebiger Coach</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Notizen & Wünsche - Grösseres Textfeld */}
-                      <div>
-                        <label className="font-semibold text-slate-700 block mb-1">
-                          Notizen &amp; Ausbildungsschwerpunkte
-                        </label>
-                        <textarea
-                          rows={4}
-                          value={newReqNotes}
-                          onChange={e => setNewReqNotes(e.target.value)}
-                          placeholder="z. B. Schwerpunkt auf Boxenmanöver rückwärts, Anlegen bei Seitenwind oder Vorbereitung auf die Schifffahrtsamts-Prüfung..."
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white transition"
-                        />
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                        <button
-                          type="button"
-                          onClick={() => setShowStudentRequestModal(false)}
-                          className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold rounded-xl hover:bg-slate-100 transition"
-                        >
-                          Abbrechen
-                        </button>
-                        <button
-                          type="submit"
-                          className="px-5 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold rounded-xl shadow-md transition"
-                        >
-                          Terminanfrage verbindlich absenden &rarr;
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
-
-              {/* MODAL 2: Schülerprofil bearbeiten (Im Stil des Fahrlehrer-Modals) */}
-              {showStudentProfileModal && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-                  <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200/80 my-8 space-y-5 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
-                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold shadow-xs">
-                          <User className="w-5 h-5 text-amber-700" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-slate-900 text-base">Mein Schülerprofil bearbeiten</h3>
-                          <p className="text-xs text-slate-500">Persönliche Angaben &amp; Schifffahrtsamts-Stammdaten</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setShowStudentProfileModal(false)}
-                        className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-xl transition"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    <form
-                      onSubmit={e => {
-                        e.preventDefault();
-                        setShowStudentProfileModal(false);
-                        setMagicFeedback('Ihr Schülerprofil wurde erfolgreich aktualisiert.');
-                        setTimeout(() => setMagicFeedback(null), 5000);
-                      }}
-                      className="space-y-4 text-xs"
-                    >
-                      {/* BILD HINZUFÜGEN (KEINE PFLICHT) */}
-                      <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 flex items-center gap-4">
-                        <div className="relative group shrink-0">
-                          {studentProfile.avatar_url ? (
-                            <img
-                              src={studentProfile.avatar_url}
-                              alt="Profilbild"
-                              className="w-16 h-16 rounded-2xl object-cover ring-2 ring-amber-500/20 shadow-xs"
-                            />
-                          ) : (
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-800 text-white font-black text-xl flex items-center justify-center shadow-xs">
-                              {studentProfile.first_name?.[0] || 'R'}{studentProfile.last_name?.[0] || 'G'}
-                            </div>
-                          )}
-                          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center shadow-xs">
-                            <Camera className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
-
-                        <div className="flex-1 space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-slate-900 text-xs">Profilbild hinzufügen</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-600 font-medium">
-                              Keine Pflicht
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-normal">
-                            Laden Sie optional ein Foto hoch oder hinterlegen Sie eine Bild-URL. Ihr Bild erleichtert dem Fahrlehrer die Erkennung am Steg.
-                          </p>
-                          <div className="flex flex-wrap items-center gap-2 pt-1">
-                            <input
-                              type="url"
-                              placeholder="Bild-URL (https://...)"
-                              value={studentProfile.avatar_url}
-                              onChange={e => setStudentProfile({ ...studentProfile, avatar_url: e.target.value })}
-                              className="px-2.5 py-1 text-[11px] bg-white border border-slate-300 rounded-lg flex-1 min-w-[140px] focus:ring-1 focus:ring-amber-500"
-                            />
-                            {studentProfile.avatar_url && (
-                              <button
-                                type="button"
-                                onClick={() => setStudentProfile({ ...studentProfile, avatar_url: '' })}
-                                className="text-[10px] text-rose-600 hover:text-rose-800 px-2 py-1 bg-white border border-rose-200 rounded-lg font-medium"
-                              >
-                                Entfernen
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* STAMMDATEN: Vorname, Nachname */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">Vorname *</label>
-                          <input
-                            type="text"
-                            value={studentProfile.first_name}
-                            onChange={e => setStudentProfile({ ...studentProfile, first_name: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">Nachname *</label>
-                          <input
-                            type="text"
-                            value={studentProfile.last_name}
-                            onChange={e => setStudentProfile({ ...studentProfile, last_name: e.target.value })}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="font-semibold text-slate-700 block mb-1">E-Mail-Adresse (gesperrt)</label>
-                        <input
-                          type="email"
-                          value={studentProfile.email}
-                          disabled
-                          className="w-full px-3 py-2 bg-slate-100 text-slate-500 border border-slate-200 rounded-xl text-xs font-medium cursor-not-allowed"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">Mobiltelefonnummer *</label>
-                          <input
-                            type="tel"
-                            value={studentProfile.phone}
-                            onChange={e => setStudentProfile({ ...studentProfile, phone: e.target.value })}
-                            placeholder="+41 79 000 00 00"
-                            required
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">Geburtsdatum *</label>
-                          <input
-                            type="date"
-                            value={studentProfile.birthdate}
-                            onChange={e => setStudentProfile({ ...studentProfile, birthdate: e.target.value })}
-                            required
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Notfallkontakt */}
-                      <div>
-                        <label className="font-semibold text-slate-700 block mb-1">Notfallkontakt (Name &amp; Telefonnummer) *</label>
-                        <input
-                          type="text"
-                          value={studentProfile.emergency_contact}
-                          onChange={e => setStudentProfile({ ...studentProfile, emergency_contact: e.target.value })}
-                          placeholder="z. B. Partnerin, +41 79 111 22 33"
-                          className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
-                        />
-                      </div>
-
-                      {/* Adresse */}
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="col-span-2">
-                          <label className="font-semibold text-slate-700 block mb-1">Strasse &amp; Nr.</label>
-                          <input
-                            type="text"
-                            value={studentProfile.street}
-                            onChange={e => setStudentProfile({ ...studentProfile, street: e.target.value })}
-                            placeholder="Seestrasse 1"
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:bg-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="font-semibold text-slate-700 block mb-1">PLZ &amp; Ort</label>
-                          <input
-                            type="text"
-                            value={`${studentProfile.zip} ${studentProfile.city}`.trim()}
-                            onChange={e => {
-                              const parts = e.target.value.split(' ');
-                              setStudentProfile({
-                                ...studentProfile,
-                                zip: parts[0] || '',
-                                city: parts.slice(1).join(' ') || ''
-                              });
-                            }}
-                            placeholder="6000 Luzern"
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:bg-white"
-                          />
-                        </div>
-                      </div>
-
-                      {/* NOTIZEN & WÜNSCHE: GRÖSSERES TEXTFELD */}
-                      <div>
-                        <label className="font-semibold text-slate-700 block mb-1">
-                          Notizen &amp; Wünsche (grösseres Textfeld)
-                        </label>
-                        <textarea
-                          rows={4}
-                          value={studentProfile.notes}
-                          onChange={e => setStudentProfile({ ...studentProfile, notes: e.target.value })}
-                          placeholder="Ihre Notizen, zeitliche Präferenzen (z. B. bevorzugt Nachmittage oder Wochenenden), besondere Wünsche an den Fahrlehrer oder Vorerfahrungen..."
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white transition"
-                        />
-                      </div>
-
-                      {/* AUFKLAPPBARER BEREICH AM SCHLUSS: THEORIE BESTANDEN (MIT DATUMSANGABE) */}
-                      <div className="border border-amber-300/80 rounded-2xl overflow-hidden bg-amber-50/40">
-                        <button
-                          type="button"
-                          onClick={() => setTheoryAccordionOpen(!theoryAccordionOpen)}
-                          className="w-full p-4 text-left flex items-center justify-between hover:bg-amber-100/50 transition cursor-pointer"
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-amber-200/80 text-amber-900 flex items-center justify-center font-bold">
-                              <CheckCircle2 className="w-4 h-4 text-amber-800" />
-                            </div>
-                            <div>
-                              <div className="font-bold text-slate-900 text-xs flex items-center gap-2">
-                                <span>Theorie Bestanden (mit Datumsangabe)</span>
-                                {studentProfile.theory_passed && (
-                                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
-                                    Bestanden
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[11px] text-slate-500">
-                                Schifffahrtsamt ASA: FABER, PIN, PID &amp; Prüfungsdatum
-                              </p>
-                            </div>
-                          </div>
-                          <span className={`text-slate-500 transform transition-transform duration-200 ${theoryAccordionOpen ? 'rotate-180' : ''}`}>
-                            ▼
-                          </span>
-                        </button>
-
-                        {theoryAccordionOpen && (
-                          <div className="p-4 pt-1 border-t border-amber-200/60 space-y-3.5 animate-in fade-in duration-150">
-                            <div className="bg-white p-3 rounded-xl border border-amber-200 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <label className="font-semibold text-slate-800 flex items-center gap-2 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={studentProfile.theory_passed}
-                                    onChange={e => setStudentProfile({ ...studentProfile, theory_passed: e.target.checked })}
-                                    className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4"
-                                  />
-                                  <span>Theorieprüfung Schifffahrtsamt erfolgreich bestanden</span>
-                                </label>
-                              </div>
-
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                                <div>
-                                  <label className="text-[11px] font-medium text-slate-600 block mb-1">
-                                    Datum Theorieprüfung (mit Datumsangabe):
-                                  </label>
-                                  <input
-                                    type="date"
-                                    value={studentProfile.theory_passed_date}
-                                    onChange={e => setStudentProfile({ ...studentProfile, theory_passed_date: e.target.value })}
-                                    className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold focus:ring-2 focus:ring-amber-500"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Schweizer Schifffahrtsamt: FABER:, PIN:, PID: */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                              <div>
-                                <label className="font-bold text-slate-800 block mb-1">
-                                  FABER: {studentProfile.theory_passed ? <span className="text-rose-500">*</span> : <span className="text-[10px] text-slate-400 font-normal">(nach Theorie)</span>}
-                                </label>
-                                <input
-                                  type="text"
-                                  value={studentProfile.faber}
-                                  onChange={e => setStudentProfile({ ...studentProfile, faber: e.target.value, license_number: e.target.value })}
-                                  placeholder="z. B. 123.456.789"
-                                  className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500"
-                                />
-                                <span className="text-[10px] text-slate-500 block mt-0.5">Fahrberechtigungs-Register</span>
-                              </div>
-                              <div>
-                                <label className="font-bold text-slate-800 block mb-1">
-                                  PIN: {studentProfile.theory_passed ? <span className="text-rose-500">*</span> : <span className="text-[10px] text-slate-400 font-normal">(nach Theorie)</span>}
-                                </label>
-                                <input
-                                  type="text"
-                                  value={studentProfile.pin}
-                                  onChange={e => setStudentProfile({ ...studentProfile, pin: e.target.value })}
-                                  placeholder="z. B. 7841"
-                                  className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500"
-                                />
-                                <span className="text-[10px] text-slate-500 block mt-0.5">Persönliche Ident.-Nr.</span>
-                              </div>
-                              <div>
-                                <label className="font-bold text-slate-800 block mb-1">
-                                  PID: {studentProfile.theory_passed ? <span className="text-rose-500">*</span> : <span className="text-[10px] text-slate-400 font-normal">(nach Theorie)</span>}
-                                </label>
-                                <input
-                                  type="text"
-                                  value={studentProfile.pid}
-                                  onChange={e => setStudentProfile({ ...studentProfile, pid: e.target.value })}
-                                  placeholder="z. B. CHE-123.456.7"
-                                  className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-amber-500"
-                                />
-                                <span className="text-[10px] text-slate-500 block mt-0.5">Personen-Identifikator</span>
-                              </div>
-                            </div>
-
-                            <p className="text-[11px] text-amber-900 bg-amber-100/60 p-2.5 rounded-lg border border-amber-200 leading-normal">
-                              Hinweis: Die ASA-Daten (FABER, PIN und PID) werden für die offizielle Prüfungsanmeldung bei den Schifffahrtsämtern Luzern (LU), Nidwalden (NW), Schwyz (SZ) und Uri (UR) benötigt.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                        <button
-                          type="button"
-                          onClick={() => setShowStudentProfileModal(false)}
-                          className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold rounded-xl hover:bg-slate-100 transition"
-                        >
-                          Abbrechen
-                        </button>
-                        <button
-                          type="submit"
-                          className="px-6 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold rounded-xl shadow-md transition"
-                        >
-                          Profilangaben speichern &rarr;
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
-
-              {/* MODAL 3: Online-Checkout & Buchung (Store) */}
-              {checkoutService && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-                  <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200/80 my-8 space-y-5 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
-                    
-                    {/* Header */}
-                    <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold shadow-xs">
-                          <ShoppingBag className="w-5 h-5 text-amber-700" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-slate-900 text-base">Online-Checkout &amp; Buchung</h3>
-                          <p className="text-xs text-slate-500">Sofortige Lektionen-Gutschrift &bull; Schweizer MWST-Beleg</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setCheckoutService(null)}
-                        className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-xl transition cursor-pointer"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    <div className="space-y-4 text-xs">
-                      
-                      {/* Produkt-Zusammenfassung */}
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-start gap-3.5">
-                        <img
-                          src={checkoutService.image_url}
-                          alt={checkoutService.name}
-                          className="w-16 h-16 rounded-xl object-cover shrink-0"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900 text-sm">{checkoutService.name}</span>
-                            {checkoutService.is_subscription && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                                {checkoutService.sessions_count}er Abo
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-slate-500 text-xs mt-1 line-clamp-2 leading-relaxed">
-                            {checkoutService.description}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Preis- & Tarifauswahl */}
-                      <div>
-                        <label className="font-semibold text-slate-800 block mb-2">Wähle deine Preis- &amp; Zeitstaffel *</label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                          {checkoutService.price_options.map(opt => {
-                            const isSelected = checkoutSelectedOption?.id === opt.id;
-                            return (
-                              <button
-                                key={opt.id}
-                                type="button"
-                                onClick={() => setCheckoutSelectedOptionId(opt.id)}
-                                className={`p-3 rounded-xl border text-left transition flex flex-col justify-between cursor-pointer ${
-                                  isSelected
-                                    ? 'border-amber-600 bg-amber-50/50 ring-2 ring-amber-500/20'
-                                    : 'border-slate-200 bg-white hover:bg-slate-50'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="font-bold text-slate-900 text-xs">
-                                    {opt.duration} Min. ({opt.sessions_count} {opt.sessions_count > 1 ? 'Einheiten' : 'Einheit'})
-                                  </span>
-                                  {isSelected && <Check className="w-4 h-4 text-amber-700" />}
-                                </div>
-                                <div className="mt-2 flex items-baseline justify-between">
-                                  <span className="text-base font-black text-slate-900">CHF {opt.price.toFixed(2)}</span>
-                                  {opt.sessions_count > 1 && (
-                                    <span className="text-[10px] text-emerald-700 font-semibold">
-                                      ~CHF {(opt.price / opt.sessions_count).toFixed(2)} / Lektion
-                                    </span>
-                                  )}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Hafen / Standort Wahl */}
-                      <div>
-                        <label className="font-semibold text-slate-800 block mb-1">Bevorzugter Einstiegs-Hafen</label>
-                        <select
-                          value={checkoutLocation}
-                          onChange={e => setCheckoutLocation(e.target.value)}
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-amber-500 focus:bg-white"
-                        >
-                          <option value="loc_luzern">Luzern (Alpenquai / Tribschen)</option>
-                          <option value="loc_stansstad">Stansstad NW (Hafenanlage)</option>
-                          <option value="loc_hergiswil">Hergiswil NW (Bootshafen)</option>
-                          <option value="loc_buochs">Buochs NW (Seefeld Pier)</option>
-                        </select>
-                      </div>
-
-                      {/* Rabattcode / Aktionscode Engine */}
-                      <div className="p-3.5 bg-amber-50/40 rounded-2xl border border-amber-200/80 space-y-2">
-                        <label className="font-semibold text-slate-800 block text-xs">
-                          Gutschein- oder Promo-Code einlösen
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <div className="relative flex-1">
-                            <Tag className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-                            <input
-                              type="text"
-                              value={checkoutPromoInput}
-                              onChange={e => setCheckoutPromoInput(e.target.value.toUpperCase())}
-                              placeholder="z. B. BOOT50 oder SOMMER2026"
-                              className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-xl font-mono text-xs font-bold uppercase tracking-wider focus:ring-2 focus:ring-amber-500"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={handleValidatePromo}
-                            className="px-4 py-2 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold rounded-xl text-xs transition cursor-pointer shrink-0"
-                          >
-                            Prüfen
-                          </button>
-                        </div>
-
-                        {checkoutPromoMsg && (
-                          <div
-                            className={`p-2 rounded-lg text-xs font-medium flex items-center gap-1.5 ${
-                              checkoutPromoMsg.type === 'success'
-                                ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                                : 'bg-rose-100 text-rose-900 border border-rose-300'
-                            }`}
-                          >
-                            {checkoutPromoMsg.type === 'success' ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                            ) : (
-                              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                            )}
-                            <span>{checkoutPromoMsg.text}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Preisaufstellung & MWST */}
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-                        <div className="flex justify-between text-slate-600">
-                          <span>Zwischensumme:</span>
-                          <span>CHF {checkoutSubtotal.toFixed(2)}</span>
-                        </div>
-                        {checkoutDiscountAmount > 0 && (
-                          <div className="flex justify-between text-emerald-700 font-bold">
-                            <span>Aktionsrabatt ({checkoutPromoApplied?.code}):</span>
-                            <span>-CHF {checkoutDiscountAmount.toFixed(2)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-200">
-                          <span>Gesamtbetrag (CHF):</span>
-                          <span>CHF {checkoutFinalTotal.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between text-[11px] text-slate-400">
-                          <span>Darin enthalten 8.1% Schweizer MWST:</span>
-                          <span>CHF {checkoutVatAmount.toFixed(2)}</span>
-                        </div>
-                      </div>
-
-                      {/* Schweizer Zahlungsarten */}
-                      <div className="space-y-3">
-                        <label className="font-semibold text-slate-800 block">Zahlungsart wählen *</label>
-                        
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                          <button
-                            type="button"
-                            onClick={() => setCheckoutPaymentMethod('bank_transfer')}
-                            className={`p-3 rounded-xl border text-left transition cursor-pointer ${
-                              checkoutPaymentMethod === 'bank_transfer'
-                                ? 'border-amber-600 bg-amber-50/60 ring-2 ring-amber-500/20'
-                                : 'border-slate-200 bg-white hover:bg-slate-50'
-                            }`}
-                          >
-                            <div className="font-bold text-slate-900 text-xs">Banküberweisung</div>
-                            <div className="text-[11px] text-slate-500 mt-0.5">Sofortige IBAN-Anzeige</div>
+                            Zurück zum Dashboard
                           </button>
 
                           <button
                             type="button"
-                            onClick={() => setCheckoutPaymentMethod('qr_bill')}
-                            className={`p-3 rounded-xl border text-left transition cursor-pointer ${
-                              checkoutPaymentMethod === 'qr_bill'
-                                ? 'border-amber-600 bg-amber-50/60 ring-2 ring-amber-500/20'
-                                : 'border-slate-200 bg-white hover:bg-slate-50'
-                            }`}
+                            onClick={() => setShowStudentRequestModal(true)}
+                            className="px-5 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-sm"
                           >
-                            <div className="font-bold text-slate-900 text-xs">QR-Rechnung</div>
-                            <div className="text-[11px] text-slate-500 mt-0.5">Swiss QR-Bill &amp; E-Banking</div>
+                            <Plus className="w-4 h-4 text-amber-400" />
+                            <span>Weitere Bootsmiete buchen</span>
                           </button>
                         </div>
 
-                        {/* Details Banküberweisung */}
-                        {checkoutPaymentMethod === 'bank_transfer' && (
-                          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-[11px]">
-                            <div className="font-bold text-slate-800">Bankverbindung für Überweisung:</div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-slate-600">
-                              <div><strong>Bank:</strong> Raiffeisenbank Luzern-Stans</div>
-                              <div><strong>Begünstigter:</strong> MY CoachingBoot GmbH, 6005 Luzern</div>
-                            </div>
-                            <div className="flex items-center gap-2 pt-1">
-                              <div className="font-mono text-xs font-bold text-slate-900 px-2.5 py-1.5 bg-white rounded-lg border border-slate-300 flex-1 select-all">
-                                CH89 0076 2011 6238 5291 1
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard?.writeText('CH89 0076 2011 6238 5291 1');
-                                  setCopiedIban(true);
-                                  setTimeout(() => setCopiedIban(false), 3000);
-                                }}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shrink-0 ${
-                                  copiedIban ? 'bg-emerald-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
-                                }`}
-                              >
-                                {copiedIban ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                                <span>{copiedIban ? 'Kopiert!' : 'IBAN kopieren'}</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Details QR-Rechnung */}
-                        {checkoutPaymentMethod === 'qr_bill' && (
-                          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-3 text-[11px]">
-                            <QrCode className="w-10 h-10 text-slate-700 shrink-0" />
-                            <div>
-                              <div className="font-bold text-slate-900">Schweizer QR-Rechnung aktiviert</div>
-                              <div className="text-slate-500">
-                                Nach Abschluss wird der QR-Beleg mit Referenz und Firmen-UID CHE-384.192.834 MWST direkt erzeugt und zum Download bereitgestellt.
-                              </div>
-                            </div>
-                          </div>
-                        )}
                       </div>
 
                     </div>
+                  )}
 
-                    {/* Footer Buttons */}
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutService(null)}
-                        className="px-4 py-2 text-slate-600 hover:text-slate-800 font-semibold rounded-xl hover:bg-slate-100 transition cursor-pointer"
-                      >
-                        Abbrechen
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleCompleteOrder}
-                        className="px-5 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer"
-                      >
-                        <span>Bestellung abschliessen (CHF {checkoutFinalTotal.toFixed(2)})</span>
-                        <ChevronRight className="w-4 h-4 text-amber-400" />
-                      </button>
-                    </div>
-
-                  </div>
                 </div>
               )}
 
-              {/* MODAL 4: Schweizer MWST-Beleg / Quittung */}
-              {showReceiptModal && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-                  <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200/80 my-8 space-y-6 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
-                    
-                    {/* Beleg Kopf */}
-                    <div className="flex items-start justify-between pb-4 border-b-2 border-slate-900">
-                      <div>
-                        <div className="font-black text-slate-900 text-lg uppercase tracking-tight">MY CoachingBoot GmbH</div>
-                        <div className="text-xs text-slate-500">Alpenquai 11 &bull; 6005 Luzern &bull; Schweiz</div>
-                        <div className="text-xs font-mono font-bold text-slate-700 mt-1">UID: CHE-384.192.834 MWST</div>
-                      </div>
-                      <button
-                        onClick={() => setShowReceiptModal(null)}
-                        className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-xl transition cursor-pointer"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    {/* Beleg Titel & Meta */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                      <div>
-                        <h4 className="font-extrabold text-slate-900 text-base">Offizielle MWST-Quittung</h4>
-                        <div className="text-slate-500 mt-0.5">
-                          Bestell- &amp; Referenz-Nr.: <strong className="font-mono text-slate-900">{showReceiptModal.order_id}</strong>
-                        </div>
-                      </div>
-                      <div className="text-right sm:text-right text-slate-500">
-                        <div>Datum: {showReceiptModal.purchased_at}</div>
-                        <div>Gültig bis: {showReceiptModal.expires_at}</div>
-                      </div>
-                    </div>
-
-                    {/* Kunde Info */}
-                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-                      <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Rechnungsempfänger:</div>
-                      <div className="font-bold text-slate-900">{studentProfile.first_name} {studentProfile.last_name}</div>
-                      <div className="text-slate-600">{studentProfile.email}</div>
-                    </div>
-
-                    {/* Positionen Tabelle */}
-                    <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
-                      <table className="w-full text-left">
-                        <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                          <tr>
-                            <th className="p-3">Position</th>
-                            <th className="p-3 text-center">Einheiten</th>
-                            <th className="p-3 text-right">Betrag CHF</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          <tr>
-                            <td className="p-3">
-                              <div className="font-bold text-slate-900">{showReceiptModal.package_name}</div>
-                              <div className="text-[11px] text-slate-500">Sofortgutschrift im Nautic-Kundenkonto</div>
-                            </td>
-                            <td className="p-3 text-center font-bold text-slate-900">
-                              {showReceiptModal.total_sessions}
-                            </td>
-                            <td className="p-3 text-right font-bold text-slate-900">
-                              CHF {showReceiptModal.price_paid.toFixed(2)}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Berechnungs-Total & MWST */}
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
-                      <div className="flex justify-between text-slate-600">
-                        <span>Netto-Betrag:</span>
-                        <span>CHF {(showReceiptModal.price_paid / 1.081).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-slate-600">
-                        <span>Schweizer MWST (8.1%):</span>
-                        <span>CHF {(showReceiptModal.price_paid - showReceiptModal.price_paid / 1.081).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-200">
-                        <span>Gesamtbetrag CHF:</span>
-                        <span>CHF {showReceiptModal.price_paid.toFixed(2)}</span>
-                      </div>
-                      <div className="pt-1 flex items-center justify-between text-[11px]">
-                        <span className="text-slate-500">Zahlungsstatus:</span>
-                        <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                          {showReceiptModal.payment_status === 'paid' ? 'Bezahlt ✓' : 'Zahlung offen'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Footer CTAs */}
-                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
-                      <button
-                        type="button"
-                        onClick={() => window.print()}
-                        className="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <Printer className="w-4 h-4 text-slate-600" />
-                        <span>Beleg drucken</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowReceiptModal(null);
-                          setShowStudentRequestModal(true);
-                        }}
-                        className="w-full sm:w-auto px-5 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <Calendar className="w-4 h-4 text-amber-400" />
-                        <span>Direkt Fahrstunde im Kalender buchen &rarr;</span>
-                      </button>
-                    </div>
-
-                  </div>
-                </div>
+              {/* ============================================================== */}
+              {/* SUBTAB: DIGITALES LERNPAKET & NAUTIC ACADEMY (1-JAHRES-ABO)    */}
+              {/* ============================================================== */}
+              {(studentNavSubTab === 'elearning' || studentSidebarNav === 'elearning') && (
+                <ElearningSection
+                  hasDigitalAccess={hasDigitalAccess}
+                  daysRemainingDigital={daysRemainingDigital}
+                  elearningVideos={elearningVideos}
+                  elearningCharts={elearningCharts}
+                  completedVideoIds={completedVideoIds}
+                  setCompletedVideoIds={setCompletedVideoIds}
+                  elearningCategoryFilter={elearningCategoryFilter}
+                  setElearningCategoryFilter={setElearningCategoryFilter}
+                  elearningActiveTab={elearningActiveTab}
+                  setElearningActiveTab={setElearningActiveTab}
+                  setActiveVideoModal={setActiveVideoModal}
+                  setActiveVideoPlaying={setActiveVideoPlaying}
+                  setActiveChartModal={setActiveChartModal}
+                  quizAnswers={quizAnswers}
+                  setQuizAnswers={setQuizAnswers}
+                  quizSubmitted={quizSubmitted}
+                  setQuizSubmitted={setQuizSubmitted}
+                  demoElearningAccessOverride={demoElearningAccessOverride}
+                  setDemoElearningAccessOverride={setDemoElearningAccessOverride}
+                  onOpenCheckout={(srv) => {
+                    setCheckoutService(srv);
+                    setCheckoutSelectedOptionId(srv.price_options[0]?.id || null);
+                    setCheckoutPromoInput('');
+                    setCheckoutPromoApplied(null);
+                    setCheckoutPromoMsg(null);
+                    setCheckoutPaymentMethod('bank_transfer');
+                    setStudentSidebarNav('store');
+                    setStudentNavSubTab('packages');
+                    setStoreViewMode('catalog');
+                  }}
+                  services={services}
+                  setMagicFeedback={setMagicFeedback}
+                />
               )}
-
+                </div>
+              </div>
             </div>
           );
         })()}
@@ -8847,6 +9224,80 @@ export default function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL: VOLLBILD FOTO-VORSCHAU FÜR BOOTS- & SCHADENSDOKUMENTATION */}
+      {previewPhotoModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-4 sm:p-5 shadow-2xl border border-slate-700/50 space-y-3 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-2 pt-1">
+              <div className="flex items-center gap-2">
+                <Camera className="w-4 h-4 text-emerald-600" />
+                <h4 className="font-extrabold text-slate-900 text-sm">{previewPhotoModal.title}</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewPhotoModal(null)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="rounded-2xl overflow-hidden max-h-[70vh] bg-slate-950 flex items-center justify-center">
+              <img
+                src={previewPhotoModal.url}
+                alt={previewPhotoModal.title}
+                className="max-h-[68vh] w-auto object-contain"
+              />
+            </div>
+            <div className="flex items-center justify-between px-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
+              <span>NMEA 2000 Bootsdokumentation &bull; Vierwaldstättersee</span>
+              <button
+                type="button"
+                onClick={() => setPreviewPhotoModal(null)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Schliessen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: INTERAKTIVER HD-VIDEO-PLAYER FÜR MANÖVER-LEHRFILME       */}
+      {/* ============================================================== */}
+      {/* ============================================================== */}
+      {/* MODAL: INTERAKTIVER HD-VIDEO-PLAYER FÜR MANÖVER-LEHRFILME       */}
+      {/* ============================================================== */}
+      {activeVideoModal && (
+        <VideoPlayerModal
+          video={activeVideoModal}
+          onClose={() => {
+            setActiveVideoModal(null);
+            setActiveVideoPlaying(false);
+          }}
+          isPlaying={activeVideoPlaying}
+          setIsPlaying={setActiveVideoPlaying}
+          progress={activeVideoProgress}
+          setProgress={setActiveVideoProgress}
+          speed={activeVideoSpeed}
+          setSpeed={setActiveVideoSpeed}
+          volume={activeVideoVolume}
+          setVolume={setActiveVideoVolume}
+          completedVideoIds={completedVideoIds}
+          setCompletedVideoIds={setCompletedVideoIds}
+        />
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: HOCHAUFLÖSENDE SCHIFFFAHRTS-BILDTAFEL (ZOOM & DETAILS)   */}
+      {/* ============================================================== */}
+      {activeChartModal && (
+        <ChartZoomModal
+          chart={activeChartModal}
+          onClose={() => setActiveChartModal(null)}
+        />
       )}
     </div>
   );

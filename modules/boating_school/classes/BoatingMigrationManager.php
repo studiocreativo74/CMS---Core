@@ -57,6 +57,9 @@ final class BoatingMigrationManager
             // 7b. Modul «Store, Angebote & Gutscheine» Schema sicherstellen
             self::ensureStoreAndPromoSchema();
 
+            // 7c. Modul «Self Check-in & Check-out (Mietboote)» Schema & Telemetrie
+            self::ensureBoatCheckinAndCheckoutSchema();
+
             // 8. RBAC Berechtigungen registrieren
             if (class_exists('BoatingPermissions')) {
                 BoatingPermissions::registerAll();
@@ -500,6 +503,105 @@ final class BoatingMigrationManager
             }
         } catch (\Throwable $e) {
             error_log("ensureStoreAndPromoSchema: Fehler bei bs_promo_codes: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Stellt das Schema für Digitaler Self Check-in, Check-out und Boots-Telemetrie sicher.
+     */
+    public static function ensureBoatCheckinAndCheckoutSchema(): void
+    {
+        // 1. bs_boats erweitern: status, current_session, fuel_capacity, hourly_consumption, telemetry_gateway_id
+        try {
+            if (self::tableExists('bs_boats')) {
+                if (!self::columnExists('bs_boats', 'status')) {
+                    DB::execute("ALTER TABLE `bs_boats` ADD COLUMN `status` ENUM('available', 'occupied', 'maintenance') NOT NULL DEFAULT 'available' AFTER `is_active`");
+                }
+                if (!self::columnExists('bs_boats', 'current_session')) {
+                    DB::execute("ALTER TABLE `bs_boats` ADD COLUMN `current_session` JSON NULL AFTER `status`");
+                }
+                if (!self::columnExists('bs_boats', 'fuel_capacity')) {
+                    DB::execute("ALTER TABLE `bs_boats` ADD COLUMN `fuel_capacity` INT UNSIGNED NOT NULL DEFAULT 160 AFTER `current_session`");
+                }
+                if (!self::columnExists('bs_boats', 'hourly_consumption')) {
+                    DB::execute("ALTER TABLE `bs_boats` ADD COLUMN `hourly_consumption` DECIMAL(5,2) NOT NULL DEFAULT 12.50 AFTER `fuel_capacity`");
+                }
+                if (!self::columnExists('bs_boats', 'telemetry_gateway_id')) {
+                    DB::execute("ALTER TABLE `bs_boats` ADD COLUMN `telemetry_gateway_id` VARCHAR(64) NULL AFTER `hourly_consumption`");
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log("ensureBoatCheckinAndCheckoutSchema: Fehler bei Erweiterung bs_boats: " . $e->getMessage());
+        }
+
+        // 2. Vorab-Check-in: bs_boat_checkins
+        try {
+            DB::execute("
+                CREATE TABLE IF NOT EXISTS `bs_boat_checkins` (
+                    `id`                          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `appointment_id`              INT UNSIGNED NOT NULL,
+                    `customer_id`                 INT UNSIGNED NOT NULL,
+                    `boat_id`                     INT UNSIGNED NOT NULL,
+                    `checked_in_at`               DATETIME NOT NULL,
+                    `check_in_code`               VARCHAR(32) NOT NULL,
+                    `fitness_confirmed`           TINYINT(1) NOT NULL DEFAULT 1,
+                    `license_confirmed`           TINYINT(1) NOT NULL DEFAULT 1,
+                    `safety_confirmed`            TINYINT(1) NOT NULL DEFAULT 1,
+                    `emergency_contact_confirmed` TINYINT(1) NOT NULL DEFAULT 1,
+                    `boat_condition_confirmed`    TINYINT(1) NOT NULL DEFAULT 1,
+                    `boat_damage_reported`        TINYINT(1) NOT NULL DEFAULT 0,
+                    `boat_damage_photos`          JSON NULL,
+                    `boat_damage_notes`           TEXT NULL,
+                    `telemetry_session_id`        VARCHAR(64) NULL,
+                    `external_script_triggered`   TINYINT(1) NOT NULL DEFAULT 0,
+                    `external_script_message`     VARCHAR(255) NULL,
+                    `created_at`                  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX `idx_checkin_appt` (`appointment_id`),
+                    INDEX `idx_checkin_customer` (`customer_id`),
+                    INDEX `idx_checkin_boat` (`boat_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Throwable $e) {
+            error_log("ensureBoatCheckinAndCheckoutSchema: Fehler bei bs_boat_checkins: " . $e->getMessage());
+        }
+
+        // 3. Check-out & Rückgabe: bs_boat_checkouts
+        try {
+            DB::execute("
+                CREATE TABLE IF NOT EXISTS `bs_boat_checkouts` (
+                    `id`                          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `check_in_id`                 INT UNSIGNED NOT NULL,
+                    `appointment_id`              INT UNSIGNED NOT NULL,
+                    `customer_id`                 INT UNSIGNED NOT NULL,
+                    `boat_id`                     INT UNSIGNED NOT NULL,
+                    `checked_out_at`              DATETIME NOT NULL,
+                    `duration_minutes`            INT UNSIGNED NOT NULL DEFAULT 60,
+                    `fuel_status`                 ENUM('full', 'refueled', 'needs_fuel', 'not_full') NOT NULL DEFAULT 'full',
+                    `liters_refueled`             DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+                    `fuel_receipt_photo`          MEDIUMTEXT NULL,
+                    `fuel_gauge_photo`            MEDIUMTEXT NULL,
+                    `sensor_fuel_liters_used`     DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+                    `sensor_engine_hours`         DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+                    `fuel_cost_total`             DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                    `fuel_price_per_liter`        DECIMAL(6,2) NOT NULL DEFAULT 2.25,
+                    `return_condition_confirmed`  TINYINT(1) NOT NULL DEFAULT 1,
+                    `return_damage_reported`      TINYINT(1) NOT NULL DEFAULT 0,
+                    `return_damage_photos`        JSON NULL,
+                    `return_damage_notes`         TEXT NULL,
+                    `cleanliness_rating`          ENUM('clean', 'moderate', 'dirty') NOT NULL DEFAULT 'clean',
+                    `mooring_secured`             TINYINT(1) NOT NULL DEFAULT 1,
+                    `keys_returned`               TINYINT(1) NOT NULL DEFAULT 1,
+                    `equipment_checked`           TINYINT(1) NOT NULL DEFAULT 1,
+                    `external_script_queried`     TINYINT(1) NOT NULL DEFAULT 0,
+                    `external_script_data`        JSON NULL,
+                    `created_at`                  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX `idx_checkout_chk` (`check_in_id`),
+                    INDEX `idx_checkout_boat` (`boat_id`),
+                    INDEX `idx_checkout_cust` (`customer_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Throwable $e) {
+            error_log("ensureBoatCheckinAndCheckoutSchema: Fehler bei bs_boat_checkouts: " . $e->getMessage());
         }
     }
 }

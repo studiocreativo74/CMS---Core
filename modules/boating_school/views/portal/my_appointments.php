@@ -174,6 +174,11 @@ ob_start();
                         <span>Meine Rechnungen</span>
                     </a>
 
+                    <a href="javascript:void(0)" onclick="alert('Nautic Ausbildungsrichtlinien, AGB & Schifffahrtsamts-Zulassung hinterlegt.')" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Rechtliches &amp; Nachweise</span>
+                    </a>
+
                     <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#profileModal" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
                         <i class="bi bi-person"></i>
                         <span>Mein Profil</span>
@@ -350,31 +355,7 @@ ob_start();
                 </div>
             </div>
 
-            <!-- 4. Subnavigation Pill Bar (wie im Screenshot) -->
-            <div class="p-1 rounded-4 mb-4 d-flex align-items-center gap-1 overflow-x-auto" style="background-color: #eef5fa; border: 1px solid #d9e6f2;">
-                <button type="button" class="btn btn-sm bg-white text-dark shadow-xs fw-bold rounded-3 px-3.5 py-2 border d-flex align-items-center gap-2 whitespace-nowrap">
-                    <i class="bi bi-clock text-warning"></i>
-                    <span>Übersicht &amp; Termine</span>
-                </button>
-                <button type="button" class="btn btn-sm text-secondary fw-semibold rounded-3 px-3.5 py-2 border-0 d-flex align-items-center gap-2 whitespace-nowrap" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
-                    <i class="bi bi-star"></i>
-                    <span>Meine VIP Pakete &amp; Abos</span>
-                </button>
-                <button type="button" class="btn btn-sm text-secondary fw-semibold rounded-3 px-3.5 py-2 border-0 d-flex align-items-center gap-2 whitespace-nowrap" onclick="alert('Ihre Quittungen & Rechnungen stehen als PDF zur Verfügung.')">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <span>Rechnungen &amp; Belege</span>
-                </button>
-                <button type="button" class="btn btn-sm text-secondary fw-semibold rounded-3 px-3.5 py-2 border-0 d-flex align-items-center gap-2 whitespace-nowrap" onclick="alert('Nautic Ausbildungsrichtlinien & Prüfungsbestimmungen hinterlegt.')">
-                    <i class="bi bi-shield-check"></i>
-                    <span>Rechtliches &amp; Nachweise</span>
-                </button>
-                <button type="button" class="btn btn-sm text-secondary fw-semibold rounded-3 px-3.5 py-2 border-0 d-flex align-items-center gap-2 whitespace-nowrap" data-bs-toggle="modal" data-bs-target="#profileModal">
-                    <i class="bi bi-person"></i>
-                    <span>Mein Profil</span>
-                </button>
-            </div>
-
-            <!-- 5. Drei Quick Feature Cards (Self Check-in, Fahrguthaben, Rechnungen) -->
+            <!-- 4. Drei Quick Feature Cards (Self Check-in, Fahrguthaben, Rechnungen) -->
             <div class="row g-3 mb-4">
                 
                 <!-- Card 1: Self Check-in -->
@@ -646,6 +627,13 @@ ob_start();
                                 </span>
                             </div>
 
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="text-muted">Allergien:</span>
+                                <span class="fw-semibold text-dark text-truncate" style="max-width: 140px;" title="<?= htmlspecialchars((string) ($customer['allergies'] ?? 'Keine erfasst')) ?>">
+                                    <?= htmlspecialchars((string) (!empty($customer['allergies']) ? $customer['allergies'] : 'Keine erfasst')) ?>
+                                </span>
+                            </div>
+
                             <div class="d-flex align-items-center justify-content-between pt-1">
                                 <span class="text-muted">Rechnungs-Status:</span>
                                 <a href="javascript:void(0)" onclick="alert('Rechnungen & Zahlungsbelege öffnen.')" class="text-dark fw-semibold text-decoration-none d-flex align-items-center gap-1">
@@ -710,7 +698,7 @@ ob_start();
                                     
                                     <!-- Leistung / Ausbildungsart -->
                                     <div class="col-12">
-                                        <label class="form-label small fw-semibold text-dark mb-1">Ausbildungs- oder Mietleistung *</label>
+                                        <label class="form-label small fw-semibold text-dark mb-1">Ausbildungs- oder Mietleistung * (nur erfasste Angebote)</label>
                                         <select name="service_id" class="form-select rounded-3 py-2" required>
                                             <?php if (!empty($availableServices)): ?>
                                                 <?php foreach ($availableServices as $srv): ?>
@@ -719,11 +707,7 @@ ob_start();
                                                     </option>
                                                 <?php endforeach; ?>
                                             <?php else: ?>
-                                                <option value="0">Motorboot Kat. A – Einzelfahrstunde (90 Min.)</option>
-                                                <option value="0">Motorboot Kat. A – Intensiv-Doppelstunde (180 Min.)</option>
-                                                <option value="0">Hafen- &amp; Boxen-Manövertraining (90 Min.)</option>
-                                                <option value="0">Prüfungsvorbereitung / Generalprobe</option>
-                                                <option value="0">Bootsmiete / Charter (Halbtag)</option>
+                                                <option disabled selected value="">Keine erfassten Dienstleistungen verfügbar</option>
                                             <?php endif; ?>
                                         </select>
                                     </div>
@@ -902,6 +886,15 @@ ob_start();
                                     <div class="col-12 col-md-6">
                                         <label class="form-label small fw-semibold text-dark mb-1">Notfallkontakt (Name &amp; Telefonnummer)</label>
                                         <input type="text" name="emergency_contact" class="form-control rounded-3" placeholder="z. B. Anna Muster, +41 78 987 65 43" value="<?= htmlspecialchars((string) ($customer['emergency_contact'] ?? '')) ?>">
+                                    </div>
+
+                                    <!-- Allergien & medizinische Besonderheiten -->
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small fw-semibold text-dark mb-1">
+                                            <i class="bi bi-shield-exclamation text-warning me-1"></i>
+                                            Allergien &amp; medizinische Besonderheiten
+                                        </label>
+                                        <input type="text" name="allergies" class="form-control rounded-3" placeholder="z. B. Wespen- / Bienenstich-Allergie, Laktose, Medikamente..." value="<?= htmlspecialchars((string) ($customer['allergies'] ?? 'Keine bekannten Allergien')) ?>">
                                     </div>
 
                                     <!-- Strasse & Nr. -->
