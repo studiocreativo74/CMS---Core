@@ -78,7 +78,8 @@ import {
   RotateCcw,
   FileDown,
   GraduationCap,
-  PlayCircle
+  PlayCircle,
+  Menu
 } from 'lucide-react';
 
 // --- Modulare Typen & Mock-Daten (Architektur-Refactoring) ---
@@ -244,7 +245,7 @@ export default function App() {
   const [workingHours, setWorkingHours] = useState<CoachWorkingHour[]>(INITIAL_WORKING_HOURS);
   const [coachTab, setCoachTab] = useState<'lessons' | 'upcoming' | 'availabilities' | 'timesheet' | 'hr'>('lessons');
 
-  // State für Schüler Magic-Link
+  // State für Kunden Magic-Link
   const [magicToken, setMagicToken] = useState<string>('sec_tk_9843ab7190ef2384a0d9e');
   const [isMagicAuthenticated, setIsMagicAuthenticated] = useState<boolean>(true);
   const [studentEmailRequest, setStudentEmailRequest] = useState<string>('');
@@ -370,6 +371,7 @@ export default function App() {
 
   // Admin Section Navigation: Übersicht (All-in-One Command Center) | Payroll | Services & Tarife | Gutscheine & Codes | Account-Anfragen | Flotte & Telemetrie
   const [adminSectionTab, setAdminSectionTab] = useState<'overview' | 'payroll' | 'services' | 'promos' | 'account_requests' | 'fleet'>('overview');
+  const [adminMenuOpen, setAdminMenuOpen] = useState<boolean>(false);
 
   // Customer Store View State
   const [storeViewMode, setStoreViewMode] = useState<'catalog' | 'my_subscriptions'>('catalog');
@@ -868,7 +870,7 @@ export default function App() {
     setAppointments(prev =>
       prev.map(a =>
         a.id === cancelModalAppointment.id
-          ? { ...a, status: 'cancelled_customer', instructor_payout_note: 'Storniert durch Schüler: ' + (cancelReason || 'Kein Grund angegeben') }
+          ? { ...a, status: 'cancelled_customer', instructor_payout_note: 'Storniert durch Kunde: ' + (cancelReason || 'Kein Grund angegeben') }
           : a
       )
     );
@@ -1361,7 +1363,7 @@ export default function App() {
       return;
     }
 
-    // Standard: Schüler / Kunde / Bootsmieter
+    // Standard: Kunde / Bootsmieter
     setLoginSuccessMsg(`Magic-Code bestätigt! Willkommen an Bord (${loginEmail}). Weiterleitung zum Kundenportal...`);
     setTimeout(() => {
       setLoginSuccessMsg(null);
@@ -1542,7 +1544,7 @@ export default function App() {
   const handleExportCsv = (type: 'detail' | 'summary') => {
     const filename = type === 'detail' ? `Payroll_Detail_${selectedMonth}.csv` : `Payroll_Summary_${selectedMonth}.csv`;
     const text = type === 'detail'
-      ? `Fahrlehrer;Datum;Schüler;Dauer_Min;Umsatz_CHF;Honorar_CHF;Status;Notiz\n` +
+      ? `Fahrlehrer;Datum;Kunde;Dauer_Min;Umsatz_CHF;Honorar_CHF;Status;Notiz\n` +
         filteredAppointments.map(a => `${a.instructor_name};${a.date};${a.customer_name};${a.duration_minutes};${a.price};${a.instructor_payout_amount};${a.instructor_payout_status};"${a.instructor_payout_note}"`).join('\n')
       : `Fahrlehrer;Total_Fahrten;Umsatz_CHF;Honorar_CHF;Marge_CHF\n` +
         INITIAL_INSTRUCTORS.map(i => {
@@ -1564,8 +1566,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      {/* Top Navigation */}
-      <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
+      {/* Top Navigation - Im Kunden-Portal ausgeblendet (Vollbild-Dashboard mit eigener Sidebar wie Screenshot) */}
+      {activeTab !== 'student' && (
+        <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
@@ -1576,89 +1579,81 @@ export default function App() {
                 Bootsfahrschule Lake Zürich
                 <span className="text-xs bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full border border-sky-400/30">PHP 8 Core</span>
               </div>
-              <p className="text-xs text-slate-400">Payroll, Schüler-Portal &amp; Coach-Management</p>
+              <p className="text-xs text-slate-400">Payroll, Kunden-Portal &amp; Coach-Management</p>
             </div>
           </div>
 
-          {/* Module Tabs - im Schüler / Kunden-Dashboard im Header entfernen */}
-          {activeTab !== 'student' ? (
-            <nav className="flex space-x-1 sm:space-x-2">
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              
+              {/* Direktlink 1: Kunden-Portal */}
               <button
-                onClick={() => setActiveTab('payroll')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                  activeTab === 'payroll' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span className="hidden md:inline">1. Admin Payroll &amp; Reports</span>
-                <span className="md:hidden">Payroll</span>
-              </button>
-
-              <button
+                type="button"
                 onClick={() => setActiveTab('student')}
-                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-800"
+                className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border shadow-xs cursor-pointer group bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 hover:from-amber-500/30 hover:to-amber-600/30 border-amber-400/30"
+                title="Direktlink zum Kunden-Portal &amp; Dashboard"
               >
-                <LayoutDashboard className="w-4 h-4" />
-                <span className="hidden md:inline">2. Kunden-Dashboard</span>
-                <span className="md:hidden">Dashboard</span>
+                <LayoutDashboard className="w-4 h-4 text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline font-bold">Kunden-Portal</span>
+                <span className="text-[10px] bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded font-black tracking-wide uppercase">
+                  Kunde
+                </span>
               </button>
 
+              {/* Direktlink 2: Fahrlehrer-Portal */}
               <button
+                type="button"
                 onClick={() => setActiveTab('instructor')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                  activeTab === 'instructor' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border shadow-xs cursor-pointer group ${
+                  activeTab === 'instructor'
+                    ? 'bg-sky-600 text-white border-sky-400 shadow-sm'
+                    : 'bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 border-sky-400/30'
                 }`}
+                title="Direktlink zum Fahrlehrer-Portal &amp; Monatsabschluss"
               >
-                <User className="w-4 h-4" />
-                <span className="hidden md:inline">3. Fahrlehrer-Portal &amp; Monatsabschluss</span>
-                <span className="md:hidden">Fahrlehrer</span>
+                <User className="w-4 h-4 text-sky-400 shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline font-bold">Fahrlehrer-Portal</span>
+                <span className="text-[10px] bg-sky-400 text-slate-950 px-1.5 py-0.2 rounded font-black tracking-wide uppercase">
+                  Coach
+                </span>
               </button>
 
+              {/* Aktiver Admin-Status-Button */}
               <button
-                onClick={() => setActiveTab('login')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                  activeTab === 'login' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                type="button"
+                onClick={() => setActiveTab('payroll')}
+                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border shadow-xs cursor-pointer ${
+                  activeTab === 'payroll'
+                    ? 'bg-slate-800 text-amber-400 border-amber-400/40 shadow-inner'
+                    : 'bg-slate-800/70 text-slate-300 hover:text-white border-slate-700'
                 }`}
+                title="Admin-Bereich öffnen"
               >
-                <LogIn className="w-4 h-4" />
-                <span className="hidden md:inline">4. Nautic Logonseite (SVG Logo)</span>
-                <span className="md:hidden">Logon</span>
+                <Shield className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="hidden md:inline font-bold">Admin</span>
               </button>
 
+              {/* Hamburger-Menü Button für vollständige, aufgeräumte Navigation */}
               <button
-                onClick={() => setActiveTab('cms')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                  activeTab === 'cms' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                }`}
+                type="button"
+                onClick={() => setAdminMenuOpen(true)}
+                className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-[#1e293b] text-white hover:bg-slate-700 border border-slate-700 shadow-md cursor-pointer hover:border-slate-500"
+                aria-label="Admin Navigation &amp; Menü öffnen"
+                title="Admin Hamburger-Menü (Übersicht aller Bereiche &amp; Direktlinks)"
               >
-                <LayoutTemplate className="w-4 h-4" />
-                <span className="hidden md:inline">5. Startseite &amp; Mini-CMS</span>
-                <span className="md:hidden">CMS</span>
+                <Menu className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="font-bold">Menü</span>
+                {(accountRequests.filter(r => r.status === 'pending').length > 0 || boats.filter(b => b.status === 'occupied').length > 0) && (
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                )}
               </button>
 
-              <button
-                onClick={() => setActiveTab('architecture')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                  activeTab === 'architecture' ? 'bg-slate-800 text-sky-400 border border-sky-500/30' : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <Layers className="w-4 h-4" />
-                <span className="hidden lg:inline">Backend &amp; Schema</span>
-              </button>
-            </nav>
-          ) : (
-            <div className="flex items-center gap-3">
-              <span className="text-xs bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full font-semibold border border-amber-400/30 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                Kunden-Portal (Roland Grüter)
-              </span>
             </div>
-          )}
         </div>
       </header>
+      )}
 
-      {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main Container - Im Kunden-Portal vollflächig ohne Randabstände */}
+      <main className={activeTab === 'student' ? 'w-full min-h-screen p-0' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'}>
 
         {/* ============================================================== */}
         {/* TAB 1: ADMIN REPORTING & FAHRLEHRER-PAYROLL (PROMPT 1)        */}
@@ -1769,9 +1764,36 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                <Shield className="w-4 h-4 text-slate-400" />
-                <span>Nautic Admin Core</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('student')}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 cursor-pointer shadow-2xs"
+                  title="Direktlink zum Kunden-Portal"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5 text-amber-700" />
+                  <span>Kunden-Portal &rarr;</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('instructor')}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 cursor-pointer shadow-2xs"
+                  title="Direktlink zum Fahrlehrer-Portal"
+                >
+                  <User className="w-3.5 h-3.5 text-sky-700" />
+                  <span>Fahrlehrer-Portal &rarr;</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdminMenuOpen(true)}
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 cursor-pointer"
+                  title="Admin Hamburger-Menü öffnen"
+                >
+                  <Menu className="w-3.5 h-3.5 text-slate-600" />
+                  <span className="hidden sm:inline">Menü</span>
+                </button>
               </div>
             </div>
 
@@ -1951,7 +1973,7 @@ export default function App() {
                                   {req.first_name} {req.last_name}
                                 </span>
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                                  Wunschrolle: {req.desired_role === 'student' ? 'Fahrschüler' : req.desired_role === 'instructor' ? 'Fahrlehrer' : req.desired_role === 'renter' ? 'Bootsmieter' : 'Administrator'}
+                                  Wunschrolle: {req.desired_role === 'student' ? 'Kunde' : req.desired_role === 'instructor' ? 'Fahrlehrer' : req.desired_role === 'renter' ? 'Bootsmieter' : 'Administrator'}
                                 </span>
                               </div>
                               <div className="text-xs text-slate-500 flex flex-wrap items-center gap-3">
@@ -1973,7 +1995,7 @@ export default function App() {
                                 className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
                               >
                                 <Check className="w-3.5 h-3.5" />
-                                <span>Als {req.desired_role === 'student' ? 'Schüler' : req.desired_role === 'instructor' ? 'Fahrlehrer' : req.desired_role === 'renter' ? 'Mieter' : 'Admin'} freischalten</span>
+                                <span>Als {req.desired_role === 'student' ? 'Kunde' : req.desired_role === 'instructor' ? 'Fahrlehrer' : req.desired_role === 'renter' ? 'Mieter' : 'Admin'} freischalten</span>
                               </button>
                               <button
                                 type="button"
@@ -2393,7 +2415,7 @@ export default function App() {
                         <tr>
                           <th className="p-3.5">Datum &amp; Zeit</th>
                           <th className="p-3.5">Fahrlehrer</th>
-                          <th className="p-3.5">Schüler</th>
+                          <th className="p-3.5">Kunde</th>
                           <th className="p-3.5">Boot</th>
                           <th className="p-3.5">Dauer</th>
                           <th className="p-3.5">Honorar</th>
@@ -2757,7 +2779,7 @@ export default function App() {
                       {accountRequests.filter(r => r.status === 'pending').length} neue Registrierungsanfrage(n) warten auf Freigabe
                     </h4>
                     <p className="text-[11px] text-amber-800">
-                      Weise neuen Benutzern direkt das passende Profil zu (Fahrlehrer, Schüler, Bootsmieter oder Admin).
+                      Weise neuen Benutzern direkt das passende Profil zu (Fahrlehrer, Kunde, Bootsmieter oder Admin).
                     </p>
                   </div>
                 </div>
@@ -2926,7 +2948,7 @@ export default function App() {
                       </th>
                       <th className="p-3">Datum &amp; Zeit</th>
                       <th className="p-3">Fahrlehrer</th>
-                      <th className="p-3">Schüler &amp; Boot</th>
+                      <th className="p-3">Kunde &amp; Boot</th>
                       <th className="p-3">Dauer</th>
                       <th className="p-3 text-right">Umsatz (CHF)</th>
                       <th className="p-3 text-right">Honorar (CHF)</th>
@@ -3467,7 +3489,7 @@ export default function App() {
                       </span>
                     </div>
                     <p className="text-slate-500 text-sm mt-1">
-                      Hier prüfen Sie eingereichte Registrierungen von der Nautic-Logonseite direkt in der Admin-Oberfläche, bestimmen das gewünschte Profil (Fahrlehrer, Schüler, Mieter oder Admin) und schalten Zugänge mit 1-Klick frei.
+                      Hier prüfen Sie eingereichte Registrierungen von der Nautic-Logonseite direkt in der Admin-Oberfläche, bestimmen das gewünschte Profil (Fahrlehrer, Kunde, Mieter oder Admin) und schalten Zugänge mit 1-Klick frei.
                     </p>
                   </div>
 
@@ -3551,7 +3573,7 @@ export default function App() {
                                 </td>
                                 <td className="py-3.5 px-4 max-w-[220px]">
                                   <span className="inline-block px-2.5 py-0.5 bg-slate-100 text-slate-800 rounded-md text-[11px] font-medium mb-1">
-                                    Wunsch: {req.desired_role === 'instructor' ? 'Fahrcoach / Skipper' : req.desired_role === 'student' ? 'Fahrschüler' : req.desired_role === 'renter' ? 'Bootsmieter' : 'Flottenleitung'}
+                                    Wunsch: {req.desired_role === 'instructor' ? 'Fahrcoach / Skipper' : req.desired_role === 'student' ? 'Kunde' : req.desired_role === 'renter' ? 'Bootsmieter' : 'Flottenleitung'}
                                   </span>
                                   {req.notes && (
                                     <p className="text-[11px] text-slate-500 italic truncate" title={req.notes}>
@@ -3578,14 +3600,14 @@ export default function App() {
                                       className="px-2.5 py-1.5 bg-amber-50/70 border border-amber-300 rounded-lg text-xs font-semibold text-amber-950 focus:outline-none focus:ring-1 focus:ring-amber-500"
                                     >
                                       <option value="instructor">Fahrlehrer / Coach</option>
-                                      <option value="student">Schüler / Fahrschüler</option>
+                                      <option value="student">Kunde (Fahrschule &amp; Coaching)</option>
                                       <option value="renter">Bootsmieter / Charterkunde</option>
                                       <option value="admin">Flottenleitung / Admin</option>
                                     </select>
                                   ) : (
                                     <div className="font-semibold text-slate-800 text-xs">
                                       {req.assigned_profile === 'instructor' && 'Fahrlehrer / Coach'}
-                                      {req.assigned_profile === 'student' && 'Schüler / Fahrschüler'}
+                                      {req.assigned_profile === 'student' && 'Kunde'}
                                       {req.assigned_profile === 'renter' && 'Bootsmieter / Charter'}
                                       {req.assigned_profile === 'admin' && 'Flottenleitung / Admin'}
                                       {!req.assigned_profile && '-'}
@@ -4058,7 +4080,7 @@ export default function App() {
                           type="text"
                           value={promoFormDesc}
                           onChange={e => setPromoFormDesc(e.target.value)}
-                          placeholder="z. B. CHF 50.- Willkommens-Rabatt für neue Fahrschüler"
+                          placeholder="z. B. CHF 50.- Willkommens-Rabatt für neue Kunden"
                           className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500"
                         />
                       </div>
@@ -4160,7 +4182,7 @@ export default function App() {
         )}
 
         {/* ============================================================== */}
-        {/* TAB 2: SCHÜLER-MAGIC-LINK & SELF-SERVICE (PROMPT 2 & 5)        */}
+        {/* TAB 2: KUNDEN-MAGIC-LINK & SELF-SERVICE (PROMPT 2 & 5)        */}
         {/* ============================================================== */}
         {/* ============================================================== */}
         {/* TAB 2: NAUTIC KUNDEN-DASHBOARD (USER BRIEF)                    */}
@@ -4201,44 +4223,55 @@ export default function App() {
           const sessionSecs = sessionRemainingSeconds % 60;
           const sessionTimerText = `${sessionMins}:${sessionSecs < 10 ? '0' : ''}${sessionSecs}`;
 
+          const displayName = (!studentProfile.first_name || studentProfile.first_name.toLowerCase() === 'office') ? 'Roland' : studentProfile.first_name;
+          const studentFullName = (!studentProfile.first_name || studentProfile.first_name.toLowerCase() === 'office')
+            ? 'Roland Grüter'
+            : `${studentProfile.first_name} ${studentProfile.last_name || ''}`.trim();
+          const studentInitials = (!studentProfile.first_name || studentProfile.first_name.toLowerCase() === 'office')
+            ? 'RG'
+            : `${studentProfile.first_name[0] || 'K'}${studentProfile.last_name ? studentProfile.last_name[0] : 'P'}`;
+
           return (
-            <div className="bg-slate-100 rounded-3xl shadow-xl overflow-hidden border border-slate-200 -mt-2">
-              <div className="flex flex-col lg:flex-row min-h-[920px]">
+            <div className="flex flex-col lg:flex-row min-h-screen w-full bg-[#f8f9fa]">
                 
                 {/* ============================================================== */}
                 {/* LINKE SIDEBAR (WIE SCREENSHOT)                                */}
                 {/* ============================================================== */}
-                <aside className="w-full lg:w-72 bg-[#2d2421] text-stone-200 p-5 flex flex-col justify-between shrink-0 border-r border-[#3f3531]">
+                <aside className="w-full lg:w-72 xl:w-80 bg-[#2d2421] text-stone-200 p-5 sm:p-6 flex flex-col justify-between shrink-0 lg:h-screen lg:sticky lg:top-0 border-r border-[#3f3531] shadow-2xl z-20 lg:overflow-y-auto">
                   <div>
                     {/* Nautisches Emblem Logo */}
-                    <div className="mb-8 flex items-center justify-center">
-                      <div className="w-28 h-20 bg-[#423733] rounded-2xl border border-stone-600/50 flex items-center justify-center shadow-inner">
+                    <div className="mb-6 flex flex-col items-center justify-center">
+                      <div className="w-24 h-20 bg-[#3a2f2b] rounded-2xl border border-stone-600/60 flex items-center justify-center shadow-lg relative group">
                         <svg viewBox="0 0 48 48" className="w-12 h-12 text-stone-200" fill="none" stroke="currentColor" strokeWidth="2">
                           <circle cx="24" cy="24" r="18" stroke="currentColor" strokeWidth="2" strokeDasharray="2 3" />
                           <circle cx="24" cy="24" r="14" stroke="currentColor" strokeWidth="1.5" />
                           <path d="M 24 10 L 24 38 M 10 24 L 38 24 M 14 14 L 34 34 M 14 34 L 34 14" stroke="currentColor" strokeWidth="1.5" />
-                          <circle cx="24" cy="24" r="4" fill="currentColor" />
+                          <circle cx="24" cy="24" r="4" fill="#f59e0b" />
                           <path d="M 24 18 L 24 30 M 18 24 L 30 24" stroke="#2d2421" strokeWidth="2" />
                         </svg>
+                      </div>
+                      <div className="mt-2.5 text-center">
+                        <div className="text-[11px] font-black tracking-widest text-amber-400 uppercase">NAUTIC PORTAL</div>
+                        <div className="text-[10px] text-stone-400 font-medium">Vierwaldstättersee • Kundenbereich</div>
                       </div>
                     </div>
 
                     {/* Navigation Menu Items */}
-                    <nav className="space-y-1.5 text-xs font-medium">
+                    <nav className="space-y-2 text-sm font-semibold">
                       <button
                         type="button"
                         onClick={() => {
                           setStudentSidebarNav('dashboard');
                           setStudentNavSubTab('overview');
                         }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
                           studentSidebarNav === 'dashboard'
-                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
+                            ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <LayoutDashboard className="w-4 h-4 text-amber-400" />
+                          <LayoutDashboard className="w-4.5 h-4.5 text-amber-400 shrink-0" />
                           <span>Dashboard</span>
                         </div>
                         {studentSidebarNav === 'dashboard' && (
@@ -4253,14 +4286,14 @@ export default function App() {
                           setStudentNavSubTab('overview');
                           setShowStudentRequestModal(true);
                         }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
                           studentSidebarNav === 'calendar'
-                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
+                            ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <Calendar className="w-4 h-4" />
+                          <Calendar className="w-4.5 h-4.5 text-sky-400 shrink-0" />
                           <span>Termine &amp; Kalender</span>
                         </div>
                         {studentSidebarNav === 'calendar' && (
@@ -4274,19 +4307,24 @@ export default function App() {
                           setStudentSidebarNav('checkin');
                           setStudentNavSubTab('checkin');
                         }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
                           studentSidebarNav === 'checkin' || studentNavSubTab === 'checkin'
-                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
+                            ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <QrCode className="w-4 h-4 text-emerald-400" />
+                          <QrCode className="w-4.5 h-4.5 text-emerald-400 shrink-0" />
                           <span>Self Checkin (Miete)</span>
                         </div>
-                        {(studentSidebarNav === 'checkin' || studentNavSubTab === 'checkin') && (
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                            LIVE
+                          </span>
+                          {(studentSidebarNav === 'checkin' || studentNavSubTab === 'checkin') && (
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                          )}
+                        </div>
                       </button>
 
                       <button
@@ -4295,14 +4333,14 @@ export default function App() {
                           setStudentSidebarNav('store');
                           setStudentNavSubTab('packages');
                         }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
                           studentSidebarNav === 'store'
-                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
+                            ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <Award className="w-4 h-4" />
+                          <Award className="w-4.5 h-4.5 text-amber-400 shrink-0" />
                           <span>Store &amp; Abos</span>
                         </div>
                         {studentSidebarNav === 'store' && (
@@ -4316,14 +4354,14 @@ export default function App() {
                           setStudentSidebarNav('elearning');
                           setStudentNavSubTab('elearning');
                         }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
                           studentSidebarNav === 'elearning' || studentNavSubTab === 'elearning'
-                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
+                            ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <Play className="w-4 h-4 text-cyan-400" />
+                          <Play className="w-4.5 h-4.5 text-cyan-400 shrink-0" />
                           <span>E-Learning &amp; Videos</span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -4342,14 +4380,14 @@ export default function App() {
                           setStudentSidebarNav('invoices');
                           setStudentNavSubTab('invoices');
                         }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
                           studentSidebarNav === 'invoices'
-                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
+                            ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <FileText className="w-4 h-4" />
+                          <FileText className="w-4.5 h-4.5 text-violet-400 shrink-0" />
                           <span>Meine Rechnungen</span>
                         </div>
                         {studentSidebarNav === 'invoices' && (
@@ -4363,14 +4401,14 @@ export default function App() {
                           setStudentSidebarNav('legal');
                           setStudentNavSubTab('legal');
                         }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
                           studentSidebarNav === 'legal'
-                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
+                            ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <Shield className="w-4 h-4" />
+                          <Shield className="w-4.5 h-4.5 text-indigo-400 shrink-0" />
                           <span>Rechtliches &amp; Nachweise</span>
                         </div>
                         {studentSidebarNav === 'legal' && (
@@ -4384,14 +4422,14 @@ export default function App() {
                           setStudentSidebarNav('profile');
                           setShowStudentProfileModal(true);
                         }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
                           studentSidebarNav === 'profile'
-                            ? 'bg-[#4a3d38] text-white font-semibold shadow-sm'
+                            ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
                             : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <User className="w-4 h-4" />
+                          <User className="w-4.5 h-4.5 text-stone-300 shrink-0" />
                           <span>Mein Profil</span>
                         </div>
                         {studentSidebarNav === 'profile' && (
@@ -4402,7 +4440,7 @@ export default function App() {
                   </div>
 
                   {/* Unterer Sidebar-Bereich: Rollen-Umschalter, User-Card, Abmelden & Session-Timeout */}
-                  <div className="pt-6 space-y-4 border-t border-stone-700/60 mt-6">
+                  <div className="pt-5 space-y-3.5 border-t border-stone-700/60 mt-auto">
                     
                     {/* Live Session Countdown & Timeout-Status */}
                     <div className="bg-[#211a17] p-2.5 rounded-xl border border-stone-700/80 text-[11px] space-y-1.5">
@@ -4463,23 +4501,23 @@ export default function App() {
                     </div>
 
                     {/* Kunde Profil Card */}
-                    <div className="bg-[#3b302c] p-3 rounded-2xl border border-stone-700/60 flex items-center justify-between gap-2">
+                    <div className="bg-[#3b302c] p-3 rounded-2xl border border-stone-700/60 flex items-center justify-between gap-2 shadow-xs">
                       <div className="flex items-center gap-2.5 overflow-hidden">
-                        <div className="w-8 h-8 rounded-xl bg-amber-600/30 text-amber-300 border border-amber-500/40 flex items-center justify-center font-bold text-xs shrink-0">
-                          {studentProfile.first_name[0]}{studentProfile.last_name[0]}
+                        <div className="w-9 h-9 rounded-xl bg-amber-600/30 text-amber-300 border border-amber-500/40 flex items-center justify-center font-bold text-xs shrink-0 shadow-inner">
+                          {studentInitials}
                         </div>
                         <div className="truncate">
-                          <div className="text-xs font-bold text-white truncate">{studentProfile.first_name} {studentProfile.last_name}</div>
-                          <div className="text-[10px] text-stone-400">Customer</div>
+                          <div className="text-xs font-bold text-white truncate">{studentFullName}</div>
+                          <div className="text-[10px] text-amber-400/90 font-medium">Kunde • Angemeldet</div>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setShowStudentProfileModal(true)}
-                        className="text-stone-400 hover:text-white p-1"
+                        className="text-stone-400 hover:text-white p-1.5 rounded-lg hover:bg-stone-700/50 transition cursor-pointer"
                         title="Profil bearbeiten"
                       >
-                        <User className="w-3.5 h-3.5" />
+                        <User className="w-4 h-4" />
                       </button>
                     </div>
 
@@ -4491,7 +4529,7 @@ export default function App() {
                         setLoginSuccessMsg('Sie wurden erfolgreich abgemeldet.');
                         setTimeout(() => setLoginSuccessMsg(null), 4000);
                       }}
-                      className="w-full py-2 px-3 bg-[#3d322e]/60 hover:bg-rose-950/40 text-stone-300 hover:text-rose-200 border border-stone-700/70 hover:border-rose-800/60 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition"
+                      className="w-full py-2 px-3 bg-[#3d322e]/60 hover:bg-rose-950/40 text-stone-300 hover:text-rose-200 border border-stone-700/70 hover:border-rose-800/60 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer"
                     >
                       <LogIn className="w-3.5 h-3.5 rotate-180" />
                       <span>Abmelden</span>
@@ -4502,7 +4540,7 @@ export default function App() {
                 {/* ============================================================== */}
                 {/* HAUPTINHALT (RECHTS)                                          */}
                 {/* ============================================================== */}
-                <div className="flex-1 bg-stone-50/70 p-6 lg:p-8 space-y-6 overflow-y-auto">
+                <div className="flex-1 bg-[#fbfbfa] p-5 sm:p-8 xl:p-10 space-y-6 overflow-y-auto min-h-screen">
                   
                   {/* Toast Feedback */}
                   {magicFeedback && (
@@ -4516,7 +4554,7 @@ export default function App() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                        Willkommen zurück, {studentProfile.first_name}!
+                        Willkommen zurück, {displayName}!
                       </h1>
                       <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
                         <span>Hier ist Ihre Kunden-Übersicht für heute.</span>
@@ -4541,10 +4579,10 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => setShowStudentRequestModal(true)}
-                        className="px-4 py-2 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition"
+                        className="px-4 py-2 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition cursor-pointer"
                       >
                         <Plus className="w-4 h-4 text-amber-400" />
-                        <span>+ Lektion / Abo buchen</span>
+                        <span>Lektion / Abo buchen</span>
                       </button>
                     </div>
                   </div>
@@ -4561,7 +4599,10 @@ export default function App() {
                         <div>
                           <div className="flex items-center gap-1.5">
                             <h3 className="font-bold text-slate-900 text-sm">Luzern</h3>
-                            <span className="text-[11px] text-emerald-600 font-semibold">🌡️</span>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-200/80">
+                              <Waves className="w-3.5 h-3.5 text-sky-600" />
+                              <span>11.4°C See</span>
+                            </span>
                           </div>
                           <div className="text-3xl font-extrabold text-slate-900 mt-0.5 tracking-tight">
                             7°C
@@ -4573,7 +4614,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setStudentWeatherStation('luzern')}
-                          className="text-[10px] text-slate-300 uppercase tracking-wider font-semibold hover:text-slate-600 inline-flex items-center gap-1 transition"
+                          className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold hover:text-slate-600 inline-flex items-center gap-1 transition cursor-pointer"
                         >
                           PROGNOSE <ExternalLink className="w-2.5 h-2.5" />
                         </button>
@@ -4593,7 +4634,10 @@ export default function App() {
                         <div>
                           <div className="flex items-center gap-1.5">
                             <h3 className="font-bold text-slate-900 text-sm">Hergiswil</h3>
-                            <span className="text-[11px] text-emerald-600 font-semibold">🌡️</span>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-200/80">
+                              <Waves className="w-3.5 h-3.5 text-sky-600" />
+                              <span>11.2°C See</span>
+                            </span>
                           </div>
                           <div className="text-3xl font-extrabold text-slate-900 mt-0.5 tracking-tight">
                             7°C
@@ -4605,7 +4649,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setStudentWeatherStation('nidwalden')}
-                          className="text-[10px] text-slate-300 uppercase tracking-wider font-semibold hover:text-slate-600 inline-flex items-center gap-1 transition"
+                          className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold hover:text-slate-600 inline-flex items-center gap-1 transition cursor-pointer"
                         >
                           PROGNOSE <ExternalLink className="w-2.5 h-2.5" />
                         </button>
@@ -4668,10 +4712,10 @@ export default function App() {
                   {studentNavSubTab === 'overview' && (
                     <>
                       {/* 4 Feature Quick-Action Cards (Self Check-in, Fahrguthaben, E-Learning, Rechnungen) */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                     
                     {/* Kachel 1: Self Check-in */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all duration-150">
                       <div>
                         <div className="flex items-start justify-between mb-3">
                           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -4706,7 +4750,7 @@ export default function App() {
                     </div>
 
                     {/* Kachel 2: Fahrguthaben & VIP */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all duration-150">
                       <div>
                         <div className="flex items-start justify-between mb-3">
                           <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -4737,7 +4781,7 @@ export default function App() {
                     </div>
 
                     {/* Kachel 3: E-Learning & Lehrfilme (1-Jahres-Abo) */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all duration-150">
                       <div>
                         <div className="flex items-start justify-between mb-3">
                           <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
@@ -4776,7 +4820,7 @@ export default function App() {
                     </div>
 
                     {/* Kachel 4: Rechnungen & Belege */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+                    <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all duration-150">
                       <div>
                         <div className="flex items-start justify-between mb-3">
                           <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
@@ -5019,15 +5063,15 @@ export default function App() {
 
                           <div className="flex items-center justify-between">
                             <span className="text-slate-500">AGB / AMB:</span>
-                            <span className="font-bold text-rose-600">
-                              Ausstehend
+                            <span className={`font-bold ${agbAccepted ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {agbAccepted ? 'Bestätigt ✓' : 'Ausstehend'}
                             </span>
                           </div>
 
                           <div className="flex items-center justify-between">
                             <span className="text-slate-500">Aktive VIP Pakete:</span>
                             <span className="font-bold text-slate-900">
-                              0 Pakete
+                              {studentRemainingSessions > 0 ? `${studentRemainingSessions} Lektionen` : (hasDigitalAccess ? '1 Digital-Abo' : '0 Pakete')}
                             </span>
                           </div>
 
@@ -6665,7 +6709,6 @@ export default function App() {
               )}
                 </div>
               </div>
-            </div>
           );
         })()}
 
@@ -6834,7 +6877,7 @@ export default function App() {
                   <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
                     <tr>
                       <th className="p-3">Datum &amp; Zeit</th>
-                      <th className="p-3">Schüler</th>
+                      <th className="p-3">Kunde</th>
                       <th className="p-3">Leistung &amp; Boot</th>
                       <th className="p-3">Dauer</th>
                       <th className="p-3 text-right">Mein Honorar</th>
@@ -6891,7 +6934,7 @@ export default function App() {
                   <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
                     <tr>
                       <th className="p-3">Datum &amp; Zeit</th>
-                      <th className="p-3">Schüler &amp; Mobil</th>
+                      <th className="p-3">Kunde &amp; Mobil</th>
                       <th className="p-3">Leistung &amp; Boot</th>
                       <th className="p-3">Treffpunkt / Hafen</th>
                       <th className="p-3 text-right">Vorschau Honorar</th>
@@ -7187,7 +7230,7 @@ export default function App() {
                   <h2 className="text-xl font-bold text-slate-900">Eigene Nautic Logonseite mit SVG-Logo</h2>
                 </div>
                 <p className="text-sm text-slate-600 mt-1">
-                  Einheitlicher Magic-Link Zugang für alle Benutzer (Fahrlehrer, Schüler, Charterkunden &amp; Flottenleitung) sowie Registrierung mit anschliessender administrativer Profil-Zuweisung.
+                  Einheitlicher Magic-Link Zugang für alle Benutzer (Fahrlehrer, Kunde, Charterkunden &amp; Flottenleitung) sowie Registrierung mit anschliessender administrativer Profil-Zuweisung.
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -7399,7 +7442,7 @@ export default function App() {
                               }}
                               className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[11px] font-medium border border-emerald-200 transition cursor-pointer"
                             >
-                              Lukas (Schüler)
+                              Lukas (Kunde)
                             </button>
                           </div>
                         </div>
@@ -7684,7 +7727,7 @@ export default function App() {
                             </td>
                             <td className="py-3 px-3 max-w-[200px]">
                               <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-medium mb-1">
-                                Wunsch: {req.desired_role === 'instructor' ? 'Fahrlehrer' : req.desired_role === 'student' ? 'Schüler' : req.desired_role === 'renter' ? 'Bootsmieter' : 'Flottenleitung'}
+                                Wunsch: {req.desired_role === 'instructor' ? 'Fahrlehrer' : req.desired_role === 'student' ? 'Kunde' : req.desired_role === 'renter' ? 'Bootsmieter' : 'Flottenleitung'}
                               </span>
                               {req.notes && (
                                 <p className="text-[11px] text-slate-500 italic truncate" title={req.notes}>
@@ -7706,7 +7749,7 @@ export default function App() {
                                     className="px-2 py-1.5 bg-amber-50/60 border border-amber-300 rounded-lg text-xs font-medium text-amber-950 focus:outline-none focus:ring-1 focus:ring-amber-500"
                                   >
                                     <option value="instructor">Fahrlehrer / Coach</option>
-                                    <option value="student">Schüler / Fahrschüler</option>
+                                    <option value="student">Kunde (Fahrschule &amp; Coaching)</option>
                                     <option value="renter">Bootsmieter / Charterkunde</option>
                                     <option value="admin">Flottenleitung / Admin</option>
                                   </select>
@@ -7714,7 +7757,7 @@ export default function App() {
                               ) : (
                                 <div className="font-semibold text-slate-800">
                                   {req.assigned_profile === 'instructor' && 'Fahrlehrer / Coach'}
-                                  {req.assigned_profile === 'student' && 'Schüler / Fahrschüler'}
+                                  {req.assigned_profile === 'student' && 'Kunde'}
                                   {req.assigned_profile === 'renter' && 'Bootsmieter / Charter'}
                                   {req.assigned_profile === 'admin' && 'Flottenleitung / Admin'}
                                   {!req.assigned_profile && '-'}
@@ -8411,7 +8454,7 @@ export default function App() {
                     </div>
                     <p className="text-xs text-slate-500 mt-1">
                       {nauticLoginTestMode
-                        ? 'Testmodus ist AKTIV: Auf der Nautic-Logonseite werden Schnell-Login-Buttons für Coach, Admin und Schüler angezeigt.'
+                        ? 'Testmodus ist AKTIV: Auf der Nautic-Logonseite werden Schnell-Login-Buttons für Coach, Admin und Kunde angezeigt.'
                         : 'Testmodus ist AUS (Standard): Loginseite ist maximal aufgeräumt – nur E-Mail-Adresse und danach 10 Magic-Code Einzelboxen.'}
                     </p>
                   </div>
@@ -8713,7 +8756,7 @@ export default function App() {
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                   <div className="font-bold text-slate-900 font-mono">BoatingMagicLinkService</div>
                   <div className="text-slate-500 mt-1">
-                    Kryptografische Tokens (SHA-256), Ablaufprüfung, Schüler-Stornierungen.
+                    Kryptografische Tokens (SHA-256), Ablaufprüfung, Kunden-Stornierungen.
                   </div>
                 </div>
 
@@ -8736,7 +8779,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Modal: Termin stornieren (Schüler) */}
+      {/* Modal: Termin stornieren (Kunde) */}
       {cancelModalAppointment && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
@@ -9298,6 +9341,252 @@ export default function App() {
           chart={activeChartModal}
           onClose={() => setActiveChartModal(null)}
         />
+      )}
+
+      {/* ============================================================== */}
+      {/* HAMBURGER MENU DRAWER (ADMIN NAVIGATION & DIREKTLINKS)         */}
+      {/* ============================================================== */}
+      {adminMenuOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
+          <div 
+            className="fixed inset-0 cursor-pointer" 
+            onClick={() => setAdminMenuOpen(false)} 
+            aria-label="Hintergrund schliessen" 
+          />
+          <div className="relative w-full max-w-md bg-slate-900 border-l border-slate-800 text-white shadow-2xl flex flex-col justify-between p-6 z-10 overflow-y-auto animate-in slide-in-from-right duration-200">
+            
+            {/* Top / Main Content */}
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
+                    <Compass className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <h2 className="font-extrabold text-base tracking-tight text-white flex items-center gap-2">
+                      Admin-Navigation
+                      <span className="text-[10px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full border border-sky-400/30 font-bold uppercase">Core</span>
+                    </h2>
+                    <p className="text-xs text-slate-400">Bootsfahrschule Lake Zürich</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setAdminMenuOpen(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                  title="Menü schliessen"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* SECTION 1: DIREKTLINKS ZU DEN PORTALEN */}
+              <div className="space-y-3">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Direktlinks zu den Portalen</span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2.5">
+                  {/* Direktlink: Kunden-Portal */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('student');
+                      setAdminMenuOpen(false);
+                    }}
+                    className={`w-full p-3.5 rounded-2xl border text-left transition flex items-center justify-between gap-3 cursor-pointer ${
+                      activeTab === 'student'
+                        ? 'bg-amber-950/40 border-amber-500 text-white shadow-sm ring-1 ring-amber-500/50'
+                        : 'bg-slate-800/60 hover:bg-slate-800 border-slate-700/80 hover:border-amber-500/50 text-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-400/30 flex items-center justify-center shrink-0">
+                        <LayoutDashboard className="w-5 h-5 text-amber-400" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-sm text-white flex items-center gap-2">
+                          Kunden-Portal
+                          <span className="text-[10px] bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded font-black uppercase">Direkt</span>
+                        </div>
+                        <div className="text-xs text-slate-400">Dashboard, Termine, Abos &amp; Self Check-in</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                  </button>
+
+                  {/* Direktlink: Fahrlehrer-Portal */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('instructor');
+                      setAdminMenuOpen(false);
+                    }}
+                    className={`w-full p-3.5 rounded-2xl border text-left transition flex items-center justify-between gap-3 cursor-pointer ${
+                      activeTab === 'instructor'
+                        ? 'bg-sky-950/40 border-sky-500 text-white shadow-sm ring-1 ring-sky-500/50'
+                        : 'bg-slate-800/60 hover:bg-slate-800 border-slate-700/80 hover:border-sky-500/50 text-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-400/30 flex items-center justify-center shrink-0">
+                        <User className="w-5 h-5 text-sky-400" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-sm text-white flex items-center gap-2">
+                          Fahrlehrer-Portal
+                          <span className="text-[10px] bg-sky-400 text-slate-950 px-1.5 py-0.2 rounded font-black uppercase">Coach</span>
+                        </div>
+                        <div className="text-xs text-slate-400">Fahrstunden, Stundenrapport &amp; Monatsabschluss</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                  </button>
+
+                  {/* Direktlink: Logonseite */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('login');
+                      setAdminMenuOpen(false);
+                    }}
+                    className={`w-full p-3 rounded-xl border text-left transition flex items-center justify-between gap-3 cursor-pointer ${
+                      activeTab === 'login'
+                        ? 'bg-slate-800 border-sky-500 text-white shadow-sm ring-1 ring-sky-500/50'
+                        : 'bg-slate-800/40 hover:bg-slate-800 border-slate-700/70 text-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 flex items-center justify-center shrink-0">
+                        <LogIn className="w-4 h-4 text-indigo-400" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-white">Nautic Logonseite</div>
+                        <div className="text-[11px] text-slate-400">Passwortloser Magic-Link Zugang</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                  </button>
+                </div>
+              </div>
+
+              {/* SECTION 2: ADMIN ARBEITSBEREICHE */}
+              <div className="space-y-3">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Admin Arbeitsbereiche</span>
+                </div>
+
+                <div className="space-y-1.5">
+                  {[
+                    { id: 'overview', title: '0. Zentrale Übersicht & Schnellaktionen', icon: LayoutDashboard, color: 'text-amber-400' },
+                    { id: 'payroll', title: '1. Lohnabrechnungen & Timesheets', icon: FileSpreadsheet, color: 'text-sky-400' },
+                    { id: 'services', title: '2. Dienstleistungen & Tarife', icon: ShoppingBag, color: 'text-amber-400', badge: services.length },
+                    { id: 'promos', title: '3. Gutscheine & Rabattcodes', icon: Tag, color: 'text-emerald-400', badge: promoCodes.length },
+                    { id: 'account_requests', title: '4. Account-Anfragen', icon: UserCheck, color: 'text-indigo-400', badge: accountRequests.filter(r => r.status === 'pending').length, badgeColor: 'bg-amber-400 text-slate-950' },
+                    { id: 'fleet', title: '5. Flotte & Telemetrie (NMEA 2000)', icon: Ship, color: 'text-cyan-400', badge: boats.filter(b => b.status === 'occupied').length > 0 ? `${boats.filter(b => b.status === 'occupied').length} auf See` : null, badgeColor: 'bg-amber-400 text-slate-950 animate-pulse' }
+                  ].map(sec => {
+                    const IconComp = sec.icon;
+                    const isActive = activeTab === 'payroll' && adminSectionTab === sec.id;
+                    return (
+                      <button
+                        key={sec.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('payroll');
+                          setAdminSectionTab(sec.id as any);
+                          setAdminMenuOpen(false);
+                        }}
+                        className={`w-full p-2.5 rounded-xl border text-left transition flex items-center justify-between gap-2.5 cursor-pointer text-xs font-semibold ${
+                          isActive
+                            ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
+                            : 'bg-slate-800/40 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : sec.color}`} />
+                          <span className="truncate">{sec.title}</span>
+                        </div>
+                        {sec.badge !== undefined && sec.badge !== null && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${sec.badgeColor || (isActive ? 'bg-white/20 text-white' : 'bg-slate-700 text-slate-200')}`}>
+                            {sec.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* SECTION 3: SYSTEM & KONFIGURATION */}
+              <div className="space-y-3">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <Palette className="w-3.5 h-3.5 text-purple-400" />
+                  <span>System &amp; Tools</span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('cms');
+                      setAdminMenuOpen(false);
+                    }}
+                    className={`w-full p-2.5 rounded-xl border text-left transition flex items-center justify-between gap-2.5 cursor-pointer text-xs font-semibold ${
+                      activeTab === 'cms'
+                        ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
+                        : 'bg-slate-800/40 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <LayoutTemplate className="w-4 h-4 text-purple-400 shrink-0" />
+                      <span>Startseite &amp; Mini-CMS (Vorlagen)</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('architecture');
+                      setAdminMenuOpen(false);
+                    }}
+                    className={`w-full p-2.5 rounded-xl border text-left transition flex items-center justify-between gap-2.5 cursor-pointer text-xs font-semibold ${
+                      activeTab === 'architecture'
+                        ? 'bg-sky-600 text-white border-sky-500 shadow-sm'
+                        : 'bg-slate-800/40 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Layers className="w-4 h-4 text-sky-400 shrink-0" />
+                      <span>Backend-Architektur &amp; DB-Schema</span>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-6 border-t border-slate-800 mt-6 flex items-center justify-between text-xs text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Nautic Core • Online
+              </span>
+              <button
+                type="button"
+                onClick={() => setAdminMenuOpen(false)}
+                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold transition cursor-pointer"
+              >
+                Schliessen
+              </button>
+            </div>
+
+          </div>
+        </div>
       )}
     </div>
   );

@@ -145,7 +145,7 @@ export const INITIAL_SERVICES: ServiceOffer[] = [
     name: 'Nautic Academy: Digitales Theorie- & Videopaket (1-Jahres-Abo)',
     description: 'Das offizielle Schweizer E-Learning-Komplettpaket für Motorboot Kat. A & Segeln Kat. D: Uneingeschränkter 365-Tage-Zugriff auf über 25 HD-Manöver-Lehrfilme (Hafenmanöver bei Seitenwind, Boje über Bord, Radeffekt), amtliche hochauflösende Schifffahrts-Bildtafeln (Lichterführung BSV, Sturmwarnung, Seezeichen) und den interaktiven ASA-Theorie- & Prüfungsfragentrainer.',
     offer_type: 'digital',
-    target_audience: 'Fahrschüler & Bootsmieter (365 Tage gültig)',
+    target_audience: 'Kunden & Bootsmieter (365 Tage gültig)',
     image_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
     is_active: true,
     is_subscription: true,
@@ -162,7 +162,7 @@ export const INITIAL_PROMO_CODES: PromoCode[] = [
   {
     id: 1,
     code: 'BOOT50',
-    description: 'CHF 50.- Willkommens-Rabatt für neue Fahrschüler',
+    description: 'CHF 50.- Willkommens-Rabatt für neue Kunden',
     discount_type: 'fixed',
     discount_value: 50.0,
     min_order_amount: 300.0,
@@ -651,7 +651,7 @@ export const INITIAL_CMS_BLOCKS: CmsBlock[] = [
         { title: 'Motorboot Kat. A', text: 'Intensive Prüfungsvorbereitung, Hafenmanöver, An- und Ablegen, Mann-über-Bord und Knotenkunde mit hoher Erfolgsquote.' },
         { title: 'Segelausbildung Kat. D', text: 'Von den Segelgrundlagen bis zur Regatta-Taktik. Praxisnahe Ausbildung bei jedem Wind auf dem See.' },
         { title: 'Flottenvermietung & Charter', text: 'Gepflegte Boote (Boesch, Axopar) für Ausflüge, Sonnenuntergangs-Cruises oder private Events mieten.' },
-        { title: 'Crew & Schüler Portal', text: 'Passwortloser Magic-Link Zugang: Alle Fahrstunden, Ausbildungskarten, Termine und Abrechnungen auf einen Blick.' }
+        { title: 'Crew & Kunden-Portal', text: 'Passwortloser Magic-Link Zugang: Alle Fahrstunden, Ausbildungskarten, Termine und Abrechnungen auf einen Blick.' }
       ]
     }
   },
@@ -673,7 +673,7 @@ export const INITIAL_CMS_BLOCKS: CmsBlock[] = [
     type: 'cta',
     title: 'Bereit für das Skipper-Patent?',
     subtitle: 'Fordere jetzt dein persönliches Konto an oder logge dich direkt per Magic-Link ein.',
-    content: 'Als Schüler oder Crew-Mitglied benötigst du kein Passwort. Gib einfach deine E-Mail-Adresse ein und starte sofort.',
+    content: 'Als Kunde oder Crew-Mitglied benötigst du kein Passwort. Gib einfach deine E-Mail-Adresse ein und starte sofort.',
     sort_order: 40,
     is_visible: true,
     extra: { btn_text: 'Jetzt per Magic-Link einloggen', btn_link: '#magic-section' }
