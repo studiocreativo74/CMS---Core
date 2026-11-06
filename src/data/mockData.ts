@@ -13,7 +13,9 @@ import {
   Boat,
   BoatCheckin,
   BoatCheckout,
-  CmsBlock
+  CmsBlock,
+  Announcement,
+  AnnouncementRead
 } from '../types/index.ts';
 
 export const INITIAL_ACCOUNT_REQUESTS: AccountRequest[] = [
@@ -953,3 +955,87 @@ export const INITIAL_WORKING_HOURS: CoachWorkingHour[] = [
     note: 'Terminkoordination & Dossierprüfung Schifffahrtsamt'
   }
 ];
+
+export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
+  {
+    id: 1,
+    title: 'Sicherheits-Vorschrift: Schwimmwestenpflicht bei Wassertemperaturen unter 12°C',
+    content: `Gemäss Weisung der Seepolizei Vierwaldstättersee und Schifffahrtsamt gilt ab sofort für alle Ausbildungs- und Mietfahrten eine lückenlose Schwimmwesten-Tragepflicht an Deck, solange die Seetemperatur unter 12°C liegt.
+
+Bitte prüfen Sie vor jedem Ablegen den ordnungsgemässen Sitz und Zustand der automatischen Rettungswesten sowie die Notsignalmittel an Bord.`,
+    target_roles: ['coach', 'customer'],
+    author_id: 1,
+    author_name: 'Backoffice / Administration',
+    is_active: true,
+    created_at: '2026-11-04 08:30:00',
+    updated_at: '2026-11-04 08:30:00'
+  },
+  {
+    id: 2,
+    title: 'Hafensperrung Luzern am kommenden Samstag (See-Regatta)',
+    content: `Wichtige Information für alle Bootsmieten & Charter-Kunden:
+
+Am Samstag, 14. November 2026, bleibt das Seebecken Luzern zwischen 10:00 und 16:30 Uhr für den privaten Durchgangsverkehr wegen der Ruder-Herbstregatta gesperrt. Alle Buchungen & Mietboote weichen auf die Ausweich-Routen Richtung Küssnacht und Stansstad/Hergiswil aus.`,
+    target_roles: ['customer'],
+    author_id: 1,
+    author_name: 'Backoffice / Administration',
+    is_active: true,
+    created_at: '2026-11-05 14:00:00',
+    updated_at: '2026-11-05 14:00:00'
+  },
+  {
+    id: 3,
+    title: 'Neue Prüfungs-Checkliste Schifffahrtsamt Kat. A (ASA 2026)',
+    content: `Liebes Coach-Team,
+
+die revidierten Bewertungsbögen für die praktische Führerprüfung Kat. A sind eingetroffen.
+Schwerpunkte der Experten:
+1. Präziseres Anfahren von Bojen bei ablandigem Wind
+2. Lückenlose mündliche Manöver-Ansagen & 360°-Rundumblick vor Kurswechseln
+3. Vertäuung mit doppeltem Palstek und Kopfschlag
+
+Bitte die Unterlagen vor der nächsten Fahrstunde im Trainer-Dossier studieren.`,
+    target_roles: ['coach'],
+    author_id: 1,
+    author_name: 'Backoffice / Administration',
+    is_active: true,
+    created_at: '2026-11-06 07:15:00',
+    updated_at: '2026-11-06 07:15:00'
+  }
+];
+
+export const INITIAL_ANNOUNCEMENT_READS: AnnouncementRead[] = [
+  {
+    id: 1,
+    announcement_id: 1,
+    user_id: 2,
+    user_name: 'Stefan Brunner',
+    user_role: 'coach',
+    read_at: '2026-11-04 09:14:22'
+  },
+  {
+    id: 2,
+    announcement_id: 1,
+    user_id: 102,
+    user_name: 'Elena Moser',
+    user_role: 'customer',
+    read_at: '2026-11-04 11:45:10'
+  },
+  {
+    id: 3,
+    announcement_id: 1,
+    user_id: 103,
+    user_name: 'Marc Zürcher',
+    user_role: 'customer',
+    read_at: '2026-11-05 08:20:05'
+  },
+  {
+    id: 4,
+    announcement_id: 3,
+    user_id: 2,
+    user_name: 'Stefan Brunner',
+    user_role: 'coach',
+    read_at: '2026-11-06 08:12:44'
+  }
+];
+

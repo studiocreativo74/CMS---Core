@@ -270,3 +270,27 @@ export interface CmsBlock {
   is_visible: boolean;
   extra?: any;
 }
+
+export type AnnouncementTargetRole = 'coach' | 'customer';
+
+export interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  target_roles: AnnouncementTargetRole[];
+  author_id: number;
+  author_name?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface AnnouncementRead {
+  id: number;
+  announcement_id: number;
+  user_id: number;
+  user_name: string;
+  user_role: AnnouncementTargetRole | 'admin';
+  read_at: string;
+}
+

@@ -79,7 +79,8 @@ import {
   FileDown,
   GraduationCap,
   PlayCircle,
-  Menu
+  Menu,
+  Bell
 } from 'lucide-react';
 
 // --- Modulare Typen & Mock-Daten (Architektur-Refactoring) ---
@@ -102,7 +103,10 @@ import type {
   ElearningVideo,
   ElearningChart,
   ElearningQuizQuestion,
-  CmsBlock
+  CmsBlock,
+  Announcement,
+  AnnouncementRead,
+  AnnouncementTargetRole
 } from './types/index.ts';
 
 import {
@@ -120,13 +124,16 @@ import {
   INITIAL_INSTRUCTORS,
   INITIAL_APPOINTMENTS,
   INITIAL_AVAILABILITIES,
-  INITIAL_WORKING_HOURS
+  INITIAL_WORKING_HOURS,
+  INITIAL_ANNOUNCEMENTS,
+  INITIAL_ANNOUNCEMENT_READS
 } from './data/mockData.ts';
 
 import { ElearningSection } from './components/elearning/ElearningSection.tsx';
 import { VideoPlayerModal } from './components/elearning/VideoPlayerModal.tsx';
 import { ChartZoomModal } from './components/elearning/ChartZoomModal.tsx';
-
+import { AnnouncementBanner } from './components/announcements/AnnouncementBanner.tsx';
+import { AnnouncementsManagementView } from './components/announcements/AnnouncementsManagementView.tsx';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'payroll' | 'student' | 'instructor' | 'login' | 'cms' | 'architecture'>('student');
@@ -369,9 +376,123 @@ export default function App() {
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>(INITIAL_PROMO_CODES);
   const [customerSubscriptions, setCustomerSubscriptions] = useState<CustomerSubscription[]>(INITIAL_CUSTOMER_SUBSCRIPTIONS);
 
-  // Admin Section Navigation: Übersicht (All-in-One Command Center) | Payroll | Services & Tarife | Gutscheine & Codes | Account-Anfragen | Flotte & Telemetrie
-  const [adminSectionTab, setAdminSectionTab] = useState<'overview' | 'payroll' | 'services' | 'promos' | 'account_requests' | 'fleet'>('overview');
+  // Admin Section Navigation: Übersicht (All-in-One Command Center) | Payroll | Services & Tarife | Gutscheine & Codes | Account-Anfragen | Flotte & Telemetrie | Mitteilungen & Leseprotokoll
+  const [adminSectionTab, setAdminSectionTab] = useState<'overview' | 'payroll' | 'services' | 'promos' | 'account_requests' | 'fleet' | 'announcements'>('overview');
   const [adminMenuOpen, setAdminMenuOpen] = useState<boolean>(false);
+
+  // --- STATE: NACHRICHTEN, MITTEILUNGEN & REVISIONSSICHERE LESEPROTOKOLLE ---
+  const [announcements, setAnnouncements] = useState<Announcement[]>(() => {
+    try {
+      const saved = localStorage.getItem('nautic_announcements');
+      return saved ? JSON.parse(saved) : INITIAL_ANNOUNCEMENTS;
+    } catch (e) {
+      return INITIAL_ANNOUNCEMENTS;
+    }
+  });
+
+  const [announcementReads, setAnnouncementReads] = useState<AnnouncementRead[]>(() => {
+    try {
+      const saved = localStorage.getItem('nautic_announcement_reads');
+      return saved ? JSON.parse(saved) : INITIAL_ANNOUNCEMENT_READS;
+    } catch (e) {
+      return INITIAL_ANNOUNCEMENT_READS;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('nautic_announcements', JSON.stringify(announcements));
+  }, [announcements]);
+
+  useEffect(() => {
+    localStorage.setItem('nautic_announcement_reads', JSON.stringify(announcementReads));
+  }, [announcementReads]);
+
+  const handleCreateAnnouncement = (data: {
+    title: string;
+    content: string;
+    target_roles: AnnouncementTargetRole[];
+    is_active: boolean;
+  }) => {
+    const newId = Math.max(0, ...announcements.map(a => a.id)) + 1;
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const newAnn: Announcement = {
+      id: newId,
+      title: data.title,
+      content: data.content,
+      target_roles: data.target_roles,
+      author_id: 1,
+      author_name: 'Backoffice / Administration',
+      is_active: data.is_active,
+      created_at: now,
+      updated_at: now
+    };
+    setAnnouncements(prev => [newAnn, ...prev]);
+    setMagicFeedback(`Mitteilung «${data.title}» wurde erfolgreich veröffentlicht.`);
+    setTimeout(() => setMagicFeedback(null), 4000);
+  };
+
+  const handleUpdateAnnouncement = (data: {
+    id: number;
+    title: string;
+    content: string;
+    target_roles: AnnouncementTargetRole[];
+    is_active: boolean;
+  }) => {
+    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    setAnnouncements(prev =>
+      prev.map(a =>
+        a.id === data.id
+          ? {
+              ...a,
+              title: data.title,
+              content: data.content,
+              target_roles: data.target_roles,
+              is_active: data.is_active,
+              updated_at: now
+            }
+          : a
+      )
+    );
+    setMagicFeedback(`Mitteilung «${data.title}» wurde erfolgreich aktualisiert.`);
+    setTimeout(() => setMagicFeedback(null), 4000);
+  };
+
+  const handleDeleteAnnouncement = (id: number) => {
+    const toDelete = announcements.find(a => a.id === id);
+    setAnnouncements(prev => prev.filter(a => a.id !== id));
+    // Kaskadierendes Löschen der Lesebestätigungen (ON DELETE CASCADE)
+    setAnnouncementReads(prev => prev.filter(r => r.announcement_id !== id));
+    setMagicFeedback(`Mitteilung ${toDelete ? `«${toDelete.title}» ` : ''}und alle zugehörigen Leseprotokolle wurden gelöscht.`);
+    setTimeout(() => setMagicFeedback(null), 4000);
+  };
+
+  const handleMarkAnnouncementRead = (
+    announcementId: number,
+    userRole: AnnouncementTargetRole,
+    userId: number,
+    userName: string
+  ) => {
+    // Unique check (announcement_id + user_id)
+    const exists = announcementReads.some(
+      r => r.announcement_id === announcementId && r.user_id === userId
+    );
+    if (!exists) {
+      const newReadId = Math.max(0, ...announcementReads.map(r => r.id)) + 1;
+      const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+      const newRead: AnnouncementRead = {
+        id: newReadId,
+        announcement_id: announcementId,
+        user_id: userId,
+        user_name: userName,
+        user_role: userRole,
+        read_at: now
+      };
+      setAnnouncementReads(prev => [...prev, newRead]);
+    }
+    const ann = announcements.find(a => a.id === announcementId);
+    setMagicFeedback(`Mitteilung ${ann ? `«${ann.title}» ` : ''}wurde als gelesen quittiert.`);
+    setTimeout(() => setMagicFeedback(null), 3500);
+  };
 
   // Customer Store View State
   const [storeViewMode, setStoreViewMode] = useState<'catalog' | 'my_subscriptions'>('catalog');
@@ -768,6 +889,31 @@ export default function App() {
   const currentInstructor = useMemo(() => {
     return instructors.find(i => i.id === currentInstructorId) || instructors[0];
   }, [instructors, currentInstructorId]);
+
+  // Ungelesene Mitteilungen für Coach (Live-Filterung & Quittierungsprüfung)
+  const unreadCoachAnnouncements = useMemo(() => {
+    return announcements.filter(a => {
+      if (!a.is_active) return false;
+      if (!a.target_roles.includes('coach')) return false;
+      const isRead = announcementReads.some(
+        r => r.announcement_id === a.id && r.user_id === currentInstructor.id
+      );
+      return !isRead;
+    });
+  }, [announcements, announcementReads, currentInstructor.id]);
+
+  // Ungelesene Mitteilungen für Kunde (Live-Filterung & Quittierungsprüfung)
+  const currentCustomerId = 101;
+  const unreadCustomerAnnouncements = useMemo(() => {
+    return announcements.filter(a => {
+      if (!a.is_active) return false;
+      if (!a.target_roles.includes('customer')) return false;
+      const isRead = announcementReads.some(
+        r => r.announcement_id === a.id && r.user_id === currentCustomerId
+      );
+      return !isRead;
+    });
+  }, [announcements, announcementReads, currentCustomerId]);
 
   // Berechnungen für Admin-Payroll
   const filteredAppointments = useMemo(() => {
@@ -1761,6 +1907,24 @@ export default function App() {
                       {boats.filter(b => b.status === 'occupied').length} auf See
                     </span>
                   )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdminSectionTab('announcements')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                    adminSectionTab === 'announcements'
+                      ? 'bg-sky-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  <Bell className="w-4 h-4 text-amber-400" />
+                  <span>6. Mitteilungen &amp; Leseprotokoll</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    adminSectionTab === 'announcements' ? 'bg-white/20 text-white' : 'bg-sky-100 text-sky-800'
+                  }`}>
+                    {announcements.length}
+                  </span>
                 </button>
               </div>
 
@@ -2764,6 +2928,19 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* SUB-BEREICH 6: MITTEILUNGEN & REVISIONSSICHERE LESEPROTOKOLLE */}
+            {adminSectionTab === 'announcements' && (
+              <div className="space-y-6 animate-in fade-in duration-150">
+                <AnnouncementsManagementView
+                  announcements={announcements}
+                  reads={announcementReads}
+                  onCreateAnnouncement={handleCreateAnnouncement}
+                  onUpdateAnnouncement={handleUpdateAnnouncement}
+                  onDeleteAnnouncement={handleDeleteAnnouncement}
+                />
               </div>
             )}
 
@@ -4549,6 +4726,15 @@ export default function App() {
                       <span>{magicFeedback}</span>
                     </div>
                   )}
+
+                  {/* Rollenbasierte Mitteilungen für Kunden mit Quittierungs-Log */}
+                  <AnnouncementBanner
+                    announcements={unreadCustomerAnnouncements}
+                    currentRole="customer"
+                    currentUserId={currentCustomerId}
+                    currentUserName={studentFullName}
+                    onMarkRead={id => handleMarkAnnouncementRead(id, 'customer', currentCustomerId, studentFullName)}
+                  />
 
                   {/* 1. Header Zeile */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -6763,6 +6949,15 @@ export default function App() {
                 />
               </div>
             </div>
+
+            {/* Rollenbasierte Mitteilungen für Coaches mit Quittierungs-Log */}
+            <AnnouncementBanner
+              announcements={unreadCoachAnnouncements}
+              currentRole="coach"
+              currentUserId={currentInstructor.id}
+              currentUserName={currentInstructor.name}
+              onMarkRead={id => handleMarkAnnouncementRead(id, 'coach', currentInstructor.id, currentInstructor.name)}
+            />
 
             {/* Monatsabschluss Banner */}
             <div className={`p-6 rounded-2xl border shadow-sm transition ${
@@ -9487,7 +9682,8 @@ export default function App() {
                     { id: 'services', title: '2. Dienstleistungen & Tarife', icon: ShoppingBag, color: 'text-amber-400', badge: services.length },
                     { id: 'promos', title: '3. Gutscheine & Rabattcodes', icon: Tag, color: 'text-emerald-400', badge: promoCodes.length },
                     { id: 'account_requests', title: '4. Account-Anfragen', icon: UserCheck, color: 'text-indigo-400', badge: accountRequests.filter(r => r.status === 'pending').length, badgeColor: 'bg-amber-400 text-slate-950' },
-                    { id: 'fleet', title: '5. Flotte & Telemetrie (NMEA 2000)', icon: Ship, color: 'text-cyan-400', badge: boats.filter(b => b.status === 'occupied').length > 0 ? `${boats.filter(b => b.status === 'occupied').length} auf See` : null, badgeColor: 'bg-amber-400 text-slate-950 animate-pulse' }
+                    { id: 'fleet', title: '5. Flotte & Telemetrie (NMEA 2000)', icon: Ship, color: 'text-cyan-400', badge: boats.filter(b => b.status === 'occupied').length > 0 ? `${boats.filter(b => b.status === 'occupied').length} auf See` : null, badgeColor: 'bg-amber-400 text-slate-950 animate-pulse' },
+                    { id: 'announcements', title: '6. Mitteilungen & Leseprotokoll', icon: Bell, color: 'text-sky-400', badge: announcements.length, badgeColor: 'bg-sky-500 text-white' }
                   ].map(sec => {
                     const IconComp = sec.icon;
                     const isActive = activeTab === 'payroll' && adminSectionTab === sec.id;
