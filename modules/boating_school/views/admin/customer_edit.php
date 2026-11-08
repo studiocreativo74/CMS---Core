@@ -106,7 +106,7 @@ ob_start();
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-1 small">
                 <li class="breadcrumb-item"><a href="?route=admin/boating">Nautic</a></li>
-                <li class="breadcrumb-item"><a href="?route=admin/boating/customers">Kunden &amp; Schüler</a></li>
+                <li class="breadcrumb-item"><a href="?route=admin/boating/customers">Kunden</a></li>
                 <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?></li>
             </ol>
         </nav>

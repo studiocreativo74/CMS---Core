@@ -134,6 +134,8 @@ import { VideoPlayerModal } from './components/elearning/VideoPlayerModal.tsx';
 import { ChartZoomModal } from './components/elearning/ChartZoomModal.tsx';
 import { AnnouncementBanner } from './components/announcements/AnnouncementBanner.tsx';
 import { AnnouncementsManagementView } from './components/announcements/AnnouncementsManagementView.tsx';
+import { StudentBookingModal } from './components/customer/StudentBookingModal.tsx';
+import { StudentProfileModal, StudentProfileData } from './components/customer/StudentProfileModal.tsx';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'payroll' | 'student' | 'instructor' | 'login' | 'cms' | 'architecture'>('student');
@@ -1024,6 +1026,61 @@ export default function App() {
     setCancelReason('');
     setMagicFeedback('Termin erfolgreich storniert. Eine E-Mail-Bestätigung wurde an den Fahrlehrer und an dich versandt.');
     setTimeout(() => setMagicFeedback(null), 6000);
+  };
+
+  const activeStudentFullName = (!studentProfile.first_name || studentProfile.first_name.toLowerCase() === 'office')
+    ? 'Roland Grüter'
+    : `${studentProfile.first_name} ${studentProfile.last_name || ''}`.trim();
+
+  const handleBookStudentAppointment = (data: {
+    service_name: string;
+    duration_minutes: number;
+    price: number;
+    instructor_id: number;
+    instructor_name: string;
+    boat_name: string;
+    location_name: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    notes: string;
+    use_balance: boolean;
+  }) => {
+    const newId = appointments.length > 0 ? Math.max(...appointments.map(a => a.id)) + 1 : 1;
+    const newAppointment: Appointment = {
+      id: newId,
+      customer_id: 1,
+      customer_name: activeStudentFullName,
+      customer_email: studentProfile.email,
+      customer_phone: studentProfile.phone,
+      instructor_id: data.instructor_id,
+      instructor_name: data.instructor_name,
+      service_name: data.service_name,
+      boat_name: data.boat_name,
+      location_name: data.location_name,
+      date: data.date,
+      start_time: data.start_time,
+      end_time: data.end_time,
+      duration_minutes: data.duration_minutes,
+      price: data.price,
+      status: 'confirmed',
+      instructor_payout_amount: Math.round((data.duration_minutes / 60) * 65.0 * 100) / 100,
+      instructor_payout_status: 'open',
+      instructor_payout_note: data.notes || (data.use_balance ? 'Gebucht über VIP-Guthaben' : 'Direktbuchung im Kundenportal')
+    };
+
+    setAppointments(prev => [newAppointment, ...prev]);
+    setMagicFeedback(`Termin für "${data.service_name}" am ${data.date} um ${data.start_time.slice(0, 5)} Uhr erfolgreich gebucht!`);
+    setTimeout(() => setMagicFeedback(null), 6000);
+  };
+
+  const handleSaveStudentProfile = (updatedProfile: StudentProfileData) => {
+    setStudentProfile(prev => ({
+      ...prev,
+      ...updatedProfile
+    }));
+    setMagicFeedback('Kundenprofil & Stammdaten (inkl. Allergien) erfolgreich aktualisiert.');
+    setTimeout(() => setMagicFeedback(null), 5000);
   };
 
   // --- STORE & GUTSCHEIN HELPER FUNCTIONS ---
@@ -4718,6 +4775,7 @@ export default function App() {
                 {/* HAUPTINHALT (RECHTS)                                          */}
                 {/* ============================================================== */}
                 <div className="flex-1 bg-[#fbfbfa] p-5 sm:p-8 xl:p-10 space-y-6 overflow-y-auto min-h-screen">
+                  <div className="max-w-[1500px] w-full mx-auto space-y-6">
                   
                   {/* Toast Feedback */}
                   {magicFeedback && (
@@ -4768,7 +4826,7 @@ export default function App() {
                         className="px-4 py-2 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition cursor-pointer"
                       >
                         <Plus className="w-4 h-4 text-amber-400" />
-                        <span>Lektion / Abo buchen</span>
+                        <span>Termin buchen</span>
                       </button>
                     </div>
                   </div>
@@ -6893,6 +6951,7 @@ export default function App() {
                   setMagicFeedback={setMagicFeedback}
                 />
               )}
+                  </div>
                 </div>
               </div>
           );
@@ -9537,6 +9596,31 @@ export default function App() {
           onClose={() => setActiveChartModal(null)}
         />
       )}
+
+      {/* ============================================================== */}
+      {/* MODAL: TERMIN BUCHEN (KUNDE - NUR ERFASSTE LEISTUNGEN & COACHES)*/}
+      {/* ============================================================== */}
+      <StudentBookingModal
+        isOpen={showStudentRequestModal}
+        onClose={() => setShowStudentRequestModal(false)}
+        services={services}
+        instructors={instructors}
+        studentRemainingSessions={studentRemainingSessions}
+        studentName={activeStudentFullName}
+        studentEmail={studentProfile.email}
+        studentPhone={studentProfile.phone}
+        onSubmit={handleBookStudentAppointment}
+      />
+
+      {/* ============================================================== */}
+      {/* MODAL: KUNDENPROFIL & STAMMDATEN (INKL. ALLERGIEN)             */}
+      {/* ============================================================== */}
+      <StudentProfileModal
+        isOpen={showStudentProfileModal}
+        onClose={() => setShowStudentProfileModal(false)}
+        profile={studentProfile}
+        onSave={handleSaveStudentProfile}
+      />
 
       {/* ============================================================== */}
       {/* HAMBURGER MENU DRAWER (ADMIN NAVIGATION & DIREKTLINKS)         */}

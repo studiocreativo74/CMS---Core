@@ -86,7 +86,7 @@ $subtitleText = $navSubtitle ?? 'Zentrales Management für Praxisfahrstunden, Bo
                         <li>
                             <a class="dropdown-item rounded-2 py-2 d-flex align-items-center gap-2 <?= str_starts_with($routeClean, 'admin/boating/customers') ? 'active fw-bold' : '' ?>" href="?route=admin/boating/customers">
                                 <i class="bi bi-people text-success"></i>
-                                <span>Schüler &amp; Kunden (CRM)</span>
+                                <span>Kunden (CRM)</span>
                             </a>
                         </li>
                         <li>
@@ -116,6 +116,15 @@ $subtitleText = $navSubtitle ?? 'Zentrales Management für Praxisfahrstunden, Bo
                             <a class="dropdown-item rounded-2 py-2 d-flex align-items-center gap-2 <?= str_starts_with($routeClean, 'admin/boating/instructor-portal') ? 'active fw-bold' : '' ?>" href="?route=admin/boating/instructor-portal">
                                 <i class="bi bi-person-workspace text-primary"></i>
                                 <span>Fahrlehrer-Portal</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-2 py-2 d-flex align-items-center justify-content-between <?= str_starts_with($routeClean, 'bootschule') ? 'active fw-bold' : '' ?>" href="?route=bootschule" target="_blank" rel="noopener">
+                                <span class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-speedometer2 text-warning"></i>
+                                    <span>Kunden-Portal</span>
+                                </span>
+                                <span class="badge bg-warning bg-opacity-25 text-dark border border-warning border-opacity-50" style="font-size: 0.65rem;">Kunde</span>
                             </a>
                         </li>
                         <li>

@@ -512,7 +512,7 @@ ob_start();
             <div class="cust-modal-header text-white">
                 <div class="d-flex align-items-start justify-content-between">
                     <div>
-                        <h4 class="fw-bold text-white mb-1" id="customerModalTitle">Kunde / Schüler bearbeiten</h4>
+                        <h4 class="fw-bold text-white mb-1" id="customerModalTitle">Kunde bearbeiten</h4>
                         <div class="text-white-50 small" id="customerModalSubtitle">Verwalten Sie Basisdaten, Prüfungsstatus und CRM-Informationen.</div>
                     </div>
                     <button type="button" class="btn-close btn-close-white opacity-75" data-bs-dismiss="modal" aria-label="Schließen"></button>
@@ -888,8 +888,8 @@ document.addEventListener('DOMContentLoaded', function () {
         form.reset();
         form.action = '?route=admin/boating/customers/create';
         document.getElementById('custFieldId').value = '';
-        modalTitle.textContent = 'Neuen Kunden / Schüler anlegen';
-        if (modalSubtitle) modalSubtitle.textContent = 'Erfassen Sie die Basis- und Ausbildungsdaten des Schülers.';
+        modalTitle.textContent = 'Neuen Kunden anlegen';
+        if (modalSubtitle) modalSubtitle.textContent = 'Erfassen Sie die Basis- und Ausbildungsdaten des Kunden.';
         submitBtn.textContent = 'Kunde anlegen';
         if (detailLink) detailLink.style.display = 'none';
         if (deleteContainer) deleteContainer.style.display = 'none';
@@ -913,7 +913,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', function () {
             form.reset();
             form.action = '?route=admin/boating/customers/update';
-            modalTitle.textContent = 'Kunde / Schüler bearbeiten';
+            modalTitle.textContent = 'Kunde bearbeiten';
             if (modalSubtitle) modalSubtitle.textContent = 'Verwalten Sie Basisdaten, Prüfungsstatus und CRM-Informationen.';
             submitBtn.textContent = 'Änderungen speichern';
 
