@@ -146,7 +146,7 @@ ob_start();
 
                 <!-- Navigation Menu Items -->
                 <nav class="d-flex flex-column gap-1.5 small font-medium">
-                    <a href="?route=bootschule/me/appointments" class="d-flex align-items-center justify-content-between px-3.5 py-2.5 rounded-3 text-white text-decoration-none fw-semibold shadow-xs" style="background-color: #4a3d38;">
+                    <a href="?route=bootschule/me/appointments" class="sidebar-nav-link active justify-content-between">
                         <span class="d-flex align-items-center gap-2.5">
                             <i class="bi bi-grid-fill text-warning"></i>
                             <span>Dashboard</span>
@@ -154,32 +154,32 @@ ob_start();
                         <span class="rounded-circle" style="width: 7px; height: 7px; background-color: #fbbf24;"></span>
                     </a>
 
-                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
+                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal" class="sidebar-nav-link">
                         <i class="bi bi-calendar3"></i>
                         <span>Termine &amp; Kalender</span>
                     </a>
 
-                    <a href="javascript:void(0)" onclick="alert('Digitaler Self Check-in für Schiffsübernahme aktiviert.')" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
+                    <a href="javascript:void(0)" onclick="alert('Digitaler Self Check-in für Schiffsübernahme aktiviert.')" class="sidebar-nav-link">
                         <i class="bi bi-qr-code"></i>
                         <span>Self Checkin (Miete)</span>
                     </a>
 
-                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
+                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal" class="sidebar-nav-link">
                         <i class="bi bi-award"></i>
                         <span>Store &amp; Abos</span>
                     </a>
 
-                    <a href="javascript:void(0)" onclick="alert('Ihre Swiss QR-Bill Rechnungen & Quittungen sind im Kundenarchiv hinterlegt.')" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
+                    <a href="javascript:void(0)" onclick="alert('Ihre Swiss QR-Bill Rechnungen & Quittungen sind im Kundenarchiv hinterlegt.')" class="sidebar-nav-link">
                         <i class="bi bi-file-earmark-text"></i>
                         <span>Meine Rechnungen</span>
                     </a>
 
-                    <a href="javascript:void(0)" onclick="alert('Nautic Ausbildungsrichtlinien, AGB & Schifffahrtsamts-Zulassung hinterlegt.')" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
+                    <a href="javascript:void(0)" onclick="alert('Nautic Ausbildungsrichtlinien, AGB & Schifffahrtsamts-Zulassung hinterlegt.')" class="sidebar-nav-link">
                         <i class="bi bi-shield-check"></i>
                         <span>Rechtliches &amp; Nachweise</span>
                     </a>
 
-                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#profileModal" class="d-flex align-items-center gap-2.5 px-3.5 py-2.5 rounded-3 text-decoration-none text-light text-opacity-75">
+                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#profileModal" class="sidebar-nav-link">
                         <i class="bi bi-person"></i>
                         <span>Mein Profil</span>
                     </a>
@@ -235,12 +235,18 @@ ob_start();
         <!-- HAUPTINHALT (RECHTS)                                          -->
         <!-- ============================================================== -->
         <div class="flex-grow-1 p-3 p-md-4 p-lg-5 overflow-y-auto" style="background-color: #f8fafc;">
+            <div class="portal-inner-container mx-auto" style="max-width: 1440px; width: 100%;">
             
+            <?php
+            $custFirst = trim((string) ($customer['first_name'] ?? ''));
+            $displayName = (!empty($custFirst) && strtolower($custFirst) !== 'office') ? $custFirst : 'Roland';
+            ?>
+
             <!-- 1. Header Zeile: Begrüssung & Quick Buttons -->
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                 <div>
                     <h2 class="h3 fw-extrabold text-dark mb-1" style="letter-spacing: -0.5px;">
-                        Willkommen zurück, <?= htmlspecialchars((string) ($customer['first_name'] ?? 'Roland')) ?>!
+                        Willkommen zurück, <?= htmlspecialchars($displayName) ?>!
                     </h2>
                     <p class="text-muted small mb-0 d-flex align-items-center gap-1.5">
                         <span>Hier ist Ihre Kunden-Übersicht für heute.</span>
@@ -258,9 +264,9 @@ ob_start();
                         <span>Mein Profil</span>
                     </button>
 
-                    <button type="button" class="btn text-white rounded-3 px-3.5 py-2 small fw-bold shadow-xs d-flex align-items-center gap-1.5" style="background-color: #2d2421;" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
-                        <i class="bi bi-plus text-warning"></i>
-                        <span>+ Lektion / Abo buchen</span>
+                    <button type="button" class="btn text-white rounded-3 px-3.5 py-2 small fw-bold shadow-xs d-flex align-items-center gap-2" style="background-color: #2d2421;" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
+                        <i class="bi bi-calendar-plus text-warning"></i>
+                        <span>Termin buchen</span>
                     </button>
                 </div>
             </div>
@@ -442,8 +448,8 @@ ob_start();
                                 <h6 class="fw-bold text-dark mb-0">Anstehende Termine (<?= count($upcomingAppointments) ?>)</h6>
                             </div>
                             <button type="button" class="btn btn-light bg-slate-50 border rounded-3 px-3 py-1.5 small fw-semibold d-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
-                                <i class="bi bi-plus text-secondary"></i>
-                                <span>Termin im Kalender buchen</span>
+                                <i class="bi bi-calendar-plus text-warning"></i>
+                                <span>Termin buchen</span>
                             </button>
                         </div>
 
@@ -459,8 +465,9 @@ ob_start();
                                 <p class="text-muted small mb-3 max-w-500 mx-auto" style="max-width: 440px;">
                                     Reservieren Sie Ihre nächste Fahrstunde direkt im Kalender – Bezahlung erfolgt flexibel später.
                                 </p>
-                                <button type="button" class="btn text-white fw-bold rounded-3 px-4 py-2 small shadow-xs" style="background-color: #2d2421;" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
-                                    <i class="bi bi-plus text-warning me-1"></i> Jetzt freien Termin im Kalender wählen
+                                <button type="button" class="btn text-white fw-bold rounded-3 px-4 py-2 small shadow-xs d-inline-flex align-items-center gap-2" style="background-color: #2d2421;" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
+                                    <i class="bi bi-calendar-plus text-warning"></i>
+                                    <span>Jetzt freien Termin buchen</span>
                                 </button>
                             </div>
                         <?php else: ?>
@@ -665,6 +672,7 @@ ob_start();
 
             </div>
 
+            </div> <!-- /.portal-inner-container -->
         </div>
 
     </div>
@@ -683,8 +691,8 @@ ob_start();
                                     <i class="bi bi-calendar2-plus fs-4 text-warning"></i>
                                 </span>
                                 <div>
-                                    <h5 class="modal-title fw-bold text-dark mb-0" id="requestAppointmentModalLabel">Terminanfrage einreichen</h5>
-                                    <span class="text-muted small">Wunschtermin für Praxisfahrstunde oder Bootsmiete einreichen</span>
+                                    <h5 class="modal-title fw-bold text-dark mb-0" id="requestAppointmentModalLabel">Termin buchen</h5>
+                                    <span class="text-muted small">Wunschtermin für Praxisfahrstunde oder Coaching buchen</span>
                                 </div>
                             </div>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
@@ -795,8 +803,9 @@ ob_start();
 
                             <div class="modal-footer border-top bg-light px-4 py-3">
                                 <button type="button" class="btn btn-outline-secondary rounded-3 btn-sm px-3" data-bs-dismiss="modal">Abbrechen</button>
-                                <button type="submit" class="btn btn-dark rounded-3 btn-sm px-4 fw-bold shadow-sm">
-                                    <i class="bi bi-send me-1"></i> Terminanfrage verbindlich absenden &rarr;
+                                <button type="submit" class="btn text-white rounded-3 btn-sm px-4 fw-bold shadow-sm d-inline-flex align-items-center gap-1.5" style="background-color: #2d2421;">
+                                    <i class="bi bi-calendar-check text-warning"></i>
+                                    <span>Termin jetzt verbindlich anfragen &rarr;</span>
                                 </button>
                             </div>
                         </form>
@@ -816,8 +825,8 @@ ob_start();
                                     <i class="bi bi-person-gear fs-4 text-warning"></i>
                                 </span>
                                 <div>
-                                    <h5 class="modal-title fw-bold text-dark mb-0" id="profileModalLabel">Mein Schülerprofil bearbeiten</h5>
-                                    <span class="text-muted small">Kontaktdaten &amp; Angaben für die Schifffahrtsamts-Prüfung</span>
+                                    <h5 class="modal-title fw-bold text-dark mb-0" id="profileModalLabel">Mein Kundenprofil bearbeiten</h5>
+                                    <span class="text-muted small">Kontaktdaten, Notfallkontakt, Allergien &amp; Ausbildungsdaten</span>
                                 </div>
                             </div>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>

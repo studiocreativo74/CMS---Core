@@ -33,6 +33,10 @@ unset($_SESSION['flash_portal_success'], $_SESSION['flash_portal_error'], $_SESS
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($siteTitle, ENT_QUOTES, 'UTF-8') ?></title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -43,17 +47,113 @@ unset($_SESSION['flash_portal_success'], $_SESSION['flash_portal_error'], $_SESS
             --bs-navy-dark: #062338;
             --bs-cyan-accent: #0284c7;
             --bs-cyan-light: #e0f2fe;
-            --bs-body-bg: #f8fafc;
+            --bs-body-bg: #fbfbfa;
             --bs-card-border: #e2e8f0;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bs-body-bg);
-            color: #1e293b;
+            color: #0f172a;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Modern UI Utilities & Enhancements */
+        .portal-main-fluid {
+            min-height: 100vh;
+            background-color: #fbfbfa;
+        }
+        .portal-inner-container {
+            max-width: 1440px;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .shadow-xs {
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        }
+        .shadow-sm {
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08) !important;
+        }
+        .shadow-md {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.08) !important;
+        }
+        .rounded-4 {
+            border-radius: 1.25rem !important; /* 20px */
+        }
+        .rounded-3xl {
+            border-radius: 1.5rem !important; /* 24px */
+        }
+        .fw-extrabold {
+            font-weight: 800 !important;
+        }
+        .p-3\.5 {
+            padding: 1.15rem !important;
+        }
+        .gap-1\.5 {
+            gap: 0.375rem !important;
+        }
+        .gap-2\.5 {
+            gap: 0.625rem !important;
+        }
+        .shrink-0 {
+            flex-shrink: 0 !important;
+        }
+        .bg-slate-50 {
+            background-color: #f8fafc !important;
+        }
+        .card {
+            border-color: #e5e7eb !important;
+            border-radius: 1.25rem !important;
+            transition: all 0.2s ease-in-out;
+        }
+        .card:hover {
+            border-color: #cbd5e1 !important;
+        }
+
+        /* Sidebar Navigation Item Styling */
+        .sidebar-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.7rem 1rem;
+            border-radius: 0.75rem;
+            color: #d6d3d1 !important;
+            text-decoration: none !important;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: all 0.15s ease-in-out;
+        }
+        .sidebar-nav-link:hover {
+            background-color: #3d322e !important;
+            color: #ffffff !important;
+        }
+        .sidebar-nav-link.active {
+            background-color: #4a3d38 !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            border-left: 3px solid #fbbf24;
+            padding-left: 0.8rem;
+        }
+
+        /* Modal Dialog Styling */
+        .modal-content {
+            border-radius: 1.5rem !important;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+        }
+        .modal-header {
+            background-color: #2d2421;
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .modal-header .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
         }
 
         .portal-navbar {
