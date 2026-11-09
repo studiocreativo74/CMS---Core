@@ -32,4 +32,17 @@ class LocationService
     {
         return BoatingSchoolRepository::createLocation($data);
     }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public static function update(int $id, array $data): bool
+    {
+        return BoatingSchoolRepository::updateLocation($id, $data);
+    }
+
+    public static function delete(int $id): bool
+    {
+        return BoatingSchoolRepository::deleteLocation($id);
+    }
 }

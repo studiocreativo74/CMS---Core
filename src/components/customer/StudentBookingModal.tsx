@@ -222,6 +222,7 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
               className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
             >
               <option value="Luzern (Alpenquai)">Luzern – Alpenquai Steg 3 (Hauptstandort)</option>
+              <option value="Buochs - Ennerberg Steganlage">Buochs – Ennerberg Steganlage (Vierwaldstättersee)</option>
               <option value="Hergiswil NW (Bootshafen)">Hergiswil NW – Bootshafen / Seestrasse</option>
               <option value="Stansstad NW (Hafenanlage)">Stansstad NW – Öffentliche Hafenanlage</option>
             </select>

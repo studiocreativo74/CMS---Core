@@ -1632,6 +1632,7 @@ if (isset($router) && $router !== null) {
 
         BoatingNotificationService::ensureSettings();
         $settings = BoatingNotificationService::getAllSettings();
+        $locations = class_exists('LocationService') ? LocationService::getAll(false) : [];
         $canManage = true;
 
         require __DIR__ . '/views/admin/settings.php';
@@ -1695,7 +1696,72 @@ if (isset($router) && $router !== null) {
         header('Location: ?route=admin/boating/settings&tab=general');
         exit;
     };
-    $registerPost('settings/test-mail', $testMailHandler);
+    // POST /admin/boating/locations/save (Standort anlegen oder aktualisieren)
+    $locationSaveHandler = static function () use ($checkPermission): void {
+        $checkPermission(true);
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_error'] = 'Ungültiges Sicherheitstoken (CSRF).';
+            header('Location: ?route=admin/boating/settings&tab=locations');
+            exit;
+        }
+
+        $locId = !empty($_POST['id']) ? (int) $_POST['id'] : 0;
+        $name = trim((string) ($_POST['name'] ?? ''));
+
+        if ($name === '') {
+            $_SESSION['flash_error'] = 'Der Standort- / Hafen-Name darf nicht leer sein.';
+            header('Location: ?route=admin/boating/settings&tab=locations');
+            exit;
+        }
+
+        $data = [
+            'name'      => $name,
+            'code'      => trim((string) ($_POST['code'] ?? '')),
+            'address'   => trim((string) ($_POST['address'] ?? '')),
+            'notes'     => trim((string) ($_POST['notes'] ?? '')),
+            'is_active' => !empty($_POST['is_active']) ? 1 : 0,
+        ];
+
+        try {
+            if ($locId > 0) {
+                LocationService::update($locId, $data);
+                $_SESSION['flash_success'] = "Standort «{$name}» wurde erfolgreich aktualisiert.";
+            } else {
+                LocationService::create($data);
+                $_SESSION['flash_success'] = "Neuer Standort «{$name}» wurde erfolgreich angelegt.";
+            }
+        } catch (\Throwable $e) {
+            $_SESSION['flash_error'] = 'Fehler beim Speichern des Standorts: ' . $e->getMessage();
+        }
+
+        header('Location: ?route=admin/boating/settings&tab=locations');
+        exit;
+    };
+    $registerPost('locations/save', $locationSaveHandler);
+
+    // POST /admin/boating/locations/delete (Standort löschen)
+    $locationDeleteHandler = static function () use ($checkPermission): void {
+        $checkPermission(true);
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_error'] = 'Ungültiges Sicherheitstoken (CSRF).';
+            header('Location: ?route=admin/boating/settings&tab=locations');
+            exit;
+        }
+
+        $locId = !empty($_POST['id']) ? (int) $_POST['id'] : 0;
+        if ($locId > 0) {
+            try {
+                LocationService::delete($locId);
+                $_SESSION['flash_success'] = 'Standort wurde gelöscht.';
+            } catch (\Throwable $e) {
+                $_SESSION['flash_error'] = 'Fehler beim Löschen: ' . $e->getMessage();
+            }
+        }
+
+        header('Location: ?route=admin/boating/settings&tab=locations');
+        exit;
+    };
+    $registerPost('locations/delete', $locationDeleteHandler);
 
     // POST & GET /admin/boating/reminders/send (Terminerinnerungs-Cron manuell oder via Webhook ausführen)
     $remindersSendHandler = static function (): void {

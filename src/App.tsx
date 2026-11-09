@@ -541,6 +541,26 @@ export default function App() {
   const [promoFormValidUntil, setPromoFormValidUntil] = useState<string>('2026-12-31');
   const [promoFormIsActive, setPromoFormIsActive] = useState<boolean>(true);
 
+  // Admin Locations Modal State (Manage bs_locations)
+  const [showLocationsModal, setShowLocationsModal] = useState<boolean>(false);
+  const [locationsList, setLocationsList] = useState<Array<{
+    id: number;
+    key: string;
+    name: string;
+    code: string;
+    address: string;
+    notes: string;
+    is_active: boolean;
+  }>>([
+    { id: 1, key: 'loc_luzern', name: 'Luzern - Hafenbecken Alpenquai', code: 'LU', address: 'Alpenquai 12, 6005 Luzern', notes: 'Hauptsteg Bootsfahrschule Motorboot & Segel', is_active: true },
+    { id: 2, key: 'loc_buochs', name: 'Buochs - Ennerberg Steganlage', code: 'NW', address: 'Seestrasse 48, 6374 Buochs', notes: 'Stützpunkt Vierwaldstättersee Süd', is_active: true },
+    { id: 3, key: 'loc_hergiswil', name: 'Hergiswil NW (Bootshafen)', code: 'NW', address: 'Seestrasse 20, 6052 Hergiswil', notes: 'Bootshafen & Schulungszentrum', is_active: true },
+    { id: 4, key: 'loc_stansstad', name: 'Stansstad NW (Hafenanlage)', code: 'NW', address: 'Hafenstrasse 4, 6362 Stansstad', notes: 'Öffentliche Hafenanlage', is_active: true },
+    { id: 5, key: 'loc_ennetbuergen', name: 'Ennetbürgen (Bürgenstock Pier)', code: 'NW', address: 'Seestrasse 10, 6373 Ennetbürgen', notes: 'Charter & VIP Coaching Treffpunkt', is_active: true },
+  ]);
+  const [editingLocation, setEditingLocation] = useState<{ id: number; key: string; name: string; code: string; address: string; notes: string; is_active: boolean } | null>(null);
+  const [isCreatingNewLocation, setIsCreatingNewLocation] = useState<boolean>(false);
+
   // --- STATE: DRAG & DROP FÜR DATENLISTEN ---
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
@@ -3278,6 +3298,19 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => {
+                        setIsCreatingNewLocation(false);
+                        setEditingLocation(null);
+                        setShowLocationsModal(true);
+                      }}
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-300 shadow-xs cursor-pointer"
+                    >
+                      <MapPin className="w-4 h-4 text-rose-600" />
+                      <span>Häfen &amp; Standorte verwalten ({locationsList.filter(l => l.is_active).length})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
                         setEditingServiceId(null);
                         setServiceFormName('');
                         setServiceFormDesc('');
@@ -4412,6 +4445,248 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {/* ============================================================== */}
+            {/* MODAL: HÄFEN & STANDORTE VERWALTEN (bs_locations)              */}
+            {/* ============================================================== */}
+            {showLocationsModal && (
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] flex flex-col">
+                  
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                        <MapPin className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-lg">Häfen, Steganlagen &amp; Standorte</h3>
+                        <p className="text-xs text-slate-500">
+                          Tabelle <span className="font-mono text-slate-700">bs_locations</span> • Dropdown-Inhalte für Kundenportal &amp; Trainer
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowLocationsModal(false)}
+                      className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-50 transition cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Body: Form or List */}
+                  <div className="overflow-y-auto py-4 space-y-4 flex-1">
+                    {/* Neuen Standort anlegen Button / Formular-Umschalter */}
+                    {!editingLocation && !isCreatingNewLocation && (
+                      <div className="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                        <div className="text-xs text-slate-600">
+                          <strong>{locationsList.length} Standorte</strong> im System konfiguriert
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingLocation({
+                              id: Date.now(),
+                              key: `loc_${Date.now().toString().slice(-4)}`,
+                              name: '',
+                              code: 'NW',
+                              address: '',
+                              notes: '',
+                              is_active: true
+                            });
+                            setIsCreatingNewLocation(true);
+                          }}
+                          className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>+ Neuen Standort anlegen</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Editor Formular wenn aktiv */}
+                    {(editingLocation || isCreatingNewLocation) && editingLocation && (
+                      <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-200 space-y-3">
+                        <div className="flex items-center justify-between pb-2 border-b border-amber-200/60">
+                          <h4 className="font-bold text-xs text-amber-950 uppercase tracking-wider">
+                            {isCreatingNewLocation ? 'Neuen Standort erfassen' : `Standort bearbeiten (#${editingLocation.id})`}
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingLocation(null);
+                              setIsCreatingNewLocation(false);
+                            }}
+                            className="text-amber-800 hover:text-amber-950 text-xs font-semibold cursor-pointer"
+                          >
+                            Abbrechen
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                          <div className="sm:col-span-2 space-y-1">
+                            <label className="font-bold text-slate-700">Bezeichnung / Hafensteg *</label>
+                            <input
+                              type="text"
+                              value={editingLocation.name}
+                              onChange={e => setEditingLocation({ ...editingLocation, name: e.target.value })}
+                              placeholder="z. B. Buochs - Ennerberg Steganlage"
+                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="font-bold text-slate-700">Kürzel (Kanton)</label>
+                            <input
+                              type="text"
+                              value={editingLocation.code}
+                              onChange={e => setEditingLocation({ ...editingLocation, code: e.target.value })}
+                              placeholder="z. B. NW, LU"
+                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 uppercase"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1 text-xs">
+                          <label className="font-bold text-slate-700">Genaue Adresse / Treffpunkt</label>
+                          <input
+                            type="text"
+                            value={editingLocation.address}
+                            onChange={e => setEditingLocation({ ...editingLocation, address: e.target.value })}
+                            placeholder="z. B. Seestrasse 48, 6374 Buochs"
+                            className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        </div>
+
+                        <div className="space-y-1 text-xs">
+                          <label className="font-bold text-slate-700">Hinweise / Notizen</label>
+                          <input
+                            type="text"
+                            value={editingLocation.notes}
+                            onChange={e => setEditingLocation({ ...editingLocation, notes: e.target.value })}
+                            placeholder="z. B. Stützpunkt Süd, Schlüsseltresor Steg 3"
+                            className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2">
+                          <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-800">
+                            <input
+                              type="checkbox"
+                              checked={editingLocation.is_active}
+                              onChange={e => setEditingLocation({ ...editingLocation, is_active: e.target.checked })}
+                              className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4 cursor-pointer"
+                            />
+                            <span>Standort aktiv &amp; im Buchungs-Dropdown auswählbar</span>
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!editingLocation.name.trim()) {
+                                alert('Bitte eine Bezeichnung eingeben.');
+                                return;
+                              }
+                              if (isCreatingNewLocation) {
+                                setLocationsList(prev => [...prev, editingLocation]);
+                                setMagicFeedback(`Standort «${editingLocation.name}» wurde erfolgreich hinzugefügt!`);
+                              } else {
+                                setLocationsList(prev => prev.map(l => l.id === editingLocation.id ? editingLocation : l));
+                                setMagicFeedback(`Standort «${editingLocation.name}» wurde aktualisiert!`);
+                              }
+                              setTimeout(() => setMagicFeedback(null), 4000);
+                              setEditingLocation(null);
+                              setIsCreatingNewLocation(false);
+                            }}
+                            className="px-4 py-2 bg-[#2d2421] hover:bg-[#3d322e] text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                          >
+                            Standort speichern
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Liste aller Standorte */}
+                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
+                      {locationsList.map(loc => (
+                        <div key={loc.id} className="p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50/80 transition text-xs">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 text-sm">{loc.name}</span>
+                              {loc.code && (
+                                <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 font-mono text-[10px] rounded font-bold">
+                                  {loc.code}
+                                </span>
+                              )}
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                loc.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                              }`}>
+                                {loc.is_active ? 'Aktiv' : 'Inaktiv'}
+                              </span>
+                            </div>
+                            {loc.address && (
+                              <div className="text-slate-500 flex items-center gap-1 text-[11px]">
+                                <MapPin className="w-3 h-3 text-slate-400" />
+                                <span>{loc.address}</span>
+                              </div>
+                            )}
+                            {loc.notes && (
+                              <div className="text-slate-400 text-[11px] italic">
+                                {loc.notes}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingLocation(loc);
+                                setIsCreatingNewLocation(false);
+                              }}
+                              className="px-2.5 py-1 text-slate-700 hover:text-black bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold transition cursor-pointer"
+                            >
+                              Bearbeiten
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm(`Standort «${loc.name}» wirklich löschen?`)) {
+                                  setLocationsList(prev => prev.filter(l => l.id !== loc.id));
+                                  setMagicFeedback(`Standort «${loc.name}» wurde gelöscht.`);
+                                  setTimeout(() => setMagicFeedback(null), 3000);
+                                }
+                              }}
+                              className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                              title="Löschen"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                  </div>
+
+                  {/* Footer */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-400">
+                      Änderungen synchronisieren sich automatisch mit dem Kunden-Buchungsmodal.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowLocationsModal(false)}
+                      className="px-5 py-2 bg-slate-800 hover:bg-black text-white font-bold rounded-xl transition cursor-pointer"
+                    >
+                      Fertig
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -4530,14 +4805,9 @@ export default function App() {
                           <Calendar className="w-4.5 h-4.5 text-sky-400 shrink-0" />
                           <span>Termine &amp; Kalender</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] bg-sky-500/20 text-sky-300 font-bold px-2 py-0.5 rounded-full border border-sky-500/30">
-                            BOOK
-                          </span>
-                          {studentSidebarNav === 'calendar' && (
-                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                          )}
-                        </div>
+                        {studentSidebarNav === 'calendar' && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+                        )}
                       </button>
 
                       <button
@@ -4556,14 +4826,9 @@ export default function App() {
                           <QrCode className="w-4.5 h-4.5 text-emerald-400 shrink-0" />
                           <span>Self Checkin (Miete)</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
-                            LIVE
-                          </span>
-                          {(studentSidebarNav === 'checkin' || studentNavSubTab === 'checkin') && (
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                          )}
-                        </div>
+                        {(studentSidebarNav === 'checkin' || studentNavSubTab === 'checkin') && (
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                        )}
                       </button>
 
                       <button
@@ -4582,14 +4847,9 @@ export default function App() {
                           <Award className="w-4.5 h-4.5 text-amber-400 shrink-0" />
                           <span>Store &amp; Abos</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded-full border border-amber-500/30">
-                            VIP
-                          </span>
-                          {studentSidebarNav === 'store' && (
-                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                          )}
-                        </div>
+                        {studentSidebarNav === 'store' && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+                        )}
                       </button>
 
                       <button
@@ -4608,14 +4868,9 @@ export default function App() {
                           <Play className="w-4.5 h-4.5 text-cyan-400 shrink-0" />
                           <span>E-Learning &amp; Videos</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-cyan-950/80 text-cyan-300 border border-cyan-700/50 uppercase">
-                            1 JAHR
-                          </span>
-                          {(studentSidebarNav === 'elearning' || studentNavSubTab === 'elearning') && (
-                            <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-                          )}
-                        </div>
+                        {(studentSidebarNav === 'elearning' || studentNavSubTab === 'elearning') && (
+                          <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0"></span>
+                        )}
                       </button>
 
                       <button
@@ -4634,14 +4889,9 @@ export default function App() {
                           <FileText className="w-4.5 h-4.5 text-violet-400 shrink-0" />
                           <span>Meine Rechnungen</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] bg-purple-500/20 text-purple-300 font-bold px-2 py-0.5 rounded-full border border-purple-500/30">
-                            QR-BILL
-                          </span>
-                          {studentSidebarNav === 'invoices' && (
-                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                          )}
-                        </div>
+                        {studentSidebarNav === 'invoices' && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+                        )}
                       </button>
 
                       <button
@@ -4660,14 +4910,9 @@ export default function App() {
                           <Shield className="w-4.5 h-4.5 text-indigo-400 shrink-0" />
                           <span>Rechtliches &amp; Nachweise</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] bg-indigo-500/20 text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-500/30">
-                            AGB
-                          </span>
-                          {studentSidebarNav === 'legal' && (
-                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                          )}
-                        </div>
+                        {studentSidebarNav === 'legal' && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+                        )}
                       </button>
 
                       <button
@@ -4686,14 +4931,9 @@ export default function App() {
                           <User className="w-4.5 h-4.5 text-slate-300 shrink-0" />
                           <span>Mein Profil</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] bg-stone-500/20 text-stone-300 font-bold px-2 py-0.5 rounded-full border border-stone-500/30">
-                            KUNDE
-                          </span>
-                          {studentSidebarNav === 'profile' && (
-                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                          )}
-                        </div>
+                        {studentSidebarNav === 'profile' && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+                        )}
                       </button>
                     </nav>
                   </div>

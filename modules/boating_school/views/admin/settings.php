@@ -119,6 +119,11 @@ ob_start();
                 <i class="bi bi-clock-history me-1"></i> 4. Cronjob &amp; Automatisierung
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link <?= $activeTab === 'locations' ? 'active' : '' ?> fw-semibold" id="tab-locations-btn" data-bs-toggle="pill" data-bs-target="#tab-locations" type="button" role="tab" onclick="document.getElementById('activeTabInput').value='locations';">
+                <i class="bi bi-geo-alt-fill me-1 text-danger"></i> 5. Häfen &amp; Standorte
+            </button>
+        </li>
     </ul>
 
     <!-- Tab Content -->
@@ -552,6 +557,101 @@ ob_start();
             </div>
         </div>
 
+        <!-- =================================================================== -->
+        <!-- TAB 5: HÄFEN & STANDORTE (bs_locations)                             -->
+        <!-- =================================================================== -->
+        <div class="tab-pane fade <?= $activeTab === 'locations' ? 'show active' : '' ?>" id="tab-locations" role="tabpanel">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div>
+                        <h5 class="card-title fw-bold text-dark mb-0">
+                            <i class="bi bi-geo-alt-fill text-danger me-2"></i>Häfen, Steganlagen &amp; Standorte (bs_locations)
+                        </h5>
+                        <small class="text-muted">
+                            Verwaltung aller Stützpunkte &amp; Treffpunkte für das Dropdown «Wunsch-Standort / Hafen» im Kundenportal und für Trainer-Verfügbarkeiten.
+                        </small>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-success fw-bold d-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#locationModal" onclick="openCreateLocationModal()">
+                            <i class="bi bi-plus-circle"></i> + Neuen Standort anlegen
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-muted small text-uppercase">
+                                <tr>
+                                    <th style="width: 60px;">ID</th>
+                                    <th>Bezeichnung / Hafensteg</th>
+                                    <th>Kürzel</th>
+                                    <th>Adresse / Treffpunkt</th>
+                                    <th>Hinweise / Notizen</th>
+                                    <th style="width: 100px;">Status</th>
+                                    <th class="text-end" style="width: 120px;">Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (!empty($locations)): ?>
+                                    <?php foreach ($locations as $loc): ?>
+                                        <tr>
+                                            <td class="font-monospace text-muted small">#<?= (int) $loc['id'] ?></td>
+                                            <td>
+                                                <div class="fw-bold text-dark"><?= htmlspecialchars((string) $loc['name'], ENT_QUOTES, 'UTF-8') ?></div>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($loc['code'])): ?>
+                                                    <span class="badge bg-secondary"><?= htmlspecialchars((string) $loc['code'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                <?php else: ?>
+                                                    <span class="text-muted small">&ndash;</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="small text-muted">
+                                                <?= htmlspecialchars((string) ($loc['address'] ?? '–'), ENT_QUOTES, 'UTF-8') ?>
+                                            </td>
+                                            <td class="small text-muted">
+                                                <?= htmlspecialchars((string) ($loc['notes'] ?? '–'), ENT_QUOTES, 'UTF-8') ?>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($loc['is_active'])): ?>
+                                                    <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">Aktiv</span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25">Inaktiv</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button" class="btn btn-outline-secondary" title="Bearbeiten"
+                                                            onclick='openEditLocationModal(<?= json_encode($loc, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)'>
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <form method="POST" action="?route=admin/boating/locations/delete" class="d-inline" onsubmit="return confirm('Möchten Sie diesen Standort wirklich löschen?');">
+                                                        <?php if ($csrfToken): ?>
+                                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                                                        <?php endif; ?>
+                                                        <input type="hidden" name="id" value="<?= (int) $loc['id'] ?>">
+                                                        <button type="submit" class="btn btn-outline-danger" title="Löschen">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4 text-muted small">
+                                            Keine Standorte erfasst.
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Speichern-Button Leiste -->
@@ -618,7 +718,91 @@ ob_start();
     </div>
 </div>
 
+<!-- Modal: Standort / Hafen anlegen & bearbeiten -->
+<div class="modal fade" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form method="POST" action="?route=admin/boating/locations/save">
+                <?php if ($csrfToken): ?>
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <?php endif; ?>
+                <input type="hidden" name="id" id="locModalId" value="0">
+
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold" id="locationModalLabel">
+                        <i class="bi bi-geo-alt-fill text-danger me-2"></i><span id="locModalTitle">Neuen Standort erfassen</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Bezeichnung / Hafensteg <span class="text-danger">*</span></label>
+                        <input type="text" name="name" id="locModalName" class="form-control" placeholder="z. B. Buochs - Ennerberg Steganlage oder Luzern - Alpenquai" required>
+                        <small class="text-muted">Wird Kunden im Dropdown «Wunsch-Standort / Hafen» angezeigt.</small>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label fw-semibold">Kanton / Kürzel</label>
+                            <input type="text" name="code" id="locModalCode" class="form-control" placeholder="z. B. NW, LU">
+                        </div>
+                        <div class="col-8">
+                            <label class="form-label fw-semibold">Status</label>
+                            <div class="form-check form-switch pt-2">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="locModalActive" value="1" checked>
+                                <label class="form-check-label fw-semibold" for="locModalActive">Aktiv &amp; buchbar</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Genaue Adresse / Treffpunkt</label>
+                        <input type="text" name="address" id="locModalAddress" class="form-control" placeholder="z. B. Seestrasse 48, 6374 Buochs">
+                        <small class="text-muted">Erscheint in der Buchungsbestätigung und Wegbeschreibung.</small>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Hinweise / Notizen (optional)</label>
+                        <textarea name="notes" id="locModalNotes" rows="2" class="form-control" placeholder="z. B. Stützpunkt Süd, Schlüsselkasten Steg 3..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="submit" class="btn btn-primary btn-sm fw-semibold px-4">
+                        <i class="bi bi-save me-1"></i> Speichern
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
+function openCreateLocationModal() {
+    document.getElementById('locModalId').value = '0';
+    document.getElementById('locModalTitle').textContent = 'Neuen Standort erfassen';
+    document.getElementById('locModalName').value = '';
+    document.getElementById('locModalCode').value = '';
+    document.getElementById('locModalAddress').value = '';
+    document.getElementById('locModalNotes').value = '';
+    document.getElementById('locModalActive').checked = true;
+}
+
+function openEditLocationModal(loc) {
+    document.getElementById('locModalId').value = loc.id || 0;
+    document.getElementById('locModalTitle').textContent = 'Standort bearbeiten: ' + (loc.name || '');
+    document.getElementById('locModalName').value = loc.name || '';
+    document.getElementById('locModalCode').value = loc.code || '';
+    document.getElementById('locModalAddress').value = loc.address || '';
+    document.getElementById('locModalNotes').value = loc.notes || '';
+    document.getElementById('locModalActive').checked = !!parseInt(loc.is_active, 10);
+
+    const modal = new bootstrap.Modal(document.getElementById('locationModal'));
+    modal.show();
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     // Klick auf Platzhalter-Button kopiert den Tag in die Zwischenablage
     const tagButtons = document.querySelectorAll('.copy-tag');

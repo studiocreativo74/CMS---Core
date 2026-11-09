@@ -159,17 +159,12 @@ ob_start();
                             <i class="bi bi-calendar3 nav-icon" style="color: #38bdf8 !important;"></i>
                             <span>Termine &amp; Kalender</span>
                         </span>
-                        <span class="sidebar-nav-badge" style="background-color: rgba(56, 189, 248, 0.18); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.35);">BOOK</span>
                     </a>
 
                     <a href="javascript:void(0)" onclick="alert('Digitaler Self Check-in für Schiffsübernahme aktiviert.')" class="sidebar-nav-link">
                         <span class="d-flex align-items-center gap-2.5">
                             <i class="bi bi-qr-code nav-icon" style="color: #34d399 !important;"></i>
                             <span>Self Checkin (Miete)</span>
-                        </span>
-                        <span class="sidebar-nav-badge d-inline-flex align-items-center gap-1" style="background-color: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.35);">
-                            <span class="rounded-circle" style="width: 5px; height: 5px; background-color: #34d399;"></span>
-                            LIVE
                         </span>
                     </a>
 
@@ -178,7 +173,6 @@ ob_start();
                             <i class="bi bi-award-fill nav-icon" style="color: #fbbf24 !important;"></i>
                             <span>Store &amp; Abos</span>
                         </span>
-                        <span class="sidebar-nav-badge" style="background-color: rgba(245, 158, 11, 0.2); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.35);">VIP</span>
                     </a>
 
                     <a href="javascript:void(0)" onclick="alert('E-Learning Videoportal & Theoriefragen aktiviert.')" class="sidebar-nav-link">
@@ -186,7 +180,6 @@ ob_start();
                             <i class="bi bi-play-circle-fill nav-icon" style="color: #22d3ee !important;"></i>
                             <span>E-Learning &amp; Videos</span>
                         </span>
-                        <span class="sidebar-nav-badge" style="background-color: rgba(8, 145, 178, 0.25); color: #67e8f9; border: 1px solid rgba(8, 145, 178, 0.4);">1 JAHR</span>
                     </a>
 
                     <a href="javascript:void(0)" onclick="alert('Deine Swiss QR-Bill Rechnungen & Quittungen sind im Kundenarchiv hinterlegt.')" class="sidebar-nav-link">
@@ -194,7 +187,6 @@ ob_start();
                             <i class="bi bi-file-earmark-text-fill nav-icon" style="color: #c084fc !important;"></i>
                             <span>Meine Rechnungen</span>
                         </span>
-                        <span class="sidebar-nav-badge" style="background-color: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.35);">QR-BILL</span>
                     </a>
 
                     <a href="javascript:void(0)" onclick="alert('Nautic Ausbildungsrichtlinien, AGB & Schifffahrtsamts-Zulassung hinterlegt.')" class="sidebar-nav-link">
@@ -202,7 +194,6 @@ ob_start();
                             <i class="bi bi-shield-check nav-icon" style="color: #818cf8 !important;"></i>
                             <span>Rechtliches &amp; Nachweise</span>
                         </span>
-                        <span class="sidebar-nav-badge" style="background-color: rgba(99, 102, 241, 0.2); color: #c7d2fe; border: 1px solid rgba(99, 102, 241, 0.35);">AGB</span>
                     </a>
 
                     <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#profileModal" class="sidebar-nav-link">
@@ -210,7 +201,6 @@ ob_start();
                             <i class="bi bi-person-circle nav-icon" style="color: #cbd5e1 !important;"></i>
                             <span>Mein Profil</span>
                         </span>
-                        <span class="sidebar-nav-badge" style="background-color: rgba(255, 255, 255, 0.1); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.18);">KUNDE</span>
                     </a>
                 </nav>
             </div>

@@ -2225,6 +2225,38 @@ final class BoatingSchoolRepository
         return (int) DB::lastInsertId();
     }
 
+    public static function updateLocation(int $id, array $data): bool
+    {
+        if (!self::isTableCreated('bs_locations') || $id <= 0) {
+            return false;
+        }
+
+        $sql = 'UPDATE `bs_locations`
+                SET `name` = :name, `code` = :code, `address` = :address, `notes` = :notes, `is_active` = :is_active, `updated_at` = NOW()
+                WHERE `id` = :id LIMIT 1';
+
+        DB::execute($sql, [
+            'id'        => $id,
+            'name'      => trim((string) ($data['name'] ?? '')),
+            'code'      => !empty($data['code']) ? trim((string) $data['code']) : null,
+            'address'   => !empty($data['address']) ? trim((string) $data['address']) : null,
+            'notes'     => !empty($data['notes']) ? trim((string) $data['notes']) : null,
+            'is_active' => isset($data['is_active']) ? (int) (bool) $data['is_active'] : 1,
+        ]);
+
+        return true;
+    }
+
+    public static function deleteLocation(int $id): bool
+    {
+        if (!self::isTableCreated('bs_locations') || $id <= 0) {
+            return false;
+        }
+
+        DB::execute('DELETE FROM `bs_locations` WHERE `id` = :id LIMIT 1', ['id' => $id]);
+        return true;
+    }
+
     // =========================================================================
     // 6. TERMINE / BUCHUNGEN (bs_appointments)
     // =========================================================================
