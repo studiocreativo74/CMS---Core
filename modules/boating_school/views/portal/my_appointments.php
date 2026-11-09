@@ -146,42 +146,71 @@ ob_start();
 
                 <!-- Navigation Menu Items -->
                 <nav class="d-flex flex-column gap-1.5 small font-medium">
-                    <a href="?route=bootschule/me/appointments" class="sidebar-nav-link active justify-content-between">
+                    <a href="?route=bootschule/me/appointments" class="sidebar-nav-link active">
                         <span class="d-flex align-items-center gap-2.5">
-                            <i class="bi bi-grid-fill text-warning"></i>
+                            <i class="bi bi-grid-fill nav-icon" style="color: #fbbf24 !important;"></i>
                             <span>Dashboard</span>
                         </span>
-                        <span class="rounded-circle" style="width: 7px; height: 7px; background-color: #fbbf24;"></span>
+                        <span class="rounded-circle" style="width: 7px; height: 7px; background-color: #fbbf24; box-shadow: 0 0 6px #fbbf24;"></span>
                     </a>
 
                     <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal" class="sidebar-nav-link">
-                        <i class="bi bi-calendar3"></i>
-                        <span>Termine &amp; Kalender</span>
+                        <span class="d-flex align-items-center gap-2.5">
+                            <i class="bi bi-calendar3 nav-icon" style="color: #38bdf8 !important;"></i>
+                            <span>Termine &amp; Kalender</span>
+                        </span>
+                        <span class="sidebar-nav-badge" style="background-color: rgba(56, 189, 248, 0.18); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.35);">BOOK</span>
                     </a>
 
                     <a href="javascript:void(0)" onclick="alert('Digitaler Self Check-in für Schiffsübernahme aktiviert.')" class="sidebar-nav-link">
-                        <i class="bi bi-qr-code"></i>
-                        <span>Self Checkin (Miete)</span>
+                        <span class="d-flex align-items-center gap-2.5">
+                            <i class="bi bi-qr-code nav-icon" style="color: #34d399 !important;"></i>
+                            <span>Self Checkin (Miete)</span>
+                        </span>
+                        <span class="sidebar-nav-badge d-inline-flex align-items-center gap-1" style="background-color: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.35);">
+                            <span class="rounded-circle" style="width: 5px; height: 5px; background-color: #34d399;"></span>
+                            LIVE
+                        </span>
                     </a>
 
                     <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal" class="sidebar-nav-link">
-                        <i class="bi bi-award"></i>
-                        <span>Store &amp; Abos</span>
+                        <span class="d-flex align-items-center gap-2.5">
+                            <i class="bi bi-award-fill nav-icon" style="color: #fbbf24 !important;"></i>
+                            <span>Store &amp; Abos</span>
+                        </span>
+                        <span class="sidebar-nav-badge" style="background-color: rgba(245, 158, 11, 0.2); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.35);">VIP</span>
                     </a>
 
-                    <a href="javascript:void(0)" onclick="alert('Ihre Swiss QR-Bill Rechnungen & Quittungen sind im Kundenarchiv hinterlegt.')" class="sidebar-nav-link">
-                        <i class="bi bi-file-earmark-text"></i>
-                        <span>Meine Rechnungen</span>
+                    <a href="javascript:void(0)" onclick="alert('E-Learning Videoportal & Theoriefragen aktiviert.')" class="sidebar-nav-link">
+                        <span class="d-flex align-items-center gap-2.5">
+                            <i class="bi bi-play-circle-fill nav-icon" style="color: #22d3ee !important;"></i>
+                            <span>E-Learning &amp; Videos</span>
+                        </span>
+                        <span class="sidebar-nav-badge" style="background-color: rgba(8, 145, 178, 0.25); color: #67e8f9; border: 1px solid rgba(8, 145, 178, 0.4);">1 JAHR</span>
+                    </a>
+
+                    <a href="javascript:void(0)" onclick="alert('Deine Swiss QR-Bill Rechnungen & Quittungen sind im Kundenarchiv hinterlegt.')" class="sidebar-nav-link">
+                        <span class="d-flex align-items-center gap-2.5">
+                            <i class="bi bi-file-earmark-text-fill nav-icon" style="color: #c084fc !important;"></i>
+                            <span>Meine Rechnungen</span>
+                        </span>
+                        <span class="sidebar-nav-badge" style="background-color: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.35);">QR-BILL</span>
                     </a>
 
                     <a href="javascript:void(0)" onclick="alert('Nautic Ausbildungsrichtlinien, AGB & Schifffahrtsamts-Zulassung hinterlegt.')" class="sidebar-nav-link">
-                        <i class="bi bi-shield-check"></i>
-                        <span>Rechtliches &amp; Nachweise</span>
+                        <span class="d-flex align-items-center gap-2.5">
+                            <i class="bi bi-shield-check nav-icon" style="color: #818cf8 !important;"></i>
+                            <span>Rechtliches &amp; Nachweise</span>
+                        </span>
+                        <span class="sidebar-nav-badge" style="background-color: rgba(99, 102, 241, 0.2); color: #c7d2fe; border: 1px solid rgba(99, 102, 241, 0.35);">AGB</span>
                     </a>
 
                     <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#profileModal" class="sidebar-nav-link">
-                        <i class="bi bi-person"></i>
-                        <span>Mein Profil</span>
+                        <span class="d-flex align-items-center gap-2.5">
+                            <i class="bi bi-person-circle nav-icon" style="color: #cbd5e1 !important;"></i>
+                            <span>Mein Profil</span>
+                        </span>
+                        <span class="sidebar-nav-badge" style="background-color: rgba(255, 255, 255, 0.1); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.18);">KUNDE</span>
                     </a>
                 </nav>
             </div>
@@ -234,7 +263,7 @@ ob_start();
         <!-- ============================================================== -->
         <!-- HAUPTINHALT (RECHTS)                                          -->
         <!-- ============================================================== -->
-        <div class="flex-grow-1 p-3 p-md-4 p-lg-5 overflow-y-auto" style="background-color: #f8fafc;">
+        <div class="flex-grow-1 p-3 p-md-4 p-lg-5 overflow-y-auto" style="background-color: #ede5dc;">
             <div class="portal-inner-container mx-auto" style="max-width: 1440px; width: 100%;">
             
             <?php
@@ -249,7 +278,7 @@ ob_start();
                         Willkommen zurück, <?= htmlspecialchars($displayName) ?>!
                     </h2>
                     <p class="text-muted small mb-0 d-flex align-items-center gap-1.5">
-                        <span>Hier ist Ihre Kunden-Übersicht für heute.</span>
+                        <span>Hier ist deine Kunden-Übersicht für heute.</span>
                         <span>&bull;</span>
                         <span class="d-flex align-items-center gap-1">
                             <i class="bi bi-envelope text-muted"></i>
@@ -259,7 +288,7 @@ ob_start();
                 </div>
 
                 <div class="d-flex align-items-center gap-2.5">
-                    <button type="button" class="btn btn-light bg-white border rounded-3 px-3.5 py-2 small fw-semibold shadow-xs d-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#profileModal">
+                    <button type="button" class="btn btn-light border rounded-3 px-3.5 py-2 small fw-semibold shadow-xs d-flex align-items-center gap-1.5" style="background-color: #f6f0e7; border-color: #e3d6c5;" data-bs-toggle="modal" data-bs-target="#profileModal">
                         <i class="bi bi-person text-secondary"></i>
                         <span>Mein Profil</span>
                     </button>
@@ -276,9 +305,9 @@ ob_start();
                 
                 <!-- Kachel Luzern -->
                 <div class="col-12 col-md-6">
-                    <div class="card border rounded-4 p-3.5 bg-white shadow-xs d-flex flex-row align-items-center justify-content-between">
+                    <div class="card border rounded-4 p-3.5 shadow-xs d-flex flex-row align-items-center justify-content-between" style="background-color: #f6f0e7; border: 1.5px solid #e3d6c5;">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary" style="width: 50px; height: 50px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary" style="width: 50px; height: 50px; background-color: #eee4d5; border: 1px solid #dfd0bc;">
                                 <i class="bi bi-cloud fs-3 text-secondary"></i>
                             </div>
                             <div>
@@ -305,9 +334,9 @@ ob_start();
 
                 <!-- Kachel Hergiswil -->
                 <div class="col-12 col-md-6">
-                    <div class="card border rounded-4 p-3.5 bg-white shadow-xs d-flex flex-row align-items-center justify-content-between">
+                    <div class="card border rounded-4 p-3.5 shadow-xs d-flex flex-row align-items-center justify-content-between" style="background-color: #f6f0e7; border: 1.5px solid #e3d6c5;">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary" style="width: 50px; height: 50px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary" style="width: 50px; height: 50px; background-color: #eee4d5; border: 1px solid #dfd0bc;">
                                 <i class="bi bi-cloud fs-3 text-secondary"></i>
                             </div>
                             <div>
@@ -335,14 +364,14 @@ ob_start();
             </div>
 
             <!-- 3. Gelbes Warnbanner: Profil vervollständigen & AGB bestätigen -->
-            <div class="rounded-4 p-3.5 mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 shadow-xs" style="background-color: #fff9eb; border: 1px solid #f5dfa8;">
+            <div class="rounded-4 p-3.5 mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 shadow-xs" style="background-color: #f5eedf; border: 1.5px solid #edd5a3;">
                 <div class="d-flex align-items-start gap-3">
                     <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background-color: #fef3c7; border: 1px solid #fde68a;">
                         <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
                     </div>
                     <div>
                         <h6 class="fw-bold text-dark mb-1">
-                            Bitte Profil-Angaben vervollständigen und AGB bestätigen
+                            Bitte vervollständige deine Profil-Angaben und bestätige die AGB
                         </h6>
                         <p class="small text-muted mb-0">
                             Fehlend: Notfallkontakt. Bitte vor dem ersten Ablegen die AGB &amp; Mietbedingungen bestätigen.
@@ -354,7 +383,7 @@ ob_start();
                     <button type="button" class="btn text-white fw-bold btn-sm rounded-3 px-3 py-2 shadow-xs" style="background-color: #f97316;" data-bs-toggle="modal" data-bs-target="#profileModal">
                         Profil ergänzen
                     </button>
-                    <button type="button" class="btn text-white fw-bold btn-sm rounded-3 px-3 py-2 shadow-xs d-flex align-items-center gap-1.5" style="background-color: #18202c;" onclick="this.innerHTML='✓ AGB bestätigt'; this.style.backgroundColor='#059669';">
+                    <button type="button" class="btn text-white fw-bold btn-sm rounded-3 px-3 py-2 shadow-xs d-flex align-items-center gap-1.5" style="background-color: #2d2421;" onclick="this.innerHTML='✓ AGB bestätigt'; this.style.backgroundColor='#059669';">
                         <i class="bi bi-check-lg"></i>
                         <span>AGB bestätigen</span>
                     </button>
@@ -366,10 +395,10 @@ ob_start();
                 
                 <!-- Card 1: Self Check-in -->
                 <div class="col-12 col-md-4">
-                    <div class="card border rounded-4 p-3.5 h-100 bg-white shadow-xs d-flex flex-column justify-content-between">
+                    <div class="card border rounded-4 p-3.5 h-100 shadow-xs d-flex flex-column justify-content-between" style="background-color: #f6f0e7; border: 1.5px solid #e3d6c5;">
                         <div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center text-success" style="width: 40px; height: 40px; background-color: #ecfdf5;">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-success" style="width: 40px; height: 40px; background-color: #ecfdf5; border: 1px solid #a7f3d0;">
                                     <i class="bi bi-qr-code fs-5"></i>
                                 </div>
                                 <span class="badge rounded-pill fw-bold text-uppercase px-2.5 py-1" style="background-color: #ecfdf5; color: #047857; font-size: 0.65rem; letter-spacing: 0.5px;">BOOT MIETEN</span>
@@ -379,7 +408,7 @@ ob_start();
                                 <span class="badge rounded px-1.5 py-0.5 fw-semibold" style="background-color: #d1fae5; color: #065f46; font-size: 0.65rem;">Nur Miete</span>
                             </div>
                             <p class="small text-muted mb-3" style="font-size: 0.78rem;">
-                                Digitaler Check-in, Schiffsübernahme &amp; Telemetrie vor dem Ablegen bei Bootsmieten.
+                                Dein digitaler Check-in, Schiffsübernahme &amp; Telemetrie vor dem Ablegen bei Bootsmieten.
                             </p>
                         </div>
                         <button type="button" class="btn w-100 fw-bold btn-sm rounded-3 py-2 text-success border d-flex align-items-center justify-content-center gap-1" style="background-color: #f0fdf4; border-color: #bbf7d0;" onclick="alert('Digitaler Check-in für Bootsmiete geöffnet.')">
@@ -390,10 +419,10 @@ ob_start();
 
                 <!-- Card 2: Fahrguthaben & VIP -->
                 <div class="col-12 col-md-4">
-                    <div class="card border rounded-4 p-3.5 h-100 bg-white shadow-xs d-flex flex-column justify-content-between">
+                    <div class="card border rounded-4 p-3.5 h-100 shadow-xs d-flex flex-column justify-content-between" style="background-color: #f6f0e7; border: 1.5px solid #e3d6c5;">
                         <div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center text-warning" style="width: 40px; height: 40px; background-color: #fffbeb;">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-warning" style="width: 40px; height: 40px; background-color: #fffbeb; border: 1px solid #fde68a;">
                                     <i class="bi bi-award fs-5 text-warning-emphasis"></i>
                                 </div>
                                 <span class="badge rounded-pill fw-bold text-uppercase px-2.5 py-1" style="background-color: #fffbeb; color: #b45309; font-size: 0.65rem; letter-spacing: 0.5px;">
@@ -402,7 +431,7 @@ ob_start();
                             </div>
                             <h6 class="fw-bold text-dark mb-1">Fahrguthaben &amp; VIP</h6>
                             <p class="small text-muted mb-3" style="font-size: 0.78rem;">
-                                10er &amp; 5er Abos, Fahrstunden oder Spezial-Coachings erwerben &amp; verwalten.
+                                Deine 10er &amp; 5er Abos, Fahrstunden oder Spezial-Coachings erwerben &amp; verwalten.
                             </p>
                         </div>
                         <button type="button" class="btn w-100 fw-bold btn-sm rounded-3 py-2 text-warning-emphasis border d-flex align-items-center justify-content-center gap-1" style="background-color: #fffbeb; border-color: #fde68a;" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
@@ -413,20 +442,20 @@ ob_start();
 
                 <!-- Card 3: Rechnungen & Belege -->
                 <div class="col-12 col-md-4">
-                    <div class="card border rounded-4 p-3.5 h-100 bg-white shadow-xs d-flex flex-column justify-content-between">
+                    <div class="card border rounded-4 p-3.5 h-100 shadow-xs d-flex flex-column justify-content-between" style="background-color: #f6f0e7; border: 1.5px solid #e3d6c5;">
                         <div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary" style="width: 40px; height: 40px; background-color: #f1f5f9;">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary" style="width: 40px; height: 40px; background-color: #ede4d5; border: 1px solid #dfd0bc;">
                                     <i class="bi bi-file-earmark-text fs-5 text-dark"></i>
                                 </div>
-                                <span class="badge rounded-pill fw-bold text-uppercase px-2.5 py-1" style="background-color: #f1f5f9; color: #475569; font-size: 0.65rem; letter-spacing: 0.5px;">SWISS QR-BILL</span>
+                                <span class="badge rounded-pill fw-bold text-uppercase px-2.5 py-1" style="background-color: #ede4d5; color: #475569; font-size: 0.65rem; letter-spacing: 0.5px;">SWISS QR-BILL</span>
                             </div>
                             <h6 class="fw-bold text-dark mb-1">Rechnungen &amp; Belege</h6>
                             <p class="small text-muted mb-3" style="font-size: 0.78rem;">
-                                Übersicht aller Quittungen, Lektionen und Treibstoffkosten mit PDF-Druck.
+                                Übersicht all deiner Quittungen, Lektionen und Treibstoffkosten mit PDF-Druck.
                             </p>
                         </div>
-                        <button type="button" class="btn w-100 fw-bold btn-sm rounded-3 py-2 text-dark border d-flex align-items-center justify-content-center gap-1" style="background-color: #f8fafc; border-color: #e2e8f0;" onclick="alert('Ihre Schweizer QR-Rechnungen und Quittungen stehen als Download bereit.')">
+                        <button type="button" class="btn w-100 fw-bold btn-sm rounded-3 py-2 text-dark border d-flex align-items-center justify-content-center gap-1" style="background-color: #eee4d5; border-color: #dfd0bc;" onclick="alert('Deine Schweizer QR-Rechnungen und Quittungen stehen als Download bereit.')">
                             <span>Zu den Rechnungen</span> &rarr;
                         </button>
                     </div>
@@ -441,13 +470,13 @@ ob_start();
                 <div class="col-12 col-lg-8 d-flex flex-column gap-4">
                     
                     <!-- Anstehende Termine Karte -->
-                    <div class="card border rounded-4 p-4 bg-white shadow-xs">
-                        <div class="d-flex justify-content-between align-items-center pb-3 border-bottom mb-4">
+                    <div class="card border rounded-4 p-4 shadow-xs" style="background-color: #f6f0e7; border: 1.5px solid #e3d6c5;">
+                        <div class="d-flex justify-content-between align-items-center pb-3 border-bottom mb-4" style="border-color: #e5dacb !important;">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="bi bi-calendar3 text-muted"></i>
                                 <h6 class="fw-bold text-dark mb-0">Anstehende Termine (<?= count($upcomingAppointments) ?>)</h6>
                             </div>
-                            <button type="button" class="btn btn-light bg-slate-50 border rounded-3 px-3 py-1.5 small fw-semibold d-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
+                            <button type="button" class="btn btn-light border rounded-3 px-3 py-1.5 small fw-semibold d-flex align-items-center gap-1.5" style="background-color: #eee4d5; border-color: #dfd0bc;" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
                                 <i class="bi bi-calendar-plus text-warning"></i>
                                 <span>Termin buchen</span>
                             </button>
@@ -456,14 +485,14 @@ ob_start();
                         <?php if (empty($upcomingAppointments)): ?>
                             <!-- Empty State wie im Screenshot -->
                             <div class="py-5 px-3 text-center">
-                                <div class="rounded-4 d-inline-flex align-items-center justify-content-center text-muted mb-3" style="width: 52px; height: 52px; background-color: #f8fafc; border: 1px solid #e2e8f0;">
-                                    <i class="bi bi-calendar3 fs-3"></i>
+                                <div class="rounded-4 d-inline-flex align-items-center justify-content-center text-muted mb-3" style="width: 52px; height: 52px; background-color: #eee4d5; border: 1px solid #dfd0bc;">
+                                    <i class="bi bi-calendar3 fs-3 text-secondary"></i>
                                 </div>
                                 <h6 class="fw-bold text-dark mb-1">
                                     Aktuell keine anstehenden Termine eingetragen.
                                 </h6>
                                 <p class="text-muted small mb-3 max-w-500 mx-auto" style="max-width: 440px;">
-                                    Reservieren Sie Ihre nächste Fahrstunde direkt im Kalender – Bezahlung erfolgt flexibel später.
+                                    Reserviere deine nächste Fahrstunde direkt im Kalender – Bezahlung erfolgt flexibel später.
                                 </p>
                                 <button type="button" class="btn text-white fw-bold rounded-3 px-4 py-2 small shadow-xs d-inline-flex align-items-center gap-2" style="background-color: #2d2421;" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal">
                                     <i class="bi bi-calendar-plus text-warning"></i>
@@ -489,8 +518,8 @@ ob_start();
                     </div>
 
                     <!-- Vergangene Termine Karte (wie im Screenshot mit 3 Terminen) -->
-                    <div class="card border rounded-4 p-4 bg-white shadow-xs">
-                        <div class="d-flex align-items-center gap-2 pb-3 border-bottom mb-3">
+                    <div class="card border rounded-4 p-4 shadow-xs" style="background-color: #f6f0e7; border: 1.5px solid #e3d6c5;">
+                        <div class="d-flex align-items-center gap-2 pb-3 border-bottom mb-3" style="border-color: #e5dacb !important;">
                             <i class="bi bi-clock-history text-muted"></i>
                             <h6 class="fw-bold text-dark mb-0">
                                 Vergangene Termine (<?= !empty($pastAppointments) ? count($pastAppointments) : 3 ?>)
@@ -500,7 +529,7 @@ ob_start();
                         <div class="divide-y">
                             <?php if (!empty($pastAppointments)): ?>
                                 <?php foreach ($pastAppointments as $p): ?>
-                                    <div class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom gap-2 small">
+                                    <div class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom gap-2 small" style="border-color: #e5dacb !important;">
                                         <div>
                                             <div class="d-flex align-items-center gap-2">
                                                 <span class="font-monospace fw-bold text-dark"><?= htmlspecialchars((string) $p['date']) ?></span>
@@ -520,7 +549,7 @@ ob_start();
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <!-- 3 Termine wie im Referenz-Screenshot -->
-                                <div class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom gap-2 small">
+                                <div class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom gap-2 small" style="border-color: #e5dacb !important;">
                                     <div>
                                         <div class="d-flex align-items-center gap-2">
                                             <span class="font-monospace fw-bold text-dark">2026-08-24</span>
@@ -538,7 +567,7 @@ ob_start();
                                     </div>
                                 </div>
 
-                                <div class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom gap-2 small">
+                                <div class="py-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center border-bottom gap-2 small" style="border-color: #e5dacb !important;">
                                     <div>
                                         <div class="d-flex align-items-center gap-2">
                                             <span class="font-monospace fw-bold text-dark">2026-08-29</span>
@@ -577,38 +606,14 @@ ob_start();
                         </div>
                     </div>
 
-                    <!-- Kalender-Abonnement (iCal / Webcal) Information -->
-                    <div class="card border rounded-4 p-4 bg-white shadow-xs">
-                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 pb-3 border-bottom mb-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <span class="p-2.5 rounded-3 d-inline-flex text-primary" style="background-color: #e0f2fe;">
-                                    <i class="bi bi-calendar2-check fs-4"></i>
-                                </span>
-                                <div>
-                                    <h6 class="fw-bold text-dark mb-0">Termine im Smartphone-Kalender abonnieren</h6>
-                                    <span class="text-muted small">Live-Synchronisation für Apple Kalender, Google Kalender &amp; Outlook</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-3 bg-light rounded-3 border d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
-                            <div class="font-monospace small text-dark text-truncate bg-white px-3 py-2 rounded border flex-grow-1 user-select-all" id="calendarFeedUrl">
-                                webcal://<?= htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'dein.coaching-boot.ch') ?>/?route=bootschule/me/calendar.ics&token=<?= htmlspecialchars((string) ($token ?? '')) ?>
-                            </div>
-                            <button type="button" class="btn text-white rounded-3 px-3 py-2 btn-sm fw-bold shrink-0 shadow-xs" style="background-color: #2d2421;" onclick="copyCalendarFeedUrl(this)">
-                                <i class="bi bi-clipboard me-1"></i> Kalender-Link kopieren
-                            </button>
-                        </div>
-                    </div>
-
                 </div>
 
-                <!-- RECHTE SPALTE (1/3): PROFIL-STATUS & SKIPPER SUPPORT (WIE SCREENSHOT) -->
+                <!-- RECHTE SPALTE (1/3): PROFIL-STATUS, KALENDER-SYNC & SKIPPER SUPPORT -->
                 <div class="col-12 col-lg-4 d-flex flex-column gap-4">
                     
                     <!-- Profil- & Kontostatus Box -->
-                    <div class="card border rounded-4 p-4 bg-white shadow-xs">
-                        <h6 class="fw-bold text-dark pb-2 border-bottom mb-3">
+                    <div class="card border rounded-4 p-4 shadow-xs" style="background-color: #f6f0e7; border: 1.5px solid #e3d6c5;">
+                        <h6 class="fw-bold text-dark pb-2 border-bottom mb-3" style="border-color: #e5dacb !important;">
                             Profil- &amp; Kontostatus
                         </h6>
 
@@ -643,7 +648,7 @@ ob_start();
 
                             <div class="d-flex align-items-center justify-content-between pt-1">
                                 <span class="text-muted">Rechnungs-Status:</span>
-                                <a href="javascript:void(0)" onclick="alert('Rechnungen & Zahlungsbelege öffnen.')" class="text-dark fw-semibold text-decoration-none d-flex align-items-center gap-1">
+                                <a href="javascript:void(0)" onclick="alert('Deine Rechnungen & Zahlungsbelege öffnen.')" class="text-dark fw-semibold text-decoration-none d-flex align-items-center gap-1">
                                     <span>Belege ansehen</span>
                                     <i class="bi bi-chevron-right" style="font-size: 0.75rem;"></i>
                                 </a>
@@ -651,18 +656,41 @@ ob_start();
                         </div>
                     </div>
 
+                    <!-- Kalender-Abonnement (iCal / Webcal) Information -->
+                    <div class="card border rounded-4 p-4 shadow-xs" style="background-color: #f6f0e7; border: 1.5px solid #e3d6c5;">
+                        <div class="d-flex align-items-center gap-3 pb-3 border-bottom mb-3" style="border-color: #e5dacb !important;">
+                            <span class="p-2.5 rounded-3 d-inline-flex text-primary flex-shrink-0" style="background-color: #e0f2fe; border: 1px solid #bae6fd;">
+                                <i class="bi bi-calendar2-check fs-5"></i>
+                            </span>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0 small">Termine im Smartphone-Kalender abonnieren</h6>
+                                <span class="text-muted" style="font-size: 0.75rem;">Live-Sync für Apple, Google &amp; Outlook</span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-column gap-2">
+                            <div class="font-monospace text-dark text-truncate bg-white px-2.5 py-2 rounded border user-select-all" style="font-size: 0.72rem; border-color: #d5c5b2 !important;" id="calendarFeedUrl">
+                                webcal://<?= htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'dein.coaching-boot.ch') ?>/?route=bootschule/me/calendar.ics&token=<?= htmlspecialchars((string) ($token ?? '')) ?>
+                            </div>
+                            <button type="button" class="btn text-white rounded-3 py-2 px-3 btn-sm fw-bold w-100 shadow-xs d-flex align-items-center justify-content-center gap-1.5" style="background-color: #2d2421;" onclick="copyCalendarFeedUrl(this)">
+                                <i class="bi bi-clipboard"></i>
+                                <span>Kalender-Link kopieren</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Skipper Support & Zentrale Box -->
-                    <div class="card border rounded-4 p-4 bg-white shadow-xs">
+                    <div class="card border rounded-4 p-4 shadow-xs" style="background-color: #f6f0e7; border: 1.5px solid #e3d6c5;">
                         <div class="d-flex align-items-center gap-2 text-dark fw-bold small mb-2">
                             <i class="bi bi-telephone text-secondary"></i>
                             <span>Skipper Support &amp; Zentrale</span>
                         </div>
 
                         <p class="small text-muted mb-3" style="font-size: 0.78rem;">
-                            Fragen zu Terminen oder Prüfungsvorbereitung? Ihr Coach-Team ist für Sie erreichbar.
+                            Fragen zu Terminen oder Prüfungsvorbereitung? Dein Coach-Team ist für dich erreichbar.
                         </p>
 
-                        <div class="small text-dark pt-2 border-top d-flex flex-column gap-1.5" style="font-size: 0.8rem;">
+                        <div class="small text-dark pt-2 border-top d-flex flex-column gap-1.5" style="border-color: #e5dacb !important; font-size: 0.8rem;">
                             <div><strong>Standorte:</strong> Luzern (LU) &amp; Nidwalden (NW)</div>
                             <div><strong>Telefon:</strong> +41 79 000 00 00</div>
                         </div>
@@ -684,30 +712,30 @@ ob_start();
             <!-- ============================================================== -->
             <div class="modal fade" id="requestAppointmentModal" tabindex="-1" aria-labelledby="requestAppointmentModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
-                    <div class="modal-content rounded-4 border-0 shadow-lg">
-                        <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="background-color: #f6f0e7;">
+                        <div class="modal-header border-bottom px-4 pt-4 pb-3" style="background-color: #2d2421; color: #ffffff;">
                             <div class="d-flex align-items-center gap-3">
-                                <span class="p-2.5 bg-warning bg-opacity-10 text-warning-emphasis rounded-3 d-inline-flex">
+                                <span class="p-2.5 rounded-3 d-inline-flex" style="background-color: rgba(245, 158, 11, 0.2); color: #fbbf24;">
                                     <i class="bi bi-calendar2-plus fs-4 text-warning"></i>
                                 </span>
                                 <div>
-                                    <h5 class="modal-title fw-bold text-dark mb-0" id="requestAppointmentModalLabel">Termin buchen</h5>
-                                    <span class="text-muted small">Wunschtermin für Praxisfahrstunde oder Coaching buchen</span>
+                                    <h5 class="modal-title fw-bold text-white mb-0" id="requestAppointmentModalLabel">Termin buchen</h5>
+                                    <span class="text-light text-opacity-75 small">Wunschtermin für deine Praxisfahrstunde oder Coaching buchen</span>
                                 </div>
                             </div>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
                         </div>
 
                         <form method="POST" action="?route=bootschule/me/request-appointment">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 
-                            <div class="modal-body p-4">
+                            <div class="modal-body p-4" style="background-color: #f6f0e7;">
                                 <div class="row g-3">
                                     
                                     <!-- Leistung / Ausbildungsart -->
                                     <div class="col-12">
-                                        <label class="form-label small fw-semibold text-dark mb-1">Ausbildungs- oder Mietleistung * (nur erfasste Angebote)</label>
-                                        <select name="service_id" class="form-select rounded-3 py-2" required>
+                                        <label class="form-label small fw-bold text-dark mb-1">Ausbildungs- oder Mietleistung * (nur erfasste Angebote)</label>
+                                        <select name="service_id" class="form-select rounded-3 py-2 bg-white" style="border: 1.5px solid #d5c5b2;" required>
                                             <?php if (!empty($availableServices)): ?>
                                                 <?php foreach ($availableServices as $srv): ?>
                                                     <option value="<?= (int) $srv['id'] ?>">
@@ -722,15 +750,15 @@ ob_start();
 
                                     <!-- Wunschdatum & Zeitfenster Card -->
                                     <div class="col-12">
-                                        <div class="p-3 bg-warning bg-opacity-10 rounded-3 border border-warning border-opacity-25">
+                                        <div class="p-3 rounded-3" style="background-color: #eee4d5; border: 1.5px solid #dfd0bc;">
                                             <div class="row g-3">
                                                 <div class="col-12 col-md-6">
-                                                    <label class="form-label small fw-semibold text-dark mb-1">Wunschdatum *</label>
-                                                    <input type="date" name="date" class="form-control rounded-3" required min="<?= date('Y-m-d') ?>" value="<?= date('Y-m-d', strtotime('+1 day')) ?>">
+                                                    <label class="form-label small fw-bold text-dark mb-1">Wunschdatum *</label>
+                                                    <input type="date" name="date" class="form-control rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;" required min="<?= date('Y-m-d') ?>" value="<?= date('Y-m-d', strtotime('+1 day')) ?>">
                                                 </div>
                                                 <div class="col-12 col-md-6">
-                                                    <label class="form-label small fw-semibold text-dark mb-1">Bevorzugtes Zeitfenster</label>
-                                                    <select name="time_preference" class="form-select rounded-3">
+                                                    <label class="form-label small fw-bold text-dark mb-1">Bevorzugtes Zeitfenster</label>
+                                                    <select name="time_preference" class="form-select rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;">
                                                         <option value="morning">Vormittag (09:00 – 10:30 Uhr)</option>
                                                         <option value="afternoon" selected>Nachmittag (14:00 – 15:30 Uhr)</option>
                                                         <option value="evening">Feierabend / Abend (17:30 – 19:00 Uhr)</option>
@@ -743,8 +771,8 @@ ob_start();
 
                                     <!-- Standort / Treffpunkt -->
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-semibold text-dark mb-1">Wunsch-Standort / Hafen</label>
-                                        <select name="location_id" class="form-select rounded-3">
+                                        <label class="form-label small fw-bold text-dark mb-1">Wunsch-Standort / Hafen</label>
+                                        <select name="location_id" class="form-select rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;">
                                             <?php if (!empty($availableLocations)): ?>
                                                 <?php foreach ($availableLocations as $loc): ?>
                                                     <option value="<?= (int) $loc['id'] ?>">
@@ -762,8 +790,8 @@ ob_start();
 
                                     <!-- Fahrlehrer / Coach Präferenz -->
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-semibold text-dark mb-1">Wunsch-Fahrlehrer (optional)</label>
-                                        <select name="instructor_id" class="form-select rounded-3">
+                                        <label class="form-label small fw-bold text-dark mb-1">Wunsch-Fahrlehrer (optional)</label>
+                                        <select name="instructor_id" class="form-select rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;">
                                             <option value="">Beliebig (Nächster freier Fahrlehrer)</option>
                                             <?php if (!empty($availableInstructors)): ?>
                                                 <?php foreach ($availableInstructors as $inst): ?>
@@ -777,14 +805,14 @@ ob_start();
 
                                     <!-- Verrechnung mit bestehendem Guthaben -->
                                     <div class="col-12">
-                                        <div class="p-3 bg-light rounded-3 border">
+                                        <div class="p-3 rounded-3" style="background-color: #eee4d5; border: 1.5px solid #dfd0bc;">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" name="use_balance" value="1" id="useBalanceCheck" <?= $prepaidBalance['remaining_units'] > 0 ? 'checked' : '' ?>>
-                                                <label class="form-check-label fw-semibold text-dark" for="useBalanceCheck">
+                                                <label class="form-check-label fw-bold text-dark" for="useBalanceCheck">
                                                     Mit bestehendem Stunden-Guthaben / Abonnement verrechnen
                                                 </label>
-                                                <div class="text-muted small">
-                                                    Aktuell verfügbar: <strong><?= (int) ($prepaidBalance['remaining_units'] ?? 0) ?> bezahlte Fahrstunden</strong>. Falls aktiviert, wird nach Bestätigung automatisch eine Einheit abgebucht.
+                                                <div class="text-dark text-opacity-75 small">
+                                                    Aktuell verfügbar: <strong><?= (int) ($prepaidBalance['remaining_units'] ?? 0) ?> bezahlte Fahrstunden</strong>. Falls aktiviert, wird nach Bestätigung automatisch eine Einheit von deinem Guthaben abgebucht.
                                                 </div>
                                             </div>
                                         </div>
@@ -792,16 +820,16 @@ ob_start();
 
                                     <!-- Notizen / Wünsche an den Fahrlehrer (Grösseres Textfeld) -->
                                     <div class="col-12">
-                                        <label class="form-label small fw-semibold text-dark mb-1">
+                                        <label class="form-label small fw-bold text-dark mb-1">
                                             Notizen &amp; Ausbildungsschwerpunkte (optional)
                                         </label>
-                                        <textarea name="notes" rows="4" class="form-control rounded-3" placeholder="z. B. Schwerpunkt auf Boxenmanöver rückwärts, Anlegen bei Seitenwind oder Prüfungsvorbereitung..."></textarea>
+                                        <textarea name="notes" rows="4" class="form-control rounded-3 bg-white" style="border: 1.5px solid #d5c5b2; color: #1c1917;" placeholder="z. B. Schwerpunkt auf Boxenmanöver rückwärts, Anlegen bei Seitenwind oder Prüfungsvorbereitung..."></textarea>
                                     </div>
 
                                 </div>
                             </div>
 
-                            <div class="modal-footer border-top bg-light px-4 py-3">
+                            <div class="modal-footer px-4 py-3" style="background-color: #eee4d5; border-top: 1px solid #dfd0bc;">
                                 <button type="button" class="btn btn-outline-secondary rounded-3 btn-sm px-3" data-bs-dismiss="modal">Abbrechen</button>
                                 <button type="submit" class="btn text-white rounded-3 btn-sm px-4 fw-bold shadow-sm d-inline-flex align-items-center gap-1.5" style="background-color: #2d2421;">
                                     <i class="bi bi-calendar-check text-warning"></i>
@@ -818,29 +846,29 @@ ob_start();
             <!-- ============================================================== -->
             <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
-                    <div class="modal-content rounded-4 border-0 shadow-lg">
-                        <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                    <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="background-color: #f6f0e7;">
+                        <div class="modal-header border-bottom px-4 pt-4 pb-3" style="background-color: #2d2421; color: #ffffff;">
                             <div class="d-flex align-items-center gap-3">
-                                <span class="p-2.5 bg-warning bg-opacity-10 text-dark rounded-3 d-inline-flex">
+                                <span class="p-2.5 rounded-3 d-inline-flex" style="background-color: rgba(245, 158, 11, 0.2); color: #fbbf24;">
                                     <i class="bi bi-person-gear fs-4 text-warning"></i>
                                 </span>
                                 <div>
-                                    <h5 class="modal-title fw-bold text-dark mb-0" id="profileModalLabel">Mein Kundenprofil bearbeiten</h5>
-                                    <span class="text-muted small">Kontaktdaten, Notfallkontakt, Allergien &amp; Ausbildungsdaten</span>
+                                    <h5 class="modal-title fw-bold text-white mb-0" id="profileModalLabel">Mein Kundenprofil bearbeiten</h5>
+                                    <span class="text-light text-opacity-75 small">Kontaktdaten, Notfallkontakt, Allergien &amp; Ausbildungsdaten</span>
                                 </div>
                             </div>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
                         </div>
 
                         <form method="POST" action="?route=bootschule/me/profile">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 
-                            <div class="modal-body p-4">
+                            <div class="modal-body p-4" style="background-color: #f6f0e7;">
                                 <div class="row g-3">
                                     
                                     <!-- Profilbild hinzufügen (keine Pflicht) -->
                                     <div class="col-12">
-                                        <div class="p-3 bg-light rounded-3 border d-flex align-items-center gap-3">
+                                        <div class="p-3 rounded-3 d-flex align-items-center gap-3" style="background-color: #eee4d5; border: 1.5px solid #dfd0bc;">
                                             <div class="rounded-circle bg-secondary bg-opacity-25 text-dark fw-bold d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; font-size: 1.25rem;">
                                                 <?= strtoupper(substr((string) ($customer['first_name'] ?? 'R'), 0, 1) . substr((string) ($customer['last_name'] ?? 'G'), 0, 1)) ?>
                                             </div>
@@ -850,9 +878,9 @@ ob_start();
                                                     <span class="badge bg-secondary-subtle text-secondary small">Keine Pflicht</span>
                                                 </div>
                                                 <p class="text-muted small mb-1" style="font-size: 0.75rem;">
-                                                    Freiwillig – erleichtert Ihrem Fahrlehrer das Wiedererkennen am Steg oder Schiff.
+                                                    Freiwillig – erleichtert deinem Fahrlehrer das Wiedererkennen am Steg oder Schiff.
                                                 </p>
-                                                <input type="url" name="avatar_url" class="form-control form-control-sm rounded-2 font-monospace" placeholder="https://... (Foto-URL oder Avatar)" value="<?= htmlspecialchars((string) ($customer['avatar_url'] ?? '')) ?>">
+                                                <input type="url" name="avatar_url" class="form-control form-control-sm rounded-2 font-monospace bg-white" style="border: 1.5px solid #d5c5b2;" placeholder="https://... (Foto-URL oder Avatar)" value="<?= htmlspecialchars((string) ($customer['avatar_url'] ?? '')) ?>">
                                             </div>
                                         </div>
                                     </div>
@@ -860,84 +888,84 @@ ob_start();
                                     <!-- Vorname & Nachname (Info) -->
                                     <div class="col-12 col-md-6">
                                         <label class="form-label small fw-semibold text-muted mb-1">Vorname</label>
-                                        <input type="text" class="form-control rounded-3 bg-light" value="<?= htmlspecialchars((string) ($customer['first_name'] ?? '')) ?>" disabled>
+                                        <input type="text" class="form-control rounded-3" style="background-color: #eee4d5; border: 1.5px solid #dfd0bc;" value="<?= htmlspecialchars((string) ($customer['first_name'] ?? '')) ?>" disabled>
                                     </div>
                                     <div class="col-12 col-md-6">
                                         <label class="form-label small fw-semibold text-muted mb-1">Nachname</label>
-                                        <input type="text" class="form-control rounded-3 bg-light" value="<?= htmlspecialchars((string) ($customer['last_name'] ?? '')) ?>" disabled>
+                                        <input type="text" class="form-control rounded-3" style="background-color: #eee4d5; border: 1.5px solid #dfd0bc;" value="<?= htmlspecialchars((string) ($customer['last_name'] ?? '')) ?>" disabled>
                                     </div>
 
                                     <!-- E-Mail (Info) -->
                                     <div class="col-12 col-md-6">
                                         <label class="form-label small fw-semibold text-muted mb-1">E-Mail-Adresse</label>
-                                        <input type="email" class="form-control rounded-3 bg-light" value="<?= htmlspecialchars((string) ($customer['email'] ?? '')) ?>" disabled>
+                                        <input type="email" class="form-control rounded-3" style="background-color: #eee4d5; border: 1.5px solid #dfd0bc;" value="<?= htmlspecialchars((string) ($customer['email'] ?? '')) ?>" disabled>
                                     </div>
 
                                     <!-- Telefonnummer (Zwingend) -->
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-semibold text-dark mb-1">
+                                        <label class="form-label small fw-bold text-dark mb-1">
                                             Mobiltelefonnummer <span class="text-danger">*</span>
                                         </label>
-                                        <input type="tel" name="phone" class="form-control rounded-3" placeholder="+41 79 123 45 67" required value="<?= htmlspecialchars((string) ($customer['phone'] ?? '')) ?>">
+                                        <input type="tel" name="phone" class="form-control rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;" placeholder="+41 79 123 45 67" required value="<?= htmlspecialchars((string) ($customer['phone'] ?? '')) ?>">
                                         <div class="form-text" style="font-size: 0.72rem;">Für kurzfristige wetterbedingte Verschiebungen oder Erreichbarkeit am Steg.</div>
                                     </div>
 
                                     <!-- Geburtsdatum (für Schifffahrtsamt) -->
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-semibold text-dark mb-1">
+                                        <label class="form-label small fw-bold text-dark mb-1">
                                             Geburtsdatum <span class="text-danger">*</span>
                                         </label>
-                                        <input type="date" name="birthdate" class="form-control rounded-3" value="<?= htmlspecialchars((string) ($customer['birthdate'] ?? '')) ?>">
+                                        <input type="date" name="birthdate" class="form-control rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;" value="<?= htmlspecialchars((string) ($customer['birthdate'] ?? '')) ?>">
                                         <div class="form-text" style="font-size: 0.72rem;">Vom Schifffahrtsamt für die Prüfungsanmeldung verlangt.</div>
                                     </div>
 
                                     <!-- Notfallkontakt -->
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-semibold text-dark mb-1">Notfallkontakt (Name &amp; Telefonnummer)</label>
-                                        <input type="text" name="emergency_contact" class="form-control rounded-3" placeholder="z. B. Anna Muster, +41 78 987 65 43" value="<?= htmlspecialchars((string) ($customer['emergency_contact'] ?? '')) ?>">
+                                        <label class="form-label small fw-bold text-dark mb-1">Notfallkontakt (Name &amp; Telefonnummer)</label>
+                                        <input type="text" name="emergency_contact" class="form-control rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;" placeholder="z. B. Anna Muster, +41 78 987 65 43" value="<?= htmlspecialchars((string) ($customer['emergency_contact'] ?? '')) ?>">
                                     </div>
 
                                     <!-- Allergien & medizinische Besonderheiten -->
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-semibold text-dark mb-1">
+                                        <label class="form-label small fw-bold text-dark mb-1">
                                             <i class="bi bi-shield-exclamation text-warning me-1"></i>
                                             Allergien &amp; medizinische Besonderheiten
                                         </label>
-                                        <input type="text" name="allergies" class="form-control rounded-3" placeholder="z. B. Wespen- / Bienenstich-Allergie, Laktose, Medikamente..." value="<?= htmlspecialchars((string) ($customer['allergies'] ?? 'Keine bekannten Allergien')) ?>">
+                                        <input type="text" name="allergies" class="form-control rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;" placeholder="z. B. Wespen- / Bienenstich-Allergie, Laktose, Medikamente..." value="<?= htmlspecialchars((string) ($customer['allergies'] ?? 'Keine bekannten Allergien')) ?>">
                                     </div>
 
                                     <!-- Strasse & Nr. -->
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-semibold text-dark mb-1">Strasse &amp; Hausnummer</label>
-                                        <input type="text" name="street" class="form-control rounded-3" placeholder="Seestrasse 12" value="<?= htmlspecialchars((string) ($customer['street'] ?? '')) ?>">
+                                        <label class="form-label small fw-bold text-dark mb-1">Strasse &amp; Hausnummer</label>
+                                        <input type="text" name="street" class="form-control rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;" placeholder="Seestrasse 12" value="<?= htmlspecialchars((string) ($customer['street'] ?? '')) ?>">
                                     </div>
 
                                     <!-- PLZ & Ort -->
                                     <div class="col-12 col-md-6">
                                         <div class="row g-2">
                                             <div class="col-4">
-                                                <label class="form-label small fw-semibold text-dark mb-1">PLZ</label>
-                                                <input type="text" name="zip" class="form-control rounded-3" placeholder="6000" value="<?= htmlspecialchars((string) ($customer['zip'] ?? '')) ?>">
+                                                <label class="form-label small fw-bold text-dark mb-1">PLZ</label>
+                                                <input type="text" name="zip" class="form-control rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;" placeholder="6000" value="<?= htmlspecialchars((string) ($customer['zip'] ?? '')) ?>">
                                             </div>
                                             <div class="col-8">
-                                                <label class="form-label small fw-semibold text-dark mb-1">Wohnort</label>
-                                                <input type="text" name="city" class="form-control rounded-3" placeholder="Luzern" value="<?= htmlspecialchars((string) ($customer['city'] ?? '')) ?>">
+                                                <label class="form-label small fw-bold text-dark mb-1">Wohnort</label>
+                                                <input type="text" name="city" class="form-control rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;" placeholder="Luzern" value="<?= htmlspecialchars((string) ($customer['city'] ?? '')) ?>">
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Notizen & Wünsche: Grösseres Textfeld -->
                                     <div class="col-12">
-                                        <label class="form-label small fw-semibold text-dark mb-1">Notizen &amp; Wünsche (grösseres Textfeld)</label>
-                                        <textarea name="notes" rows="4" class="form-control rounded-3" placeholder="Ihre Notizen, Ausbildungsziele, zeitliche Präferenzen oder Vorkenntnisse..."><?= htmlspecialchars((string) ($customer['notes'] ?? '')) ?></textarea>
+                                        <label class="form-label small fw-bold text-dark mb-1">Notizen &amp; Wünsche (grösseres Textfeld)</label>
+                                        <textarea name="notes" rows="4" class="form-control rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;" placeholder="Deine Notizen, Ausbildungsziele, zeitliche Präferenzen oder Vorkenntnisse..."><?= htmlspecialchars((string) ($customer['notes'] ?? '')) ?></textarea>
                                     </div>
 
                                     <!-- AUFKLAPPBARER BEREICH AM SCHLUSS: THEORIE BESTANDEN (MIT DATUMSANGABE) -->
                                     <div class="col-12">
                                         <div class="accordion" id="theoryAccordion">
-                                            <div class="accordion-item rounded-3 border overflow-hidden">
+                                            <div class="accordion-item rounded-3 border overflow-hidden" style="border-color: #dfd0bc !important;">
                                                 <h2 class="accordion-header" id="headingTheory">
-                                                    <button class="accordion-button collapsed bg-light text-dark fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTheory" aria-expanded="false" aria-controls="collapseTheory">
+                                                    <button class="accordion-button collapsed fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTheory" aria-expanded="false" aria-controls="collapseTheory" style="background-color: #eee4d5;">
                                                         <i class="bi bi-patch-check-fill text-warning me-2 fs-5"></i>
                                                         Theorie Bestanden (mit Datumsangabe)
                                                         <?php if (!empty($customer['theory_passed'])): ?>
@@ -946,55 +974,55 @@ ob_start();
                                                     </button>
                                                 </h2>
                                                 <div id="collapseTheory" class="accordion-collapse collapse" aria-labelledby="headingTheory" data-bs-parent="#theoryAccordion">
-                                                    <div class="accordion-body bg-white p-3 p-md-4">
+                                                    <div class="accordion-body p-3 p-md-4" style="background-color: #f6f0e7;">
                                                         <div class="row g-3">
                                                             <!-- Checkbox & Datumsangabe -->
                                                             <div class="col-12 col-md-6">
                                                                 <div class="form-check pt-2">
                                                                     <input class="form-check-input" type="checkbox" name="theory_passed" value="1" id="theoryPassedCheck" <?= !empty($customer['theory_passed']) ? 'checked' : '' ?>>
-                                                                    <label class="form-check-label fw-semibold text-dark" for="theoryPassedCheck">
+                                                                    <label class="form-check-label fw-bold text-dark" for="theoryPassedCheck">
                                                                         Theorieprüfung Schifffahrtsamt bestanden
                                                                     </label>
                                                                 </div>
                                                             </div>
                                                             <div class="col-12 col-md-6">
-                                                                <label class="form-label small fw-semibold text-dark mb-1">
+                                                                <label class="form-label small fw-bold text-dark mb-1">
                                                                     Datum Theorieprüfung (mit Datumsangabe)
                                                                 </label>
-                                                                <input type="date" name="theory_passed_at" class="form-control rounded-3" value="<?= htmlspecialchars((string) ($customer['theory_passed_at'] ?? '')) ?>">
+                                                                <input type="date" name="theory_passed_at" class="form-control rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;" value="<?= htmlspecialchars((string) ($customer['theory_passed_at'] ?? '')) ?>">
                                                             </div>
 
                                                             <!-- FABER: Fahrberechtigungs-Register -->
                                                             <div class="col-12 col-md-4">
-                                                                <label class="form-label small fw-semibold text-dark mb-1">
+                                                                <label class="form-label small fw-bold text-dark mb-1">
                                                                     FABER: <span class="theory-req-star text-danger" style="display: <?= !empty($customer['theory_passed']) ? 'inline' : 'none' ?>;">*</span>
                                                                 </label>
-                                                                <input type="text" name="faber" class="form-control rounded-3 font-monospace" placeholder="z. B. 123.456.789" value="<?= htmlspecialchars((string) ($customer['faber'] ?? $customer['license_number'] ?? '')) ?>">
+                                                                <input type="text" name="faber" class="form-control rounded-3 font-monospace bg-white" style="border: 1.5px solid #d5c5b2;" placeholder="z. B. 123.456.789" value="<?= htmlspecialchars((string) ($customer['faber'] ?? $customer['license_number'] ?? '')) ?>">
                                                                 <div class="form-text" style="font-size: 0.70rem;">Fahrberechtigungs-Register (nur bei bestandener Theorie)</div>
                                                             </div>
 
                                                             <!-- PIN: Persönliche Identifikationsnummer -->
                                                             <div class="col-12 col-md-4">
-                                                                <label class="form-label small fw-semibold text-dark mb-1">
+                                                                <label class="form-label small fw-bold text-dark mb-1">
                                                                     PIN: <span class="theory-req-star text-danger" style="display: <?= !empty($customer['theory_passed']) ? 'inline' : 'none' ?>;">*</span>
                                                                 </label>
-                                                                <input type="text" name="pin" class="form-control rounded-3 font-monospace" placeholder="z. B. 7841" value="<?= htmlspecialchars((string) ($customer['pin'] ?? '')) ?>">
+                                                                <input type="text" name="pin" class="form-control rounded-3 font-monospace bg-white" style="border: 1.5px solid #d5c5b2;" placeholder="z. B. 7841" value="<?= htmlspecialchars((string) ($customer['pin'] ?? '')) ?>">
                                                                 <div class="form-text" style="font-size: 0.70rem;">Persönliche Identifikationsnummer (nur bei bestandener Theorie)</div>
                                                             </div>
 
                                                             <!-- PID: Personen-Identifikator -->
                                                             <div class="col-12 col-md-4">
-                                                                <label class="form-label small fw-semibold text-dark mb-1">
+                                                                <label class="form-label small fw-bold text-dark mb-1">
                                                                     PID: <span class="theory-req-star text-danger" style="display: <?= !empty($customer['theory_passed']) ? 'inline' : 'none' ?>;">*</span>
                                                                 </label>
-                                                                <input type="text" name="pid" class="form-control rounded-3 font-monospace" placeholder="z. B. CHE-123.456.7" value="<?= htmlspecialchars((string) ($customer['pid'] ?? '')) ?>">
+                                                                <input type="text" name="pid" class="form-control rounded-3 font-monospace bg-white" style="border: 1.5px solid #d5c5b2;" placeholder="z. B. CHE-123.456.7" value="<?= htmlspecialchars((string) ($customer['pid'] ?? '')) ?>">
                                                                 <div class="form-text" style="font-size: 0.70rem;">Personen-Identifikator (nur bei bestandener Theorie)</div>
                                                             </div>
 
                                                             <div class="col-12">
-                                                                <div class="alert alert-light border small text-muted mb-0">
+                                                                <div class="alert border small text-muted mb-0" style="background-color: #eee4d5; border-color: #dfd0bc;">
                                                                     <i class="bi bi-info-circle me-1"></i>
-                                                                    <strong>Hinweis zur Prüfungsanmeldung:</strong> Die ASA-Daten (FABER, PIN und PID) werden erst benötigt und verlangt, sobald Sie die Theorieprüfung beim Schifffahrtsamt erfolgreich bestanden haben.
+                                                                    <strong>Hinweis zur Prüfungsanmeldung:</strong> Die ASA-Daten (FABER, PIN und PID) werden erst benötigt und verlangt, sobald du die Theorieprüfung beim Schifffahrtsamt erfolgreich bestanden hast.
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1007,9 +1035,9 @@ ob_start();
                                 </div>
                             </div>
 
-                            <div class="modal-footer border-top bg-light px-4 py-3">
+                            <div class="modal-footer px-4 py-3" style="background-color: #eee4d5; border-top: 1px solid #dfd0bc;">
                                 <button type="button" class="btn btn-outline-secondary rounded-3 btn-sm px-3" data-bs-dismiss="modal">Abbrechen</button>
-                                <button type="submit" class="btn btn-dark rounded-3 btn-sm px-4 fw-bold shadow-sm">
+                                <button type="submit" class="btn text-white rounded-3 btn-sm px-4 fw-bold shadow-sm" style="background-color: #2d2421;">
                                     <i class="bi bi-save me-1"></i> Profilangaben speichern &rarr;
                                 </button>
                             </div>

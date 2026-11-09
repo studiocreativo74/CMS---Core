@@ -105,21 +105,27 @@ unset($_SESSION['flash_portal_success'], $_SESSION['flash_portal_error'], $_SESS
         .bg-slate-50 {
             background-color: #f8fafc !important;
         }
-        .card {
-            border-color: #e5e7eb !important;
+        
+        /* Light brown box backgrounds for high contrast and readability */
+        .card, .card.bg-white, .portal-box {
+            background-color: #f6f0e7 !important; /* Warm light-brown */
+            border: 1px solid #e5dacb !important;
             border-radius: 1.25rem !important;
+            box-shadow: 0 1px 3px rgba(45, 36, 33, 0.05);
             transition: all 0.2s ease-in-out;
         }
         .card:hover {
-            border-color: #cbd5e1 !important;
+            border-color: #d8c7b2 !important;
+            box-shadow: 0 4px 12px rgba(45, 36, 33, 0.08);
         }
 
         /* Sidebar Navigation Item Styling */
         .sidebar-nav-link {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 0.75rem;
-            padding: 0.7rem 1rem;
+            padding: 0.7rem 0.95rem;
             border-radius: 0.75rem;
             color: #d6d3d1 !important;
             text-decoration: none !important;
@@ -135,25 +141,79 @@ unset($_SESSION['flash_portal_success'], $_SESSION['flash_portal_error'], $_SESS
             background-color: #4a3d38 !important;
             color: #ffffff !important;
             font-weight: 700;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
             border-left: 3px solid #fbbf24;
             padding-left: 0.8rem;
         }
+        .sidebar-nav-link .nav-icon {
+            font-size: 1.05rem;
+            line-height: 1;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s ease;
+        }
+        .sidebar-nav-link:hover .nav-icon {
+            transform: scale(1.1);
+        }
+        .sidebar-nav-badge {
+            font-size: 0.625rem;
+            font-weight: 700;
+            padding: 0.18rem 0.45rem;
+            border-radius: 9999px;
+            letter-spacing: 0.4px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
 
-        /* Modal Dialog Styling */
+        /* Modal Dialog Styling with Light Brown Background & High Contrast */
         .modal-content {
             border-radius: 1.5rem !important;
             overflow: hidden;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            border: 1px solid #ded0be !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
+            background-color: #f6f0e7 !important;
         }
         .modal-header {
-            background-color: #2d2421;
-            color: #ffffff;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: #2d2421 !important;
+            color: #ffffff !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+        .modal-header .modal-title, .modal-header h1, .modal-header h2, .modal-header h3, .modal-header h4, .modal-header h5 {
+            color: #ffffff !important;
+        }
+        .modal-header .text-muted, .modal-header .text-secondary, .modal-header span.small {
+            color: rgba(255, 255, 255, 0.75) !important;
         }
         .modal-header .btn-close {
-            filter: invert(1) grayscale(100%) brightness(200%);
+            filter: invert(1) grayscale(100%) brightness(200%) !important;
+        }
+        .modal-body {
+            background-color: #f6f0e7 !important; /* Light-brown for modal body */
+            color: #1c1917 !important;
+        }
+        .modal-footer {
+            background-color: #eee4d5 !important;
+            border-top: 1px solid #e2d4c3 !important;
+        }
+
+        /* Crisp white form controls inside the light-brown boxes for optimal contrast */
+        .form-control, .form-select {
+            background-color: #ffffff !important;
+            border: 1.5px solid #d5c5b2 !important;
+            color: #1c1917 !important;
+            font-weight: 500;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: #ffffff !important;
+            border-color: #b45309 !important;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25) !important;
+            color: #1c1917 !important;
+        }
+        label.form-label, .form-label {
+            color: #292524 !important;
+            font-weight: 600;
         }
 
         .portal-navbar {

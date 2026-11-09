@@ -101,7 +101,7 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8">
+      <div className="bg-[#f6f0e7] rounded-3xl max-w-xl w-full shadow-2xl border border-[#ded0be] overflow-hidden my-8">
         
         {/* Header */}
         <div className="px-6 py-5 bg-[#2d2421] text-white flex items-center justify-between">
@@ -114,7 +114,7 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
                 Termin buchen
               </h3>
               <p className="text-xs text-stone-300">
-                Wählen Sie Ihre gewünschte Dienstleistung, Ihren Coach und den Termin
+                Wähle deine gewünschte Dienstleistung, deinen Coach und den Termin
               </p>
             </div>
           </div>
@@ -133,13 +133,13 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
           
           {/* 1. Dienstleistung wählen (NUR erfasste Dienstleistungen) */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-stone-900 uppercase tracking-wider">
               1. Dienstleistung auswählen *
             </label>
             <select
               value={selectedServiceId}
               onChange={e => setSelectedServiceId(Number(e.target.value))}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
             >
               {activeServices.map(s => (
                 <option key={s.id} value={s.id}>
@@ -148,7 +148,7 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
               ))}
             </select>
             {currentService && (
-              <p className="text-[11px] text-slate-500 line-clamp-2 mt-1">
+              <p className="text-[11px] text-slate-600 line-clamp-2 mt-1">
                 {currentService.description}
               </p>
             )}
@@ -157,13 +157,13 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
           {/* 2. Fahrcoach wählen (NUR erfasste Coaches) */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-slate-500" />
+              <User className="w-3.5 h-3.5 text-slate-600" />
               <span>2. Coach / Fahrlehrer wählen *</span>
             </label>
             <select
               value={selectedCoachId}
               onChange={e => setSelectedCoachId(e.target.value === 'any' ? 'any' : Number(e.target.value))}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
             >
               <option value="any">Beliebiger Coach (Früheste Verfügbarkeit)</option>
               {instructors.map(i => (
@@ -178,7 +178,7 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                <Calendar className="w-3.5 h-3.5 text-slate-600" />
                 <span>Wunschdatum *</span>
               </label>
               <input
@@ -187,19 +187,19 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
                 min={new Date().toISOString().slice(0, 10)}
                 value={selectedDate}
                 onChange={e => setSelectedDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
               />
             </div>
 
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-slate-500" />
+                <Clock className="w-3.5 h-3.5 text-slate-600" />
                 <span>Startzeit *</span>
               </label>
               <select
                 value={selectedStartTime}
                 onChange={e => setSelectedStartTime(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
               >
                 <option value="08:30">08:30 Uhr (Frühschicht)</option>
                 <option value="10:30">10:30 Uhr (Vormittag)</option>
@@ -213,13 +213,13 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
           {/* 4. Treffpunkt / Standort */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-slate-500" />
+              <MapPin className="w-3.5 h-3.5 text-slate-600" />
               <span>Treffpunkt / Hafensteg *</span>
             </label>
             <select
               value={selectedLocation}
               onChange={e => setSelectedLocation(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
             >
               <option value="Luzern (Alpenquai)">Luzern – Alpenquai Steg 3 (Hauptstandort)</option>
               <option value="Hergiswil NW (Bootshafen)">Hergiswil NW – Bootshafen / Seestrasse</option>
@@ -229,27 +229,27 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
 
           {/* 5. Guthaben einlösen (falls vorhanden) */}
           {studentRemainingSessions > 0 && (
-            <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-center justify-between gap-3">
+            <div className="p-3.5 bg-[#eee4d5] rounded-2xl border border-[#ded0be] flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold shrink-0">
-                  <Award className="w-4 h-4 text-emerald-700" />
+                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold shrink-0">
+                  <Award className="w-4 h-4 text-amber-700" />
                 </div>
                 <div>
-                  <div className="font-bold text-xs text-emerald-950">
+                  <div className="font-bold text-xs text-stone-900">
                     VIP-Guthaben verfügbar
                   </div>
-                  <div className="text-[11px] text-emerald-800">
-                    Sie haben noch {studentRemainingSessions} bezahlte Lektionen auf Ihrem Konto.
+                  <div className="text-[11px] text-stone-700">
+                    Du hast noch {studentRemainingSessions} bezahlte Lektionen auf deinem Konto.
                   </div>
                 </div>
               </div>
 
-              <label className="flex items-center gap-2 cursor-pointer font-bold text-xs text-emerald-900">
+              <label className="flex items-center gap-2 cursor-pointer font-bold text-xs text-stone-900">
                 <input
                   type="checkbox"
                   checked={useBalance}
                   onChange={e => setUseBalance(e.target.checked)}
-                  className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                  className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4 cursor-pointer"
                 />
                 <span>Anrechnen (CHF 0.00)</span>
               </label>
@@ -266,15 +266,15 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
               placeholder="z. B. Fokus auf Rückwärts in Box anlegen, Boje über Bord Manöver..."
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
             />
           </div>
 
           {/* Zusammenfassung & Footer */}
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+          <div className="p-4 bg-[#eee4d5] rounded-2xl border border-[#ded0be] flex items-center justify-between">
             <div>
-              <div className="text-[11px] text-slate-500">Gesamtbetrag:</div>
-              <div className="text-base font-extrabold text-slate-900">
+              <div className="text-[11px] text-stone-600">Gesamtbetrag:</div>
+              <div className="text-base font-extrabold text-stone-900">
                 {useBalance ? 'CHF 0.00 (aus Abo verrechnet)' : `CHF ${servicePrice.toFixed(2)}`}
               </div>
             </div>
@@ -283,7 +283,7 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-white transition cursor-pointer"
+                className="px-4 py-2.5 rounded-xl border border-[#ded0be] text-xs font-bold text-slate-700 bg-white hover:bg-stone-50 transition cursor-pointer"
               >
                 Abbrechen
               </button>

@@ -660,7 +660,7 @@ export default function App() {
 
   const handleCompleteCheckin = () => {
     if (!checkinFitness || !checkinLicense || !checkinSafety || !checkinEmergencyContact) {
-      alert('Bitte bestätigen Sie alle 4 Pflichtprüfungen (0.0‰ Alkohol, Ausweis, Sicherheitsausrüstung, Notfallkontakt).');
+      alert('Bitte bestätige alle 4 Pflichtprüfungen (0.0‰ Alkohol, Ausweis, Sicherheitsausrüstung, Notfallkontakt).');
       return;
     }
 
@@ -718,7 +718,7 @@ export default function App() {
 
   const handleCompleteCheckout = () => {
     if (!checkoutMooringSecured || !checkoutKeysReturned || !checkoutEquipmentChecked) {
-      alert('Bitte bestätigen Sie die 3 Sicherungsprüfungen (Vertäut & Hauptschalter AUS, Schlüssel im Safe, Ausrüstung vollzählig).');
+      alert('Bitte bestätige die 3 Sicherungsprüfungen (Vertäut & Hauptschalter AUS, Schlüssel im Safe, Ausrüstung vollzählig).');
       return;
     }
 
@@ -1371,7 +1371,7 @@ export default function App() {
   const handleValidatePromo = () => {
     const code = checkoutPromoInput.trim().toUpperCase();
     if (!code) {
-      setCheckoutPromoMsg({ type: 'error', text: 'Bitte geben Sie einen Rabattcode ein.' });
+      setCheckoutPromoMsg({ type: 'error', text: 'Bitte gib einen Rabattcode ein.' });
       return;
     }
     const found = promoCodes.find(p => p.code.toUpperCase() === code);
@@ -1468,9 +1468,9 @@ export default function App() {
     setCheckoutService(null);
     setShowReceiptModal(newSub);
     if (isDigital) {
-      setMagicFeedback(`Gratulation! Ihre Bestellung ${orderId} wurde erfolgreich verbucht. Ihr 1-Jahres-Abo für die Nautic Academy (Lehrfilme, Bildtafeln & Prüfungstrainer) ist ab sofort für 365 Tage aktiv!`);
+      setMagicFeedback(`Gratulation! Deine Bestellung ${orderId} wurde erfolgreich verbucht. Dein 1-Jahres-Abo für die Nautic Academy (Lehrfilme, Bildtafeln & Prüfungstrainer) ist ab sofort für 365 Tage aktiv!`);
     } else {
-      setMagicFeedback(`Vielen Dank! Ihre Bestellung ${orderId} wurde erfolgreich verbucht. Das Guthaben von ${sessions} Lektion(en) steht Ihnen sofort zur Verfügung.`);
+      setMagicFeedback(`Vielen Dank! Deine Bestellung ${orderId} wurde erfolgreich verbucht. Das Guthaben von ${sessions} Lektion(en) steht dir sofort zur Verfügung.`);
     }
     setTimeout(() => setMagicFeedback(null), 6000);
   };
@@ -4530,9 +4530,14 @@ export default function App() {
                           <Calendar className="w-4.5 h-4.5 text-sky-400 shrink-0" />
                           <span>Termine &amp; Kalender</span>
                         </div>
-                        {studentSidebarNav === 'calendar' && (
-                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] bg-sky-500/20 text-sky-300 font-bold px-2 py-0.5 rounded-full border border-sky-500/30">
+                            BOOK
+                          </span>
+                          {studentSidebarNav === 'calendar' && (
+                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                          )}
+                        </div>
                       </button>
 
                       <button
@@ -4577,9 +4582,14 @@ export default function App() {
                           <Award className="w-4.5 h-4.5 text-amber-400 shrink-0" />
                           <span>Store &amp; Abos</span>
                         </div>
-                        {studentSidebarNav === 'store' && (
-                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded-full border border-amber-500/30">
+                            VIP
+                          </span>
+                          {studentSidebarNav === 'store' && (
+                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                          )}
+                        </div>
                       </button>
 
                       <button
@@ -4624,9 +4634,14 @@ export default function App() {
                           <FileText className="w-4.5 h-4.5 text-violet-400 shrink-0" />
                           <span>Meine Rechnungen</span>
                         </div>
-                        {studentSidebarNav === 'invoices' && (
-                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] bg-purple-500/20 text-purple-300 font-bold px-2 py-0.5 rounded-full border border-purple-500/30">
+                            QR-BILL
+                          </span>
+                          {studentSidebarNav === 'invoices' && (
+                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                          )}
+                        </div>
                       </button>
 
                       <button
@@ -4645,9 +4660,14 @@ export default function App() {
                           <Shield className="w-4.5 h-4.5 text-indigo-400 shrink-0" />
                           <span>Rechtliches &amp; Nachweise</span>
                         </div>
-                        {studentSidebarNav === 'legal' && (
-                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] bg-indigo-500/20 text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-500/30">
+                            AGB
+                          </span>
+                          {studentSidebarNav === 'legal' && (
+                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                          )}
+                        </div>
                       </button>
 
                       <button
@@ -4663,12 +4683,17 @@ export default function App() {
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <User className="w-4.5 h-4.5 text-stone-300 shrink-0" />
+                          <User className="w-4.5 h-4.5 text-slate-300 shrink-0" />
                           <span>Mein Profil</span>
                         </div>
-                        {studentSidebarNav === 'profile' && (
-                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] bg-stone-500/20 text-stone-300 font-bold px-2 py-0.5 rounded-full border border-stone-500/30">
+                            KUNDE
+                          </span>
+                          {studentSidebarNav === 'profile' && (
+                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                          )}
+                        </div>
                       </button>
                     </nav>
                   </div>
@@ -4774,7 +4799,7 @@ export default function App() {
                 {/* ============================================================== */}
                 {/* HAUPTINHALT (RECHTS)                                          */}
                 {/* ============================================================== */}
-                <div className="flex-1 bg-[#fbfbfa] p-5 sm:p-8 xl:p-10 space-y-6 overflow-y-auto min-h-screen">
+                <div className="flex-1 bg-[#ede5dc] p-5 sm:p-8 xl:p-10 space-y-6 overflow-y-auto min-h-screen">
                   <div className="max-w-[1500px] w-full mx-auto space-y-6">
                   
                   {/* Toast Feedback */}
@@ -4800,11 +4825,11 @@ export default function App() {
                       <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                         Willkommen zurück, {displayName}!
                       </h1>
-                      <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                        <span>Hier ist Ihre Kunden-Übersicht für heute.</span>
+                      <p className="text-xs text-slate-600 mt-1 flex items-center gap-1.5">
+                        <span>Hier ist deine Kunden-Übersicht für heute.</span>
                         <span className="text-slate-400">&bull;</span>
-                        <span className="flex items-center gap-1 text-slate-600 font-medium">
-                          <Mail className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="flex items-center gap-1 text-slate-700 font-medium">
+                          <Mail className="w-3.5 h-3.5 text-slate-500" />
                           {studentProfile.email}
                         </span>
                       </p>
@@ -4814,9 +4839,9 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => setShowStudentProfileModal(true)}
-                        className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-xl border border-slate-300 shadow-xs flex items-center gap-1.5 transition"
+                        className="px-4 py-2 bg-white hover:bg-[#f6f0e7] text-slate-800 font-semibold text-xs rounded-xl border border-[#d5c5b2] shadow-xs flex items-center gap-1.5 transition"
                       >
-                        <User className="w-3.5 h-3.5 text-slate-500" />
+                        <User className="w-3.5 h-3.5 text-slate-600" />
                         <span>Mein Profil</span>
                       </button>
 
@@ -4831,14 +4856,14 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* 2. Side-by-Side Dual Wetter-Kacheln (Luzern & Hergiswil wie im Screenshot) */}
+                  {/* 2. Side-by-Side Dual Wetter-Kacheln (Luzern & Hergiswil) */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     
                     {/* Wetterkarte Luzern */}
-                    <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-slate-300 transition">
+                    <div className="bg-[#f6f0e7] rounded-3xl p-5 border border-[#e3d6c5] shadow-xs flex items-center justify-between hover:border-[#d5c5b2] transition">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500">
-                          <Cloud className="w-7 h-7 text-slate-400 stroke-1" />
+                        <div className="w-12 h-12 rounded-2xl bg-[#eee4d5] border border-[#ded0be] flex items-center justify-center text-slate-600">
+                          <Cloud className="w-7 h-7 text-slate-500 stroke-1" />
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
@@ -4858,7 +4883,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setStudentWeatherStation('luzern')}
-                          className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold hover:text-slate-600 inline-flex items-center gap-1 transition cursor-pointer"
+                          className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold hover:text-slate-800 inline-flex items-center gap-1 transition cursor-pointer"
                         >
                           PROGNOSE <ExternalLink className="w-2.5 h-2.5" />
                         </button>
@@ -4870,10 +4895,10 @@ export default function App() {
                     </div>
 
                     {/* Wetterkarte Hergiswil NW */}
-                    <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between hover:border-slate-300 transition">
+                    <div className="bg-[#f6f0e7] rounded-3xl p-5 border border-[#e3d6c5] shadow-xs flex items-center justify-between hover:border-[#d5c5b2] transition">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-500">
-                          <Cloud className="w-7 h-7 text-slate-400 stroke-1" />
+                        <div className="w-12 h-12 rounded-2xl bg-[#eee4d5] border border-[#ded0be] flex items-center justify-center text-slate-600">
+                          <Cloud className="w-7 h-7 text-slate-500 stroke-1" />
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
@@ -4893,7 +4918,7 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => setStudentWeatherStation('nidwalden')}
-                          className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold hover:text-slate-600 inline-flex items-center gap-1 transition cursor-pointer"
+                          className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold hover:text-slate-800 inline-flex items-center gap-1 transition cursor-pointer"
                         >
                           PROGNOSE <ExternalLink className="w-2.5 h-2.5" />
                         </button>
@@ -4915,10 +4940,10 @@ export default function App() {
                         </div>
                         <div>
                           <h4 className="font-bold text-slate-900 text-sm">
-                            Bitte Profil-Angaben vervollständigen und AGB bestätigen
+                            Bitte vervollständige deine Profil-Angaben und bestätige die AGB
                           </h4>
                           <p className="text-xs text-slate-600 mt-0.5">
-                            Fehlend: Notfallkontakt. Bitte vor dem ersten Ablegen die AGB &amp; Mietbedingungen bestätigen.
+                            Fehlend: Notfallkontakt. Bitte vor deinem ersten Ablegen die AGB &amp; Mietbedingungen bestätigen.
                           </p>
                         </div>
                       </div>
@@ -4959,13 +4984,13 @@ export default function App() {
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                     
                     {/* Kachel 1: Self Check-in */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all duration-150">
+                    <div className="bg-[#f6f0e7] rounded-2xl p-5 border border-[#e3d6c5] shadow-xs flex flex-col justify-between hover:shadow-md hover:border-[#d5c5b2] transition-all duration-150">
                       <div>
                         <div className="flex items-start justify-between mb-3">
-                          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                             <QrCode className="w-5 h-5" />
                           </div>
-                          <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                             BOOT MIETEN
                           </span>
                         </div>
@@ -4975,8 +5000,8 @@ export default function App() {
                             Nur Miete
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 leading-relaxed mb-4">
-                          Digitaler Check-in, Schiffsübernahme &amp; Telemetrie vor dem Ablegen bei Bootsmieten.
+                        <p className="text-xs text-slate-600 leading-relaxed mb-4">
+                          Dein digitaler Check-in, Schiffsübernahme &amp; Telemetrie vor dem Ablegen bei Bootsmieten.
                         </p>
                       </div>
 
@@ -4986,7 +5011,7 @@ export default function App() {
                           setStudentSidebarNav('checkin');
                           setStudentNavSubTab('checkin');
                         }}
-                        className="w-full py-2 bg-emerald-50/60 hover:bg-emerald-100/70 text-emerald-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-emerald-200/60 cursor-pointer"
+                        className="w-full py-2 bg-white hover:bg-[#ede5dc] text-emerald-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-[#d5c5b2] cursor-pointer shadow-xs"
                       >
                         <span>Zum Self Check-in (Bootsmiete)</span>
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -4994,30 +5019,30 @@ export default function App() {
                     </div>
 
                     {/* Kachel 2: Fahrguthaben & VIP */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all duration-150">
+                    <div className="bg-[#f6f0e7] rounded-2xl p-5 border border-[#e3d6c5] shadow-xs flex flex-col justify-between hover:shadow-md hover:border-[#d5c5b2] transition-all duration-150">
                       <div>
                         <div className="flex items-start justify-between mb-3">
-                          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
                             <Award className="w-5 h-5" />
                           </div>
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                            studentRemainingSessions > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-50 text-amber-700'
+                            studentRemainingSessions > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                           }`}>
                             {studentRemainingSessions > 0 ? `${studentRemainingSessions} LEKTIONEN VERFÜGBAR` : '0 AKTIVE ABOS'}
                           </span>
                         </div>
                         <h4 className="font-bold text-slate-900 text-sm mb-1">Fahrguthaben &amp; VIP</h4>
-                        <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                        <p className="text-xs text-slate-600 leading-relaxed mb-4">
                           {studentRemainingSessions > 0
                             ? `Aktuell ${studentRemainingSessions} bezahlte Einheiten verfügbar. Weitere Lektionen & Abos entdecken.`
-                            : '10er & 5er Abos, Fahrstunden oder Spezial-Coachings erwerben & verwalten.'}
+                            : 'Deine 10er & 5er Abos, Fahrstunden oder Spezial-Coachings erwerben & verwalten.'}
                         </p>
                       </div>
 
                       <button
                         type="button"
                         onClick={() => setStudentNavSubTab('packages')}
-                        className="w-full py-2 bg-amber-50/60 hover:bg-amber-100/70 text-amber-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-amber-200/60 cursor-pointer"
+                        className="w-full py-2 bg-white hover:bg-[#ede5dc] text-amber-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-[#d5c5b2] cursor-pointer shadow-xs"
                       >
                         <span>Store &amp; Pakete öffnen</span>
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -5025,25 +5050,25 @@ export default function App() {
                     </div>
 
                     {/* Kachel 3: E-Learning & Lehrfilme (1-Jahres-Abo) */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all duration-150">
+                    <div className="bg-[#f6f0e7] rounded-2xl p-5 border border-[#e3d6c5] shadow-xs flex flex-col justify-between hover:shadow-md hover:border-[#d5c5b2] transition-all duration-150">
                       <div>
                         <div className="flex items-start justify-between mb-3">
-                          <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center">
                             <Play className="w-5 h-5" />
                           </div>
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                            hasDigitalAccess ? 'bg-cyan-100 text-cyan-800' : 'bg-slate-100 text-slate-700'
+                            hasDigitalAccess ? 'bg-sky-100 text-sky-800' : 'bg-stone-200 text-stone-700'
                           }`}>
                             {hasDigitalAccess ? `${daysRemainingDigital} TAGE AKTIV` : '1-JAHRES-ABO'}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-bold text-slate-900 text-sm">Nautic E-Learning</h4>
-                          <span className="text-[10px] bg-cyan-100 text-cyan-800 px-1.5 py-0.2 rounded font-semibold">
+                          <span className="text-[10px] bg-sky-100 text-sky-800 px-1.5 py-0.2 rounded font-semibold">
                             Videos &amp; Tafeln
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                        <p className="text-xs text-slate-600 leading-relaxed mb-4">
                           {hasDigitalAccess
                             ? 'Vollzugriff: 6 HD-Lehrfilme, Bildtafeln & ASA-Theorietrainer freigeschaltet.'
                             : 'Offizielles digitales Lernpaket mit Lehrfilmen, Bildtafeln & Theorietrainer.'}
@@ -5056,7 +5081,7 @@ export default function App() {
                           setStudentSidebarNav('elearning');
                           setStudentNavSubTab('elearning');
                         }}
-                        className="w-full py-2 bg-cyan-50/70 hover:bg-cyan-100 text-cyan-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-cyan-200 cursor-pointer"
+                        className="w-full py-2 bg-white hover:bg-[#ede5dc] text-sky-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-[#d5c5b2] cursor-pointer shadow-xs"
                       >
                         <span>{hasDigitalAccess ? 'Zum E-Learning Hub' : 'Digitales Paket öffnen'}</span>
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -5064,26 +5089,26 @@ export default function App() {
                     </div>
 
                     {/* Kachel 4: Rechnungen & Belege */}
-                    <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-xs flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all duration-150">
+                    <div className="bg-[#f6f0e7] rounded-2xl p-5 border border-[#e3d6c5] shadow-xs flex flex-col justify-between hover:shadow-md hover:border-[#d5c5b2] transition-all duration-150">
                       <div>
                         <div className="flex items-start justify-between mb-3">
-                          <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-xl bg-stone-200 text-stone-700 flex items-center justify-center">
                             <FileText className="w-5 h-5" />
                           </div>
-                          <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          <span className="text-[10px] bg-stone-200 text-stone-800 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                             SWISS QR-BILL
                           </span>
                         </div>
                         <h4 className="font-bold text-slate-900 text-sm mb-1">Rechnungen &amp; Belege</h4>
-                        <p className="text-xs text-slate-500 leading-relaxed mb-4">
-                          Übersicht aller Quittungen, Lektionen und Treibstoffkosten mit PDF-Druck.
+                        <p className="text-xs text-slate-600 leading-relaxed mb-4">
+                          Übersicht all deiner Quittungen, Lektionen und Treibstoffkosten mit PDF-Druck.
                         </p>
                       </div>
 
                       <button
                         type="button"
                         onClick={() => setStudentNavSubTab('invoices')}
-                        className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-300 cursor-pointer"
+                        className="w-full py-2 bg-white hover:bg-[#ede5dc] text-slate-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border border-[#d5c5b2] cursor-pointer shadow-xs"
                       >
                         <span>Zu den Rechnungen</span>
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -5099,10 +5124,10 @@ export default function App() {
                     <div className="lg:col-span-2 space-y-6">
                       
                       {/* Anstehende Termine Karte */}
-                      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6">
-                        <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+                      <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] shadow-xs p-6">
+                        <div className="flex items-center justify-between pb-4 border-b border-[#ded0be] mb-5">
                           <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-slate-500" />
+                            <Calendar className="w-4 h-4 text-slate-600" />
                             <h3 className="font-bold text-slate-900 text-sm">
                               Anstehende Termine ({upcomingApps.length})
                             </h3>
@@ -5110,7 +5135,7 @@ export default function App() {
                           <button
                             type="button"
                             onClick={() => setShowStudentRequestModal(true)}
-                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-xl flex items-center gap-1.5 transition"
+                            className="px-3 py-1.5 bg-white hover:bg-[#ede5dc] text-slate-800 font-semibold text-xs rounded-xl flex items-center gap-1.5 transition border border-[#d5c5b2] shadow-xs"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             <span>Termin im Kalender buchen</span>
@@ -5120,14 +5145,14 @@ export default function App() {
                         {upcomingApps.length === 0 ? (
                           /* Empty State wie im Screenshot */
                           <div className="py-12 px-4 text-center space-y-3">
-                            <div className="w-12 h-12 mx-auto rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-400">
+                            <div className="w-12 h-12 mx-auto rounded-2xl bg-[#eee4d5] border border-[#ded0be] flex items-center justify-center text-slate-500">
                               <Calendar className="w-6 h-6" />
                             </div>
                             <h4 className="font-bold text-slate-800 text-sm">
                               Aktuell keine anstehenden Termine eingetragen.
                             </h4>
-                            <p className="text-xs text-slate-500 max-w-md mx-auto">
-                              Reservieren Sie Ihre nächste Fahrstunde direkt im Kalender – Bezahlung erfolgt flexibel später.
+                            <p className="text-xs text-slate-600 max-w-md mx-auto">
+                              Reserviere deine nächste Fahrstunde direkt im Kalender – Bezahlung erfolgt flexibel später.
                             </p>
                             <div className="pt-2">
                               <button
@@ -5141,17 +5166,17 @@ export default function App() {
                             </div>
                           </div>
                         ) : (
-                          <div className="divide-y divide-slate-100 space-y-3">
+                          <div className="divide-y divide-[#e3d6c5] space-y-3">
                             {upcomingApps.map(app => (
                               <div key={app.id} className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <span className="font-bold text-slate-900 text-sm">{app.service_name}</span>
-                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
                                       {app.status === 'confirmed' ? 'Bestätigt' : 'Angefragt'}
                                     </span>
                                   </div>
-                                  <div className="text-slate-500 mt-1 flex flex-wrap items-center gap-3">
+                                  <div className="text-slate-600 mt-1 flex flex-wrap items-center gap-3">
                                     <span>{app.date} ({app.start_time.slice(0, 5)} Uhr)</span>
                                     <span>&bull;</span>
                                     <span>Coach: {app.instructor_name}</span>
@@ -5160,7 +5185,7 @@ export default function App() {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="font-bold text-slate-800">CHF {app.price.toFixed(2)}</span>
+                                  <span className="font-bold text-slate-900">CHF {app.price.toFixed(2)}</span>
                                   {(app.service_name.includes('Miete') || app.service_name.includes('Charter')) && (
                                     <button
                                       type="button"
@@ -5178,7 +5203,7 @@ export default function App() {
                                   <button
                                     type="button"
                                     onClick={() => setCancelModalAppointment(app)}
-                                    className="px-2.5 py-1 text-[11px] text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-lg transition"
+                                    className="px-2.5 py-1 text-[11px] text-rose-700 hover:bg-rose-50 border border-rose-300 rounded-lg transition bg-white"
                                   >
                                     Stornieren
                                   </button>
@@ -5190,15 +5215,15 @@ export default function App() {
                       </div>
 
                       {/* Vergangene Termine Karte (wie im Screenshot) */}
-                      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6">
-                        <div className="flex items-center gap-2 pb-4 border-b border-slate-100 mb-4">
-                          <Clock className="w-4 h-4 text-slate-500" />
+                      <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] shadow-xs p-6">
+                        <div className="flex items-center gap-2 pb-4 border-b border-[#ded0be] mb-4">
+                          <Clock className="w-4 h-4 text-slate-600" />
                           <h3 className="font-bold text-slate-900 text-sm">
                             Vergangene Termine ({pastApps.length})
                           </h3>
                         </div>
 
-                        <div className="divide-y divide-slate-100">
+                        <div className="divide-y divide-[#e3d6c5]">
                           {pastApps.map(p => (
                             <div key={p.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                               <div>
@@ -5227,35 +5252,79 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Kalender-Abonnement (iCal / Webcal) */}
-                      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center font-bold">
-                              <Calendar className="w-5 h-5 text-sky-600" />
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-slate-900 text-sm">
-                                Termine im Smartphone-Kalender abonnieren
-                              </h3>
-                              <p className="text-xs text-slate-500">
-                                Live-Synchronisation für Apple Kalender, Google &amp; Outlook
-                              </p>
-                            </div>
+                    </div>
+
+                    {/* RECHTE SPALTE (1/3): PROFIL-STATUS, KALENDER-SYNC & SKIPPER SUPPORT */}
+                    <div className="space-y-6">
+                      
+                      {/* Profil- & Kontostatus Box */}
+                      <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] shadow-xs p-6 space-y-4">
+                        <h3 className="font-bold text-slate-900 text-sm pb-2 border-b border-[#ded0be]">
+                          Profil- &amp; Kontostatus
+                        </h3>
+
+                        <div className="space-y-3.5 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-600">Stammdaten:</span>
+                            <span className="font-bold text-amber-700">
+                              Unvollständig
+                            </span>
                           </div>
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-auto">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            iCal / Webcal Feed
-                          </span>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-600">AGB / AMB:</span>
+                            <span className={`font-bold ${agbAccepted ? 'text-emerald-700' : 'text-rose-700'}`}>
+                              {agbAccepted ? 'Bestätigt ✓' : 'Ausstehend'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-600">Aktive VIP Pakete:</span>
+                            <span className="font-bold text-slate-900">
+                              {studentRemainingSessions > 0 ? `${studentRemainingSessions} Lektionen` : (hasDigitalAccess ? '1 Digital-Abo' : '0 Pakete')}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-600">Allergien:</span>
+                            <span className="font-semibold text-slate-800 truncate max-w-[140px]" title={studentProfile.allergies || 'Keine erfasst'}>
+                              {studentProfile.allergies ? studentProfile.allergies : 'Keine erfasst'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-slate-600">Rechnungs-Status:</span>
+                            <button
+                              type="button"
+                              onClick={() => setStudentNavSubTab('invoices')}
+                              className="text-slate-800 hover:text-black font-semibold flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>Belege ansehen</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Kalender-Abonnement (iCal / Webcal) */}
+                      <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] shadow-xs p-6 space-y-4">
+                        <div className="flex items-center gap-3 pb-3 border-b border-[#ded0be]">
+                          <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold shrink-0">
+                            <Calendar className="w-4.5 h-4.5 text-sky-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-slate-900 text-sm">
+                              Termine im Smartphone-Kalender abonnieren
+                            </h3>
+                            <p className="text-[11px] text-slate-600">
+                              Live-Sync für Apple, Google &amp; Outlook
+                            </p>
+                          </div>
                         </div>
 
-                        <p className="text-xs text-slate-600 leading-relaxed">
-                          Abonnieren Sie Ihren persönlichen Ausbildungs-Kalender. Alle gebuchten, verschobenen oder bestätigten Fahrstunden und Treffpunkte werden automatisch in Echtzeit in Ihren Smartphone-Kalender übertragen.
-                        </p>
-
                         {/* URL & Link kopieren Button */}
-                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                          <div className="flex-1 font-mono text-[11px] text-slate-700 truncate px-2.5 py-1.5 bg-white rounded-lg border border-slate-200 select-all">
+                        <div className="space-y-2">
+                          <div className="font-mono text-[11px] text-slate-800 truncate px-3 py-2 bg-white rounded-xl border-2 border-[#d5c5b2] select-all shadow-xs">
                             webcal://dein.coaching-boot.ch/?route=bootschule/me/calendar.ics&token=ROLAND1234
                           </div>
                           <button
@@ -5265,7 +5334,7 @@ export default function App() {
                               setCopiedCalendarLink(true);
                               setTimeout(() => setCopiedCalendarLink(false), 3500);
                             }}
-                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 shadow-xs cursor-pointer ${
+                            className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer ${
                               copiedCalendarLink
                                 ? 'bg-emerald-600 text-white'
                                 : 'bg-[#2d2421] hover:bg-[#3d322e] text-white'
@@ -5286,72 +5355,18 @@ export default function App() {
                         </div>
                       </div>
 
-                    </div>
-
-                    {/* RECHTE SPALTE (1/3): PROFIL-STATUS & SKIPPER SUPPORT (WIE SCREENSHOT) */}
-                    <div className="space-y-6">
-                      
-                      {/* Profil- & Kontostatus Box */}
-                      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
-                        <h3 className="font-bold text-slate-900 text-sm pb-2 border-b border-slate-100">
-                          Profil- &amp; Kontostatus
-                        </h3>
-
-                        <div className="space-y-3.5 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="text-slate-500">Stammdaten:</span>
-                            <span className="font-bold text-amber-600">
-                              Unvollständig
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <span className="text-slate-500">AGB / AMB:</span>
-                            <span className={`font-bold ${agbAccepted ? 'text-emerald-600' : 'text-rose-600'}`}>
-                              {agbAccepted ? 'Bestätigt ✓' : 'Ausstehend'}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <span className="text-slate-500">Aktive VIP Pakete:</span>
-                            <span className="font-bold text-slate-900">
-                              {studentRemainingSessions > 0 ? `${studentRemainingSessions} Lektionen` : (hasDigitalAccess ? '1 Digital-Abo' : '0 Pakete')}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <span className="text-slate-500">Allergien:</span>
-                            <span className="font-semibold text-slate-800 truncate max-w-[140px]" title={studentProfile.allergies || 'Keine erfasst'}>
-                              {studentProfile.allergies ? studentProfile.allergies : 'Keine erfasst'}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between pt-1">
-                            <span className="text-slate-500">Rechnungs-Status:</span>
-                            <button
-                              type="button"
-                              onClick={() => setStudentNavSubTab('invoices')}
-                              className="text-slate-700 hover:text-black font-semibold flex items-center gap-1 cursor-pointer"
-                            >
-                              <span>Belege ansehen</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
                       {/* Skipper Support & Zentrale Box */}
-                      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-3">
+                      <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] shadow-xs p-6 space-y-3">
                         <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                           <Phone className="w-4 h-4 text-slate-700" />
                           <span>Skipper Support &amp; Zentrale</span>
                         </div>
 
-                        <p className="text-xs text-slate-500 leading-relaxed">
-                          Fragen zu Terminen oder Prüfungsvorbereitung? Ihr Coach-Team ist für Sie erreichbar.
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                          Fragen zu Terminen oder Prüfungsvorbereitung? Dein Coach-Team ist für dich erreichbar.
                         </p>
 
-                        <div className="text-xs text-slate-800 space-y-1.5 pt-2 border-t border-slate-100">
+                        <div className="text-xs text-slate-800 space-y-1.5 pt-2 border-t border-[#ded0be]">
                           <div><strong className="text-slate-900">Standorte:</strong> Luzern (LU) &amp; Nidwalden (NW)</div>
                           <div><strong className="text-slate-900">Telefon:</strong> +41 79 000 00 00</div>
                         </div>
@@ -6313,7 +6328,7 @@ export default function App() {
                         <div>
                           <h4 className="font-bold text-slate-900 text-sm">Zurück am Steg in Hergiswil?</h4>
                           <p className="text-xs text-slate-500 mt-0.5">
-                            Sobald das Boot sicher vertäut und der Motor aus ist, führen Sie den Check-out durch.
+                            Sobald das Boot sicher vertäut und der Motor aus ist, führst du den Check-out durch.
                           </p>
                         </div>
 

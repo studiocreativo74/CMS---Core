@@ -58,7 +58,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8">
+      <div className="bg-[#f6f0e7] rounded-3xl max-w-xl w-full shadow-2xl border border-[#ded0be] overflow-hidden my-8">
         
         {/* Header */}
         <div className="px-6 py-5 bg-[#2d2421] text-white flex items-center justify-between">
@@ -68,10 +68,10 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-white">
-                Mein Kundenprofil &amp; Stammdaten
+                Dein Kundenprofil &amp; Stammdaten
               </h3>
               <p className="text-xs text-stone-300">
-                Persönliche Angaben, Notfallkontakt &amp; Allergien verwalten
+                Hier kannst du deine persönlichen Angaben, Notfallkontakt &amp; Allergien verwalten
               </p>
             </div>
           </div>
@@ -99,7 +99,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 required
                 value={formData.first_name}
                 onChange={e => handleChange('first_name', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
               />
             </div>
 
@@ -112,7 +112,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 required
                 value={formData.last_name}
                 onChange={e => handleChange('last_name', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
               />
             </div>
           </div>
@@ -121,7 +121,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
-                <Mail className="w-3.5 h-3.5 text-slate-500" />
+                <Mail className="w-3.5 h-3.5 text-slate-600" />
                 <span>E-Mail-Adresse *</span>
               </label>
               <input
@@ -129,13 +129,13 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 required
                 value={formData.email}
                 onChange={e => handleChange('email', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
               />
             </div>
 
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
-                <Phone className="w-3.5 h-3.5 text-slate-500" />
+                <Phone className="w-3.5 h-3.5 text-slate-600" />
                 <span>Telefon / Mobilnummer *</span>
               </label>
               <input
@@ -143,7 +143,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 required
                 value={formData.phone}
                 onChange={e => handleChange('phone', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
               />
             </div>
           </div>
@@ -152,7 +152,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-3 sm:col-span-2 space-y-1.5">
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                <MapPin className="w-3.5 h-3.5 text-slate-600" />
                 <span>Strasse &amp; Nr.</span>
               </label>
               <input
@@ -160,7 +160,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 placeholder="z. B. Seestrasse 42"
                 value={formData.street || ''}
                 onChange={e => handleChange('street', e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
               />
             </div>
 
@@ -182,7 +182,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                     handleChange('city', val);
                   }
                 }}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
               />
             </div>
           </div>
@@ -190,7 +190,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
           {/* Notfallkontakt */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
-              <Shield className="w-3.5 h-3.5 text-slate-500" />
+              <Shield className="w-3.5 h-3.5 text-slate-600" />
               <span>Notfallkontakt (Name &amp; Telefonnummer)</span>
             </label>
             <input
@@ -198,17 +198,17 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               placeholder="z. B. Maria Grüter (Ehefrau) – +41 79 123 45 67"
               value={formData.emergency_contact || ''}
               onChange={e => handleChange('emergency_contact', e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3.5 py-2.5 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
             />
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-600">
               Wird gemäss Schifffahrtsgesetz für Ausfahrten und Bootsmieten benötigt.
             </p>
           </div>
 
           {/* ALLERGIEN (SPEZIFISCHE ANFORDERUNG: Feld Allergien in Kundendaten) */}
-          <div className="space-y-1.5 p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl">
-            <label className="block text-xs font-bold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
-              <HeartPulse className="w-4 h-4 text-amber-600" />
+          <div className="space-y-1.5 p-3.5 bg-[#eee4d5] border border-[#ded0be] rounded-2xl">
+            <label className="block text-xs font-bold text-stone-900 uppercase tracking-wider flex items-center gap-1.5">
+              <HeartPulse className="w-4 h-4 text-amber-700" />
               <span>Allergien &amp; gesundheitliche Hinweise</span>
             </label>
             <input
@@ -216,19 +216,19 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               placeholder="z. B. Wespenstich-Allergie (EpiPen an Bord), Asthma, Keine Allergien..."
               value={formData.allergies || ''}
               onChange={e => handleChange('allergies', e.target.value)}
-              className="w-full px-3.5 py-2 bg-white border border-amber-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3.5 py-2 bg-white border-2 border-[#d5c5b2] rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
             />
-            <p className="text-[11px] text-amber-800">
-              Wichtig für Ihren Coach bei Notfällen auf dem See (z. B. Insektenstiche, Notfallmedikamente).
+            <p className="text-[11px] text-stone-700">
+              Wichtig für deinen Coach bei Notfällen auf dem See (z. B. Insektenstiche, Notfallmedikamente).
             </p>
           </div>
 
           {/* Footer Buttons */}
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#ded0be]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              className="px-4 py-2.5 rounded-xl border border-[#ded0be] text-xs font-bold text-slate-700 bg-white hover:bg-stone-50 transition cursor-pointer"
             >
               Abbrechen
             </button>
