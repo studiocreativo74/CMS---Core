@@ -107,6 +107,7 @@ export interface ServiceOffer {
   sessions_count: number;
   location_ids: string[]; // ["loc_luzern", "loc_stansstad", "loc_hergiswil", ...]
   price_options: ServicePriceOption[];
+  tax_rate?: number; // MwSt.-Satz in Prozent (0.0% für Fahrschule/Coaching, 8.1% für Miete)
 }
 
 export interface CustomerSubscription {
@@ -125,6 +126,9 @@ export interface CustomerSubscription {
   location_name?: string;
   created_at?: string;
   is_digital_elearning?: boolean;
+  offer_type?: 'bootsfahrschule' | 'coaching' | 'mieten' | 'digital' | 'anderes';
+  tax_rate?: number;
+  tax_amount?: number;
 }
 
 export interface ElearningVideo {

@@ -607,7 +607,15 @@ ob_start();
                                                 <?php endif; ?>
                                             </td>
                                             <td class="small text-muted">
-                                                <?= htmlspecialchars((string) ($loc['address'] ?? '–'), ENT_QUOTES, 'UTF-8') ?>
+                                                <?php if (!empty($loc['address'])): ?>
+                                                    <a href="https://www.google.com/maps/search/?api=1&query=<?= urlencode((string) $loc['address']) ?>" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-dark d-inline-flex align-items-center gap-1 hover-underline" title="Auf Google Maps öffnen">
+                                                        <i class="bi bi-geo-alt-fill text-danger flex-shrink-0"></i>
+                                                        <span class="fw-semibold"><?= htmlspecialchars((string) $loc['address'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                        <i class="bi bi-box-arrow-up-right text-muted" style="font-size: 0.7rem;"></i>
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="text-muted">&ndash;</span>
+                                                <?php endif; ?>
                                             </td>
                                             <td class="small text-muted">
                                                 <?= htmlspecialchars((string) ($loc['notes'] ?? '–'), ENT_QUOTES, 'UTF-8') ?>
@@ -757,9 +765,15 @@ ob_start();
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Genaue Adresse / Treffpunkt</label>
-                        <input type="text" name="address" id="locModalAddress" class="form-control" placeholder="z. B. Seestrasse 48, 6374 Buochs">
-                        <small class="text-muted">Erscheint in der Buchungsbestätigung und Wegbeschreibung.</small>
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label class="form-label fw-semibold mb-0">Genaue Adresse / Treffpunkt</label>
+                            <a id="locModalMapsPreview" href="https://maps.google.com" target="_blank" rel="noopener noreferrer" class="small text-decoration-none text-primary fw-semibold d-inline-flex align-items-center gap-1" style="display: none !important;">
+                                <i class="bi bi-geo-alt-fill text-danger"></i>
+                                <span>In Google Maps prüfen &nearr;</span>
+                            </a>
+                        </div>
+                        <input type="text" name="address" id="locModalAddress" class="form-control" placeholder="z. B. Seestrasse 48, 6374 Buochs" oninput="updateLocModalMapsPreview(this.value)">
+                        <small class="text-muted">Erscheint in der Buchungsbestätigung und Wegbeschreibung (automatisch mit Google Maps verknüpft).</small>
                     </div>
 
                     <div class="mb-2">
@@ -780,6 +794,18 @@ ob_start();
 </div>
 
 <script>
+function updateLocModalMapsPreview(address) {
+    const preview = document.getElementById('locModalMapsPreview');
+    if (!preview) return;
+    const trimmed = (address || '').trim();
+    if (trimmed.length > 2) {
+        preview.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(trimmed);
+        preview.style.setProperty('display', 'inline-flex', 'important');
+    } else {
+        preview.style.setProperty('display', 'none', 'important');
+    }
+}
+
 function openCreateLocationModal() {
     document.getElementById('locModalId').value = '0';
     document.getElementById('locModalTitle').textContent = 'Neuen Standort erfassen';
@@ -788,6 +814,7 @@ function openCreateLocationModal() {
     document.getElementById('locModalAddress').value = '';
     document.getElementById('locModalNotes').value = '';
     document.getElementById('locModalActive').checked = true;
+    updateLocModalMapsPreview('');
 }
 
 function openEditLocationModal(loc) {
@@ -798,6 +825,7 @@ function openEditLocationModal(loc) {
     document.getElementById('locModalAddress').value = loc.address || '';
     document.getElementById('locModalNotes').value = loc.notes || '';
     document.getElementById('locModalActive').checked = !!parseInt(loc.is_active, 10);
+    updateLocModalMapsPreview(loc.address || '');
 
     const modal = new bootstrap.Modal(document.getElementById('locationModal'));
     modal.show();

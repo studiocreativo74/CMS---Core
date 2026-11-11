@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock, MapPin, User, Check, Sparkles, Award } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, User, Check, Sparkles, Award, ExternalLink } from 'lucide-react';
 import { ServiceOffer, Instructor } from '../../types/index.ts';
 
 interface StudentBookingModalProps {
@@ -26,6 +26,30 @@ interface StudentBookingModalProps {
     use_balance: boolean;
   }) => void;
 }
+
+// Genaue Adressen & Google Maps Koordinaten/Suchqueries der Stützpunkte
+const LOCATION_DETAILS: Record<string, { address: string; mapsQuery: string; hint: string }> = {
+  'Luzern (Alpenquai)': {
+    address: 'Alpenquai 12, 6005 Luzern',
+    mapsQuery: 'Alpenquai+12+6005+Luzern',
+    hint: 'Steg 3 beim KKL / Alpenquai – Hauptstandort Luzern'
+  },
+  'Buochs - Ennerberg Steganlage': {
+    address: 'Seestrasse 48, 6374 Buochs',
+    mapsQuery: 'Seestrasse+48+6374+Buochs',
+    hint: 'Ennerberg Steganlage am Vierwaldstättersee'
+  },
+  'Hergiswil NW (Bootshafen)': {
+    address: 'Seestrasse 20, 6052 Hergiswil',
+    mapsQuery: 'Seestrasse+20+6052+Hergiswil',
+    hint: 'Bootshafen Hergiswil / Steg 2'
+  },
+  'Stansstad NW (Hafenanlage)': {
+    address: 'Hafenstrasse 4, 6362 Stansstad',
+    mapsQuery: 'Hafenstrasse+4+6362+Stansstad',
+    hint: 'Öffentliche Hafenanlage Stansstad'
+  },
+};
 
 export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
   isOpen,
@@ -212,10 +236,24 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
 
           {/* 4. Treffpunkt / Standort */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-slate-600" />
-              <span>Treffpunkt / Hafensteg *</span>
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-slate-600" />
+                <span>Treffpunkt / Hafensteg *</span>
+              </label>
+              {LOCATION_DETAILS[selectedLocation] && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${LOCATION_DETAILS[selectedLocation].mapsQuery}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-900 hover:text-amber-700 hover:underline transition"
+                >
+                  <MapPin className="w-3 h-3 text-red-600" />
+                  <span>Auf Google Maps öffnen</span>
+                  <ExternalLink className="w-3 h-3 text-stone-500" />
+                </a>
+              )}
+            </div>
             <select
               value={selectedLocation}
               onChange={e => setSelectedLocation(e.target.value)}
@@ -226,6 +264,35 @@ export const StudentBookingModal: React.FC<StudentBookingModalProps> = ({
               <option value="Hergiswil NW (Bootshafen)">Hergiswil NW – Bootshafen / Seestrasse</option>
               <option value="Stansstad NW (Hafenanlage)">Stansstad NW – Öffentliche Hafenanlage</option>
             </select>
+
+            {/* Treffpunkt Detail-Box mit genauer Adresse & Google Maps Verknüpfung */}
+            {LOCATION_DETAILS[selectedLocation] && (
+              <div className="p-2.5 bg-white rounded-xl border border-[#d5c5b2] flex items-center justify-between gap-3 text-xs shadow-xs">
+                <div className="flex items-start gap-2 min-w-0">
+                  <div className="w-6 h-6 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <MapPin className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-stone-900 text-[11px] truncate">
+                      {LOCATION_DETAILS[selectedLocation].address}
+                    </div>
+                    <div className="text-[10px] text-stone-600 truncate">
+                      {LOCATION_DETAILS[selectedLocation].hint}
+                    </div>
+                  </div>
+                </div>
+
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${LOCATION_DETAILS[selectedLocation].mapsQuery}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1.5 bg-[#2d2421] hover:bg-[#3d322e] text-white rounded-lg font-bold text-[11px] transition shrink-0 flex items-center gap-1 shadow-xs cursor-pointer"
+                >
+                  <span>Maps</span>
+                  <ExternalLink className="w-3 h-3 text-amber-400" />
+                </a>
+              </div>
+            )}
           </div>
 
           {/* 5. Guthaben einlösen (falls vorhanden) */}

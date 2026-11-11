@@ -57,6 +57,7 @@ export const INITIAL_SERVICES: ServiceOffer[] = [
     is_subscription: true,
     sessions_count: 10,
     location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil'],
+    tax_rate: 0.0,
     price_options: [
       { id: 101, service_id: 1, duration: 90, price: 1800.0, sessions_count: 10, sort_order: 1 }
     ]
@@ -72,6 +73,7 @@ export const INITIAL_SERVICES: ServiceOffer[] = [
     is_subscription: true,
     sessions_count: 5,
     location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil'],
+    tax_rate: 0.0,
     price_options: [
       { id: 102, service_id: 2, duration: 90, price: 925.0, sessions_count: 5, sort_order: 1 }
     ]
@@ -87,6 +89,7 @@ export const INITIAL_SERVICES: ServiceOffer[] = [
     is_subscription: false,
     sessions_count: 1,
     location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil', 'loc_buochs'],
+    tax_rate: 0.0,
     price_options: [
       { id: 103, service_id: 3, duration: 60, price: 135.0, sessions_count: 1, sort_order: 1 },
       { id: 104, service_id: 3, duration: 90, price: 195.0, sessions_count: 1, sort_order: 2 },
@@ -104,6 +107,7 @@ export const INITIAL_SERVICES: ServiceOffer[] = [
     is_subscription: false,
     sessions_count: 1,
     location_ids: ['loc_luzern', 'loc_stansstad', 'loc_buochs'],
+    tax_rate: 0.0,
     price_options: [
       { id: 106, service_id: 4, duration: 120, price: 290.0, sessions_count: 1, sort_order: 1 },
       { id: 107, service_id: 4, duration: 180, price: 390.0, sessions_count: 1, sort_order: 2 }
@@ -120,6 +124,7 @@ export const INITIAL_SERVICES: ServiceOffer[] = [
     is_subscription: false,
     sessions_count: 1,
     location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil', 'loc_buochs', 'loc_ennetbuergen'],
+    tax_rate: 0.0,
     price_options: [
       { id: 108, service_id: 5, duration: 60, price: 100.0, sessions_count: 1, sort_order: 1 },
       { id: 109, service_id: 5, duration: 90, price: 250.0, sessions_count: 1, sort_order: 2 },
@@ -137,6 +142,7 @@ export const INITIAL_SERVICES: ServiceOffer[] = [
     is_subscription: false,
     sessions_count: 1,
     location_ids: ['loc_luzern', 'loc_hergiswil'],
+    tax_rate: 8.1, // Bootsvermietung unterliegt der MWST (Normalsatz 8.1%)
     price_options: [
       { id: 111, service_id: 6, duration: 240, price: 480.0, sessions_count: 1, sort_order: 1 },
       { id: 112, service_id: 6, duration: 480, price: 850.0, sessions_count: 1, sort_order: 2 }
@@ -153,6 +159,7 @@ export const INITIAL_SERVICES: ServiceOffer[] = [
     is_subscription: true,
     sessions_count: 365,
     location_ids: ['loc_luzern', 'loc_stansstad', 'loc_hergiswil', 'loc_buochs', 'loc_ennetbuergen'],
+    tax_rate: 0.0,
     price_options: [
       { id: 113, service_id: 7, duration: 365, price: 149.0, sessions_count: 365, sort_order: 1 },
       { id: 114, service_id: 7, duration: 730, price: 239.0, sessions_count: 730, sort_order: 2 }
@@ -216,7 +223,10 @@ export const INITIAL_CUSTOMER_SUBSCRIPTIONS: CustomerSubscription[] = [
     payment_method: 'bank_transfer',
     payment_status: 'paid',
     order_id: 'CB-ORD-849201',
-    location_name: 'Luzern & Stansstad'
+    location_name: 'Luzern & Stansstad',
+    offer_type: 'bootsfahrschule',
+    tax_rate: 0.0,
+    tax_amount: 0.0
   },
   {
     id: 2,
@@ -232,7 +242,28 @@ export const INITIAL_CUSTOMER_SUBSCRIPTIONS: CustomerSubscription[] = [
     payment_status: 'paid',
     order_id: 'CB-ELE-981042',
     location_name: 'Online Campus (Schweizweit)',
-    is_digital_elearning: true
+    is_digital_elearning: true,
+    offer_type: 'digital',
+    tax_rate: 0.0,
+    tax_amount: 0.0
+  },
+  {
+    id: 3,
+    customer_id: 1,
+    service_id: 6,
+    package_name: 'Bootsmiete Boesch 620 Bimini (Halbtag 4 Std.)',
+    total_sessions: 1,
+    used_sessions: 1,
+    purchased_at: '2026-03-05 14:00:00',
+    expires_at: '2026-03-05',
+    price_paid: 480.0,
+    payment_method: 'qr_bill',
+    payment_status: 'paid',
+    order_id: 'CB-RENT-732104',
+    location_name: 'Luzern (Alpenquai)',
+    offer_type: 'mieten',
+    tax_rate: 8.1,
+    tax_amount: 35.97
   }
 ];
 

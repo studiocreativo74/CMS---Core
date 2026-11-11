@@ -131,17 +131,11 @@ ob_start();
         <!-- ============================================================== -->
         <aside class="d-flex flex-column justify-content-between p-3 p-lg-4 shrink-0 text-white" style="width: 100%; max-width: 275px; background-color: #2d2421; border-right: 1px solid #3f3531;">
             <div>
-                <!-- Nautisches Emblem Logo im abgerundeten Kasten -->
+                <!-- Nautisches Emblem Logo im abgerundeten Kasten (Coaching Boot) -->
                 <div class="text-center mb-4 mt-2">
-                    <div class="d-inline-flex align-items-center justify-content-center rounded-4 shadow-inner" style="width: 110px; height: 80px; background-color: #423733; border: 1px solid rgba(255, 255, 255, 0.15);">
-                        <svg viewBox="0 0 48 48" style="width: 46px; height: 46px; color: #f5f5f4;" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="24" cy="24" r="18" stroke="currentColor" stroke-width="2" stroke-dasharray="2 3" />
-                            <circle cx="24" cy="24" r="14" stroke="currentColor" stroke-width="1.5" />
-                            <path d="M 24 10 L 24 38 M 10 24 L 38 24 M 14 14 L 34 34 M 14 34 L 34 14" stroke="currentColor" stroke-width="1.5" />
-                            <circle cx="24" cy="24" r="4" fill="currentColor" />
-                            <path d="M 24 18 L 24 30 M 18 24 L 30 24" stroke="#2d2421" stroke-width="2" />
-                        </svg>
-                    </div>
+                    <a href="?route=bootschule/me/appointments" class="d-inline-flex align-items-center justify-content-center text-decoration-none">
+                        <img src="/assets/aistudio/pikto_mit_hintergrund_da2813fc.svg" alt="Coaching Boot Logo" style="width: 78px; height: 78px; border-radius: 16px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); object-fit: contain;" />
+                    </a>
                 </div>
 
                 <!-- Navigation Menu Items -->
@@ -311,8 +305,8 @@ ob_start();
                             </div>
                         </div>
                         <div class="text-end">
-                            <a href="#weatherCard" class="text-secondary fw-semibold text-decoration-none text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">
-                                PROGNOSE <i class="bi bi-box-arrow-up-right" style="font-size: 0.6rem;"></i>
+                            <a href="https://www.srf.ch/meteo/wetter/Luzern" target="_blank" rel="noopener noreferrer" class="badge rounded-2 text-dark border px-2 py-1 text-decoration-none text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px; background-color: #fcecd7; border-color: #edd5ba !important;" title="Wetterportal SRF Meteo für Luzern öffnen">
+                                PROGNOSE <i class="bi bi-box-arrow-up-right ms-0.5" style="font-size: 0.6rem;"></i>
                             </a>
                             <div class="d-flex align-items-center gap-1.5 text-secondary small fw-medium mt-1 justify-content-end">
                                 <i class="bi bi-wind text-muted"></i>
@@ -340,8 +334,8 @@ ob_start();
                             </div>
                         </div>
                         <div class="text-end">
-                            <a href="#weatherCard" class="text-secondary fw-semibold text-decoration-none text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">
-                                PROGNOSE <i class="bi bi-box-arrow-up-right" style="font-size: 0.6rem;"></i>
+                            <a href="https://www.srf.ch/meteo/wetter/Hergiswil%20(NW)" target="_blank" rel="noopener noreferrer" class="badge rounded-2 text-dark border px-2 py-1 text-decoration-none text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px; background-color: #fcecd7; border-color: #edd5ba !important;" title="Wetterportal SRF Meteo für Hergiswil (NW) öffnen">
+                                PROGNOSE <i class="bi bi-box-arrow-up-right ms-0.5" style="font-size: 0.6rem;"></i>
                             </a>
                             <div class="d-flex align-items-center gap-1.5 text-secondary small fw-medium mt-1 justify-content-end">
                                 <i class="bi bi-wind text-muted"></i>
@@ -680,9 +674,45 @@ ob_start();
                             Fragen zu Terminen oder Prüfungsvorbereitung? Dein Coach-Team ist für dich erreichbar.
                         </p>
 
-                        <div class="small text-dark pt-2 border-top d-flex flex-column gap-1.5" style="border-color: #e5dacb !important; font-size: 0.8rem;">
-                            <div><strong>Standorte:</strong> Luzern (LU) &amp; Nidwalden (NW)</div>
-                            <div><strong>Telefon:</strong> +41 79 000 00 00</div>
+                        <div class="small text-dark pt-2 border-top d-flex flex-column gap-2" style="border-color: #e5dacb !important; font-size: 0.8rem;">
+                            <div>
+                                <span class="fw-bold d-block text-dark mb-1.5">Stützpunkte &amp; Treffpunkte:</span>
+                                <div class="d-flex flex-column gap-1.5">
+                                    <a href="https://www.google.com/maps/search/?api=1&query=Alpenquai+12+6005+Luzern" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-dark d-flex align-items-center justify-content-between p-2 rounded-3 bg-white shadow-xs" style="border: 1px solid #d5c5b2;">
+                                        <div class="d-flex align-items-center gap-1.5 min-w-0">
+                                            <i class="bi bi-geo-alt-fill text-danger flex-shrink-0" style="font-size: 0.85rem;"></i>
+                                            <div class="text-truncate">
+                                                <span class="fw-bold text-dark">Luzern</span>
+                                                <span class="text-muted small ms-1">Alpenquai 12</span>
+                                            </div>
+                                        </div>
+                                        <span class="badge text-white px-2 py-1 rounded-2 flex-shrink-0" style="background-color: #2d2421; font-size: 0.65rem;">Maps &nearr;</span>
+                                    </a>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=Seestrasse+48+6374+Buochs" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-dark d-flex align-items-center justify-content-between p-2 rounded-3 bg-white shadow-xs" style="border: 1px solid #d5c5b2;">
+                                        <div class="d-flex align-items-center gap-1.5 min-w-0">
+                                            <i class="bi bi-geo-alt-fill text-danger flex-shrink-0" style="font-size: 0.85rem;"></i>
+                                            <div class="text-truncate">
+                                                <span class="fw-bold text-dark">Buochs</span>
+                                                <span class="text-muted small ms-1">Seestrasse 48</span>
+                                            </div>
+                                        </div>
+                                        <span class="badge text-white px-2 py-1 rounded-2 flex-shrink-0" style="background-color: #2d2421; font-size: 0.65rem;">Maps &nearr;</span>
+                                    </a>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=Seestrasse+20+6052+Hergiswil" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-dark d-flex align-items-center justify-content-between p-2 rounded-3 bg-white shadow-xs" style="border: 1px solid #d5c5b2;">
+                                        <div class="d-flex align-items-center gap-1.5 min-w-0">
+                                            <i class="bi bi-geo-alt-fill text-danger flex-shrink-0" style="font-size: 0.85rem;"></i>
+                                            <div class="text-truncate">
+                                                <span class="fw-bold text-dark">Hergiswil</span>
+                                                <span class="text-muted small ms-1">Seestrasse 20</span>
+                                            </div>
+                                        </div>
+                                        <span class="badge text-white px-2 py-1 rounded-2 flex-shrink-0" style="background-color: #2d2421; font-size: 0.65rem;">Maps &nearr;</span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="pt-1">
+                                <strong>Telefon:</strong> <a href="tel:+41790000000" class="text-dark fw-bold text-decoration-none">+41 79 000 00 00</a>
+                            </div>
                         </div>
                     </div>
 
@@ -759,23 +789,44 @@ ob_start();
                                         </div>
                                     </div>
 
-                                    <!-- Standort / Treffpunkt -->
+                                    <!-- Standort / Treffpunkt mit Google Maps Verknüpfung -->
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label small fw-bold text-dark mb-1">Wunsch-Standort / Hafen</label>
-                                        <select name="location_id" class="form-select rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;">
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <label class="form-label small fw-bold text-dark mb-0">Wunsch-Standort / Hafen *</label>
+                                            <a id="portalLocationHeaderMapsLink" href="https://www.google.com/maps/search/?api=1&query=Alpenquai+12+6005+Luzern" target="_blank" rel="noopener noreferrer" class="text-decoration-none fw-bold small text-dark d-inline-flex align-items-center gap-1 hover-underline" style="font-size: 0.72rem;">
+                                                <i class="bi bi-geo-alt-fill text-danger"></i>
+                                                <span>Auf Maps öffnen &nearr;</span>
+                                            </a>
+                                        </div>
+                                        <select name="location_id" id="portalLocationSelect" class="form-select rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;" onchange="updateLocationMapLink(this)">
                                             <?php if (!empty($availableLocations)): ?>
                                                 <?php foreach ($availableLocations as $loc): ?>
-                                                    <option value="<?= (int) $loc['id'] ?>">
-                                                        <?= htmlspecialchars((string) $loc['name']) ?> (<?= htmlspecialchars((string) ($loc['city'] ?? 'Vierwaldstättersee')) ?>)
+                                                    <?php
+                                                        $locAddr = !empty($loc['address']) ? $loc['address'] : ($loc['name'] ?? '');
+                                                    ?>
+                                                    <option value="<?= (int) $loc['id'] ?>" data-address="<?= htmlspecialchars((string) $locAddr, ENT_QUOTES, 'UTF-8') ?>" data-name="<?= htmlspecialchars((string) $loc['name'], ENT_QUOTES, 'UTF-8') ?>" data-notes="<?= htmlspecialchars((string) ($loc['notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+                                                        <?= htmlspecialchars((string) $loc['name']) ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             <?php else: ?>
-                                                <option value="">Luzern (Alpenquai / Tribschen)</option>
-                                                <option value="">Stansstad (NW)</option>
-                                                <option value="">Hergiswil (NW)</option>
-                                                <option value="">Buochs (NW)</option>
+                                                <option value="1" data-address="Alpenquai 12, 6005 Luzern" data-name="Luzern (Alpenquai)" data-notes="Steg 3 beim KKL / Alpenquai">Luzern – Alpenquai Steg 3 (Hauptstandort)</option>
+                                                <option value="2" data-address="Seestrasse 48, 6374 Buochs" data-name="Buochs - Ennerberg" data-notes="Ennerberg Steganlage">Buochs – Ennerberg Steganlage</option>
+                                                <option value="3" data-address="Seestrasse 20, 6052 Hergiswil" data-name="Hergiswil (Bootshafen)" data-notes="Bootshafen Hergiswil / Steg 2">Hergiswil NW – Bootshafen</option>
+                                                <option value="4" data-address="Hafenstrasse 4, 6362 Stansstad" data-name="Stansstad (Hafenanlage)" data-notes="Öffentliche Hafenanlage">Stansstad NW – Hafenanlage</option>
                                             <?php endif; ?>
                                         </select>
+
+                                        <!-- Treffpunkt Detailbox mit direkter Maps Verknüpfung -->
+                                        <div id="portalLocationAddressBox" class="mt-2 p-2 rounded-3 small d-flex align-items-center justify-content-between gap-2 shadow-xs" style="background-color: #ffffff; border: 1.5px solid #d5c5b2;">
+                                            <div class="d-flex align-items-center gap-1.5 min-w-0">
+                                                <i class="bi bi-geo-alt-fill text-danger flex-shrink-0"></i>
+                                                <span class="text-dark fw-bold small text-truncate" id="portalLocationAddressText">Alpenquai 12, 6005 Luzern</span>
+                                            </div>
+                                            <a id="portalLocationMapsLink" href="https://www.google.com/maps/search/?api=1&query=Alpenquai+12+6005+Luzern" target="_blank" rel="noopener noreferrer" class="btn btn-sm py-1 px-2.5 text-white fw-bold d-inline-flex align-items-center gap-1 flex-shrink-0 rounded-2" style="background-color: #2d2421; font-size: 0.72rem;">
+                                                <span>Maps</span>
+                                                <i class="bi bi-box-arrow-up-right text-warning" style="font-size: 0.65rem;"></i>
+                                            </a>
+                                        </div>
                                     </div>
 
                                     <!-- Fahrlehrer / Coach Präferenz -->
@@ -1123,7 +1174,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         theoryCheck.addEventListener('change', updateTheoryRequired);
     }
+
+    // Initialisiere Treffpunkt-Adresse & Google Maps Link
+    const locSel = document.getElementById('portalLocationSelect');
+    if (locSel) {
+        updateLocationMapLink(locSel);
+    }
 });
+
+// Aktualisiert genaue Treffpunkt-Adresse & Google Maps Verknüpfung im Buchungsmodal
+function updateLocationMapLink(selectElem) {
+    if (!selectElem) return;
+    const opt = selectElem.options[selectElem.selectedIndex];
+    if (!opt) return;
+
+    const address = opt.getAttribute('data-address') || '';
+    const name = opt.getAttribute('data-name') || '';
+    const notes = opt.getAttribute('data-notes') || '';
+    const query = address || name || 'Luzern Alpenquai';
+
+    const textElem = document.getElementById('portalLocationAddressText');
+    const linkElem = document.getElementById('portalLocationMapsLink');
+    const headerLinkElem = document.getElementById('portalLocationHeaderMapsLink');
+    const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query);
+
+    if (textElem) {
+        textElem.textContent = address ? address : name;
+        if (notes) {
+            textElem.title = notes;
+        }
+    }
+    if (linkElem) {
+        linkElem.href = mapsUrl;
+    }
+    if (headerLinkElem) {
+        headerLinkElem.href = mapsUrl;
+    }
+}
 </script>
 
 <?php

@@ -264,6 +264,7 @@ export default function App() {
 
   // State für Kunden-Dashboard (Wetter, Kontostand, Profil, Terminanfrage & Session)
   const [studentWeatherStation, setStudentWeatherStation] = useState<'luzern' | 'nidwalden'>('luzern');
+  const [showWeatherModal, setShowWeatherModal] = useState<'luzern' | 'hergiswil' | null>(null);
   const [showStudentProfileModal, setShowStudentProfileModal] = useState<boolean>(false);
   const [showStudentRequestModal, setShowStudentRequestModal] = useState<boolean>(false);
   const [studentAppointmentTab, setStudentAppointmentTab] = useState<'upcoming' | 'past'>('upcoming');
@@ -1385,7 +1386,13 @@ export default function App() {
   }, [checkoutPromoApplied, checkoutSubtotal]);
 
   const checkoutFinalTotal = Math.max(0, checkoutSubtotal - checkoutDiscountAmount);
-  const checkoutVatAmount = checkoutFinalTotal * (8.1 / 108.1);
+  // Schweizer MWST-Regel:
+  // - Fahrschule, Coaching & Ausbildung: 0.0% MWST (steuerbefreite Bildungsleistung gemäss Art. 21 Abs. 2 Ziff. 11 MWSTG)
+  // - Nur gewerbliche Bootsvermietung: 8.1% MWST (Normalsatz)
+  // Firmen-MWST-Nr.: CHE-110.497.163 MWST
+  const checkoutIsRental = checkoutService?.offer_type === 'mieten';
+  const checkoutTaxRate = checkoutIsRental ? 8.1 : 0.0;
+  const checkoutVatAmount = checkoutIsRental ? (checkoutFinalTotal * (8.1 / 108.1)) : 0.0;
   const checkoutNettoAmount = checkoutFinalTotal - checkoutVatAmount;
 
   const handleValidatePromo = () => {
@@ -1458,6 +1465,10 @@ export default function App() {
       ? `${checkoutService.name} (${expireYearsToAdd === 2 ? '2-Jahres-Abo' : '1-Jahres-Abo'})`
       : `${checkoutService.name} (${checkoutSelectedOption.duration} Min)`;
 
+    const isRental = checkoutService.offer_type === 'mieten';
+    const taxRate = isRental ? 8.1 : 0.0;
+    const taxAmount = isRental ? (checkoutFinalTotal * (8.1 / 108.1)) : 0.0;
+
     const newSub: CustomerSubscription = {
       id: Date.now(),
       customer_id: 1,
@@ -1472,7 +1483,10 @@ export default function App() {
       payment_status: 'paid',
       order_id: orderId,
       location_name: isDigital ? 'Online Academy (Schweizweit)' : (locationLabels[checkoutLocation] || 'Luzern'),
-      is_digital_elearning: isDigital
+      is_digital_elearning: isDigital,
+      offer_type: checkoutService.offer_type,
+      tax_rate: taxRate,
+      tax_amount: taxAmount
     };
 
     setCustomerSubscriptions(prev => [newSub, ...prev]);
@@ -4549,7 +4563,21 @@ export default function App() {
                         </div>
 
                         <div className="space-y-1 text-xs">
-                          <label className="font-bold text-slate-700">Genaue Adresse / Treffpunkt</label>
+                          <div className="flex items-center justify-between">
+                            <label className="font-bold text-slate-700">Genaue Adresse / Treffpunkt</label>
+                            {editingLocation.address && editingLocation.address.trim().length > 2 && (
+                              <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(editingLocation.address.trim())}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 font-semibold text-rose-600 hover:text-rose-800 hover:underline text-[11px]"
+                              >
+                                <MapPin className="w-3 h-3 text-red-500" />
+                                <span>In Google Maps prüfen</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                          </div>
                           <input
                             type="text"
                             value={editingLocation.address}
@@ -4627,8 +4655,17 @@ export default function App() {
                             </div>
                             {loc.address && (
                               <div className="text-slate-500 flex items-center gap-1 text-[11px]">
-                                <MapPin className="w-3 h-3 text-slate-400" />
-                                <span>{loc.address}</span>
+                                <MapPin className="w-3 h-3 text-red-500 shrink-0" />
+                                <a
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.address)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-slate-700 hover:text-rose-600 hover:underline inline-flex items-center gap-1 font-medium transition"
+                                  title="In Google Maps öffnen"
+                                >
+                                  <span>{loc.address}</span>
+                                  <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
+                                </a>
                               </div>
                             )}
                             {loc.notes && (
@@ -4748,20 +4785,26 @@ export default function App() {
                 {/* ============================================================== */}
                 <aside className="w-full lg:w-72 xl:w-80 bg-[#2d2421] text-stone-200 p-5 sm:p-6 flex flex-col justify-between shrink-0 lg:h-screen lg:sticky lg:top-0 border-r border-[#3f3531] shadow-2xl z-20 lg:overflow-y-auto">
                   <div>
-                    {/* Nautisches Emblem Logo */}
+                    {/* Nautisches Emblem Logo (Coaching Boot) */}
                     <div className="mb-6 flex flex-col items-center justify-center">
-                      <div className="w-24 h-20 bg-[#3a2f2b] rounded-2xl border border-stone-600/60 flex items-center justify-center shadow-lg relative group">
-                        <svg viewBox="0 0 48 48" className="w-12 h-12 text-stone-200" fill="none" stroke="currentColor" strokeWidth="2">
-                          <circle cx="24" cy="24" r="18" stroke="currentColor" strokeWidth="2" strokeDasharray="2 3" />
-                          <circle cx="24" cy="24" r="14" stroke="currentColor" strokeWidth="1.5" />
-                          <path d="M 24 10 L 24 38 M 10 24 L 38 24 M 14 14 L 34 34 M 14 34 L 34 14" stroke="currentColor" strokeWidth="1.5" />
-                          <circle cx="24" cy="24" r="4" fill="#f59e0b" />
-                          <path d="M 24 18 L 24 30 M 18 24 L 30 24" stroke="#2d2421" strokeWidth="2" />
-                        </svg>
-                      </div>
-                      <div className="mt-2.5 text-center">
-                        <div className="text-[11px] font-black tracking-widest text-amber-400 uppercase">NAUTIC PORTAL</div>
-                        <div className="text-[10px] text-stone-400 font-medium">Vierwaldstättersee • Kundenbereich</div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStudentSidebarNav('dashboard');
+                          setStudentNavSubTab('overview');
+                        }}
+                        className="w-24 h-24 flex items-center justify-center relative group cursor-pointer focus:outline-hidden transition-transform hover:scale-105"
+                        title="Zum Kunden-Dashboard"
+                      >
+                        <img
+                          src="/assets/aistudio/pikto_mit_hintergrund_da2813fc.svg"
+                          alt="Coaching Boot Logo"
+                          className="w-20 h-20 rounded-2xl shadow-xl border border-stone-600/50 object-contain drop-shadow-md"
+                        />
+                      </button>
+                      <div className="mt-1 text-center">
+                        <div className="text-[11px] font-black tracking-widest text-amber-400 uppercase">COACHING BOOT</div>
+                        <div className="text-[10px] text-stone-400 font-medium">Vierwaldstättersee • Kundenportal</div>
                       </div>
                     </div>
 
@@ -5119,14 +5162,26 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="text-right space-y-1">
-                        <button
-                          type="button"
-                          onClick={() => setStudentWeatherStation('luzern')}
-                          className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold hover:text-slate-800 inline-flex items-center gap-1 transition cursor-pointer"
-                        >
-                          PROGNOSE <ExternalLink className="w-2.5 h-2.5" />
-                        </button>
+                      <div className="text-right space-y-1.5">
+                        <div className="flex items-center gap-1.5 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setShowWeatherModal('luzern')}
+                            className="text-[10px] text-amber-900 bg-white/90 hover:bg-white px-2 py-0.5 rounded-md border border-[#ded0be] uppercase tracking-wider font-bold inline-flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                            title="Nautische Seewetter-Details & Sturmwarnung öffnen"
+                          >
+                            DETAILS
+                          </button>
+                          <a
+                            href="https://www.srf.ch/meteo/wetter/Luzern"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-amber-950 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-md border border-amber-300/80 uppercase tracking-wider font-extrabold inline-flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                            title="Wetterportal SRF Meteo für Luzern öffnen"
+                          >
+                            PROGNOSE <ExternalLink className="w-2.5 h-2.5 text-amber-800" />
+                          </a>
+                        </div>
                         <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium justify-end">
                           <Wind className="w-3.5 h-3.5 text-slate-400" />
                           <span>7.7 km/h</span>
@@ -5154,14 +5209,26 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="text-right space-y-1">
-                        <button
-                          type="button"
-                          onClick={() => setStudentWeatherStation('nidwalden')}
-                          className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold hover:text-slate-800 inline-flex items-center gap-1 transition cursor-pointer"
-                        >
-                          PROGNOSE <ExternalLink className="w-2.5 h-2.5" />
-                        </button>
+                      <div className="text-right space-y-1.5">
+                        <div className="flex items-center gap-1.5 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setShowWeatherModal('hergiswil')}
+                            className="text-[10px] text-amber-900 bg-white/90 hover:bg-white px-2 py-0.5 rounded-md border border-[#ded0be] uppercase tracking-wider font-bold inline-flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                            title="Nautische Seewetter-Details & Sturmwarnung öffnen"
+                          >
+                            DETAILS
+                          </button>
+                          <a
+                            href="https://www.srf.ch/meteo/wetter/Hergiswil%20(NW)"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-amber-950 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-md border border-amber-300/80 uppercase tracking-wider font-extrabold inline-flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                            title="Wetterportal SRF Meteo für Hergiswil (NW) öffnen"
+                          >
+                            PROGNOSE <ExternalLink className="w-2.5 h-2.5 text-amber-800" />
+                          </a>
+                        </div>
                         <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium justify-end">
                           <Wind className="w-3.5 h-3.5 text-slate-400" />
                           <span>8.9 km/h</span>
@@ -5606,9 +5673,75 @@ export default function App() {
                           Fragen zu Terminen oder Prüfungsvorbereitung? Dein Coach-Team ist für dich erreichbar.
                         </p>
 
-                        <div className="text-xs text-slate-800 space-y-1.5 pt-2 border-t border-[#ded0be]">
-                          <div><strong className="text-slate-900">Standorte:</strong> Luzern (LU) &amp; Nidwalden (NW)</div>
-                          <div><strong className="text-slate-900">Telefon:</strong> +41 79 000 00 00</div>
+                        <div className="text-xs text-slate-800 space-y-2 pt-2 border-t border-[#ded0be]">
+                          <div>
+                            <span className="font-bold text-slate-900 block mb-1.5">Stützpunkte &amp; Treffpunkte:</span>
+                            <div className="space-y-1.5">
+                              <a
+                                href="https://www.google.com/maps/search/?api=1&query=Alpenquai+12+6005+Luzern"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 rounded-xl bg-white border border-[#d5c5b2] flex items-center justify-between text-slate-900 hover:border-amber-600 transition shadow-xs group"
+                              >
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                                  <div className="truncate">
+                                    <strong className="text-slate-900">Luzern:</strong>
+                                    <span className="text-slate-600 text-[11px] ml-1">Alpenquai 12</span>
+                                  </div>
+                                </div>
+                                <span className="text-[10px] font-bold text-white bg-[#2d2421] px-2 py-0.5 rounded-lg group-hover:bg-amber-700 transition flex items-center gap-1 shrink-0">
+                                  <span>Maps</span>
+                                  <ExternalLink className="w-2.5 h-2.5 text-amber-400" />
+                                </span>
+                              </a>
+
+                              <a
+                                href="https://www.google.com/maps/search/?api=1&query=Seestrasse+48+6374+Buochs"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 rounded-xl bg-white border border-[#d5c5b2] flex items-center justify-between text-slate-900 hover:border-amber-600 transition shadow-xs group"
+                              >
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                                  <div className="truncate">
+                                    <strong className="text-slate-900">Buochs:</strong>
+                                    <span className="text-slate-600 text-[11px] ml-1">Seestrasse 48</span>
+                                  </div>
+                                </div>
+                                <span className="text-[10px] font-bold text-white bg-[#2d2421] px-2 py-0.5 rounded-lg group-hover:bg-amber-700 transition flex items-center gap-1 shrink-0">
+                                  <span>Maps</span>
+                                  <ExternalLink className="w-2.5 h-2.5 text-amber-400" />
+                                </span>
+                              </a>
+
+                              <a
+                                href="https://www.google.com/maps/search/?api=1&query=Seestrasse+20+6052+Hergiswil"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 rounded-xl bg-white border border-[#d5c5b2] flex items-center justify-between text-slate-900 hover:border-amber-600 transition shadow-xs group"
+                              >
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                                  <div className="truncate">
+                                    <strong className="text-slate-900">Hergiswil:</strong>
+                                    <span className="text-slate-600 text-[11px] ml-1">Seestrasse 20</span>
+                                  </div>
+                                </div>
+                                <span className="text-[10px] font-bold text-white bg-[#2d2421] px-2 py-0.5 rounded-lg group-hover:bg-amber-700 transition flex items-center gap-1 shrink-0">
+                                  <span>Maps</span>
+                                  <ExternalLink className="w-2.5 h-2.5 text-amber-400" />
+                                </span>
+                              </a>
+                            </div>
+                          </div>
+
+                          <div className="pt-1">
+                            <strong className="text-slate-900">Telefon:</strong>{' '}
+                            <a href="tel:+41790000000" className="text-slate-900 font-bold hover:underline">
+                              +41 79 000 00 00
+                            </a>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -5658,7 +5791,7 @@ export default function App() {
 
                     <div className="text-xs text-slate-500 font-medium self-end sm:self-auto flex items-center gap-2">
                       <Receipt className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Schweizer MWST-Belege mit CHE-384.192.834 MWST &bull; 8.1% MWST inklusive</span>
+                      <span>MWST-Nr.: CHE-110.497.163 MWST &bull; Fahrschule 0% MWST (Art. 21 MWSTG) &bull; Bootsvermietung 8.1% MWST</span>
                     </div>
                   </div>
 
@@ -5977,13 +6110,16 @@ export default function App() {
                       <h3 className="font-bold text-slate-900 text-sm">Meine Rechnungen &amp; Schweizer MWST-Belege</h3>
                       <p className="text-xs text-slate-500">Übersicht aller bezahlten und offenen Buchungen inklusive QR-Rechnung</p>
                     </div>
-                    <span className="text-xs bg-slate-100 text-slate-700 font-semibold px-3 py-1 rounded-xl">
-                      UID: CHE-384.192.834 MWST
+                    <span className="text-xs bg-slate-100 text-slate-700 font-semibold px-3 py-1 rounded-xl font-mono">
+                      UID: CHE-110.497.163 MWST
                     </span>
                   </div>
 
                   <div className="divide-y divide-slate-100">
-                    {customerSubscriptions.map(sub => (
+                    {customerSubscriptions.map(sub => {
+                      const isRental = sub.offer_type === 'mieten' || sub.package_name.toLowerCase().includes('miete');
+                      const vatAmt = sub.tax_amount ?? (isRental ? (sub.price_paid - sub.price_paid / 1.081) : 0);
+                      return (
                       <div key={sub.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                         <div>
                           <div className="flex items-center gap-2">
@@ -5995,12 +6131,20 @@ export default function App() {
                               {sub.payment_status === 'paid' ? 'Bezahlt ✓' : 'Zahlung offen'}
                             </span>
                           </div>
-                          <div className="text-slate-500 mt-1 flex items-center gap-3">
+                          <div className="text-slate-500 mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
                             <span>Datum: {sub.purchased_at.slice(0, 10)}</span>
                             <span>&bull;</span>
                             <span>Zahlungsart: {sub.payment_method === 'bank_transfer' ? 'Raiffeisen Banküberweisung' : 'QR-Rechnung'}</span>
                             <span>&bull;</span>
-                            <span>inkl. 8.1% MWST: CHF {(sub.price_paid - sub.price_paid / 1.081).toFixed(2)}</span>
+                            {isRental ? (
+                              <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                inkl. 8.1% MWST: CHF {vatAmt.toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-stone-700 font-medium bg-stone-100 px-2 py-0.5 rounded-md border border-stone-200">
+                                0.0% MWST (Fahrschule / steuerbefreite Bildungsleistung)
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -6016,7 +6160,8 @@ export default function App() {
                           </button>
                         </div>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 </div>
               )}
@@ -9876,6 +10021,596 @@ export default function App() {
         profile={studentProfile}
         onSave={handleSaveStudentProfile}
       />
+
+      {/* ============================================================== */}
+      {/* MODAL: STORE CHECKOUT & BESTELLUNG                             */}
+      {/* ============================================================== */}
+      {checkoutService && checkoutSelectedOption && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-[#f6f0e7] rounded-3xl max-w-xl w-full shadow-2xl border border-[#ded0be] overflow-hidden my-8">
+            <div className="px-6 py-5 bg-[#2d2421] text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-400/30 flex items-center justify-center shrink-0">
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white">Angebot verbindlich buchen</h3>
+                  <p className="text-xs text-stone-300">
+                    {checkoutService.offer_type === 'mieten' ? 'Bootsmiete inkl. 8.1% MWST' : 'Fahrschule (steuerbefreit nach Art. 21 MWSTG)'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCheckoutService(null)}
+                className="text-stone-400 hover:text-white p-1 rounded-lg hover:bg-stone-800 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              <div className="p-4 bg-white rounded-2xl border border-[#d5c5b2] shadow-xs">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-stone-100 text-stone-700">
+                      {checkoutService.offer_type === 'mieten' ? 'Gewerbliche Vermietung' : 'Fahrschule / Coaching'}
+                    </span>
+                    <h4 className="font-bold text-stone-900 text-sm mt-1">{checkoutService.name}</h4>
+                    <p className="text-[11px] text-stone-600 mt-0.5 line-clamp-2">{checkoutService.description}</p>
+                  </div>
+                </div>
+
+                {/* Preis- / Zeitstufen */}
+                {checkoutService.price_options.length > 1 && (
+                  <div className="mt-3 pt-3 border-t border-stone-100 space-y-1.5">
+                    <label className="font-bold text-stone-800 block">Gewünschte Dauer / Einheit:</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {checkoutService.price_options.map(opt => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setCheckoutSelectedOptionId(opt.id)}
+                          className={`p-2.5 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
+                            checkoutSelectedOption.id === opt.id
+                              ? 'bg-[#2d2421] text-white border-[#2d2421]'
+                              : 'bg-stone-50 border-stone-200 text-stone-800 hover:bg-stone-100'
+                          }`}
+                        >
+                          <span className="font-semibold">{opt.duration} Min.</span>
+                          <span className="font-bold">CHF {opt.price.toFixed(2)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Gutschein / Promo-Code */}
+              <div className="p-3.5 bg-white rounded-2xl border border-[#d5c5b2] shadow-xs space-y-2">
+                <label className="font-bold text-stone-800 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-stone-600" />
+                  <span>Rabatt- oder Gutscheincode einlösen</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={checkoutPromoInput}
+                    onChange={e => setCheckoutPromoInput(e.target.value.toUpperCase())}
+                    placeholder="z. B. BOOT50 oder SOMMER2026"
+                    className="flex-1 px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl font-mono text-xs uppercase"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleValidatePromo}
+                    className="px-3.5 py-2 bg-stone-800 hover:bg-black text-white rounded-xl font-bold transition cursor-pointer"
+                  >
+                    Anwenden
+                  </button>
+                </div>
+                {checkoutPromoMsg && (
+                  <div className={`text-[11px] font-semibold ${checkoutPromoMsg.type === 'success' ? 'text-emerald-700' : 'text-rose-600'}`}>
+                    {checkoutPromoMsg.text}
+                  </div>
+                )}
+              </div>
+
+              {/* MWST-Berechnung (Schweizer Mehrwertsteuergesetz-konform) */}
+              <div className="p-4 bg-[#eee4d5] rounded-2xl border border-[#ded0be] space-y-2">
+                <div className="flex items-center justify-between text-stone-700">
+                  <span>Zwischensumme:</span>
+                  <span>CHF {checkoutSubtotal.toFixed(2)}</span>
+                </div>
+                {checkoutDiscountAmount > 0 && (
+                  <div className="flex items-center justify-between text-emerald-800 font-semibold">
+                    <span>Rabatt ({checkoutPromoApplied?.code}):</span>
+                    <span>- CHF {checkoutDiscountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+
+                {/* Unterscheidung nach Fahrschule vs. Vermietung */}
+                {checkoutIsRental ? (
+                  <>
+                    <div className="flex items-center justify-between text-stone-600 text-[11px]">
+                      <span>Nettobetrag (exkl. MWST):</span>
+                      <span>CHF {checkoutNettoAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-emerald-800 font-semibold">
+                      <span>Mehrwertsteuer (8.1% Normalsatz):</span>
+                      <span>+ CHF {checkoutVatAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="text-[10px] text-stone-500 pt-1 border-t border-[#dfd0bc]">
+                      Gewerbliche Bootsvermietung unterliegt dem Schweizer MWST-Normalsatz von 8.1%.
+                      <br />
+                      <strong>MWST-Nr.: CHE-110.497.163 MWST</strong>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between text-stone-700 font-semibold">
+                      <span>Mehrwertsteuer (0.0% MWST):</span>
+                      <span className="text-emerald-800">CHF 0.00 (steuerbefreit)</span>
+                    </div>
+                    <div className="text-[10px] text-stone-600 pt-1 border-t border-[#dfd0bc]">
+                      Fahrschule &amp; Ausbildungs-Coaching sind als Bildungsleistung gemäss <strong>Art. 21 Abs. 2 Ziff. 11 MWSTG</strong> von der Mehrwertsteuer ausgenommen. Es wird keine MWST verrechnet.
+                      <br />
+                      <strong>UID: CHE-110.497.163</strong>
+                    </div>
+                  </>
+                )}
+
+                <div className="pt-2 border-t border-[#dfd0bc] flex items-center justify-between">
+                  <span className="font-extrabold text-stone-900 text-sm">Gesamtbetrag {checkoutIsRental ? '(inkl. 8.1% MWST)' : '(MWST-befreit)'}:</span>
+                  <span className="font-black text-stone-900 text-base">CHF {checkoutFinalTotal.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Zahlungsart */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-800 block">Zahlungsmethode:</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutPaymentMethod('bank_transfer')}
+                    className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 cursor-pointer ${
+                      checkoutPaymentMethod === 'bank_transfer'
+                        ? 'bg-white border-[#2d2421] text-stone-900 font-bold shadow-xs'
+                        : 'bg-white/60 border-stone-200 text-stone-600'
+                    }`}
+                  >
+                    <Wallet className="w-4 h-4 text-stone-700" />
+                    <span>Raiffeisen Überweisung</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutPaymentMethod('qr_bill')}
+                    className={`p-2.5 rounded-xl border text-left transition flex items-center gap-2 cursor-pointer ${
+                      checkoutPaymentMethod === 'qr_bill'
+                        ? 'bg-white border-[#2d2421] text-stone-900 font-bold shadow-xs'
+                        : 'bg-white/60 border-stone-200 text-stone-600'
+                    }`}
+                  >
+                    <QrCode className="w-4 h-4 text-stone-700" />
+                    <span>Schweizer QR-Rechnung</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Footer Buttons */}
+              <div className="pt-3 border-t border-[#ded0be] flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setCheckoutService(null)}
+                  className="px-4 py-2.5 bg-white hover:bg-stone-50 border border-[#ded0be] text-stone-700 font-bold rounded-xl transition cursor-pointer"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCompleteOrder}
+                  className="px-5 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer"
+                >
+                  <Check className="w-4 h-4 text-amber-400" />
+                  <span>Kauf abschliessen (CHF {checkoutFinalTotal.toFixed(2)})</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: SCHWEIZER MWST-QUITTUNG & RECHNUNGSBELEG               */}
+      {/* ============================================================== */}
+      {showReceiptModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8 print:m-0 print:border-none print:shadow-none">
+            {/* Beleg Kopf */}
+            <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-400/20 text-amber-400 border border-amber-400/30 flex items-center justify-center">
+                  <Receipt className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white">Schweizer MWST-Quittung</h3>
+                  <p className="text-xs text-slate-400 font-mono">Beleg-Nr. {showReceiptModal.order_id}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                  title="Drucken"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Drucken</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowReceiptModal(null)}
+                  className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Beleg Inhalt */}
+            <div className="p-6 space-y-5 text-xs">
+              {/* Aussteller & Kunde */}
+              <div className="grid grid-cols-2 gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Leistungserbringer:</div>
+                  <div className="font-bold text-slate-900 text-sm mt-0.5">Nautic Bootsfahrschule &amp; Vermietung</div>
+                  <div className="text-slate-600 text-[11px]">Alpenquai 12, 6005 Luzern</div>
+                  <div className="text-slate-600 text-[11px]">Vierwaldstättersee (LU / NW)</div>
+                  <div className="mt-1.5 inline-block font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-[11px] border border-slate-200">
+                    MWST-Nr.: CHE-110.497.163 MWST
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Kunde / Rechnungsempfänger:</div>
+                  <div className="font-bold text-slate-900 text-sm mt-0.5">{activeStudentFullName || 'Roland Meier'}</div>
+                  <div className="text-slate-600 text-[11px]">{studentProfile.email || 'office@studiocreativo.ch'}</div>
+                  <div className="text-slate-600 text-[11px]">{studentProfile.street || 'Seestrasse'}, {studentProfile.zip || '6000'} {studentProfile.city || 'Luzern'}</div>
+                  <div className="text-slate-500 text-[11px] mt-1">Datum: {showReceiptModal.purchased_at.slice(0, 10)}</div>
+                </div>
+              </div>
+
+              {/* Leistungszeile */}
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="font-bold text-slate-900 text-sm">{showReceiptModal.package_name}</span>
+                    <div className="text-slate-500 text-[11px] mt-0.5">
+                      Standort: {showReceiptModal.location_name || 'Luzern Alpenquai'} &bull; Status: <strong className="text-emerald-700">Bezahlt ({showReceiptModal.payment_method === 'bank_transfer' ? 'Banküberweisung' : 'QR-Rechnung'})</strong>
+                    </div>
+                  </div>
+                  <div className="font-mono font-black text-slate-900 text-base">
+                    CHF {showReceiptModal.price_paid.toFixed(2)}
+                  </div>
+                </div>
+
+                {/* Mehrwertsteuer-Abrechnung */}
+                {(() => {
+                  const isRental = showReceiptModal.offer_type === 'mieten' || showReceiptModal.package_name.toLowerCase().includes('miete');
+                  const vatAmount = isRental ? (showReceiptModal.tax_amount ?? (showReceiptModal.price_paid - showReceiptModal.price_paid / 1.081)) : 0;
+                  const netAmount = showReceiptModal.price_paid - vatAmount;
+
+                  return (
+                    <div className="pt-3 border-t border-slate-200 space-y-1.5">
+                      <div className="flex items-center justify-between text-slate-600">
+                        <span>Leistungsbetrag netto:</span>
+                        <span className="font-mono">CHF {netAmount.toFixed(2)}</span>
+                      </div>
+
+                      {isRental ? (
+                        <div className="flex items-center justify-between text-emerald-800 font-semibold">
+                          <span>Mehrwertsteuer (8.1% Normalsatz):</span>
+                          <span className="font-mono">+ CHF {vatAmount.toFixed(2)}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between text-stone-700 font-medium">
+                          <span>Mehrwertsteuer (0.0% MWST):</span>
+                          <span className="font-mono">CHF 0.00 (steuerbefreit)</span>
+                        </div>
+                      )}
+
+                      <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-slate-900 font-bold text-sm">
+                        <span>Gesamtbetrag CHF {isRental ? '(inkl. 8.1% MWST)' : '(MWST-befreit)'}:</span>
+                        <span className="font-mono font-black text-base">CHF {showReceiptModal.price_paid.toFixed(2)}</span>
+                      </div>
+
+                      {/* Gesetzlicher MWST-Hinweis */}
+                      <div className="mt-3 p-3 rounded-xl bg-white border border-slate-200 text-[11px] text-slate-600">
+                        {isRental ? (
+                          <span>
+                            <strong>Gewerbliche Bootsvermietung:</strong> Der anwendbare Mehrwertsteuersatz beträgt 8.1% (Schweizer Normalsatz). Die MWST ist im Gesamtbetrag enthalten. <strong>MWST-Nr.: CHE-110.497.163 MWST</strong>.
+                          </span>
+                        ) : (
+                          <span>
+                            <strong>Bootsfahrschule &amp; Ausbildungsleistungen:</strong> Diese Leistung ist als Aus- und Weiterbildungsleistung gemäss <strong>Art. 21 Abs. 2 Ziff. 11 des Schweizerischen Mehrwertsteuergesetzes (MWSTG)</strong> von der Mehrwertsteuer ausgenommen. Es wird keine MWST in Rechnung gestellt. <strong>UID: CHE-110.497.163</strong>.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Beleg Footer */}
+              <div className="flex items-center justify-between pt-2">
+                <div className="text-[10px] text-slate-400">
+                  Elektronisch erstellter Beleg &bull; Gültig ohne Unterschrift
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowReceiptModal(null)}
+                  className="px-4 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl transition cursor-pointer"
+                >
+                  Schliessen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: SEEWETTER, STURMWARNUNG & WETTERPORTALE VIERWALDSTÄTTERSEE */}
+      {/* ============================================================== */}
+      {showWeatherModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div
+            className="fixed inset-0 cursor-pointer"
+            onClick={() => setShowWeatherModal(null)}
+            aria-label="Schliessen"
+          />
+          <div className="relative w-full max-w-2xl bg-[#faf6f0] border border-[#e2d5c3] rounded-3xl shadow-2xl p-6 sm:p-7 z-10 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-[#e2d5c3] pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-sky-100 border border-sky-200 text-sky-800 flex items-center justify-center shrink-0">
+                  <Waves className="w-6 h-6 text-sky-700" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-extrabold text-slate-900">
+                      Seewetter &amp; Wetterportale Vierwaldstättersee
+                    </h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-200/80 text-amber-900 uppercase">
+                      {showWeatherModal === 'luzern' ? 'Station Luzern (LU)' : 'Station Hergiswil (NW)'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Live-Nautik-Bedingungen für Fahrschüler &amp; Bootsmieter mit direkter Verlinkung der Wetterportale
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowWeatherModal(null)}
+                className="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-300 text-slate-700 flex items-center justify-center transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="py-5 space-y-5 max-h-[75vh] overflow-y-auto pr-1">
+              {/* Station Toggle */}
+              <div className="flex items-center gap-2 p-1 bg-[#eee4d5] rounded-xl border border-[#ded0be]">
+                <button
+                  type="button"
+                  onClick={() => setShowWeatherModal('luzern')}
+                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    showWeatherModal === 'luzern'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Luzerner Bucht &amp; Alpenquai
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowWeatherModal('hergiswil')}
+                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    showWeatherModal === 'hergiswil'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Hergiswil &amp; Alpnachersee
+                </button>
+              </div>
+
+              {/* Live Nautical Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white p-3.5 rounded-2xl border border-[#e2d5c3]">
+                  <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                    <Cloud className="w-3.5 h-3.5 text-slate-400" />
+                    Lufttemperatur
+                  </div>
+                  <div className="text-2xl font-extrabold text-slate-900 mt-1">
+                    7°C
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Teils sonnig</div>
+                </div>
+
+                <div className="bg-white p-3.5 rounded-2xl border border-[#e2d5c3]">
+                  <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                    <Waves className="w-3.5 h-3.5 text-sky-600" />
+                    Wassertemperatur
+                  </div>
+                  <div className="text-2xl font-extrabold text-sky-900 mt-1">
+                    {showWeatherModal === 'luzern' ? '11.4°C' : '11.2°C'}
+                  </div>
+                  <div className="text-[10px] text-sky-700 mt-0.5">Vierwaldstättersee</div>
+                </div>
+
+                <div className="bg-white p-3.5 rounded-2xl border border-[#e2d5c3]">
+                  <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                    <Wind className="w-3.5 h-3.5 text-slate-400" />
+                    Wind &amp; Beaufort
+                  </div>
+                  <div className="text-2xl font-extrabold text-slate-900 mt-1">
+                    {showWeatherModal === 'luzern' ? '7.7' : '8.9'} <span className="text-xs font-bold">km/h</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">
+                    {showWeatherModal === 'luzern' ? '4.2 kn · 2 Bft (NNO)' : '4.8 kn · 2 Bft (NW)'}
+                  </div>
+                </div>
+
+                <div className="bg-white p-3.5 rounded-2xl border border-[#e2d5c3]">
+                  <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                    <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                    Sturmwarndienst
+                  </div>
+                  <div className="text-xs font-extrabold text-emerald-800 mt-2 flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Keine Warnung
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">Normaler Seebetrieb</div>
+                </div>
+              </div>
+
+              {/* Sturmwarnung Info Box Schweizer Seen */}
+              <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl text-xs text-amber-950 space-y-1.5">
+                <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                  <AlertTriangle className="w-4 h-4 text-amber-700" />
+                  Amtliche Sturmwarnung für Schweizer Seen (Vierwaldstättersee):
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-[11px]">
+                  <div className="bg-white/80 p-2 rounded-lg border border-amber-200/60">
+                    <strong className="text-amber-800">40 Blitze / Min (Starkwindwarnung):</strong>
+                    <p className="text-slate-600 mt-0.5">Kündigt Winde mit Böenspitzen von 25 bis 33 Knoten (ca. 45–60 km/h) an. Uferzone beachten!</p>
+                  </div>
+                  <div className="bg-white/80 p-2 rounded-lg border border-amber-200/60">
+                    <strong className="text-rose-700">90 Blitze / Min (Sturmwarnung):</strong>
+                    <p className="text-slate-600 mt-0.5">Kündigt Sturmwindböen ab 34 Knoten (ab 60 km/h) an. Sofort sicheren Hafen anlaufen und Schwimmwesten tragen!</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wetterportale Direkte Links */}
+              <div>
+                <h4 className="font-extrabold text-slate-900 text-sm mb-3 flex items-center justify-between">
+                  <span>Offizielle Schweizer Wetterportale für mehr Informationen</span>
+                  <span className="text-[11px] text-slate-500 font-normal">Externe Portale (neuer Tab)</span>
+                </h4>
+
+                <div className="space-y-2.5">
+                  {/* SRF Meteo */}
+                  <a
+                    href={
+                      showWeatherModal === 'luzern'
+                        ? 'https://www.srf.ch/meteo/wetter/Luzern'
+                        : 'https://www.srf.ch/meteo/wetter/Hergiswil%20(NW)'
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3.5 bg-white hover:bg-amber-50/50 rounded-2xl border border-[#e2d5c3] hover:border-amber-400 flex items-center justify-between group transition shadow-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-red-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                        SRF
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                          SRF Meteo – Lokalprognose {showWeatherModal === 'luzern' ? 'Luzern' : 'Hergiswil'}
+                          <span className="text-[10px] bg-red-100 text-red-800 font-bold px-2 py-0.2 rounded-full">Offiziell</span>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Stündliche Temperatur-, Sonnen-, Niederschlags- und Wolkenprognosen sowie Niederschlagsradar.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-100 group-hover:bg-amber-200 px-3 py-1.5 rounded-xl transition shrink-0">
+                      SRF Meteo öffnen <ExternalLink className="w-3.5 h-3.5" />
+                    </div>
+                  </a>
+
+                  {/* MeteoSchweiz */}
+                  <a
+                    href={
+                      showWeatherModal === 'luzern'
+                        ? 'https://www.meteoschweiz.admin.ch/lokalprognose/luzern.html'
+                        : 'https://www.meteoschweiz.admin.ch/lokalprognose/hergiswil-nw.html'
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3.5 bg-white hover:bg-sky-50/50 rounded-2xl border border-[#e2d5c3] hover:border-sky-400 flex items-center justify-between group transition shadow-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-slate-900 text-white font-bold text-[10px] flex items-center justify-center text-center p-1 leading-tight shrink-0">
+                        + CH
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                          MeteoSchweiz – Bundesamt für Meteorologie
+                          <span className="text-[10px] bg-sky-100 text-sky-800 font-bold px-2 py-0.2 rounded-full">Bund / Sturmwarndienst</span>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Amtliche Wetterberichte, Messwerte der Bodenstationen und Sturmwarnungs-Status für Schweizer Seen.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-sky-900 bg-sky-100 group-hover:bg-sky-200 px-3 py-1.5 rounded-xl transition shrink-0">
+                      MeteoSchweiz öffnen <ExternalLink className="w-3.5 h-3.5" />
+                    </div>
+                  </a>
+
+                  {/* Windfinder */}
+                  <a
+                    href={
+                      showWeatherModal === 'luzern'
+                        ? 'https://de.windfinder.com/forecast/luzern_lake'
+                        : 'https://de.windfinder.com/forecast/hergiswil_alpnachersee'
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3.5 bg-white hover:bg-emerald-50/50 rounded-2xl border border-[#e2d5c3] hover:border-emerald-400 flex items-center justify-between group transition shadow-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-teal-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                        <Wind className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                          Windfinder – Bootswetter &amp; Thermik
+                          <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.2 rounded-full">Wind &amp; Wellen</span>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Windgeschwindigkeit in Knoten, Windrichtung, Böenspitzen und Wellenhöhe speziell für Skipper.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-teal-900 bg-teal-100 group-hover:bg-teal-200 px-3 py-1.5 rounded-xl transition shrink-0">
+                      Windfinder öffnen <ExternalLink className="w-3.5 h-3.5" />
+                    </div>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-4 border-t border-[#e2d5c3]">
+              <div className="text-[11px] text-slate-500">
+                Tipp: Bei Fahrstunden oder Miete vor dem Ablegen stets die Sturmwarnleuchten am Ufer prüfen.
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowWeatherModal(null)}
+                className="px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Schliessen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ============================================================== */}
       {/* HAMBURGER MENU DRAWER (ADMIN NAVIGATION & DIREKTLINKS)         */}

@@ -213,7 +213,9 @@ ob_start();
                                         <?= BoatingSchoolService::formatPrice((float) ($srv['price'] ?? 0.0)) ?>
                                     </div>
                                     <?php if (!empty($srv['tax_rate']) && (float) $srv['tax_rate'] > 0): ?>
-                                        <div class="small text-muted">inkl. <?= number_format((float) $srv['tax_rate'], 1) ?>% MwSt.</div>
+                                        <div class="small text-muted">inkl. <?= number_format((float) $srv['tax_rate'], 1) ?>% MwSt. (Miete)</div>
+                                    <?php else: ?>
+                                        <div class="small text-muted">0.0% MwSt. (Fahrschule)</div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
