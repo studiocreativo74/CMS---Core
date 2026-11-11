@@ -137,6 +137,39 @@ import { AnnouncementsManagementView } from './components/announcements/Announce
 import { StudentBookingModal } from './components/customer/StudentBookingModal.tsx';
 import { StudentProfileModal, StudentProfileData } from './components/customer/StudentProfileModal.tsx';
 
+export const CoachingBootLogo: React.FC<{ className?: string }> = ({ className = 'w-20 h-20' }) => (
+  <svg
+    viewBox="0 0 400 400"
+    className={className}
+    role="img"
+    aria-label="Coaching Boot Logo"
+  >
+    <rect fill="#5a3e32" x="16.4" y="16.4" width="367.21" height="367.21" rx="48" ry="48" />
+    <g fill="#ffffff">
+      <path d="M195.14,45.63l10.6,29.8h.12v-29.8h8.04v43.52h-10l-10.73-30.47h-.12v30.47h-8.04v-43.52h10.12Z" />
+      <path d="M110.23,261.41c-14.35-18.84-22.88-42.33-22.88-67.79,0-47.27,29.4-87.79,70.87-104.25v-19.75c-51.91,17.31-89.44,66.35-89.44,124.01,0,32.87,12.2,62.94,32.31,85.93l9.13-18.14Z" />
+      <path d="M311.58,193.62c0,25.42-8.51,48.88-22.82,67.71l9.05,18.25c20.12-22.99,32.34-53.08,32.34-85.96,0-57.65-37.53-106.7-89.44-124.01v19.75c41.47,16.46,70.87,56.99,70.87,104.25Z" />
+      <path d="M341.94,219.56l25.77-25.77-25.64-25.64c1.55,8.32,2.35,16.83,2.35,25.46s-.85,17.45-2.48,25.95Z" />
+      <path d="M199.46,331.44c-8.29,0-16.51-.74-24.6-2.21l25.13,25.13,25.38-25.38c-8.51,1.63-17.18,2.45-25.92,2.45Z" />
+      <path d="M54.5,193.62c0-8.17.71-16.24,2.11-24.14l-24.32,24.32,24.44,24.44c-1.47-8.07-2.22-16.31-2.22-24.61Z" />
+      <path d="M194.34,178.42c-.27.02.86,18.07-.9,46.69-.54,7.15-1.42,14.98-3.2,23.28-2.05,8.07-4.24,17.61-12,24.5-8.91,7.13-20.02,1.62-27-4.1-7.63-6.07-13.37-14.38-18.4-23.07.04-.04,2.47,3.73,7.43,9.83,5.01,5.63,12.97,15.13,26,17.9,6.6,1.37,13.16-3.64,16.33-11.2,3.41-7.39,5.33-16.08,6.72-25.14,2.8-18.19,3.46-38.19,5-58.7Z" />
+      <path d="M207.87,177.78c.27-.05.66,18.14,2.96,46.28.67,7.01,1.63,14.63,3.34,22.53,1.89,7.63,4.19,16.57,10.58,21.78,6.73,5.3,16.8.32,24.13-5.72,7.69-6.17,14-14.54,19.83-23.28-.05-.03-2.13,4.16-6.78,11.09-4.83,6.47-12.09,17.35-26.48,22.31-7.65,2.73-16.28-2.97-19.37-10.73-3.65-7.59-5.45-16.35-6.63-25.46-2.34-18.3-1.93-38.33-1.57-58.81Z" />
+      <path d="M161.89,177.52c.08,0-.35-1.21.25-3.49.36-1.99,3.28-6.28,8.14-4.87,4.47,1.43,6.63,8.25,3.1,13.31-1.57,2.58-5.43,4.08-8.18,2.52-2.73-1.48-3.73-4.7-3.31-7.47.06-.03.1,1.31,1.11,3.07.86,1.74,3.63,3.73,6.28,2.14,2.55-1.41,3.96-6.26,1.76-9.5-1.84-3.88-8.45-1.81-9.15,4.29Z" />
+      <path d="M230.95,174.3c.08,0-.35-1.21.25-3.49.36-1.99,3.28-6.28,8.14-4.87,4.47,1.43,6.63,8.25,3.1,13.31-1.57,2.57-5.43,4.08-8.18,2.52-2.73-1.48-3.73-4.7-3.31-7.47.06-.03.1,1.31,1.11,3.07.86,1.74,3.63,3.73,6.28,2.14,2.55-1.41,3.96-6.26,1.76-9.5-1.85-3.89-8.45-1.81-9.15,4.29Z" />
+      <path d="M180.98,147.75c.25.07-.68-3.92,2.26-10.3,2.41-6.2,12.18-14.6,24.38-11.55,5.81,1.46,11.56,6.08,13.7,13.1,2.41,6.84.89,15.69-4.74,21.93-5.43,6.27-14.8,9.25-22.66,6.38-8-2.54-13.39-10.92-12.95-19.56.23-.11-.24,4.09,3.04,9.66,2.8,5.55,12.28,11.46,22.87,7.17,10.67-3.27,17.73-21.04,7.54-31.49-4.66-4.96-12.6-7.07-19.87-4.2-7.3,2.64-13.05,10.28-13.59,18.85Z" />
+      <path d="M189.8,146.74c.15.04-.49-2.17,1.08-5.85,1.26-3.56,6.8-8.6,13.99-6.91,7.19.94,12.57,12.75,5.29,20.55-3.22,3.67-8.75,5.34-13.27,3.57-4.61-1.57-7.54-6.52-7.09-11.35.13-.07-.02,2.3,1.88,5.29,1.65,3,6.87,5.96,12.42,3.59,5.59-1.85,9.19-11.08,3.93-16.59-4.58-6.04-17.37-2.71-18.24,7.72Z" />
+      <path d="M201.37,183.5s3.1,57.7-.63,123.97c0,0-3.1-58.45.63-123.97Z" />
+      <path d="M128.13,248.89c.27-.26,1.97,12.74,13.6,27.33,5.77,7.14,14.24,14.43,25.48,18.29,5.55,1.97,11.98,2.9,18.22,5.21,6.14,2.15,12.65,6.29,14.69,13.2-.13.13-.95-3.17-5.12-6.48-4.08-3.44-11.51-5.51-20.8-7.19-19.28-1.84-43.01-21.85-46.08-50.36Z" />
+      <path d="M273.98,242.08c-.3-.28-.32,13.2-11.87,30.11-5.71,8.22-14.66,17-26.72,21.88-11.36,4.91-27.14,4.97-34.09,18.79.14.12.52-3.36,4.55-7.65,3.94-4.41,11.67-7.98,20.87-10.93,18.45-4.68,40.3-24.22,47.25-52.2Z" />
+      <path d="M174.24,173.49c-.16.3,13.05-8.02,35.7-7.4,5.59.13,11.63,1.04,17.87,2.71l2.35.65,1.19.33.07.02h.04c-.2-.29,1.89,2.68,1.01,1.44v.16s0,.32,0,.32v.63s0,1.28,0,1.28v.32s0,.16,0,.16v.08c-.5.7,1.11-1.51-1.12,1.58h-.04s-.65.21-.65.21l-2.54.69c-3.4.86-6.91,1.53-10.51,2.08-7.2,1.03-14.76,1.55-22.48,1.21-3.85-.17-7.75-.49-11.64-1.06-1.94-.31-3.9-.55-5.83-.99-1.55-.63-4.91-.02-4.29-2.79.22-.33-.31,1.61,1.02,1.82,1.67.13,4.09.52,7.23.68,6.26.45,15.32.7,26.3-.47,7.92-1.32,35.71-3.97,10.94-7.3-13.64-2.45-29.41-2-44.62,3.63Z" />
+      <path d="M145.39,242.27l-.37-.27-1.86-1.38-3.69-2.69c-4.88-3.54-9.58-6.88-14.04-9.99-2.23-1.55-4.4-3.05-6.5-4.48l-1.56-1.06-.26-.18c.08-.05.07-.05,0,0l-.35-.24c-.89.56-1.78,1.11-2.68,1.65l.47,3.36c2.7,19.14,5.01,31.33,5.01,31.33-.41-7.03-.9-13.94-1.46-20.64-.28-3.35-.58-6.65-.88-9.89l-.2-2.09.81.59c4.89,3.55,9.6,6.89,14.05,9.99,2.23,1.55,4.39,3.04,6.48,4.47l2.84,1.93c-8.23,1.36-14.49,6.01-17.04,10.39-2.86,4.55-3.06,7.75-3.12,8.14,1.86-6.87,7.22-12.16,13.2-14.31,3.01-1.09,6.11-1.78,9.2-1.87l1.08-.08c.26-.91.54-1.81.88-2.68Z" />
+      <path d="M281.99,251.81h0c.86-.19,1.72-.4,2.58-.6l.06-.73.21-2.41.39-4.75c.49-6.27.9-12.28,1.24-17.94.17-2.83.32-5.57.46-8.22l.1-1.97.02-.33c.08.04.08.03,0,0v-.26c-.85-.53-1.71-1.07-2.55-1.64l-2.64,2.46c-14.41,13.48-23.3,22.57-23.3,22.57,5.59-4.45,11.02-8.9,16.26-13.28,2.62-2.19,5.19-4.37,7.7-6.52l1.62-1.39-.08,1.04c-.49,6.29-.9,12.3-1.24,17.95-.17,2.83-.32,5.57-.46,8.2l-.18,3.57c-5.21-6.31-12.14-9.02-17.01-8.66-5.17.18-7.9,1.87-8.25,2.04,6.58-2.4,13.59-.84,18.34,3.07,2.39,1.96,4.5,4.24,6.11,6.85l.64.95Z" />
+      <path d="M136.89,260.82c.21-.24,3.53,7.92,13.54,15.6,4.93,4.03,11.4,7.24,19.41,9.47,7.65,2.68,17.48,4.14,24.19,11.06.36-.62-6.94-4.46-19.66-6.94-6.21-1.48-14.08-3.06-21.2-8.03-6.96-4.76-13.29-12.14-16.28-21.17Z" />
+      <path d="M205.19,299.44c-.16.06,5.33-6.18,16.75-9.96,10.99-3.78,25.96-9.7,36.92-23.84-.36-.36-3.11,7.48-12.82,15.28-4.78,3.86-11.29,7.21-18.6,9.58-7.2,2.4-15.27,3.79-22.25,8.93Z" />
+    </g>
+  </svg>
+);
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<'payroll' | 'student' | 'instructor' | 'login' | 'cms' | 'architecture'>('student');
 
@@ -4796,11 +4829,7 @@ export default function App() {
                         className="w-24 h-24 flex items-center justify-center relative group cursor-pointer focus:outline-hidden transition-transform hover:scale-105"
                         title="Zum Kunden-Dashboard"
                       >
-                        <img
-                          src="/assets/aistudio/pikto_mit_hintergrund_da2813fc.svg"
-                          alt="Coaching Boot Logo"
-                          className="w-20 h-20 rounded-2xl shadow-xl border border-stone-600/50 object-contain drop-shadow-md"
-                        />
+                        <CoachingBootLogo className="w-20 h-20 rounded-2xl shadow-xl border border-stone-600/50 drop-shadow-md" />
                       </button>
                       <div className="mt-1 text-center">
                         <div className="text-[11px] font-black tracking-widest text-amber-400 uppercase">COACHING BOOT</div>
@@ -5173,11 +5202,11 @@ export default function App() {
                             DETAILS
                           </button>
                           <a
-                            href="https://www.srf.ch/meteo/wetter/Luzern"
+                            href="https://search.ch/meteo/luzern"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[10px] text-amber-950 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-md border border-amber-300/80 uppercase tracking-wider font-extrabold inline-flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                            title="Wetterportal SRF Meteo für Luzern öffnen"
+                            title="Wetterportal search.ch Meteo für Luzern öffnen"
                           >
                             PROGNOSE <ExternalLink className="w-2.5 h-2.5 text-amber-800" />
                           </a>
@@ -5220,11 +5249,11 @@ export default function App() {
                             DETAILS
                           </button>
                           <a
-                            href="https://www.srf.ch/meteo/wetter/Hergiswil%20(NW)"
+                            href="https://search.ch/meteo/hergiswil"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[10px] text-amber-950 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-md border border-amber-300/80 uppercase tracking-wider font-extrabold inline-flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                            title="Wetterportal SRF Meteo für Hergiswil (NW) öffnen"
+                            title="Wetterportal search.ch Meteo für Hergiswil (NW) öffnen"
                           >
                             PROGNOSE <ExternalLink className="w-2.5 h-2.5 text-amber-800" />
                           </a>
@@ -10502,16 +10531,42 @@ export default function App() {
                 </h4>
 
                 <div className="space-y-2.5">
-                  {/* SRF Meteo */}
+                  {/* search.ch Meteo */}
                   <a
                     href={
                       showWeatherModal === 'luzern'
-                        ? 'https://www.srf.ch/meteo/wetter/Luzern'
-                        : 'https://www.srf.ch/meteo/wetter/Hergiswil%20(NW)'
+                        ? 'https://search.ch/meteo/luzern'
+                        : 'https://search.ch/meteo/hergiswil'
                     }
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-3.5 bg-white hover:bg-amber-50/50 rounded-2xl border border-[#e2d5c3] hover:border-amber-400 flex items-center justify-between group transition shadow-xs"
+                    className="p-3.5 bg-white hover:bg-sky-50/50 rounded-2xl border border-[#e2d5c3] hover:border-sky-400 flex items-center justify-between group transition shadow-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-sky-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                        Meteo
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                          search.ch Meteo – Lokalprognose {showWeatherModal === 'luzern' ? 'Luzern' : 'Hergiswil (NW)'}
+                          <span className="text-[10px] bg-sky-100 text-sky-800 font-bold px-2 py-0.2 rounded-full">Direktlink</span>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Stündliche Wettervorhersage, Regenradar, Windkurven und lokale 5-Tages-Prognose.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-sky-900 bg-sky-100 group-hover:bg-sky-200 px-3 py-1.5 rounded-xl transition shrink-0">
+                      Öffnen <ExternalLink className="w-3.5 h-3.5" />
+                    </div>
+                  </a>
+
+                  {/* SRF Meteo */}
+                  <a
+                    href="https://www.srf.ch/meteo"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3.5 bg-white hover:bg-red-50/50 rounded-2xl border border-[#e2d5c3] hover:border-red-400 flex items-center justify-between group transition shadow-xs"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-red-600 text-white font-black text-xs flex items-center justify-center shrink-0">
@@ -10519,29 +10574,25 @@ export default function App() {
                       </div>
                       <div>
                         <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                          SRF Meteo – Lokalprognose {showWeatherModal === 'luzern' ? 'Luzern' : 'Hergiswil'}
-                          <span className="text-[10px] bg-red-100 text-red-800 font-bold px-2 py-0.2 rounded-full">Offiziell</span>
+                          SRF Meteo – Offizielles Schweizer Wetterportal
+                          <span className="text-[10px] bg-red-100 text-red-800 font-bold px-2 py-0.2 rounded-full">Schweiz</span>
                         </div>
                         <p className="text-xs text-slate-500">
-                          Stündliche Temperatur-, Sonnen-, Niederschlags- und Wolkenprognosen sowie Niederschlagsradar.
+                          Schweizweite Grosswetterlage, Unwetterwarnungen, Satellitenbilder und Prognose-Videos.
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-100 group-hover:bg-amber-200 px-3 py-1.5 rounded-xl transition shrink-0">
-                      SRF Meteo öffnen <ExternalLink className="w-3.5 h-3.5" />
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-100 group-hover:bg-red-200 px-3 py-1.5 rounded-xl transition shrink-0">
+                      SRF Meteo <ExternalLink className="w-3.5 h-3.5" />
                     </div>
                   </a>
 
                   {/* MeteoSchweiz */}
                   <a
-                    href={
-                      showWeatherModal === 'luzern'
-                        ? 'https://www.meteoschweiz.admin.ch/lokalprognose/luzern.html'
-                        : 'https://www.meteoschweiz.admin.ch/lokalprognose/hergiswil-nw.html'
-                    }
+                    href="https://www.meteoschweiz.admin.ch"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-3.5 bg-white hover:bg-sky-50/50 rounded-2xl border border-[#e2d5c3] hover:border-sky-400 flex items-center justify-between group transition shadow-xs"
+                    className="p-3.5 bg-white hover:bg-slate-50 rounded-2xl border border-[#e2d5c3] hover:border-slate-400 flex items-center justify-between group transition shadow-xs"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-slate-900 text-white font-bold text-[10px] flex items-center justify-center text-center p-1 leading-tight shrink-0">
@@ -10550,28 +10601,24 @@ export default function App() {
                       <div>
                         <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
                           MeteoSchweiz – Bundesamt für Meteorologie
-                          <span className="text-[10px] bg-sky-100 text-sky-800 font-bold px-2 py-0.2 rounded-full">Bund / Sturmwarndienst</span>
+                          <span className="text-[10px] bg-slate-100 text-slate-800 font-bold px-2 py-0.2 rounded-full">Bund &amp; Seen</span>
                         </div>
                         <p className="text-xs text-slate-500">
-                          Amtliche Wetterberichte, Messwerte der Bodenstationen und Sturmwarnungs-Status für Schweizer Seen.
+                          Amtlicher Sturmwarndienst für Schweizer Seen, Messwerte der Bodenstationen und Isobarenkarte.
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-sky-900 bg-sky-100 group-hover:bg-sky-200 px-3 py-1.5 rounded-xl transition shrink-0">
-                      MeteoSchweiz öffnen <ExternalLink className="w-3.5 h-3.5" />
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 bg-slate-100 group-hover:bg-slate-200 px-3 py-1.5 rounded-xl transition shrink-0">
+                      MeteoSchweiz <ExternalLink className="w-3.5 h-3.5" />
                     </div>
                   </a>
 
-                  {/* Windfinder */}
+                  {/* Windy Vierwaldstättersee */}
                   <a
-                    href={
-                      showWeatherModal === 'luzern'
-                        ? 'https://de.windfinder.com/forecast/luzern_lake'
-                        : 'https://de.windfinder.com/forecast/hergiswil_alpnachersee'
-                    }
+                    href="https://www.windy.com/?47.050,8.307,11"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-3.5 bg-white hover:bg-emerald-50/50 rounded-2xl border border-[#e2d5c3] hover:border-emerald-400 flex items-center justify-between group transition shadow-xs"
+                    className="p-3.5 bg-white hover:bg-teal-50/50 rounded-2xl border border-[#e2d5c3] hover:border-teal-400 flex items-center justify-between group transition shadow-xs"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-teal-600 text-white font-black text-xs flex items-center justify-center shrink-0">
@@ -10579,16 +10626,16 @@ export default function App() {
                       </div>
                       <div>
                         <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                          Windfinder – Bootswetter &amp; Thermik
-                          <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.2 rounded-full">Wind &amp; Wellen</span>
+                          Windy Live-Radar – Vierwaldstättersee
+                          <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.2 rounded-full">Nautik &amp; Wellen</span>
                         </div>
                         <p className="text-xs text-slate-500">
-                          Windgeschwindigkeit in Knoten, Windrichtung, Böenspitzen und Wellenhöhe speziell für Skipper.
+                          Live-Windströmungen, Böenspitzen in Knoten und Wellenradar für den gesamten Vierwaldstättersee.
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs font-bold text-teal-900 bg-teal-100 group-hover:bg-teal-200 px-3 py-1.5 rounded-xl transition shrink-0">
-                      Windfinder öffnen <ExternalLink className="w-3.5 h-3.5" />
+                      Windy Radar <ExternalLink className="w-3.5 h-3.5" />
                     </div>
                   </a>
                 </div>
