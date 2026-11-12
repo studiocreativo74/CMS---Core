@@ -168,12 +168,12 @@ ob_start();
 
                 <!-- Navigation Menu Items -->
                 <nav class="d-flex flex-column gap-1.5 small font-medium">
-                    <a href="?route=bootschule/me/appointments" class="sidebar-nav-link active">
+                    <a href="javascript:void(0)" onclick="switchPortalTab('overview')" class="sidebar-nav-link active" id="sidebarLinkOverview">
                         <span class="d-flex align-items-center gap-2.5">
                             <i class="bi bi-grid-fill nav-icon" style="color: #fbbf24 !important;"></i>
                             <span>Dashboard</span>
                         </span>
-                        <span class="rounded-circle" style="width: 7px; height: 7px; background-color: #fbbf24; box-shadow: 0 0 6px #fbbf24;"></span>
+                        <span class="rounded-circle nav-active-dot" id="dotOverview" style="width: 7px; height: 7px; background-color: #fbbf24; box-shadow: 0 0 6px #fbbf24;"></span>
                     </a>
 
                     <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#requestAppointmentModal" class="sidebar-nav-link">
@@ -213,11 +213,20 @@ ob_start();
                         </span>
                     </a>
 
-                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#legalModal" class="sidebar-nav-link">
+                    <a href="javascript:void(0)" onclick="switchPortalTab('legal')" class="sidebar-nav-link" id="sidebarLinkLegal">
                         <span class="d-flex align-items-center gap-2.5">
                             <i class="bi bi-shield-check nav-icon" style="color: #818cf8 !important;"></i>
                             <span>Rechtliches &amp; Nachweise</span>
                         </span>
+                        <span class="rounded-circle nav-active-dot" id="dotLegal" style="width: 7px; height: 7px; background-color: #fbbf24; box-shadow: 0 0 6px #fbbf24; display: none;"></span>
+                    </a>
+
+                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#reportIssueModal" class="sidebar-nav-link" id="sidebarLinkReportIssue">
+                        <span class="d-flex align-items-center gap-2.5">
+                            <i class="bi bi-exclamation-octagon nav-icon" style="color: #f43f5e !important;"></i>
+                            <span>Fehler melden</span>
+                        </span>
+                        <span class="badge rounded-pill fw-bold" style="background-color: #4c0519; color: #fda4af; font-size: 0.6rem; padding: 2px 6px;">Support</span>
                     </a>
 
                     <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#profileModal" class="sidebar-nav-link">
@@ -301,7 +310,12 @@ ob_start();
                     </p>
                 </div>
 
-                <div class="d-flex align-items-center gap-2.5">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button type="button" class="btn btn-light border rounded-3 px-3 py-2 small fw-semibold shadow-xs d-flex align-items-center gap-1.5 text-danger" style="background-color: #f6f0e7; border-color: #e3d6c5;" data-bs-toggle="modal" data-bs-target="#reportIssueModal" title="Fehler, Datenkorrektur oder technisches Problem melden">
+                        <i class="bi bi-exclamation-octagon"></i>
+                        <span>Fehler melden</span>
+                    </button>
+
                     <button type="button" class="btn btn-light border rounded-3 px-3.5 py-2 small fw-semibold shadow-xs d-flex align-items-center gap-1.5" style="background-color: #f6f0e7; border-color: #e3d6c5;" data-bs-toggle="modal" data-bs-target="#profileModal">
                         <i class="bi bi-person text-secondary"></i>
                         <span>Mein Profil</span>
@@ -313,6 +327,11 @@ ob_start();
                     </button>
                 </div>
             </div>
+
+            <!-- ============================================================== -->
+            <!-- SECTION 1: DASHBOARD OVERVIEW (ÜBERSICHT)                      -->
+            <!-- ============================================================== -->
+            <div id="viewSectionOverview" class="portal-view-section">
 
             <!-- 2. Dual Side-by-Side Wetter-Kacheln (Luzern & Hergiswil wie im Screenshot) -->
             <div class="row g-3 mb-4">
@@ -758,7 +777,186 @@ ob_start();
 
                 </div>
 
-            </div>
+            </div> <!-- /#viewSectionOverview -->
+
+            <!-- ============================================================== -->
+            <!-- SECTION 2: RECHTLICHES & NACHWEISE (EXAKT WIE IM REACT APPLET)  -->
+            <!-- ============================================================== -->
+            <div id="viewSectionLegal" class="portal-view-section" style="display: none;">
+                
+                <!-- Header / Breadcrumb Bar -->
+                <div class="card border rounded-4 p-4 mb-4 bg-white shadow-xs" style="border-color: #dfd0bc !important;">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="p-3 rounded-3 d-inline-flex" style="background-color: rgba(129, 140, 248, 0.15); color: #6366f1;">
+                                <i class="bi bi-shield-check fs-3"></i>
+                            </span>
+                            <div>
+                                <h4 class="fw-bold text-dark mb-1">Rechtliches, AGB &amp; Schifffahrtsamts-Zulassung</h4>
+                                <p class="text-muted small mb-0">Ausbildungsrichtlinien für Motorboot Kat. A auf dem Vierwaldstättersee &amp; offizielle Nachweise</p>
+                            </div>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-dark fw-bold rounded-3 px-3.5 py-2 shadow-2xs d-flex align-items-center gap-1.5" onclick="switchPortalTab('overview')">
+                                <i class="bi bi-arrow-left"></i>
+                                <span>Zurück zum Dashboard</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    
+                    <!-- Box 1: AGB & AMB (Mit Bestätigungs-Status und Button) -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card border rounded-4 p-4 bg-white h-100 shadow-xs d-flex flex-column justify-content-between" style="border-color: #dfd0bc !important;">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                        <i class="bi bi-file-earmark-check text-warning fs-5"></i>
+                                        <span>Allgemeine Geschäfts- &amp; Mietvertragsbedingungen (AMB)</span>
+                                    </div>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning" style="font-size: 0.65rem;">Verbindlich</span>
+                                </div>
+                                <p class="text-muted small mb-3 leading-relaxed">
+                                    Mit Buchung einer Fahrstunde oder Miete werden die Sicherheitsregeln der Schifffahrtsämter Luzern und Nidwalden sowie die Stornierungsbedingungen (kostenfreie Stornierung bis 24h vor Terminbeginn) anerkannt.
+                                </p>
+                            </div>
+                            <div class="pt-3 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <span id="legalAgbBadge" class="badge rounded-pill fw-bold px-3 py-1.5" style="background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 0.75rem;">
+                                    Status: AGB bestätigt ✓
+                                </span>
+                                <button type="button" id="legalAgbConfirmBtn" class="btn btn-sm fw-bold px-3 py-1.5 rounded-3 text-white shadow-2xs" style="background-color: #059669;" onclick="confirmLegalAgb()">
+                                    ✓ Bestätigt
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Box 2: Schifffahrtsamt-Prüfung & ASA-Stammdaten -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card border rounded-4 p-4 bg-white h-100 shadow-xs d-flex flex-column justify-content-between" style="border-color: #dfd0bc !important;">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                        <i class="bi bi-person-vcard text-primary fs-5"></i>
+                                        <span>Schifffahrtsamt-Prüfung &amp; ASA-Stammdaten</span>
+                                    </div>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary" style="font-size: 0.65rem;">Kat. A</span>
+                                </div>
+                                <p class="text-muted small mb-3 leading-relaxed">
+                                    Für die praktische Schifffahrtsprüfung müssen die Theorieprüfung bestanden sein und die ASA-Daten (FABER-Nummer, PIN, PID) im Profil hinterlegt sein.
+                                </p>
+                            </div>
+                            <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                                <span class="text-muted small">Status: <strong><?= !empty($customer['theory_passed']) ? '<span class="text-success fw-bold">Theorie bestanden ✓</span>' : '<span class="text-warning-emphasis fw-bold">Theorie ausstehend</span>' ?></strong></span>
+                                <button type="button" class="btn btn-sm btn-outline-dark fw-bold rounded-3 px-3 py-1.5 shadow-2xs" data-bs-toggle="modal" data-bs-target="#profileModal">
+                                    <i class="bi bi-person-gear me-1"></i> ASA-Daten im Profil prüfen &rarr;
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Box 3: Binnenschifffahrtsverordnung & 0.00‰ Nulltoleranz -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card border rounded-4 p-4 bg-white h-100 shadow-xs d-flex flex-column justify-content-between" style="border-color: #dfd0bc !important;">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                        <i class="bi bi-exclamation-diamond text-danger fs-5"></i>
+                                        <span>BSV Nulltoleranz für Alkohol (Art. 78a BSV)</span>
+                                    </div>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger" style="font-size: 0.65rem;">Gesetz</span>
+                                </div>
+                                <p class="text-muted small mb-3 leading-relaxed">
+                                    Auf allen Schweizer Gewässern gilt für Fahrschüler, Fahrlehrer und Schiffsführer von Charterbooten eine strikte Grenze von <strong>0.00 Promille</strong>. Schiffsführung erfolgt strikt nüchtern. Bei Zuwiderhandlung wird der Ausbildungsbetrieb unverzüglich eingestellt.
+                                </p>
+                            </div>
+                            <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                                <span class="badge bg-dark text-white" style="font-size: 0.72rem;">Art. 78a BSV (Bundesrecht)</span>
+                                <a href="https://www.fedlex.admin.ch/eli/cc/1979/337_337_337/de" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary fw-bold rounded-3 px-2.5 py-1">
+                                    Fedlex Gesetzestext &nearr;
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Box 4: Sturmwarnung auf Schweizer Seen -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card border rounded-4 p-4 bg-white h-100 shadow-xs d-flex flex-column justify-content-between" style="border-color: #dfd0bc !important;">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                        <i class="bi bi-lightning-charge text-warning fs-5"></i>
+                                        <span>Sturmwarnsystem Vierwaldstättersee (Art. 40 BSV)</span>
+                                    </div>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning" style="font-size: 0.65rem;">Seewetter</span>
+                                </div>
+                                <p class="text-muted small mb-3 leading-relaxed">
+                                    <strong>40 Blitze/Min (Starkwind):</strong> Böen 25–33 kn (ca. 45–60 km/h). Ufernähe beachten.<br>
+                                    <strong>90 Blitze/Min (Sturm):</strong> Böen ab 34 kn. Sofort nächsten Schutzhafen anlaufen und Rettungswesten anlegen!
+                                </p>
+                            </div>
+                            <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                                <span class="text-muted small">Aktueller Status: <strong class="text-success">Keine Warnung</strong></span>
+                                <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-3 px-3 py-1.5" data-bs-toggle="modal" data-bs-target="#lakeWeatherModal">
+                                    <i class="bi bi-cloud-sun me-1"></i> Seewetter Details &rarr;
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Box 5: Versicherungsschutz & Kasko-Selbstbehalt -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card border rounded-4 p-4 bg-white h-100 shadow-xs d-flex flex-column justify-content-between" style="border-color: #dfd0bc !important;">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                        <i class="bi bi-shield-lock text-info fs-5"></i>
+                                        <span>Versicherungsschutz &amp; Selbstbehalt</span>
+                                    </div>
+                                    <span class="badge bg-info-subtle text-info-emphasis border border-info" style="font-size: 0.65rem;">Vollkasko</span>
+                                </div>
+                                <p class="text-muted small mb-3 leading-relaxed">
+                                    Fahrschulboote und Mietboote (Boesch 620 Bimini De Luxe) sind betriebshaftpflicht- und vollkaskoversichert (Deckung CHF 5'000'000.-). Bei grobfahrlässiger Beschädigung oder Grundberührung haftet der Schiffsführer im Rahmen des vereinbarten Selbstbehalts von CHF 1'000.-.
+                                </p>
+                            </div>
+                            <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                                <span class="text-muted small">Selbstbehalt: <strong>CHF 1'000.00</strong></span>
+                                <span class="badge bg-success-subtle text-success border border-success">Zertifiziert</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Box 6: Impressum & MWST-Nr. -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card border rounded-4 p-4 bg-white h-100 shadow-xs d-flex flex-column justify-content-between" style="border-color: #dfd0bc !important;">
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                        <i class="bi bi-buildings text-secondary fs-5"></i>
+                                        <span>Unternehmensdaten &amp; Schweizer Mehrwertsteuer</span>
+                                    </div>
+                                    <span class="badge bg-dark text-white" style="font-size: 0.65rem;">UID / MWST</span>
+                                </div>
+                                <p class="text-muted small mb-3 leading-relaxed">
+                                    <strong>Coaching Boot GmbH</strong> · Alpenquai, 6005 Luzern<br>
+                                    Schweizer MWST-Nummer: <strong class="text-dark">CHE-110.497.163 MWST</strong><br>
+                                    Fahrschulunterricht ist gemäss <strong>Art. 21 Abs. 2 Ziff. 11 MWSTG</strong> von der Mehrwertsteuer befreit (0.0%). Für Bootsvermietung und Charter gilt der reguläre Steuersatz von 8.1% MWST.
+                                </p>
+                            </div>
+                            <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                                <span class="badge bg-secondary-subtle text-secondary border">CHE-110.497.163 MWST</span>
+                                <button type="button" class="btn btn-dark fw-bold rounded-3 px-3 py-1.5" onclick="switchPortalTab('overview')">
+                                    Zum Dashboard &rarr;
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div> <!-- /#viewSectionLegal -->
 
             </div> <!-- /.portal-inner-container -->
         </div>
@@ -2733,6 +2931,148 @@ ob_start();
                 </div>
             </div>
 
+            <!-- ============================================================== -->
+            <!-- MODAL 8: FEHLER ODER PROBLEM MELDEN (SUPPORT TICKET)           -->
+            <!-- ============================================================== -->
+            <div class="modal fade" id="reportIssueModal" tabindex="-1" aria-labelledby="reportIssueModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden" style="background-color: #f6f0e7;">
+                        <div class="modal-header border-bottom px-4 pt-4 pb-3" style="background-color: #2d2421; color: #ffffff;">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="p-2.5 rounded-3 d-inline-flex" style="background-color: rgba(244, 63, 94, 0.2); color: #fda4af;">
+                                    <i class="bi bi-exclamation-octagon fs-4 text-danger"></i>
+                                </span>
+                                <div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <h5 class="modal-title fw-bold text-white mb-0" id="reportIssueModalLabel">Fehler oder Problem melden</h5>
+                                        <span class="badge rounded-pill fw-bold text-uppercase" style="background-color: #881337; color: #fecdd3; font-size: 0.65rem;">Support-Ticket</span>
+                                    </div>
+                                    <span class="text-light text-opacity-75 small">Datenfehler, Abo-Guthaben oder technische Probleme direkt an das Coaching Boot Team übermitteln</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                        </div>
+
+                        <!-- Formular Bereich -->
+                        <div id="reportIssueFormContainer">
+                            <form id="reportIssueForm" onsubmit="handleReportIssueSubmit(event)">
+                                <div class="modal-body p-4" style="background-color: #f6f0e7;">
+                                    
+                                    <div class="p-3 rounded-3 mb-3 bg-white border" style="border-color: #dfd0bc !important;">
+                                        <div class="d-flex align-items-start gap-2.5">
+                                            <i class="bi bi-info-circle-fill text-danger fs-5 mt-0.5"></i>
+                                            <div class="small text-muted">
+                                                <strong class="text-dark d-block">Direkter Support &amp; Fehlererfassung:</strong>
+                                                Hast du falsche Daten in deinem Profil bemerkt, stimmt dein Fahrstunden-Saldo nicht oder gibt es eine technische Störung bei der Buchung? Wir bearbeiten deine Meldung schnellstmöglich.
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <!-- Kategorie -->
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small fw-bold text-dark mb-1">Art des Fehlers / Problems *</label>
+                                            <select class="form-select rounded-3 py-2 bg-white" style="border: 1.5px solid #d5c5b2;" id="issueCategorySelect" required>
+                                                <option value="data_error">Falsche Kundendaten / Adress- oder Telefonfehler</option>
+                                                <option value="balance_error">Falsches Fahrstunden-Guthaben / Abo-Zählung</option>
+                                                <option value="tech_booking">Technisches Problem (Buchung / Kalender)</option>
+                                                <option value="tech_login">Login / Magic-Code / Sitzungsproblem</option>
+                                                <option value="boat_rental">Problem bei Bootsmiete / Self Check-in</option>
+                                                <option value="other_feedback">Sonstiges Feedback / Verbesserungsvorschlag</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Dringlichkeit -->
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small fw-bold text-dark mb-1">Dringlichkeit *</label>
+                                            <select class="form-select rounded-3 py-2 bg-white" style="border: 1.5px solid #d5c5b2;" id="issueUrgencySelect" required>
+                                                <option value="normal">Normal (Rückmeldung innert 24 Std.)</option>
+                                                <option value="urgent">Dringend (Termin oder Bootsübernahme steht kurz bevor)</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Betroffener Bereich -->
+                                        <div class="col-12">
+                                            <label class="form-label small fw-bold text-dark mb-1">Betroffenes Modul / Bereich *</label>
+                                            <select class="form-select rounded-3 py-2 bg-white" style="border: 1.5px solid #d5c5b2;" id="issueModuleSelect" required>
+                                                <option value="profile">Mein Kundenprofil &amp; Notfallkontakt / ASA-Daten</option>
+                                                <option value="calendar">Termine, Kalender &amp; Buchungsanfrage</option>
+                                                <option value="store">Store, Abos &amp; Fahrguthaben</option>
+                                                <option value="checkin">Self Check-in (Miete) &amp; Bootsübergabe</option>
+                                                <option value="elearning">E-Learning, Videos &amp; Theoriefragen</option>
+                                                <option value="invoices">Meine Rechnungen &amp; Zahlungsbelege</option>
+                                                <option value="weather">Seewetter-Anzeige / Treffpunkte</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Beschreibung -->
+                                        <div class="col-12">
+                                            <label class="form-label small fw-bold text-dark mb-1">Genaue Beschreibung des Fehlers / Was soll korrigiert werden? *</label>
+                                            <textarea class="form-control rounded-3 bg-white" rows="4" style="border: 1.5px solid #d5c5b2; color: #1c1917;" id="issueDescriptionText" placeholder="z. B. Meine Telefonnummer sollte auf +41 79 123 45 67 korrigiert werden, oder Im Buchungs-Modal wird mein 10er Abo nicht automatisch angerechnet..." required></textarea>
+                                        </div>
+
+                                        <!-- Rückmeldung via -->
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small fw-bold text-dark mb-1">Deine E-Mail für Rückfragen</label>
+                                            <input type="email" class="form-control rounded-3 py-2 bg-white" style="border: 1.5px solid #d5c5b2;" id="issueContactEmail" value="<?= htmlspecialchars((string) ($customer['email'] ?? 'office@studiocreativo.ch')) ?>" required>
+                                        </div>
+
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small fw-bold text-dark mb-1">Deine Telefonnummer (optional)</label>
+                                            <input type="tel" class="form-control rounded-3 py-2 bg-white" style="border: 1.5px solid #d5c5b2;" id="issueContactPhone" value="<?= htmlspecialchars((string) ($customer['phone'] ?? '+41 79 000 00 00')) ?>">
+                                        </div>
+
+                                        <!-- Screenshot Upload (optional) -->
+                                        <div class="col-12">
+                                            <label class="form-label small fw-bold text-dark mb-1">Screenshot oder Beleg anfügen (optional)</label>
+                                            <input type="file" class="form-control rounded-3 bg-white" style="border: 1.5px solid #d5c5b2;" id="issueScreenshotFile" accept="image/*,.pdf">
+                                            <span class="text-muted" style="font-size: 0.7rem;">Optional: PNG, JPG oder PDF bis max. 10 MB.</span>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer px-4 py-3" style="background-color: #eee4d5; border-top: 1px solid #dfd0bc;">
+                                    <button type="button" class="btn btn-outline-secondary rounded-3 btn-sm px-3" data-bs-dismiss="modal">Abbrechen</button>
+                                    <button type="submit" class="btn text-white rounded-3 btn-sm px-4 fw-bold shadow-sm d-inline-flex align-items-center gap-1.5" style="background-color: #be123c;">
+                                        <i class="bi bi-send-fill text-white"></i>
+                                        <span>Fehlerbericht jetzt absenden &rarr;</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Erfolgsbestätigung nach Absenden -->
+                        <div id="reportIssueSuccessBox" class="p-4" style="display: none; background-color: #f6f0e7;">
+                            <div class="p-4 rounded-4 bg-white border shadow-sm text-center" style="border-color: #a7f3d0 !important;">
+                                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px; background-color: #ecfdf5; color: #059669;">
+                                    <i class="bi bi-check2-circle fs-1"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">Vielen Dank für deine Meldung!</h5>
+                                <p class="text-muted small mb-3">
+                                    Dein Bericht wurde erfolgreich an das technische Support- und Administrationsteam von Coaching Boot übermittelt.
+                                </p>
+                                <div class="d-inline-flex align-items-center gap-2 p-2 px-3 rounded-3 bg-light border mb-4">
+                                    <span class="text-muted small">Ticket-Referenz:</span>
+                                    <strong class="text-danger font-monospace" id="issueTicketCodeDisplay">#TICKET-2026-8492</strong>
+                                </div>
+                                <div class="row g-2 small text-muted text-start mb-4 mx-auto" style="max-width: 480px;">
+                                    <div class="col-6"><strong>Eingangszeit:</strong> <span id="issueTicketTime">Gerade eben</span></div>
+                                    <div class="col-6"><strong>Priorität:</strong> <span id="issueTicketPriority">Normal</span></div>
+                                    <div class="col-12"><strong>Rückmeldung an:</strong> <span id="issueTicketEmail">office@studiocreativo.ch</span></div>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-dark rounded-3 btn-sm px-4 fw-bold" data-bs-dismiss="modal" onclick="resetReportIssueForm()">
+                                        Schließen
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
         <?php else: ?>
             <!-- Zustand: Ohne aktive Session -> E-Mail-Eingabe für Magic-Code -->
             <div class="container py-5">
@@ -3254,6 +3594,105 @@ function answerQuiz(qId, selectedIdx, isCorrect, explanation) {
             feed.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i> ' + explanation;
         }
     }
+}
+
+// ==========================================
+// PORTAL TABS (DASHBOARD VS. RECHTLICHES)
+// ==========================================
+function switchPortalTab(tabName) {
+    const secOverview = document.getElementById('viewSectionOverview');
+    const secLegal = document.getElementById('viewSectionLegal');
+    const linkOverview = document.getElementById('sidebarLinkOverview');
+    const linkLegal = document.getElementById('sidebarLinkLegal');
+    const dotOverview = document.getElementById('dotOverview');
+    const dotLegal = document.getElementById('dotLegal');
+
+    if (tabName === 'legal') {
+        if (secOverview) secOverview.style.display = 'none';
+        if (secLegal) secLegal.style.display = 'block';
+
+        if (linkOverview) linkOverview.classList.remove('active');
+        if (linkLegal) linkLegal.classList.add('active');
+
+        if (dotOverview) dotOverview.style.display = 'none';
+        if (dotLegal) dotLegal.style.display = 'inline-block';
+    } else {
+        if (secLegal) secLegal.style.display = 'none';
+        if (secOverview) secOverview.style.display = 'block';
+
+        if (linkLegal) linkLegal.classList.remove('active');
+        if (linkOverview) linkOverview.classList.add('active');
+
+        if (dotLegal) dotLegal.style.display = 'none';
+        if (dotOverview) dotOverview.style.display = 'inline-block';
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function confirmLegalAgb() {
+    const badge = document.getElementById('legalAgbBadge');
+    const btn = document.getElementById('legalAgbConfirmBtn');
+    if (badge) {
+        badge.innerHTML = 'Status: AGB &amp; Mietbedingungen bestätigt ✓';
+        badge.style.backgroundColor = '#ecfdf5';
+        badge.style.color = '#065f46';
+        badge.style.borderColor = '#a7f3d0';
+    }
+    if (btn) {
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Bestätigt';
+        btn.classList.remove('btn-dark');
+        btn.style.backgroundColor = '#059669';
+    }
+}
+
+// ==========================================
+// FEHLER ODER PROBLEM MELDEN (SUPPORT TICKET)
+// ==========================================
+function handleReportIssueSubmit(event) {
+    event.preventDefault();
+
+    const cat = document.getElementById('issueCategorySelect')?.value || 'data_error';
+    const urgency = document.getElementById('issueUrgencySelect')?.value || 'normal';
+    const email = document.getElementById('issueContactEmail')?.value || 'office@studiocreativo.ch';
+    const desc = document.getElementById('issueDescriptionText')?.value || '';
+
+    if (!desc.trim()) {
+        alert('Bitte gib eine kurze Fehlerbeschreibung ein.');
+        return;
+    }
+
+    const ticketCode = '#TICKET-2026-' + Math.floor(1000 + Math.random() * 9000);
+    const codeDisplay = document.getElementById('issueTicketCodeDisplay');
+    const timeDisplay = document.getElementById('issueTicketTime');
+    const prioDisplay = document.getElementById('issueTicketPriority');
+    const emailDisplay = document.getElementById('issueTicketEmail');
+
+    if (codeDisplay) codeDisplay.textContent = ticketCode;
+    if (timeDisplay) {
+        const now = new Date();
+        timeDisplay.textContent = now.toLocaleDateString('de-CH') + ' um ' + now.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+    }
+    if (prioDisplay) {
+        prioDisplay.textContent = urgency === 'urgent' ? 'Dringend (vor anstehender Fahrt)' : 'Normal (24h)';
+        prioDisplay.className = urgency === 'urgent' ? 'text-danger fw-bold' : 'text-dark fw-bold';
+    }
+    if (emailDisplay) emailDisplay.textContent = email;
+
+    const formBox = document.getElementById('reportIssueFormContainer');
+    const successBox = document.getElementById('reportIssueSuccessBox');
+    if (formBox) formBox.style.display = 'none';
+    if (successBox) successBox.style.display = 'block';
+}
+
+function resetReportIssueForm() {
+    const formBox = document.getElementById('reportIssueFormContainer');
+    const successBox = document.getElementById('reportIssueSuccessBox');
+    const form = document.getElementById('reportIssueForm');
+
+    if (form) form.reset();
+    if (formBox) formBox.style.display = 'block';
+    if (successBox) successBox.style.display = 'none';
 }
 </script>
 

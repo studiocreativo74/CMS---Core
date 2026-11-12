@@ -300,10 +300,12 @@ export default function App() {
   const [showWeatherModal, setShowWeatherModal] = useState<'luzern' | 'hergiswil' | null>(null);
   const [showStudentProfileModal, setShowStudentProfileModal] = useState<boolean>(false);
   const [showStudentRequestModal, setShowStudentRequestModal] = useState<boolean>(false);
+  const [showReportIssueModal, setShowReportIssueModal] = useState<boolean>(false);
+  const [reportIssueSuccess, setReportIssueSuccess] = useState<string | null>(null);
   const [studentAppointmentTab, setStudentAppointmentTab] = useState<'upcoming' | 'past'>('upcoming');
   const [agbAccepted, setAgbAccepted] = useState<boolean>(false);
   const [studentNavSubTab, setStudentNavSubTab] = useState<'overview' | 'checkin' | 'packages' | 'elearning' | 'invoices' | 'legal' | 'profile'>('overview');
-  const [studentSidebarNav, setStudentSidebarNav] = useState<'dashboard' | 'calendar' | 'checkin' | 'store' | 'elearning' | 'invoices' | 'legal' | 'profile'>('dashboard');
+  const [studentSidebarNav, setStudentSidebarNav] = useState<'dashboard' | 'calendar' | 'checkin' | 'store' | 'elearning' | 'invoices' | 'legal' | 'profile' | 'report_issue'>('dashboard');
 
   // --- STATE: DIGITALES LERNPAKET & E-LEARNING (1-JAHRES-ABO) ---
   const [elearningVideos] = useState<ElearningVideo[]>(INITIAL_ELEARNING_VIDEOS);
@@ -4990,6 +4992,27 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => {
+                          setStudentSidebarNav('report_issue');
+                          setShowReportIssueModal(true);
+                        }}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
+                          studentSidebarNav === 'report_issue'
+                            ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
+                            : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <AlertTriangle className="w-4.5 h-4.5 text-rose-400 shrink-0" />
+                          <span>Fehler melden</span>
+                        </div>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                          Support
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
                           setStudentSidebarNav('profile');
                           setShowStudentProfileModal(true);
                         }}
@@ -5147,7 +5170,17 @@ export default function App() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2.5 self-start sm:self-auto">
+                    <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => setShowReportIssueModal(true)}
+                        className="px-3.5 py-2 bg-white hover:bg-[#f6f0e7] text-rose-700 font-semibold text-xs rounded-xl border border-[#d5c5b2] shadow-xs flex items-center gap-1.5 transition cursor-pointer"
+                        title="Fehler oder technisches Problem melden"
+                      >
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+                        <span>Fehler melden</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => setShowStudentProfileModal(true)}
@@ -6237,9 +6270,64 @@ export default function App() {
                     </div>
 
                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                      <div className="font-bold text-slate-900">Schifffahrtsamt-Prüfung &amp; ASA-Stammdaten</div>
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <User className="w-4 h-4 text-sky-700" />
+                        <span>Schifffahrtsamt-Prüfung &amp; ASA-Stammdaten</span>
+                      </div>
                       <p>
-                        Für die praktische Schifffahrtsprüfung müssen die Theorieprüfung bestanden sein und die ASA-Daten (FABER, PIN, PID) im Profil hinterlegt sein.
+                        Für die praktische Schifffahrtsprüfung müssen die Theorieprüfung bestanden sein und die ASA-Daten (FABER-Nummer, PIN, PID) im Profil hinterlegt sein.
+                      </p>
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowStudentProfileModal(true)}
+                          className="text-[11px] font-bold text-sky-800 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>ASA-Daten im Kundenprofil prüfen &rarr;</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <AlertTriangle className="w-4 h-4 text-rose-600" />
+                        <span>BSV Nulltoleranz für Alkohol (Art. 78a BSV)</span>
+                      </div>
+                      <p>
+                        Auf allen Schweizer Gewässern gilt für Fahrschüler, Fahrlehrer und Schiffsführer von Charterbooten eine strikte Grenze von <strong>0.00 Promille</strong>. Schiffsführung erfolgt strikt nüchtern. Bei Zuwiderhandlung wird der Ausbildungsbetrieb unverzüglich eingestellt.
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <Waves className="w-4 h-4 text-amber-600" />
+                        <span>Sturmwarnsystem Vierwaldstättersee (Art. 40 BSV)</span>
+                      </div>
+                      <p>
+                        <strong>40 Blitze/Min (Starkwind):</strong> Böen 25–33 kn (ca. 45–60 km/h). Ufernähe beachten.<br />
+                        <strong>90 Blitze/Min (Sturm):</strong> Böen ab 34 kn. Sofort nächsten Schutzhafen anlaufen und Rettungswesten anlegen!
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <Shield className="w-4 h-4 text-emerald-700" />
+                        <span>Versicherungsschutz &amp; Selbstbehalt</span>
+                      </div>
+                      <p>
+                        Fahrschulboote und Mietboote (Boesch 620 Bimini De Luxe) sind betriebshaftpflicht- und vollkaskoversichert (Deckung CHF 5'000'000.-). Bei grobfahrlässiger Beschädigung oder Grundberührung haftet der Schiffsführer im Rahmen des vereinbarten Selbstbehalts von CHF 1'000.-.
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <FileText className="w-4 h-4 text-stone-700" />
+                        <span>Unternehmensdaten &amp; Schweizer Mehrwertsteuer</span>
+                      </div>
+                      <p>
+                        <strong>Coaching Boot GmbH</strong> · Alpenquai, 6005 Luzern<br />
+                        Schweizer MWST-Nummer: <strong>CHE-110.497.163 MWST</strong><br />
+                        Fahrschulunterricht ist gemäss <strong>Art. 21 Abs. 2 Ziff. 11 MWSTG</strong> von der Mehrwertsteuer befreit (0.0%). Für Bootsvermietung und Charter gilt der reguläre Steuersatz von 8.1% MWST.
                       </p>
                     </div>
                   </div>
@@ -10902,6 +10990,192 @@ export default function App() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+      {/* ============================================================== */}
+      {/* MODAL: FEHLER ODER PROBLEM MELDEN (KUNDEN-SUPPORT TICKET)      */}
+      {/* ============================================================== */}
+      {showReportIssueModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-[#f6f0e7] rounded-3xl max-w-xl w-full shadow-2xl border border-[#ded0be] overflow-hidden my-8">
+            <div className="px-6 py-5 bg-[#2d2421] text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-400/30 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-rose-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-bold text-white">Fehler oder Problem melden</h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-900 text-rose-200 border border-rose-700 uppercase tracking-wide">
+                      Support
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-300">
+                    Datenfehler, Abo-Guthaben oder technische Probleme direkt melden
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowReportIssueModal(false);
+                  setReportIssueSuccess(null);
+                }}
+                className="text-stone-400 hover:text-white p-1 rounded-lg hover:bg-stone-800 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {reportIssueSuccess ? (
+              <div className="p-6 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                  <Check className="w-8 h-8 text-emerald-600" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-slate-900">Vielen Dank für deine Meldung!</h4>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Dein Bericht wurde an das Support-Team von Coaching Boot übermittelt.
+                  </p>
+                </div>
+                <div className="inline-flex items-center gap-2 p-2 px-3 rounded-xl bg-slate-100 border border-slate-200 text-xs">
+                  <span className="text-slate-500">Ticket-Referenz:</span>
+                  <span className="font-mono font-bold text-rose-700">{reportIssueSuccess}</span>
+                </div>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReportIssueModal(false);
+                      setReportIssueSuccess(null);
+                    }}
+                    className="px-5 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-sm"
+                  >
+                    Schliessen
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.currentTarget;
+                  const desc = (form.elements.namedItem('issue_desc') as HTMLTextAreaElement)?.value || '';
+                  if (!desc.trim()) return;
+                  const ticket = `#TICKET-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+                  setReportIssueSuccess(ticket);
+                }}
+                className="p-6 space-y-4 text-xs"
+              >
+                <div className="p-3.5 bg-white rounded-2xl border border-[#d5c5b2] shadow-xs text-slate-700 space-y-1">
+                  <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-rose-600" />
+                    <span>Direkter Support &amp; Fehlererfassung</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                    Stimmen Daten in deinem Profil nicht, weicht dein Fahrstunden-Guthaben ab oder gibt es eine technische Störung? Teile es uns hier mit.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-800">Art des Fehlers *</label>
+                    <select
+                      name="issue_category"
+                      defaultValue="data_error"
+                      className="w-full p-2.5 bg-white border border-[#d5c5b2] rounded-xl text-xs text-slate-800 font-medium focus:ring-2 focus:ring-rose-500/20"
+                      required
+                    >
+                      <option value="data_error">Falsche Kundendaten / Adresse / Telefon</option>
+                      <option value="balance_error">Falsches Fahrstunden-Guthaben / Abo-Zählung</option>
+                      <option value="tech_booking">Technisches Problem (Buchung / Kalender)</option>
+                      <option value="tech_login">Login / Magic-Code / Sitzung</option>
+                      <option value="boat_rental">Problem bei Bootsmiete / Self Check-in</option>
+                      <option value="other_feedback">Sonstiges Feedback / Anregung</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-800">Dringlichkeit *</label>
+                    <select
+                      name="issue_urgency"
+                      defaultValue="normal"
+                      className="w-full p-2.5 bg-white border border-[#d5c5b2] rounded-xl text-xs text-slate-800 font-medium focus:ring-2 focus:ring-rose-500/20"
+                      required
+                    >
+                      <option value="normal">Normal (Antwort innert 24 Std.)</option>
+                      <option value="urgent">Dringend (vor anstehender Fahrt / Miete)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-800">Betroffenes Modul *</label>
+                  <select
+                    name="issue_module"
+                    defaultValue="profile"
+                    className="w-full p-2.5 bg-white border border-[#d5c5b2] rounded-xl text-xs text-slate-800 font-medium"
+                    required
+                  >
+                    <option value="profile">Kundenprofil &amp; Notfallkontakt / ASA-Daten</option>
+                    <option value="calendar">Termine, Kalender &amp; Buchungsanfrage</option>
+                    <option value="store">Store, Abos &amp; Fahrguthaben</option>
+                    <option value="checkin">Self Check-in (Miete) &amp; Bootsübergabe</option>
+                    <option value="elearning">E-Learning &amp; Lehrfilme</option>
+                    <option value="invoices">Meine Rechnungen &amp; Zahlungsbelege</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-800">Genaue Beschreibung des Fehlers *</label>
+                  <textarea
+                    name="issue_desc"
+                    rows={4}
+                    required
+                    placeholder="z. B. Meine Telefonnummer sollte auf +41 79 ... geändert werden oder Im Buchungs-Modal wird mein Abo nicht verrechnet..."
+                    className="w-full p-3 bg-white border border-[#d5c5b2] rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-rose-500/20"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-800">Deine E-Mail für Rückfragen</label>
+                    <input
+                      type="email"
+                      defaultValue={studentProfile.email}
+                      required
+                      className="w-full p-2.5 bg-white border border-[#d5c5b2] rounded-xl text-xs text-slate-800"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-800">Deine Telefonnummer (optional)</label>
+                    <input
+                      type="tel"
+                      defaultValue={studentProfile.phone}
+                      className="w-full p-2.5 bg-white border border-[#d5c5b2] rounded-xl text-xs text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-[#dfd0bc] flex items-center justify-end gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowReportIssueModal(false)}
+                    className="px-4 py-2 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-[#be123c] hover:bg-[#9f1239] text-white font-bold rounded-xl text-xs shadow-sm flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Fehlerbericht jetzt absenden &rarr;</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
