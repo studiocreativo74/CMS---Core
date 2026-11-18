@@ -103,6 +103,11 @@ require __DIR__ . '/_nautic_nav.php';
                 <span>Kalender &amp; Disposition</span>
             </a>
 
+            <a href="?route=admin/boating/instructor-portal" class="btn btn-dark btn-sm fw-bold px-3 py-2 rounded-3 shadow-xs d-flex align-items-center gap-1.5" title="Coach-Dashboard öffnen">
+                <i class="bi bi-person-workspace text-warning"></i>
+                <span>Coach Dashboard</span>
+            </a>
+
             <a href="?route=admin/boating/account-requests" class="btn btn-outline-secondary btn-sm fw-semibold px-3 py-2 rounded-3 d-flex align-items-center gap-1.5 position-relative">
                 <i class="bi bi-person-check-fill text-warning"></i>
                 <span>Account-Anfragen</span>

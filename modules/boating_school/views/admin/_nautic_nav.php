@@ -113,9 +113,12 @@ $subtitleText = $navSubtitle ?? 'Zentrales Management für Praxisfahrstunden, Bo
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item rounded-2 py-2 d-flex align-items-center gap-2 <?= str_starts_with($routeClean, 'admin/boating/instructor-portal') ? 'active fw-bold' : '' ?>" href="?route=admin/boating/instructor-portal">
-                                <i class="bi bi-person-workspace text-primary"></i>
-                                <span>Fahrlehrer-Portal</span>
+                            <a class="dropdown-item rounded-2 py-2 d-flex align-items-center justify-content-between <?= str_starts_with($routeClean, 'admin/boating/instructor-portal') ? 'active fw-bold' : '' ?>" href="?route=admin/boating/instructor-portal">
+                                <span class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-person-workspace text-primary"></i>
+                                    <span>Coach Dashboard</span>
+                                </span>
+                                <span class="badge bg-info bg-opacity-25 text-dark border border-info border-opacity-50" style="font-size: 0.65rem;">Coach</span>
                             </a>
                         </li>
                         <li>
@@ -162,6 +165,11 @@ $subtitleText = $navSubtitle ?? 'Zentrales Management für Praxisfahrstunden, Bo
                     </ul>
                 </div>
 
+                <a href="?route=admin/boating/instructor-portal" class="btn btn-sm btn-outline-dark d-none d-sm-inline-flex align-items-center gap-1 rounded-3 px-3 py-2" title="Coach Dashboard öffnen">
+                    <i class="bi bi-person-workspace text-warning"></i>
+                    <span>Coach Dashboard</span>
+                </a>
+
                 <a href="?route=nautic/login" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex align-items-center gap-1 rounded-3 px-3 py-2" title="Eigene Nautic Logonseite mit SVG-Logo öffnen">
                     <i class="bi bi-box-arrow-in-right"></i>
                     <span>Nautic Login</span>
@@ -204,6 +212,9 @@ $subtitleText = $navSubtitle ?? 'Zentrales Management für Praxisfahrstunden, Bo
             </a>
             <a href="?route=admin/boating/instructors" class="btn btn-sm <?= str_starts_with($routeClean, 'admin/boating/instructors') ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill px-3">
                 <i class="bi bi-person-badge me-1"></i> Fahrlehrer / Skipper
+            </a>
+            <a href="?route=admin/boating/instructor-portal" class="btn btn-sm <?= str_starts_with($routeClean, 'admin/boating/instructor-portal') ? 'btn-primary' : 'btn-outline-dark' ?> rounded-pill px-3">
+                <i class="bi bi-person-workspace me-1"></i> Coach Dashboard
             </a>
             <a href="?route=admin/boating/services" class="btn btn-sm <?= str_starts_with($routeClean, 'admin/boating/services') ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill px-3">
                 <i class="bi bi-tag me-1"></i> Leistungen

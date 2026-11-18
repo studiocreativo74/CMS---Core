@@ -108,9 +108,9 @@ if (class_exists('ModuleManager')) {
         'icon'  => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-graph-up-arrow me-2" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M0 0h1v15h15v1H0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.707l-4.146 4.147a.5.5 0 0 1-.708 0L7 6.707l-3.646 3.647a.5.5 0 0 1-.708-.708l4-4a.5.5 0 0 1 .708 0L9.5 7.793l3.646-3.647H10.5a.5.5 0 0 1-.5-.5"/></svg>',
     ]);
 
-    // 9. Fahrlehrer-Portal & Monatsabschluss -> ?route=admin/boating/instructor-portal
+    // 9. Coach Dashboard & Monatsabschluss -> ?route=admin/boating/instructor-portal
     ModuleManager::addAdminMenuItem([
-        'label' => 'Fahrlehrer-Portal',
+        'label' => 'Coach Dashboard',
         'route' => 'admin/boating/instructor-portal',
         'url'   => '?route=admin/boating/instructor-portal',
         'icon'  => '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-workspace me-2" viewBox="0 0 16 16"><path d="M4 16s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM2 1a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/></svg>',
@@ -2154,6 +2154,14 @@ if (isset($router) && $router !== null) {
         }
 
         $locations = class_exists('LocationService') ? LocationService::getAll(true) : BoatingSchoolRepository::getLocations(true);
+        $boats = class_exists('BoatService') ? BoatService::getAll(['is_active' => 1]) : BoatingSchoolRepository::getBoats(['is_active' => 1], 50, 0);
+        $todayAppointments = [];
+        $todayStr = date('Y-m-d');
+        foreach ($upcomingAppointments as $uApp) {
+            if ((string) ($uApp['date'] ?? '') === $todayStr) {
+                $todayAppointments[] = $uApp;
+            }
+        }
         $csrfToken = class_exists('Csrf') ? Csrf::getToken() : '';
         require __DIR__ . '/views/admin/instructor_portal.php';
     };
@@ -2161,6 +2169,55 @@ if (isset($router) && $router !== null) {
     $registerGet('instructor-dashboard', $instructorPortalGetHandler);
     $registerGet('my-dashboard', $instructorPortalGetHandler);
     $registerGet('coach', $instructorPortalGetHandler);
+
+    // POST /admin/boating/instructor-portal/complete-appointment (Coach markiert Fahrstunde als durchgeführt)
+    $registerPost('instructor-portal/complete-appointment', static function (): void {
+        if (!class_exists('Auth') || !Auth::check()) {
+            $_SESSION['flash_error'] = 'Bitte anmelden.';
+            header('Location: ?route=login');
+            exit;
+        }
+
+        if (class_exists('Csrf') && !Csrf::validateRequest()) {
+            $_SESSION['flash_error'] = 'Ungültiges CSRF-Token.';
+            header('Location: ?route=admin/boating/instructor-portal');
+            exit;
+        }
+
+        $canManage = BoatingSchoolService::canManage();
+        $currentInst = BoatingSchoolService::getCurrentInstructor();
+        $appId = (int) ($_POST['appointment_id'] ?? 0);
+        $instructorId = (int) ($_POST['instructor_id'] ?? 0);
+        $month = trim((string) ($_POST['month'] ?? date('Y-m')));
+        $coachNote = trim((string) ($_POST['coach_note'] ?? ''));
+
+        if (!$canManage && $currentInst) {
+            $instructorId = (int) $currentInst['id'];
+        }
+
+        if ($appId > 0) {
+            $app = AppointmentService::find($appId);
+            if ($app && ($canManage || ((int) ($app['instructor_id'] ?? 0) === $instructorId))) {
+                AppointmentService::updateStatus($appId, 'completed');
+                if ($coachNote !== '' && method_exists('BoatingSchoolRepository', 'updateAppointment')) {
+                    $existingNote = trim((string) ($app['instructor_payout_note'] ?? ''));
+                    $mergedNote = $existingNote !== '' ? ($existingNote . ' | ' . $coachNote) : $coachNote;
+                    BoatingSchoolRepository::updateAppointment($appId, ['instructor_payout_note' => $mergedNote]);
+                }
+                BoatingSchoolService::log('appointment_completed_by_coach', [
+                    'appointment_id' => $appId,
+                    'instructor_id'  => $instructorId,
+                    'note'           => $coachNote,
+                ]);
+                $_SESSION['flash_success'] = 'Lektion wurde als abgeschlossen markiert und für die Abrechnung vorgemerkt.';
+            } else {
+                $_SESSION['flash_error'] = 'Keine Berechtigung für diesen Termin.';
+            }
+        }
+
+        header('Location: ?route=admin/boating/instructor-portal&month=' . urlencode($month) . '&instructor_id=' . $instructorId);
+        exit;
+    });
 
     // POST /admin/boating/instructor-portal/close-month & submit-month (Monatsabschluss / Timesheet einreichen)
     $instructorSubmitMonthPostHandler = static function (): void {

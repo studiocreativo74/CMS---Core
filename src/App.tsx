@@ -280,12 +280,16 @@ export default function App() {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
-  // State für Fahrlehrer-Portal
+  // State für Fahrlehrer- / Coach-Dashboard
   const [currentInstructorId, setCurrentInstructorId] = useState<number>(1);
   const [selectedMonth, setSelectedMonth] = useState<string>('2026-03');
   const [availabilities, setAvailabilities] = useState<CoachAvailability[]>(INITIAL_AVAILABILITIES);
   const [workingHours, setWorkingHours] = useState<CoachWorkingHour[]>(INITIAL_WORKING_HOURS);
-  const [coachTab, setCoachTab] = useState<'lessons' | 'upcoming' | 'availabilities' | 'timesheet' | 'hr'>('lessons');
+  const [coachTab, setCoachTab] = useState<'overview' | 'lessons' | 'upcoming' | 'availabilities' | 'timesheet' | 'hr'>('overview');
+  const [completeLessonModalApp, setCompleteLessonModalApp] = useState<Appointment | null>(null);
+  const [completeLessonNote, setCompleteLessonNote] = useState<string>('');
+  const [coachFeedback, setCoachFeedback] = useState<string | null>(null);
+  const [coachWebcalCopied, setCoachWebcalCopied] = useState<boolean>(false);
 
   // State für Kunden Magic-Link
   const [magicToken, setMagicToken] = useState<string>('sec_tk_9843ab7190ef2384a0d9e');
@@ -1067,6 +1071,31 @@ export default function App() {
         return a;
       })
     );
+    setCoachFeedback(`Monatsabschluss ${selectedMonth} abgeschlossen: Alle offenen Fahrten wurden an die Administration übergeben.`);
+    setTimeout(() => setCoachFeedback(null), 5000);
+  };
+
+  const handleCompleteLessonByCoach = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!completeLessonModalApp) return;
+    const trimmedNote = completeLessonNote.trim();
+    setAppointments(prev =>
+      prev.map(a =>
+        a.id === completeLessonModalApp.id
+          ? {
+              ...a,
+              status: 'completed',
+              instructor_payout_note: trimmedNote
+                ? `${a.instructor_payout_note ? a.instructor_payout_note + ' | ' : ''}Coach-Rapport: ${trimmedNote}`
+                : a.instructor_payout_note || 'Durch Coach abgeschlossen'
+            }
+          : a
+      )
+    );
+    setCoachFeedback(`Lektion mit ${completeLessonModalApp.customer_name} als «Abgeschlossen» markiert.`);
+    setCompleteLessonModalApp(null);
+    setCompleteLessonNote('');
+    setTimeout(() => setCoachFeedback(null), 5000);
   };
 
   const handleCancelAppointmentByStudent = () => {
@@ -1838,8 +1867,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      {/* Top Navigation - Im Kunden-Portal ausgeblendet (Vollbild-Dashboard mit eigener Sidebar wie Screenshot) */}
-      {activeTab !== 'student' && (
+      {/* Top Navigation - Im Kunden- & Coach-Dashboard ausgeblendet (Vollbild-Dashboard mit eigener Sidebar) */}
+      {activeTab !== 'student' && activeTab !== 'instructor' && (
         <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -1851,7 +1880,7 @@ export default function App() {
                 Bootsfahrschule Lake Zürich
                 <span className="text-xs bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full border border-sky-400/30">PHP 8 Core</span>
               </div>
-              <p className="text-xs text-slate-400">Payroll, Kunden-Portal &amp; Coach-Management</p>
+              <p className="text-xs text-slate-400">Payroll, Kunden-Portal &amp; Coach Dashboard</p>
             </div>
           </div>
 
@@ -1871,19 +1900,18 @@ export default function App() {
                 </span>
               </button>
 
-              {/* Direktlink 2: Fahrlehrer-Portal */}
+              {/* Direktlink 2: Coach Dashboard */}
               <button
                 type="button"
-                onClick={() => setActiveTab('instructor')}
-                className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border shadow-xs cursor-pointer group ${
-                  activeTab === 'instructor'
-                    ? 'bg-sky-600 text-white border-sky-400 shadow-sm'
-                    : 'bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 border-sky-400/30'
-                }`}
-                title="Direktlink zum Fahrlehrer-Portal &amp; Monatsabschluss"
+                onClick={() => {
+                  setCoachTab('overview');
+                  setActiveTab('instructor');
+                }}
+                className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 border shadow-xs cursor-pointer group bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 border-sky-400/30"
+                title="Direktlink zum Coach Dashboard &amp; Monatsabschluss"
               >
-                <User className="w-4 h-4 text-sky-400 shrink-0 group-hover:scale-110 transition-transform" />
-                <span className="hidden sm:inline font-bold">Fahrlehrer-Portal</span>
+                <Compass className="w-4 h-4 text-sky-400 shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline font-bold">Coach Dashboard</span>
                 <span className="text-[10px] bg-sky-400 text-slate-950 px-1.5 py-0.2 rounded font-black tracking-wide uppercase">
                   Coach
                 </span>
@@ -1924,8 +1952,8 @@ export default function App() {
       </header>
       )}
 
-      {/* Main Container - Im Kunden-Portal vollflächig ohne Randabstände */}
-      <main className={activeTab === 'student' ? 'w-full min-h-screen p-0' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'}>
+      {/* Main Container - Im Kunden- & Coach-Dashboard vollflächig ohne Randabstände */}
+      <main className={activeTab === 'student' || activeTab === 'instructor' ? 'w-full min-h-screen p-0' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'}>
 
         {/* ============================================================== */}
         {/* TAB 1: ADMIN REPORTING & FAHRLEHRER-PAYROLL (PROMPT 1)        */}
@@ -2067,12 +2095,15 @@ export default function App() {
 
                 <button
                   type="button"
-                  onClick={() => setActiveTab('instructor')}
+                  onClick={() => {
+                    setCoachTab('overview');
+                    setActiveTab('instructor');
+                  }}
                   className="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 cursor-pointer shadow-2xs"
-                  title="Direktlink zum Fahrlehrer-Portal"
+                  title="Direktlink zum Coach Dashboard"
                 >
-                  <User className="w-3.5 h-3.5 text-sky-700" />
-                  <span>Fahrlehrer-Portal &rarr;</span>
+                  <Compass className="w-3.5 h-3.5 text-sky-700" />
+                  <span>Coach Dashboard &rarr;</span>
                 </button>
 
                 <button
@@ -2135,6 +2166,18 @@ export default function App() {
                     >
                       <Calendar className="w-4 h-4 text-sky-400" />
                       <span>Kalender &amp; Disposition</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCoachTab('overview');
+                        setActiveTab('instructor');
+                      }}
+                      className="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm cursor-pointer hover:shadow-md"
+                    >
+                      <Compass className="w-4 h-4 text-amber-300" />
+                      <span>Coach Dashboard</span>
                     </button>
                   </div>
                 </div>
@@ -7475,516 +7518,1306 @@ export default function App() {
         })()}
 
         {/* ============================================================== */}
-        {/* TAB 3: FAHRLEHRER-PORTAL & MONATSABSCHLUSS (PROMPT 2, 3 & 5)   */}
+        {/* TAB 3: COACH DASHBOARD (VOLLBILD WARM-ESPRESSO / PARCHMENT)    */}
         {/* ============================================================== */}
-        {activeTab === 'instructor' && (
-          <div className="space-y-6">
-            {/* Header & Instructor Switcher */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div
-                  className="w-14 h-14 rounded-2xl text-white font-extrabold text-xl flex items-center justify-center shadow-md"
-                  style={{ backgroundColor: currentInstructor.color_code }}
-                >
-                  {currentInstructor.name.split(' ').map(n => n[0]).join('')}
-                </div>
+        {activeTab === 'instructor' && (() => {
+          const coachFirstName = currentInstructor.name.split(' ')[0];
+          const coachInitials = currentInstructor.name
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase();
+
+          const upcomingCoachApps = appointments.filter(
+            a => a.instructor_id === currentInstructorId && (a.status === 'confirmed' || a.status === 'requested')
+          );
+          const nextCoachAppointment = upcomingCoachApps[0] || null;
+          const coachAvailabilities = availabilities.filter(a => a.instructor_id === currentInstructorId);
+          const coachWorkingHours = workingHours.filter(w => w.instructor_id === currentInstructorId);
+          const coachWebcalUrl = `webcal://coachingboot.ch/calendar/coach-${currentInstructor.id}.ics`;
+
+          const sessionMins = Math.floor(sessionRemainingSeconds / 60);
+          const sessionSecs = sessionRemainingSeconds % 60;
+          const sessionTimerText = `${sessionMins}:${sessionSecs < 10 ? '0' : ''}${sessionSecs}`;
+
+          const openAddWorkingHourModal = () => {
+            setWhDate('2026-03-24');
+            setWhHours(3);
+            setWhMinutes(0);
+            setWhStartTime('09:00');
+            setWhBreakMinutes(0);
+            setWhCategory('maintenance');
+            setWhSubject('Bootsprüfung Vorbereitung & Tanken');
+            setShowAddWorkingHour(true);
+          };
+
+          const baseStations = [
+            {
+              name: 'Luzern Alpenquai / Tribschen',
+              canton: 'LU',
+              note: 'Hauptstützpunkt & Prüfungsbereich',
+              mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Alpenquai+Luzern+Bootshafen'
+            },
+            {
+              name: 'Hergiswil NW Bootshafen',
+              canton: 'NW',
+              note: 'Ausbildung & Manöverübungen',
+              mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Bootshafen+Hergiswil+NW'
+            },
+            {
+              name: 'Stansstad NW Hafen',
+              canton: 'NW',
+              note: 'Nidwalden Charter & Check-in',
+              mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Hafen+Stansstad+NW'
+            },
+            {
+              name: 'Buochs NW Seefeld Pier',
+              canton: 'NW',
+              note: 'Praxis Kat. A / Segel Kat. D',
+              mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Seefeld+Pier+Buochs+NW'
+            }
+          ];
+
+          return (
+            <div className="flex flex-col lg:flex-row min-h-screen w-full bg-[#ede5dc]">
+              {/* ============================================================== */}
+              {/* LINKE COACH-SIDEBAR (WARM ESPRESSO #2d2421)                    */}
+              {/* ============================================================== */}
+              <aside className="w-full lg:w-72 xl:w-80 bg-[#2d2421] text-stone-200 p-5 sm:p-6 flex flex-col justify-between shrink-0 lg:h-screen lg:sticky lg:top-0 border-r border-[#3f3531] shadow-2xl z-20 lg:overflow-y-auto">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold text-slate-900">{currentInstructor.name}</h1>
-                    <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">Aktiv</span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">{currentInstructor.title} &bull; Lizenz: {currentInstructor.license_number}</p>
-                  <p className="text-xs text-sky-700 font-medium mt-0.5">
-                    Honorarmodell: {currentInstructor.pay_rate_type === 'per_hour' ? `CHF ${currentInstructor.pay_rate_amount.toFixed(2)} / Stunde` : `CHF ${currentInstructor.pay_rate_amount.toFixed(2)} Pauschale / Termin`}
-                    {currentInstructor.payroll_external_code && ` (Lohn-Code: ${currentInstructor.payroll_external_code})`}
-                  </p>
-                </div>
-              </div>
-
-              {/* Fahrlehrer & Monatswechsler */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <User className="w-4 h-4" />
-                  <span>Coach wechseln:</span>
-                </div>
-                <select
-                  value={currentInstructorId}
-                  onChange={e => setCurrentInstructorId(Number(e.target.value))}
-                  className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                >
-                  {INITIAL_INSTRUCTORS.map(i => (
-                    <option key={i.id} value={i.id}>{i.name}</option>
-                  ))}
-                </select>
-
-                <input
-                  type="month"
-                  value={selectedMonth}
-                  onChange={e => setSelectedMonth(e.target.value)}
-                  className="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                />
-              </div>
-            </div>
-
-            {/* Rollenbasierte Mitteilungen für Coaches mit Quittierungs-Log */}
-            <AnnouncementBanner
-              announcements={unreadCoachAnnouncements}
-              currentRole="coach"
-              currentUserId={currentInstructor.id}
-              currentUserName={currentInstructor.name}
-              onMarkRead={id => handleMarkAnnouncementRead(id, 'coach', currentInstructor.id, currentInstructor.name)}
-            />
-
-            {/* Monatsabschluss Banner */}
-            <div className={`p-6 rounded-2xl border shadow-sm transition ${
-              instructorMonthStats.openCount > 0 ? 'bg-amber-50/80 border-amber-300' : 'bg-emerald-50/80 border-emerald-300'
-            }`}>
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    {instructorMonthStats.openCount > 0 ? (
-                      <AlertTriangle className="w-5 h-5 text-amber-600" />
-                    ) : (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    )}
-                    <h2 className="text-lg font-bold text-slate-900">
-                      Monatsabschluss {selectedMonth}
-                    </h2>
-                  </div>
-                  <p className="text-sm text-slate-600 mt-1">
-                    {instructorMonthStats.openCount > 0
-                      ? `Du hast noch ${instructorMonthStats.openCount} offene Fahrstunde(n) im Wert von CHF ${instructorMonthStats.openAmount.toFixed(2)}. Bitte prüfe deine Fahrten und übergebe sie an den Admin zur Lohnabrechnung.`
-                      : `Alle ${instructorMonthStats.count} Fahrstunden dieses Monats wurden erfolgreich an die Administration übergeben oder bereits ausbezahlt.`}
-                  </p>
-                </div>
-
-                {instructorMonthStats.openCount > 0 && (
-                  <button
-                    onClick={handleCloseMonthForInstructor}
-                    className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-sm shadow-md transition flex items-center gap-2 self-start md:self-auto"
-                  >
-                    <Check className="w-4 h-4" />
-                    Monat {selectedMonth} jetzt abschliessen ({instructorMonthStats.openCount} Fahrten)
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Monats-KPIs des Fahrlehrers */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div className="text-xs uppercase font-semibold text-slate-500">Fahrten im Monat</div>
-                <div className="text-2xl font-bold text-slate-900 mt-1">{instructorMonthStats.count}</div>
-                <div className="text-xs text-slate-400 mt-1">{instructorMonthStats.totalHours} Stunden Ausbildungszeit</div>
-              </div>
-
-              <div className="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/40 shadow-sm">
-                <div className="text-xs uppercase font-semibold text-amber-700">Honorar Offen</div>
-                <div className="text-2xl font-bold text-amber-800 mt-1">CHF {instructorMonthStats.openAmount.toFixed(2)}</div>
-                <div className="text-xs text-amber-600 mt-1">{instructorMonthStats.openCount} Termin(e) zur Übergabe bereit</div>
-              </div>
-
-              <div className="bg-white p-4 rounded-xl border border-sky-200 bg-sky-50/40 shadow-sm">
-                <div className="text-xs uppercase font-semibold text-sky-700">Übergeben (Exported)</div>
-                <div className="text-2xl font-bold text-sky-800 mt-1">CHF {instructorMonthStats.exportedAmount.toFixed(2)}</div>
-                <div className="text-xs text-sky-600 mt-1">Warten auf Auszahlung</div>
-              </div>
-
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div className="text-xs uppercase font-semibold text-slate-500">Monatshonorar Gesamt</div>
-                <div className="text-2xl font-bold text-slate-900 mt-1">CHF {instructorMonthStats.totalAmount.toFixed(2)}</div>
-                <div className="text-xs text-emerald-600 mt-1">CHF {instructorMonthStats.paidAmount.toFixed(2)} bereits bezahlt</div>
-              </div>
-            </div>
-
-            {/* Unter-Tabs für Fahrlehrer (Fahrten, Bevorstehende, Absenzen, Zeiterfassung, HR) */}
-            <div className="border-b border-slate-200 flex space-x-4">
-              <button
-                onClick={() => setCoachTab('lessons')}
-                className={`pb-3 text-sm font-bold border-b-2 transition ${
-                  coachTab === 'lessons' ? 'border-sky-600 text-sky-600' : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Fahrten im {selectedMonth} ({instructorMonthStats.count})
-              </button>
-              <button
-                onClick={() => setCoachTab('upcoming')}
-                className={`pb-3 text-sm font-bold border-b-2 transition ${
-                  coachTab === 'upcoming' ? 'border-sky-600 text-sky-600' : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Bevorstehende Termine ({appointments.filter(a => a.instructor_id === currentInstructorId && a.status === 'confirmed').length})
-              </button>
-              <button
-                onClick={() => setCoachTab('availabilities')}
-                className={`pb-3 text-sm font-bold border-b-2 transition ${
-                  coachTab === 'availabilities' ? 'border-sky-600 text-sky-600' : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Absenzen &amp; Sperrzeiten ({availabilities.filter(a => a.instructor_id === currentInstructorId).length})
-              </button>
-              <button
-                onClick={() => setCoachTab('timesheet')}
-                className={`pb-3 text-sm font-bold border-b-2 transition ${
-                  coachTab === 'timesheet' ? 'border-sky-600 text-sky-600' : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                CH-Zeiterfassung &amp; Timesheets ({workingHours.filter(w => w.instructor_id === currentInstructorId).length})
-              </button>
-              <button
-                onClick={() => setCoachTab('hr')}
-                className={`pb-3 text-sm font-bold border-b-2 transition ${
-                  coachTab === 'hr' ? 'border-sky-600 text-sky-600' : 'border-transparent text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                HR-Personalakte
-              </button>
-            </div>
-
-            {/* Tab: Fahrten im Monat */}
-            {coachTab === 'lessons' && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <table className="w-full text-left text-sm text-slate-600">
-                  <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
-                    <tr>
-                      <th className="p-3">Datum &amp; Zeit</th>
-                      <th className="p-3">Kunde</th>
-                      <th className="p-3">Leistung &amp; Boot</th>
-                      <th className="p-3">Dauer</th>
-                      <th className="p-3 text-right">Mein Honorar</th>
-                      <th className="p-3">Status</th>
-                      <th className="p-3">Abrechnungsnotiz</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {instructorMonthStats.appointments.map(a => (
-                      <tr key={a.id} className="hover:bg-slate-50 transition">
-                        <td className="p-3 font-medium text-slate-900">
-                          <div>{a.date}</div>
-                          <div className="text-xs text-slate-400">{a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)}</div>
-                        </td>
-                        <td className="p-3">
-                          <div className="font-semibold text-slate-900">{a.customer_name}</div>
-                          <div className="text-xs text-slate-400">{a.customer_phone}</div>
-                        </td>
-                        <td className="p-3">
-                          <div className="text-slate-900">{a.service_name}</div>
-                          <div className="text-xs text-slate-400">{a.boat_name}</div>
-                        </td>
-                        <td className="p-3 text-slate-700">{a.duration_minutes} Min</td>
-                        <td className="p-3 text-right font-bold text-slate-900">CHF {a.instructor_payout_amount.toFixed(2)}</td>
-                        <td className="p-3">
-                          {a.instructor_payout_status === 'open' && (
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                              Offen
-                            </span>
-                          )}
-                          {a.instructor_payout_status === 'exported' && (
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800">
-                              An Admin übergeben
-                            </span>
-                          )}
-                          {a.instructor_payout_status === 'paid' && (
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                              Ausbezahlt
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-3 text-xs text-slate-500">{a.instructor_payout_note}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Tab: Bevorstehende Termine */}
-            {coachTab === 'upcoming' && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <table className="w-full text-left text-sm text-slate-600">
-                  <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
-                    <tr>
-                      <th className="p-3">Datum &amp; Zeit</th>
-                      <th className="p-3">Kunde &amp; Mobil</th>
-                      <th className="p-3">Leistung &amp; Boot</th>
-                      <th className="p-3">Treffpunkt / Hafen</th>
-                      <th className="p-3 text-right">Vorschau Honorar</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {appointments
-                      .filter(a => a.instructor_id === currentInstructorId && a.status === 'confirmed')
-                      .map(a => (
-                        <tr key={a.id} className="hover:bg-slate-50 transition">
-                          <td className="p-3 font-medium text-slate-900">
-                            <div className="text-sky-700 font-bold">{a.date}</div>
-                            <div className="text-xs text-slate-500">{a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)} Uhr</div>
-                          </td>
-                          <td className="p-3">
-                            <div className="font-semibold text-slate-900">{a.customer_name}</div>
-                            <div className="text-xs text-slate-500">{a.customer_phone} &bull; {a.customer_email}</div>
-                          </td>
-                          <td className="p-3">
-                            <div className="text-slate-900">{a.service_name}</div>
-                            <div className="text-xs text-slate-400">{a.boat_name}</div>
-                          </td>
-                          <td className="p-3 text-slate-700">{a.location_name}</td>
-                          <td className="p-3 text-right font-bold text-slate-900">CHF {a.instructor_payout_amount.toFixed(2)}</td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Tab: Absenzen & Sperrzeiten */}
-            {coachTab === 'availabilities' && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
-                  <div className="text-sm text-slate-600">
-                    Gemeldete Absenzen verhindern automatisch Doppelbuchungen im Kunden-Portal und Admin-Kalender.
-                  </div>
-                  <button
-                    onClick={() => setShowAddAbsence(true)}
-                    className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-xs"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Absenz / Sperrzeit erfassen (stundenweise)
-                  </button>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <table className="w-full text-left text-sm text-slate-600">
-                    <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
-                      <tr>
-                        <th className="p-3">Datum</th>
-                        <th className="p-3">Typ</th>
-                        <th className="p-3">Zeitfenster (von – bis)</th>
-                        <th className="p-3">Grund / Bemerkung</th>
-                        <th className="p-3 text-right">Aktion</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {availabilities
-                        .filter(a => a.instructor_id === currentInstructorId)
-                        .map(av => (
-                          <tr key={av.id} className="hover:bg-slate-50 transition">
-                            <td className="p-3 font-bold text-slate-900">{av.date}</td>
-                            <td className="p-3">
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                av.type === 'vacation' ? 'bg-emerald-100 text-emerald-800' :
-                                av.type === 'sick' ? 'bg-rose-100 text-rose-800' :
-                                av.type === 'military' ? 'bg-indigo-100 text-indigo-800' : 'bg-amber-100 text-amber-800'
-                              }`}>
-                                {av.type === 'vacation' ? 'Ferien / Urlaub' :
-                                 av.type === 'sick' ? 'Krankheit / Unfall' :
-                                 av.type === 'military' ? 'Militärdienst' : 'Sperrzeit'}
-                              </span>
-                            </td>
-                            <td className="p-3 text-slate-700 font-medium">
-                              {av.start_time && av.end_time ? (
-                                <span className="flex items-center gap-1.5 text-slate-900 font-semibold">
-                                  <Clock className="w-3.5 h-3.5 text-amber-600" />
-                                  {av.start_time.slice(0, 5)} – {av.end_time.slice(0, 5)} Uhr
-                                </span>
-                              ) : (
-                                <span className="text-slate-400">Ganztägig</span>
-                              )}
-                            </td>
-                            <td className="p-3 text-slate-600">{av.note}</td>
-                            <td className="p-3 text-right">
-                              <button
-                                onClick={() => setAvailabilities(prev => prev.filter(x => x.id !== av.id))}
-                                className="text-xs text-rose-600 hover:text-rose-800 font-semibold"
-                              >
-                                Löschen
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Tab: Zeiterfassung & Timesheets */}
-            {coachTab === 'timesheet' && (
-              <div className="space-y-4">
-                <div className="bg-white p-4 rounded-xl border border-slate-200 flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-sm">Schweizer Zeiterfassung (Timesheet)</h3>
-                    <p className="text-xs text-slate-500">Zusatzleistungen wie Bootswartung, Bereitstellung, Theorieunterricht oder Prüfungsbegleitung.</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setWhDate('2026-03-24');
-                      setWhHours(3);
-                      setWhMinutes(0);
-                      setWhStartTime('09:00');
-                      setWhBreakMinutes(0);
-                      setWhCategory('maintenance');
-                      setWhSubject('Bootsprüfung Vorbereitung & Tanken');
-                      setShowAddWorkingHour(true);
-                    }}
-                    className="px-3.5 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Arbeitszeit erfassen (h &amp; min)
-                  </button>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <table className="w-full text-left text-sm text-slate-600">
-                    <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
-                      <tr>
-                        <th className="p-3">Datum</th>
-                        <th className="p-3">Kategorie</th>
-                        <th className="p-3">Zeit &amp; Pause</th>
-                        <th className="p-3">Stunden</th>
-                        <th className="p-3 text-right">Ansatz (CHF)</th>
-                        <th className="p-3 text-right">Total (CHF)</th>
-                        <th className="p-3">Status</th>
-                        <th className="p-3">Betreff / Notiz</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {workingHours
-                        .filter(w => w.instructor_id === currentInstructorId)
-                        .map(w => (
-                          <tr key={w.id} className="hover:bg-slate-50 transition">
-                            <td className="p-3 font-bold text-slate-900">{w.date}</td>
-                            <td className="p-3 capitalize">{w.category}</td>
-                            <td className="p-3 text-slate-500">
-                              {w.start_time.slice(0, 5)} - {w.end_time.slice(0, 5)} ({w.break_minutes}m Pause)
-                            </td>
-                            <td className="p-3 font-bold text-slate-800">{w.total_hours.toFixed(2)} h</td>
-                            <td className="p-3 text-right">CHF {w.rate_amount.toFixed(2)}</td>
-                            <td className="p-3 text-right font-bold text-sky-700">CHF {w.total_amount.toFixed(2)}</td>
-                            <td className="p-3">
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                w.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
-                                w.status === 'submitted' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
-                              }`}>
-                                {w.status}
-                              </span>
-                            </td>
-                            <td className="p-3 text-xs text-slate-500">{w.note}</td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Tab: HR-Personalakte (Prompt 3) */}
-            {coachTab === 'hr' && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-indigo-600" />
-                      HR-Personalakte (bs_instructor_details)
-                    </h3>
-                    <p className="text-xs text-slate-500">Vertrauliche Personaldaten für das Schweizer Lohnsystem</p>
-                  </div>
-                  <span className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full font-semibold border border-indigo-200">
-                    CH Sozialversicherung
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                    <span className="text-xs uppercase font-semibold text-slate-400">AHV-Nummer (Schweiz)</span>
-                    <div className="font-mono font-bold text-slate-900">{currentInstructor.ahv_number || '756.xxxx.xxxx.xx'}</div>
+                  {/* Coaching Boot Emblem */}
+                  <div className="mb-6 flex flex-col items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setCoachTab('overview')}
+                      className="w-24 h-24 flex items-center justify-center relative group cursor-pointer focus:outline-hidden transition-transform hover:scale-105"
+                      title="Zur Coach Dashboard Übersicht"
+                    >
+                      <CoachingBootLogo className="w-20 h-20 rounded-2xl shadow-xl border border-stone-600/50 drop-shadow-md" />
+                    </button>
+                    <div className="mt-1 text-center">
+                      <div className="text-[11px] font-black tracking-widest text-amber-400 uppercase">COACHING BOOT</div>
+                      <div className="text-[10px] text-stone-400 font-medium">Vierwaldstättersee • Coach Dashboard</div>
+                    </div>
                   </div>
 
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                    <span className="text-xs uppercase font-semibold text-slate-400">Bank IBAN</span>
-                    <div className="font-mono font-bold text-slate-900">{currentInstructor.bank_iban}</div>
-                    <div className="text-xs text-slate-500">{currentInstructor.bank_name}, {currentInstructor.bank_city}</div>
-                  </div>
+                  {/* Coach Navigation Menu Items */}
+                  <nav className="space-y-1.5 text-sm font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setCoachTab('overview')}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
+                        coachTab === 'overview'
+                          ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
+                          : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <LayoutDashboard className="w-4.5 h-4.5 text-amber-400 shrink-0" />
+                        <span>Dashboard (Heute)</span>
+                      </div>
+                      {coachTab === 'overview' && <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />}
+                    </button>
 
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                    <span className="text-xs uppercase font-semibold text-slate-400">Wohnadresse</span>
-                    <div className="font-medium text-slate-900">{currentInstructor.address}</div>
-                  </div>
-
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                    <span className="text-xs uppercase font-semibold text-slate-400">Fahrlehrer-Lizenz</span>
-                    <div className="font-semibold text-slate-900">{currentInstructor.license_number}</div>
-                  </div>
-
-                  <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs uppercase font-semibold text-emerald-800 flex items-center gap-1">
-                        <Lock className="w-3.5 h-3.5 text-emerald-600" />
-                        Lohn-Stundensatz (Admin-Einstellung)
+                    <button
+                      type="button"
+                      onClick={() => setCoachTab('lessons')}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
+                        coachTab === 'lessons'
+                          ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
+                          : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Compass className="w-4.5 h-4.5 text-sky-400 shrink-0" />
+                        <span>Monatsfahrten</span>
+                      </div>
+                      <span className="text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-md bg-stone-800/80 text-stone-200">
+                        {instructorMonthStats.count}
                       </span>
-                      <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full font-bold">Fest hinterlegt</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCoachTab('upcoming')}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
+                        coachTab === 'upcoming'
+                          ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
+                          : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Calendar className="w-4.5 h-4.5 text-emerald-400 shrink-0" />
+                        <span>Bevorstehende Termine</span>
+                      </div>
+                      <span className="text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-md bg-stone-800/80 text-stone-200">
+                        {upcomingCoachApps.length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCoachTab('availabilities')}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
+                        coachTab === 'availabilities'
+                          ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
+                          : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Clock className="w-4.5 h-4.5 text-amber-300 shrink-0" />
+                        <span>Absenzen &amp; Sperrzeiten</span>
+                      </div>
+                      <span className="text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-md bg-stone-800/80 text-stone-200">
+                        {coachAvailabilities.length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCoachTab('timesheet')}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
+                        coachTab === 'timesheet'
+                          ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
+                          : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileSpreadsheet className="w-4.5 h-4.5 text-violet-400 shrink-0" />
+                        <span>CH-Zeiterfassung</span>
+                      </div>
+                      <span className="text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-md bg-stone-800/80 text-stone-200">
+                        {coachWorkingHours.length}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCoachTab('hr')}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
+                        coachTab === 'hr'
+                          ? 'bg-[#4a3d38] text-white font-bold shadow-sm border-l-4 border-amber-400 pl-3.5'
+                          : 'text-stone-300 hover:bg-[#3d322e] hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Shield className="w-4.5 h-4.5 text-indigo-400 shrink-0" />
+                        <span>HR-Personalakte</span>
+                      </div>
+                      {coachTab === 'hr' && <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowReportIssueModal(true)}
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer text-stone-300 hover:bg-[#3d322e] hover:text-white"
+                    >
+                      <div className="flex items-center gap-3">
+                        <AlertTriangle className="w-4.5 h-4.5 text-rose-400 shrink-0" />
+                        <span>Boot / Fehler melden</span>
+                      </div>
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                        Support
+                      </span>
+                    </button>
+                  </nav>
+                </div>
+
+                {/* Unterer Sidebar-Bereich: Coach-Wechsler, Session, Rollen-Umschalter, Admin-Link */}
+                <div className="pt-5 space-y-3.5 border-t border-stone-700/60 mt-6">
+                  {/* Coach-Profil Switcher (für Admin / Demo) */}
+                  <div className="bg-[#211a17] p-3 rounded-xl border border-stone-700/80 space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-stone-400 flex items-center justify-between">
+                      <span>Aktiver Coach</span>
+                      <span className="text-[9px] text-amber-400 font-bold">WECHSELN</span>
+                    </label>
+                    <select
+                      value={currentInstructorId}
+                      onChange={e => setCurrentInstructorId(Number(e.target.value))}
+                      className="w-full px-2.5 py-1.5 bg-[#2d2421] border border-stone-600/80 rounded-lg text-xs font-semibold text-white focus:outline-hidden focus:ring-2 focus:ring-amber-400/50 cursor-pointer"
+                    >
+                      {instructors.map(i => (
+                        <option key={i.id} value={i.id}>{i.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Live Session Countdown */}
+                  <div className="bg-[#211a17] p-2.5 rounded-xl border border-stone-700/80 text-[11px] flex items-center justify-between text-stone-300">
+                    <span className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${sessionRemainingSeconds > 60 ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500 animate-ping'}`} />
+                      Sitzung aktiv:
+                    </span>
+                    <span className="font-mono font-bold tabular-nums text-amber-300">{sessionTimerText} min</span>
+                  </div>
+
+                  {/* Rolle wechseln (Admin | Coach | Kunde) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-bold tracking-wider text-stone-400 uppercase">Rolle wechseln</span>
+                      <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-bold uppercase">PORTAL</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 bg-[#1f1816] p-1 rounded-xl text-[11px] font-medium">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('payroll')}
+                        className="py-1 px-2 rounded-lg text-center text-stone-400 hover:text-white transition cursor-pointer"
+                      >
+                        Admin
+                      </button>
+                      <button
+                        type="button"
+                        className="py-1 px-2 rounded-lg text-center bg-[#4a3d38] text-white font-bold shadow-xs"
+                      >
+                        Coach
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('student')}
+                        className="py-1 px-2 rounded-lg text-center text-stone-400 hover:text-white transition cursor-pointer"
+                      >
+                        Kunde
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Direktlink zurück ins Admin Dashboard */}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('payroll')}
+                    className="w-full py-2 px-3 bg-stone-800/80 hover:bg-stone-700 text-amber-300 border border-stone-600/70 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
+                  >
+                    <Shield className="w-3.5 h-3.5 text-amber-400" />
+                    <span>&larr; Admin Dashboard</span>
+                  </button>
+
+                  {/* Coach Profil Card */}
+                  <div className="bg-[#3b302c] p-3 rounded-2xl border border-stone-700/60 flex items-center justify-between gap-2 shadow-xs">
+                    <div className="flex items-center gap-2.5 overflow-hidden">
+                      <div
+                        className="w-9 h-9 rounded-xl text-white border border-white/20 flex items-center justify-center font-bold text-xs shrink-0 shadow-inner"
+                        style={{ backgroundColor: currentInstructor.color_code }}
+                      >
+                        {coachInitials}
+                      </div>
+                      <div className="truncate">
+                        <div className="text-xs font-bold text-white truncate">{currentInstructor.name}</div>
+                        <div className="text-[10px] text-amber-400/90 font-medium truncate">
+                          Coach &bull; CHF {currentInstructor.pay_rate_amount.toFixed(0)}/h
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCoachTab('hr')}
+                      className="text-stone-400 hover:text-white p-1.5 rounded-lg hover:bg-stone-700/50 transition cursor-pointer"
+                      title="HR-Personalakte öffnen"
+                    >
+                      <Shield className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Abmelden */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('login');
+                      setLoginSuccessMsg('Sie wurden erfolgreich vom Coach Dashboard abgemeldet.');
+                      setTimeout(() => setLoginSuccessMsg(null), 4000);
+                    }}
+                    className="w-full py-2 px-3 bg-[#3d322e]/60 hover:bg-rose-950/40 text-stone-300 hover:text-rose-200 border border-stone-700/70 hover:border-rose-800/60 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer"
+                  >
+                    <LogIn className="w-3.5 h-3.5 rotate-180" />
+                    <span>Abmelden</span>
+                  </button>
+                </div>
+              </aside>
+
+              {/* ============================================================== */}
+              {/* HAUPTINHALT COACH DASHBOARD (RECHTS)                           */}
+              {/* ============================================================== */}
+              <div className="flex-1 bg-[#ede5dc] p-5 sm:p-8 xl:p-10 space-y-6 overflow-y-auto min-h-screen">
+                <div className="max-w-[1500px] w-full mx-auto space-y-6">
+
+                  {/* Toast Feedback */}
+                  {coachFeedback && (
+                    <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl text-emerald-900 text-xs font-semibold flex items-center justify-between gap-3 shadow-xs">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                        <span>{coachFeedback}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCoachFeedback(null)}
+                        className="text-emerald-700 hover:text-emerald-950 cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Rollenbasierte Mitteilungen für Coaches mit Quittierungs-Log */}
+                  <AnnouncementBanner
+                    announcements={unreadCoachAnnouncements}
+                    currentRole="coach"
+                    currentUserId={currentInstructor.id}
+                    currentUserName={currentInstructor.name}
+                    onMarkRead={id => handleMarkAnnouncementRead(id, 'coach', currentInstructor.id, currentInstructor.name)}
+                  />
+
+                  {/* 1. Header Zeile mit Monatswechsler & Quick Actions */}
+                  <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                    <div>
+                      <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                        Ahoi, {coachFirstName}!
+                      </h1>
+                      <p className="text-xs text-slate-600 mt-1 flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-slate-800">{currentInstructor.title}</span>
+                        <span className="text-slate-400">&bull;</span>
+                        <span>Lizenz: {currentInstructor.license_number}</span>
+                        <span className="text-slate-400">&bull;</span>
+                        <span className="font-semibold text-amber-900 tabular-nums">
+                          {currentInstructor.pay_rate_type === 'per_hour'
+                            ? `CHF ${currentInstructor.pay_rate_amount.toFixed(2)} / Std.`
+                            : `CHF ${currentInstructor.pay_rate_amount.toFixed(2)} Pauschale`}
+                        </span>
+                      </p>
                     </div>
 
-                    {editingRateInstructorId === currentInstructor.id ? (
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="relative flex-1">
-                          <input
-                            type="number"
-                            step="0.5"
-                            min="0"
-                            value={tempRateInput}
-                            onChange={e => setTempRateInput(parseFloat(e.target.value) || 0)}
-                            className="w-full px-2.5 py-1 text-sm bg-white border border-emerald-400 rounded-lg font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
-                          />
-                          <span className="absolute right-2.5 top-1 text-xs text-slate-400 font-medium">CHF</span>
+                    <div className="flex flex-wrap items-center gap-2.5 self-start xl:self-auto">
+                      <input
+                        type="month"
+                        value={selectedMonth}
+                        onChange={e => setSelectedMonth(e.target.value)}
+                        className="px-3 py-2 bg-white border border-[#d5c5b2] rounded-xl text-xs font-bold text-slate-800 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-amber-500/40 cursor-pointer"
+                        title="Abrechnungsmonat wählen"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => setShowReportIssueModal(true)}
+                        className="px-3.5 py-2 bg-white hover:bg-[#f6f0e7] text-rose-700 font-semibold text-xs rounded-xl border border-[#d5c5b2] shadow-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+                      >
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+                        <span>Vorfall / Fehler</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowAddAbsence(true)}
+                        className="px-3.5 py-2 bg-white hover:bg-[#f6f0e7] text-slate-800 font-semibold text-xs rounded-xl border border-[#d5c5b2] shadow-xs flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+                      >
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Absenz erfassen</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={openAddWorkingHourModal}
+                        className="px-4 py-2 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap"
+                      >
+                        <Plus className="w-4 h-4 text-amber-400" />
+                        <span>Arbeitszeit erfassen</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2. Side-by-Side Seewetter-Kacheln (Luzern & Hergiswil) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Wetterkarte Luzern */}
+                    <div className="bg-[#f6f0e7] rounded-3xl p-5 border border-[#e3d6c5] shadow-xs flex items-center justify-between hover:border-[#d5c5b2] transition">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-[#eee4d5] border border-[#ded0be] flex items-center justify-center text-slate-600">
+                          <Cloud className="w-7 h-7 text-slate-500 stroke-1" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-slate-900 text-sm">Luzern</h3>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-200/80 tabular-nums">
+                              <Waves className="w-3.5 h-3.5 text-sky-600" />
+                              <span>11.4°C See</span>
+                            </span>
+                          </div>
+                          <div className="text-3xl font-extrabold text-slate-900 mt-0.5 tracking-tight tabular-nums">
+                            7°C
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right space-y-1.5">
+                        <div className="flex items-center gap-1.5 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setShowWeatherModal('luzern')}
+                            className="text-[10px] text-amber-900 bg-white/90 hover:bg-white px-2 py-0.5 rounded-md border border-[#ded0be] uppercase tracking-wider font-bold inline-flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                          >
+                            DETAILS
+                          </button>
+                          <a
+                            href="https://search.ch/meteo/luzern"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-amber-950 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-md border border-amber-300/80 uppercase tracking-wider font-extrabold inline-flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                          >
+                            PROGNOSE <ExternalLink className="w-2.5 h-2.5 text-amber-800" />
+                          </a>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium justify-end tabular-nums">
+                          <Wind className="w-3.5 h-3.5 text-slate-400" />
+                          <span>7.7 km/h</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Wetterkarte Hergiswil NW */}
+                    <div className="bg-[#f6f0e7] rounded-3xl p-5 border border-[#e3d6c5] shadow-xs flex items-center justify-between hover:border-[#d5c5b2] transition">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-[#eee4d5] border border-[#ded0be] flex items-center justify-center text-slate-600">
+                          <Cloud className="w-7 h-7 text-slate-500 stroke-1" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-slate-900 text-sm">Hergiswil</h3>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-200/80 tabular-nums">
+                              <Waves className="w-3.5 h-3.5 text-sky-600" />
+                              <span>11.2°C See</span>
+                            </span>
+                          </div>
+                          <div className="text-3xl font-extrabold text-slate-900 mt-0.5 tracking-tight tabular-nums">
+                            7°C
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right space-y-1.5">
+                        <div className="flex items-center gap-1.5 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setShowWeatherModal('hergiswil')}
+                            className="text-[10px] text-amber-900 bg-white/90 hover:bg-white px-2 py-0.5 rounded-md border border-[#ded0be] uppercase tracking-wider font-bold inline-flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                          >
+                            DETAILS
+                          </button>
+                          <a
+                            href="https://search.ch/meteo/hergiswil"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-amber-950 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-md border border-amber-300/80 uppercase tracking-wider font-extrabold inline-flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                          >
+                            PROGNOSE <ExternalLink className="w-2.5 h-2.5 text-amber-800" />
+                          </a>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium justify-end tabular-nums">
+                          <Wind className="w-3.5 h-3.5 text-slate-400" />
+                          <span>8.9 km/h</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Monatsabschluss Banner */}
+                  <div className={`p-5 rounded-2xl border shadow-xs transition ${
+                    instructorMonthStats.openCount > 0
+                      ? 'bg-[#fff9eb] border-[#f5dfa8]'
+                      : 'bg-emerald-50/90 border-emerald-200'
+                  }`}>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                          instructorMonthStats.openCount > 0
+                            ? 'bg-amber-100 text-amber-800 border-amber-200'
+                            : 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                        }`}>
+                          {instructorMonthStats.openCount > 0 ? (
+                            <AlertTriangle className="w-5 h-5 text-amber-600" />
+                          ) : (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                          )}
+                        </div>
+                        <div>
+                          <h2 className="text-sm sm:text-base font-extrabold text-slate-900">
+                            Monatsabschluss {selectedMonth}
+                          </h2>
+                          <p className="text-xs text-slate-600 mt-0.5">
+                            {instructorMonthStats.openCount > 0
+                              ? `Du hast noch ${instructorMonthStats.openCount} offene Fahrstunde(n) im Wert von CHF ${instructorMonthStats.openAmount.toFixed(2)}. Bitte prüfe deine Fahrten und übergebe sie an den Admin zur Lohnabrechnung.`
+                              : `Alle ${instructorMonthStats.count} Fahrstunden dieses Monats wurden erfolgreich an die Administration übergeben oder bereits ausbezahlt.`}
+                          </p>
+                        </div>
+                      </div>
+
+                      {instructorMonthStats.openCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleCloseMonthForInstructor}
+                          className="px-4 py-2.5 bg-[#2d2421] hover:bg-[#3d322e] text-white font-bold rounded-xl text-xs shadow-xs transition flex items-center gap-2 self-start md:self-auto shrink-0 cursor-pointer"
+                        >
+                          <Check className="w-4 h-4 text-amber-400" />
+                          <span>Monat {selectedMonth} jetzt abschliessen ({instructorMonthStats.openCount})</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 4. Monats-KPIs des Coaches (Tabular Numerals & Parchment Cards) */}
+                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div className="bg-[#f6f0e7] p-5 rounded-2xl border border-[#e3d6c5] shadow-xs">
+                      <div className="text-[11px] uppercase tracking-wider font-bold text-slate-500">Fahrten im Monat</div>
+                      <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-1 tabular-nums">{instructorMonthStats.count}</div>
+                      <div className="text-xs text-slate-600 mt-1 tabular-nums">{instructorMonthStats.totalHours} Std. Ausbildungszeit</div>
+                    </div>
+
+                    <div className="bg-[#f6f0e7] p-5 rounded-2xl border border-amber-300/80 shadow-xs">
+                      <div className="text-[11px] uppercase tracking-wider font-bold text-amber-800">Honorar Offen</div>
+                      <div className="text-2xl sm:text-3xl font-black text-amber-900 mt-1 tabular-nums">CHF {instructorMonthStats.openAmount.toFixed(2)}</div>
+                      <div className="text-xs text-amber-700 mt-1 tabular-nums">{instructorMonthStats.openCount} Termin(e) zur Übergabe</div>
+                    </div>
+
+                    <div className="bg-[#f6f0e7] p-5 rounded-2xl border border-sky-300/80 shadow-xs">
+                      <div className="text-[11px] uppercase tracking-wider font-bold text-sky-800">Übergeben (Exported)</div>
+                      <div className="text-2xl sm:text-3xl font-black text-sky-900 mt-1 tabular-nums">CHF {instructorMonthStats.exportedAmount.toFixed(2)}</div>
+                      <div className="text-xs text-sky-700 mt-1">Warten auf Auszahlung</div>
+                    </div>
+
+                    <div className="bg-[#f6f0e7] p-5 rounded-2xl border border-[#e3d6c5] shadow-xs">
+                      <div className="text-[11px] uppercase tracking-wider font-bold text-slate-500">Monatshonorar Gesamt</div>
+                      <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-1 tabular-nums">CHF {instructorMonthStats.totalAmount.toFixed(2)}</div>
+                      <div className="text-xs text-emerald-700 font-semibold mt-1 tabular-nums">CHF {instructorMonthStats.paidAmount.toFixed(2)} bereits bezahlt</div>
+                    </div>
+                  </div>
+
+                  {/* ============================================================== */}
+                  {/* SUBVIEW: ÜBERSICHT / HEUTE AUF DEM SEE                         */}
+                  {/* ============================================================== */}
+                  {coachTab === 'overview' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* LINKE SPALTE (2/3): NÄCHSTER EINSATZ + TAGESPLAN + MONATSFAHRTEN */}
+                      <div className="lg:col-span-2 space-y-6">
+
+                        {/* Nächster Einsatz & Tagesplan */}
+                        <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] shadow-xs p-6">
+                          <div className="flex items-center justify-between pb-4 border-b border-[#ded0be] mb-5">
+                            <div className="flex items-center gap-2">
+                              <Anchor className="w-4 h-4 text-amber-700" />
+                              <h3 className="font-bold text-slate-900 text-sm">
+                                Nächster Einsatz &amp; Bevorstehende Termine ({upcomingCoachApps.length})
+                              </h3>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setCoachTab('upcoming')}
+                              className="px-3 py-1.5 bg-white hover:bg-[#ede5dc] text-slate-800 font-semibold text-xs rounded-xl flex items-center gap-1 transition border border-[#d5c5b2] cursor-pointer"
+                            >
+                              <span>Alle anzeigen</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          {upcomingCoachApps.length === 0 ? (
+                            <div className="py-10 text-center space-y-2">
+                              <div className="w-12 h-12 mx-auto rounded-2xl bg-[#eee4d5] border border-[#ded0be] flex items-center justify-center text-slate-500">
+                                <Calendar className="w-6 h-6" />
+                              </div>
+                              <h4 className="font-bold text-slate-800 text-sm">Keine offenen Einsätze eingetragen.</h4>
+                              <p className="text-xs text-slate-600">Alle zugewiesenen Termine wurden bereits abgeschlossen oder sind im Monatsbericht.</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              {nextCoachAppointment && (
+                                <div className="p-4 bg-white rounded-2xl border border-[#d5c5b2] shadow-2xs space-y-3">
+                                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                                    <div>
+                                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800">Nächster Einsatz</span>
+                                      <h4 className="text-base font-extrabold text-slate-900 mt-0.5">
+                                        {nextCoachAppointment.service_name} &mdash; {nextCoachAppointment.customer_name}
+                                      </h4>
+                                      <div className="text-xs text-slate-600 mt-1 flex flex-wrap items-center gap-3">
+                                        <span className="font-mono font-bold text-slate-800 tabular-nums">
+                                          {nextCoachAppointment.date} &bull; {nextCoachAppointment.start_time.slice(0, 5)}–{nextCoachAppointment.end_time.slice(0, 5)} Uhr
+                                        </span>
+                                        <span className="text-slate-400">&bull;</span>
+                                        <span className="font-semibold text-slate-800">{nextCoachAppointment.boat_name}</span>
+                                      </div>
+                                    </div>
+                                    <div className="text-left sm:text-right shrink-0">
+                                      <div className="text-sm font-black text-emerald-800 tabular-nums">
+                                        + CHF {nextCoachAppointment.instructor_payout_amount.toFixed(2)}
+                                      </div>
+                                      <div className="text-[11px] text-slate-500">{nextCoachAppointment.duration_minutes} Min.</div>
+                                    </div>
+                                  </div>
+
+                                  <div className="pt-3 border-t border-stone-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                    <div className="flex flex-wrap items-center gap-3 text-slate-600">
+                                      <a
+                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nextCoachAppointment.location_name)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 font-semibold text-sky-800 hover:underline"
+                                      >
+                                        <MapPin className="w-3.5 h-3.5 text-sky-600" />
+                                        <span>{nextCoachAppointment.location_name}</span>
+                                        <ExternalLink className="w-3 h-3" />
+                                      </a>
+                                      <a
+                                        href={`tel:${nextCoachAppointment.customer_phone}`}
+                                        className="inline-flex items-center gap-1 font-medium text-slate-700 hover:text-slate-950"
+                                      >
+                                        <Phone className="w-3.5 h-3.5 text-slate-500" />
+                                        <span>{nextCoachAppointment.customer_phone}</span>
+                                      </a>
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setCompleteLessonModalApp(nextCoachAppointment);
+                                        setCompleteLessonNote('');
+                                      }}
+                                      className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>Lektion abschliessen</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {upcomingCoachApps.length > 1 && (
+                                <div className="divide-y divide-[#ded0be]">
+                                  {upcomingCoachApps.slice(1, 5).map(app => (
+                                    <div key={app.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                                      <div>
+                                        <div className="font-bold text-slate-900">
+                                          {app.date} &bull; {app.start_time.slice(0, 5)} Uhr &mdash; {app.customer_name}
+                                        </div>
+                                        <div className="text-slate-600 mt-0.5">
+                                          {app.service_name} &bull; {app.boat_name} &bull; {app.location_name}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <span className="font-bold text-slate-900 tabular-nums">CHF {app.instructor_payout_amount.toFixed(2)}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setCompleteLessonModalApp(app);
+                                            setCompleteLessonNote('');
+                                          }}
+                                          className="px-2.5 py-1.5 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 rounded-lg font-bold transition cursor-pointer"
+                                        >
+                                          Abschliessen
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Aktuelle Monatsfahrten Kompaktansicht */}
+                        <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] shadow-xs p-6">
+                          <div className="flex items-center justify-between pb-4 border-b border-[#ded0be] mb-4">
+                            <div className="flex items-center gap-2">
+                              <FileSpreadsheet className="w-4 h-4 text-slate-600" />
+                              <h3 className="font-bold text-slate-900 text-sm">
+                                Fahrten &amp; Honorare im {selectedMonth} ({instructorMonthStats.count})
+                              </h3>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setCoachTab('lessons')}
+                              className="px-3 py-1.5 bg-white hover:bg-[#ede5dc] text-slate-800 font-semibold text-xs rounded-xl flex items-center gap-1 transition border border-[#d5c5b2] cursor-pointer"
+                            >
+                              <span>Vollansicht öffnen</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <div className="divide-y divide-[#ded0be]">
+                            {instructorMonthStats.appointments.slice(0, 4).map(a => (
+                              <div key={a.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                                <div>
+                                  <div className="font-bold text-slate-900">
+                                    {a.date} ({a.start_time.slice(0, 5)}–{a.end_time.slice(0, 5)}) &bull; {a.customer_name}
+                                  </div>
+                                  <div className="text-slate-600 mt-0.5">
+                                    {a.service_name} &bull; {a.boat_name}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3 shrink-0">
+                                  <span className="font-bold text-slate-900 tabular-nums">CHF {a.instructor_payout_amount.toFixed(2)}</span>
+                                  <span className={`text-[11px] font-bold ${
+                                    a.instructor_payout_status === 'paid' ? 'text-emerald-700' :
+                                    a.instructor_payout_status === 'exported' ? 'text-sky-700' : 'text-amber-700'
+                                  }`}>
+                                    {a.instructor_payout_status === 'paid' ? 'Ausbezahlt' :
+                                     a.instructor_payout_status === 'exported' ? 'Übergeben' : 'Offen'}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                            {instructorMonthStats.appointments.length === 0 && (
+                              <div className="py-6 text-center text-xs text-slate-500">
+                                Für {selectedMonth} liegen noch keine abgerechneten Fahrten vor.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* RECHTE SPALTE (1/3): FLOTTENSTATUS, WEBCAL SYNC, STÜTZPUNKTE */}
+                      <div className="space-y-6">
+                        {/* Flotte Status Widget */}
+                        <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] shadow-xs p-5 space-y-3">
+                          <div className="flex items-center justify-between pb-2.5 border-b border-[#ded0be]">
+                            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                              <Ship className="w-4 h-4 text-sky-700" />
+                              <span>Flotte &amp; Verfügbarkeit</span>
+                            </h3>
+                            <span className="text-[11px] font-bold text-slate-600 tabular-nums">
+                              {boats.filter(b => b.status === 'available').length}/{boats.length} frei
+                            </span>
+                          </div>
+
+                          <div className="divide-y divide-[#ded0be]">
+                            {boats.map(b => (
+                              <div key={b.id} className="py-2.5 flex items-center justify-between gap-2 text-xs">
+                                <div className="min-w-0">
+                                  <div className="font-bold text-slate-900 truncate">{b.name}</div>
+                                  <div className="text-[11px] text-slate-500 truncate">{b.registration} &bull; {b.berth}</div>
+                                </div>
+                                <span className={`text-[11px] font-bold shrink-0 ${
+                                  b.status === 'available' ? 'text-emerald-700' :
+                                  b.status === 'occupied' ? 'text-amber-700' : 'text-rose-700'
+                                }`}>
+                                  {b.status === 'available' ? 'Bereit' : b.status === 'occupied' ? 'Auf See' : 'Wartung'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Kalender-Sync (WebCal) */}
+                        <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] shadow-xs p-5 space-y-3">
+                          <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 pb-2 border-b border-[#ded0be]">
+                            <Link className="w-4 h-4 text-amber-700" />
+                            <span>Coach Kalender-Sync (WebCal)</span>
+                          </h3>
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            Abonniere deinen persönlichen Einsatzplan direkt in Apple Kalender, Google Calendar oder Outlook.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              readOnly
+                              value={coachWebcalUrl}
+                              className="flex-1 px-2.5 py-1.5 bg-white border border-[#d5c5b2] rounded-lg text-[11px] font-mono text-slate-700 truncate"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (navigator.clipboard) {
+                                  navigator.clipboard.writeText(coachWebcalUrl).catch(() => {});
+                                }
+                                setCoachWebcalCopied(true);
+                                setTimeout(() => setCoachWebcalCopied(false), 3000);
+                              }}
+                              className="px-3 py-1.5 bg-[#2d2421] hover:bg-[#3d322e] text-white rounded-lg text-xs font-bold flex items-center gap-1 transition cursor-pointer shrink-0"
+                            >
+                              {coachWebcalCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-amber-400" />}
+                              <span>{coachWebcalCopied ? 'Kopiert' : 'Kopieren'}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Stützpunkte Google Maps Links */}
+                        <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] shadow-xs p-5 space-y-3">
+                          <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 pb-2 border-b border-[#ded0be]">
+                            <MapPin className="w-4 h-4 text-sky-700" />
+                            <span>Stützpunkte &amp; Häfen</span>
+                          </h3>
+                          <div className="divide-y divide-[#ded0be]">
+                            {baseStations.map(st => (
+                              <a
+                                key={st.name}
+                                href={st.mapsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="py-2.5 flex items-center justify-between gap-2 text-xs hover:text-sky-800 transition group"
+                              >
+                                <div className="min-w-0">
+                                  <div className="font-bold text-slate-900 group-hover:text-sky-800 truncate">{st.name}</div>
+                                  <div className="text-[11px] text-slate-500">{st.note}</div>
+                                </div>
+                                <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-700 shrink-0" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ============================================================== */}
+                  {/* SUBVIEW: MONATSFAHRTEN & ABRECHNUNG                            */}
+                  {/* ============================================================== */}
+                  {coachTab === 'lessons' && (
+                    <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] shadow-xs overflow-hidden">
+                      <div className="px-6 py-4 border-b border-[#ded0be] flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="font-bold text-slate-900 text-sm">
+                          Fahrten &amp; Honorare im {selectedMonth} ({instructorMonthStats.count})
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => setCoachTab('overview')}
+                          className="text-xs font-bold text-slate-700 hover:text-slate-950 cursor-pointer"
+                        >
+                          &larr; Zurück zur Übersicht
+                        </button>
+                      </div>
+                      <div className="overflow-x-auto bg-white">
+                        <table className="w-full text-left text-sm text-slate-600">
+                          <thead className="bg-[#f6f0e7] text-xs uppercase font-semibold text-slate-600 border-b border-[#ded0be]">
+                            <tr>
+                              <th className="p-3">Datum &amp; Zeit</th>
+                              <th className="p-3">Kunde</th>
+                              <th className="p-3">Leistung &amp; Boot</th>
+                              <th className="p-3">Dauer</th>
+                              <th className="p-3 text-right">Mein Honorar</th>
+                              <th className="p-3">Status</th>
+                              <th className="p-3">Abrechnungsnotiz</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {instructorMonthStats.appointments.map(a => (
+                              <tr key={a.id} className="hover:bg-[#faf7f2] transition">
+                                <td className="p-3 font-medium text-slate-900">
+                                  <div className="tabular-nums">{a.date}</div>
+                                  <div className="text-xs text-slate-400 tabular-nums">{a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)}</div>
+                                </td>
+                                <td className="p-3">
+                                  <div className="font-semibold text-slate-900">{a.customer_name}</div>
+                                  <div className="text-xs text-slate-400">{a.customer_phone}</div>
+                                </td>
+                                <td className="p-3">
+                                  <div className="text-slate-900">{a.service_name}</div>
+                                  <div className="text-xs text-slate-400">{a.boat_name}</div>
+                                </td>
+                                <td className="p-3 text-slate-700 tabular-nums">{a.duration_minutes} Min</td>
+                                <td className="p-3 text-right font-bold text-slate-900 tabular-nums">CHF {a.instructor_payout_amount.toFixed(2)}</td>
+                                <td className="p-3">
+                                  {a.instructor_payout_status === 'open' && (
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                                      Offen
+                                    </span>
+                                  )}
+                                  {a.instructor_payout_status === 'exported' && (
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800">
+                                      An Admin übergeben
+                                    </span>
+                                  )}
+                                  {a.instructor_payout_status === 'paid' && (
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                                      Ausbezahlt
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="p-3 text-xs text-slate-500">{a.instructor_payout_note}</td>
+                              </tr>
+                            ))}
+                            {instructorMonthStats.appointments.length === 0 && (
+                              <tr>
+                                <td colSpan={7} className="p-8 text-center text-xs text-slate-500">
+                                  Keine Fahrten im ausgewählten Monat {selectedMonth}.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ============================================================== */}
+                  {/* SUBVIEW: BEVORSTEHENDE TERMINE & 1-KLICK ABSCHLIESSEN          */}
+                  {/* ============================================================== */}
+                  {coachTab === 'upcoming' && (
+                    <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] shadow-xs overflow-hidden">
+                      <div className="px-6 py-4 border-b border-[#ded0be] flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="font-bold text-slate-900 text-sm">
+                          Bevorstehende Termine ({upcomingCoachApps.length})
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => setCoachTab('overview')}
+                          className="text-xs font-bold text-slate-700 hover:text-slate-950 cursor-pointer"
+                        >
+                          &larr; Zurück zur Übersicht
+                        </button>
+                      </div>
+                      <div className="overflow-x-auto bg-white">
+                        <table className="w-full text-left text-sm text-slate-600">
+                          <thead className="bg-[#f6f0e7] text-xs uppercase font-semibold text-slate-600 border-b border-[#ded0be]">
+                            <tr>
+                              <th className="p-3">Datum &amp; Zeit</th>
+                              <th className="p-3">Kunde &amp; Mobil</th>
+                              <th className="p-3">Leistung &amp; Boot</th>
+                              <th className="p-3">Treffpunkt / Hafen</th>
+                              <th className="p-3 text-right">Honorar</th>
+                              <th className="p-3 text-right">Aktion</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {upcomingCoachApps.map(a => (
+                              <tr key={a.id} className="hover:bg-[#faf7f2] transition">
+                                <td className="p-3 font-medium text-slate-900">
+                                  <div className="text-sky-700 font-bold tabular-nums">{a.date}</div>
+                                  <div className="text-xs text-slate-500 tabular-nums">{a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)} Uhr</div>
+                                </td>
+                                <td className="p-3">
+                                  <div className="font-semibold text-slate-900">{a.customer_name}</div>
+                                  <div className="text-xs text-slate-500">{a.customer_phone} &bull; {a.customer_email}</div>
+                                </td>
+                                <td className="p-3">
+                                  <div className="text-slate-900">{a.service_name}</div>
+                                  <div className="text-xs text-slate-400">{a.boat_name}</div>
+                                </td>
+                                <td className="p-3 text-slate-700">{a.location_name}</td>
+                                <td className="p-3 text-right font-bold text-slate-900 tabular-nums">CHF {a.instructor_payout_amount.toFixed(2)}</td>
+                                <td className="p-3 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCompleteLessonModalApp(a);
+                                      setCompleteLessonNote('');
+                                    }}
+                                    className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition cursor-pointer"
+                                  >
+                                    Abschliessen
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                            {upcomingCoachApps.length === 0 && (
+                              <tr>
+                                <td colSpan={6} className="p-8 text-center text-xs text-slate-500">
+                                  Aktuell stehen keine bestätigten Einsätze mehr aus.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ============================================================== */}
+                  {/* SUBVIEW: ABSENZEN & SPERRZEITEN                                */}
+                  {/* ============================================================== */}
+                  {coachTab === 'availabilities' && (
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap justify-between items-center gap-3 bg-[#f6f0e7] p-4 rounded-2xl border border-[#e3d6c5]">
+                        <div className="text-xs text-slate-700">
+                          Gemeldete Absenzen verhindern automatisch Doppelbuchungen im Kunden-Portal und Admin-Kalender.
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleSaveInstructorRate(currentInstructor.id, tempRateInput)}
-                          className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold shadow-xs"
+                          onClick={() => setShowAddAbsence(true)}
+                          className="px-3.5 py-2 bg-[#2d2421] hover:bg-[#3d322e] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
                         >
-                          Speichern
+                          <Plus className="w-4 h-4 text-amber-400" />
+                          <span>Absenz / Sperrzeit erfassen</span>
                         </button>
+                      </div>
+
+                      <div className="bg-white rounded-2xl border border-[#e3d6c5] shadow-xs overflow-hidden">
+                        <table className="w-full text-left text-sm text-slate-600">
+                          <thead className="bg-[#f6f0e7] text-xs uppercase font-semibold text-slate-600 border-b border-[#ded0be]">
+                            <tr>
+                              <th className="p-3">Datum</th>
+                              <th className="p-3">Typ</th>
+                              <th className="p-3">Zeitfenster (von – bis)</th>
+                              <th className="p-3">Grund / Bemerkung</th>
+                              <th className="p-3 text-right">Aktion</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {coachAvailabilities.map(av => (
+                              <tr key={av.id} className="hover:bg-[#faf7f2] transition">
+                                <td className="p-3 font-bold text-slate-900 tabular-nums">{av.date}</td>
+                                <td className="p-3">
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    av.type === 'vacation' ? 'bg-emerald-100 text-emerald-800' :
+                                    av.type === 'sick' ? 'bg-rose-100 text-rose-800' :
+                                    av.type === 'military' ? 'bg-indigo-100 text-indigo-800' : 'bg-amber-100 text-amber-800'
+                                  }`}>
+                                    {av.type === 'vacation' ? 'Ferien / Urlaub' :
+                                     av.type === 'sick' ? 'Krankheit / Unfall' :
+                                     av.type === 'military' ? 'Militärdienst' : 'Sperrzeit'}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-slate-700 font-medium tabular-nums">
+                                  {av.start_time && av.end_time ? (
+                                    <span className="flex items-center gap-1.5 text-slate-900 font-semibold">
+                                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                      {av.start_time.slice(0, 5)} – {av.end_time.slice(0, 5)} Uhr
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400">Ganztägig</span>
+                                  )}
+                                </td>
+                                <td className="p-3 text-slate-600">{av.note}</td>
+                                <td className="p-3 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => setAvailabilities(prev => prev.filter(x => x.id !== av.id))}
+                                    className="text-xs text-rose-600 hover:text-rose-800 font-semibold cursor-pointer"
+                                  >
+                                    Löschen
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ============================================================== */}
+                  {/* SUBVIEW: SCHWEIZER ZEITERFASSUNG & TIMESHEETS                  */}
+                  {/* ============================================================== */}
+                  {coachTab === 'timesheet' && (
+                    <div className="space-y-4">
+                      <div className="bg-[#f6f0e7] p-4 rounded-2xl border border-[#e3d6c5] flex flex-wrap justify-between items-center gap-3">
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-sm">Schweizer Zeiterfassung (Timesheet)</h3>
+                          <p className="text-xs text-slate-600">Zusatzleistungen wie Bootswartung, Bereitstellung, Theorieunterricht oder Prüfungsbegleitung.</p>
+                        </div>
                         <button
                           type="button"
-                          onClick={() => setEditingRateInstructorId(null)}
-                          className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs"
+                          onClick={openAddWorkingHourModal}
+                          className="px-3.5 py-2 bg-[#2d2421] hover:bg-[#3d322e] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                        >
+                          <Plus className="w-4 h-4 text-amber-400" />
+                          <span>Arbeitszeit erfassen (h &amp; min)</span>
+                        </button>
+                      </div>
+
+                      <div className="bg-white rounded-2xl border border-[#e3d6c5] shadow-xs overflow-x-auto">
+                        <table className="w-full text-left text-sm text-slate-600">
+                          <thead className="bg-[#f6f0e7] text-xs uppercase font-semibold text-slate-600 border-b border-[#ded0be]">
+                            <tr>
+                              <th className="p-3">Datum</th>
+                              <th className="p-3">Kategorie</th>
+                              <th className="p-3">Zeit &amp; Pause</th>
+                              <th className="p-3">Stunden</th>
+                              <th className="p-3 text-right">Ansatz (CHF)</th>
+                              <th className="p-3 text-right">Total (CHF)</th>
+                              <th className="p-3">Status</th>
+                              <th className="p-3">Betreff / Notiz</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {coachWorkingHours.map(w => (
+                              <tr key={w.id} className="hover:bg-[#faf7f2] transition">
+                                <td className="p-3 font-bold text-slate-900 tabular-nums">{w.date}</td>
+                                <td className="p-3 capitalize">{w.category}</td>
+                                <td className="p-3 text-slate-500 tabular-nums">
+                                  {w.start_time.slice(0, 5)} - {w.end_time.slice(0, 5)} ({w.break_minutes}m Pause)
+                                </td>
+                                <td className="p-3 font-bold text-slate-800 tabular-nums">{w.total_hours.toFixed(2)} h</td>
+                                <td className="p-3 text-right tabular-nums">CHF {w.rate_amount.toFixed(2)}</td>
+                                <td className="p-3 text-right font-bold text-sky-800 tabular-nums">CHF {w.total_amount.toFixed(2)}</td>
+                                <td className="p-3">
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                    w.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
+                                    w.status === 'submitted' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
+                                  }`}>
+                                    {w.status}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-xs text-slate-500">{w.note}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ============================================================== */}
+                  {/* SUBVIEW: HR-PERSONALAKTE                                       */}
+                  {/* ============================================================== */}
+                  {coachTab === 'hr' && (
+                    <div className="bg-[#f6f0e7] rounded-2xl border border-[#e3d6c5] p-6 shadow-xs space-y-6">
+                      <div className="flex items-center justify-between border-b border-[#ded0be] pb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <Shield className="w-5 h-5 text-indigo-700" />
+                            HR-Personalakte (bs_instructor_details)
+                          </h3>
+                          <p className="text-xs text-slate-600">Vertrauliche Personaldaten für das Schweizer Lohnsystem (AHV / ALV / NBU)</p>
+                        </div>
+                        <span className="text-xs bg-white text-indigo-800 px-3 py-1 rounded-full font-semibold border border-[#d5c5b2]">
+                          CH Sozialversicherung
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 text-sm">
+                        <div className="p-4 bg-white rounded-xl border border-[#e3d6c5] space-y-1">
+                          <span className="text-xs uppercase font-semibold text-slate-400">AHV-Nummer (Schweiz)</span>
+                          <div className="font-mono font-bold text-slate-900 tabular-nums">{currentInstructor.ahv_number || '756.xxxx.xxxx.xx'}</div>
+                        </div>
+
+                        <div className="p-4 bg-white rounded-xl border border-[#e3d6c5] space-y-1">
+                          <span className="text-xs uppercase font-semibold text-slate-400">Bank IBAN</span>
+                          <div className="font-mono font-bold text-slate-900">{currentInstructor.bank_iban}</div>
+                          <div className="text-xs text-slate-500">{currentInstructor.bank_name}, {currentInstructor.bank_city}</div>
+                        </div>
+
+                        <div className="p-4 bg-white rounded-xl border border-[#e3d6c5] space-y-1">
+                          <span className="text-xs uppercase font-semibold text-slate-400">Wohnadresse</span>
+                          <div className="font-medium text-slate-900">{currentInstructor.address}</div>
+                        </div>
+
+                        <div className="p-4 bg-white rounded-xl border border-[#e3d6c5] space-y-1">
+                          <span className="text-xs uppercase font-semibold text-slate-400">Fahrlehrer-Lizenz</span>
+                          <div className="font-semibold text-slate-900">{currentInstructor.license_number}</div>
+                        </div>
+
+                        <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs uppercase font-semibold text-emerald-800 flex items-center gap-1">
+                              <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                              Lohn-Stundensatz (Admin-Einstellung)
+                            </span>
+                            <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full font-bold">Fest hinterlegt</span>
+                          </div>
+
+                          {editingRateInstructorId === currentInstructor.id ? (
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="relative flex-1">
+                                <input
+                                  type="number"
+                                  step="0.5"
+                                  min="0"
+                                  value={tempRateInput}
+                                  onChange={e => setTempRateInput(parseFloat(e.target.value) || 0)}
+                                  className="w-full px-2.5 py-1 text-sm bg-white border border-emerald-400 rounded-lg font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 tabular-nums"
+                                />
+                                <span className="absolute right-2.5 top-1 text-xs text-slate-400 font-medium">CHF</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleSaveInstructorRate(currentInstructor.id, tempRateInput)}
+                                className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer"
+                              >
+                                Speichern
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingRateInstructorId(null)}
+                                className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs cursor-pointer"
+                              >
+                                Abbrechen
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <div className="font-bold text-emerald-900 text-base tabular-nums">
+                                CHF {currentInstructor.pay_rate_amount.toFixed(2)} <span className="text-xs font-normal text-emerald-700">/ Std.</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingRateInstructorId(currentInstructor.id);
+                                  setTempRateInput(currentInstructor.pay_rate_amount);
+                                }}
+                                className="px-2.5 py-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-semibold transition cursor-pointer"
+                              >
+                                Ansatz anpassen (Admin)
+                              </button>
+                            </div>
+                          )}
+                          <p className="text-[10px] text-emerald-700">
+                            Vom Admin hinterlegt: Wird automatisch und unveränderbar in alle Timesheets übernommen.
+                          </p>
+                        </div>
+
+                        <div className="p-4 bg-white rounded-xl border border-[#e3d6c5] space-y-1">
+                          <span className="text-xs uppercase font-semibold text-slate-400">Kreditoren-Code</span>
+                          <div className="font-mono font-semibold text-slate-900">{currentInstructor.payroll_external_code}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+
+              {/* ============================================================== */}
+              {/* MODAL: LEKTION ABSCHLIESSEN (COACH 1-KLICK RAPPORT)            */}
+              {/* ============================================================== */}
+              {completeLessonModalApp && (
+                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+                  <div className="bg-[#f6f0e7] rounded-3xl max-w-md w-full shadow-2xl border border-[#ded0be] overflow-hidden">
+                    <div className="px-6 py-4 bg-[#2d2421] text-white flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                        <h3 className="font-bold text-sm sm:text-base">Lektion abschliessen</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCompleteLessonModalApp(null)}
+                        className="text-stone-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <form onSubmit={handleCompleteLessonByCoach} className="p-6 space-y-4 text-xs">
+                      <div className="p-3.5 bg-white rounded-2xl border border-[#d5c5b2]">
+                        <div className="font-bold text-slate-900 text-sm">{completeLessonModalApp.customer_name}</div>
+                        <div className="text-slate-600 mt-0.5">
+                          {completeLessonModalApp.service_name} &bull; {completeLessonModalApp.date} ({completeLessonModalApp.start_time.slice(0, 5)} Uhr)
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="font-bold text-slate-800 block">Ausbildungs- / Rapportnotiz (optional)</label>
+                        <textarea
+                          rows={3}
+                          value={completeLessonNote}
+                          onChange={e => setCompleteLessonNote(e.target.value)}
+                          placeholder="z. B. Hafenmanöver rückwärts sauber geübt, bereit für Prüfungsvorbereitung."
+                          className="w-full p-3 bg-white border border-[#d5c5b2] rounded-xl text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30"
+                        />
+                      </div>
+                      <div className="flex items-center justify-end gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setCompleteLessonModalApp(null)}
+                          className="px-4 py-2 bg-white hover:bg-stone-50 border border-[#d5c5b2] text-slate-700 font-semibold rounded-xl cursor-pointer"
                         >
                           Abbrechen
                         </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div className="font-bold text-emerald-900 text-base">
-                          CHF {currentInstructor.pay_rate_amount.toFixed(2)} <span className="text-xs font-normal text-emerald-700">/ Std.</span>
-                        </div>
                         <button
-                          type="button"
-                          onClick={() => {
-                            setEditingRateInstructorId(currentInstructor.id);
-                            setTempRateInput(currentInstructor.pay_rate_amount);
-                          }}
-                          className="px-2.5 py-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-semibold transition"
-                          title="Als Admin den Stundensatz für diesen Fahrlehrer anpassen"
+                          type="submit"
+                          className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer"
                         >
-                          Ansatz anpassen (Admin)
+                          <Check className="w-4 h-4" />
+                          <span>Jetzt abschliessen</span>
                         </button>
                       </div>
-                    )}
-                    <p className="text-[10px] text-emerald-700">
-                      Vom Admin hinterlegt: Wird automatisch und unveränderbar in alle Timesheets übernommen.
-                    </p>
-                  </div>
-
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                    <span className="text-xs uppercase font-semibold text-slate-400">Kreditoren-Code</span>
-                    <div className="font-mono font-semibold text-slate-900">{currentInstructor.payroll_external_code}</div>
+                    </form>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          );
+        })()}
 
         {/* ============================================================== */}
         {/* TAB 4: NAUTIC EIGENE LOGONSEITE MIT SVG LOGO                   */}
@@ -10822,10 +11655,11 @@ export default function App() {
                     <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
                   </button>
 
-                  {/* Direktlink: Fahrlehrer-Portal */}
+                  {/* Direktlink: Coach Dashboard */}
                   <button
                     type="button"
                     onClick={() => {
+                      setCoachTab('overview');
                       setActiveTab('instructor');
                       setAdminMenuOpen(false);
                     }}
@@ -10837,14 +11671,14 @@ export default function App() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-400/30 flex items-center justify-center shrink-0">
-                        <User className="w-5 h-5 text-sky-400" />
+                        <Compass className="w-5 h-5 text-sky-400" />
                       </div>
                       <div>
                         <div className="font-bold text-sm text-white flex items-center gap-2">
-                          Fahrlehrer-Portal
+                          Coach Dashboard
                           <span className="text-[10px] bg-sky-400 text-slate-950 px-1.5 py-0.2 rounded font-black uppercase">Coach</span>
                         </div>
-                        <div className="text-xs text-slate-400">Fahrstunden, Stundenrapport &amp; Monatsabschluss</div>
+                        <div className="text-xs text-slate-400">Einsatzplan, CH-Timesheets &amp; Monatsabschluss</div>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />

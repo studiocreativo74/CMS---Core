@@ -78,6 +78,7 @@ ob_start();
                 <li><a class="dropdown-item rounded-2 py-2 active" href="?route=admin/boating/promos"><i class="bi bi-ticket-perforated me-2 text-success"></i>Gutscheine &amp; Codes</a></li>
                 <li><a class="dropdown-item rounded-2 py-2" href="?route=admin/boating/customers"><i class="bi bi-people me-2 text-success"></i>Kunden CRM</a></li>
                 <li><a class="dropdown-item rounded-2 py-2" href="?route=admin/boating/reports"><i class="bi bi-graph-up-arrow me-2 text-secondary"></i>Auswertungen &amp; Payroll</a></li>
+                <li><a class="dropdown-item rounded-2 py-2" href="?route=admin/boating/instructor-portal"><i class="bi bi-person-workspace me-2 text-primary"></i>Coach Dashboard</a></li>
                 <li><a class="dropdown-item rounded-2 py-2" href="?route=admin/boating/settings"><i class="bi bi-gear me-2"></i>Einstellungen</a></li>
             </ul>
         </div>

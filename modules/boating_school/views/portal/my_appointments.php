@@ -1028,6 +1028,79 @@ ob_start();
                             <!-- Angebote Grid -->
                             <div class="row g-4" id="storeOffersGrid">
                                 
+                                <?php if (!empty($availableServices) && is_array($availableServices) && count($availableServices) > 0): ?>
+                                    <?php foreach ($availableServices as $srvItem):
+                                        $sName = (string) ($srvItem['name'] ?? 'Angebot');
+                                        $sPrice = (float) ($srvItem['price'] ?? 0.0);
+                                        $sTax = (float) ($srvItem['tax_rate'] ?? 0.0);
+                                        $sCatRaw = (string) ($srvItem['category'] ?? 'practical');
+                                        $sCatLabel = class_exists('BoatingSchoolService') ? BoatingSchoolService::getCategoryLabel($sCatRaw) : $sCatRaw;
+                                        $sDuration = (int) ($srvItem['duration_minutes'] ?? 0);
+                                        $sDesc = (string) ($srvItem['description'] ?? '');
+                                        
+                                        $catTokens = ['all'];
+                                        $lowName = mb_strtolower($sName);
+                                        $lowCat = mb_strtolower($sCatRaw);
+                                        if (stripos($lowName, 'abo') !== false || stripos($lowCat, 'package') !== false || stripos($lowName, 'paket') !== false) {
+                                            $catTokens[] = 'abo';
+                                        }
+                                        if (stripos($lowName, 'fahrstunde') !== false || stripos($lowName, 'lektion') !== false || stripos($lowCat, 'practical') !== false || stripos($lowName, 'kat. a') !== false) {
+                                            $catTokens[] = 'fahrschule';
+                                        }
+                                        if (stripos($lowName, 'miete') !== false || stripos($lowCat, 'rental') !== false || stripos($lowName, 'charter') !== false) {
+                                            $catTokens[] = 'miete';
+                                        }
+                                        if (stripos($lowName, 'coaching') !== false || stripos($lowCat, 'coaching') !== false) {
+                                            $catTokens[] = 'coaching';
+                                        }
+                                        if (stripos($lowName, 'theorie') !== false || stripos($lowName, 'e-learning') !== false || stripos($lowCat, 'digital') !== false || stripos($lowCat, 'theory') !== false) {
+                                            $catTokens[] = 'digital';
+                                        }
+                                        $cardDataCategory = implode(' ', array_unique($catTokens));
+                                    ?>
+                                        <div class="col-12 col-md-6 col-lg-4 store-offer-card" data-category="<?= htmlspecialchars($cardDataCategory, ENT_QUOTES, 'UTF-8') ?>">
+                                            <div class="card h-100 rounded-4 border bg-white shadow-2xs overflow-hidden d-flex flex-column justify-content-between" style="border-color: #e2d5c3 !important;">
+                                                <div class="p-3.5">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="badge rounded-pill text-dark fw-bold text-uppercase px-2.5 py-1" style="background-color: <?= ($sTax > 0) ? '#dcfce7' : '#fde68a' ?>; font-size: 0.65rem;">
+                                                            <?= htmlspecialchars($sCatLabel, ENT_QUOTES, 'UTF-8') ?>
+                                                        </span>
+                                                        <?php if ($sDuration > 0): ?>
+                                                            <span class="small text-muted fw-semibold" style="font-size: 0.72rem;">
+                                                                <i class="bi bi-clock me-1"></i><?= $sDuration ?> Min.
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <h6 class="fw-bold text-dark mb-1"><?= htmlspecialchars($sName, ENT_QUOTES, 'UTF-8') ?></h6>
+                                                    <p class="text-muted small mb-3" style="font-size: 0.78rem;">
+                                                        <?= nl2br(htmlspecialchars($sDesc !== '' ? $sDesc : 'Praxisausbildung oder Bootsmiete auf dem Vierwaldstättersee mit Coaching Boot.', ENT_QUOTES, 'UTF-8')) ?>
+                                                    </p>
+                                                    <div class="d-flex flex-wrap gap-1 mb-2">
+                                                        <span class="badge rounded-pill bg-light text-secondary border" style="font-size: 0.65rem;">Luzern &amp; Hergiswil</span>
+                                                        <?php if (!empty($srvItem['code'])): ?>
+                                                            <span class="badge rounded-pill bg-light text-secondary border" style="font-size: 0.65rem;"><?= htmlspecialchars((string) $srvItem['code'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                                <div class="p-3.5 pt-2 border-top bg-light bg-opacity-50" style="border-color: #f1e9dd !important;">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2.5">
+                                                        <div>
+                                                            <div class="h5 fw-extrabold text-dark mb-0">CHF <?= number_format($sPrice, 2, '.', "'") ?></div>
+                                                            <?php if ($sTax > 0): ?>
+                                                                <span class="text-success fw-bold" style="font-size: 0.68rem;">inkl. <?= number_format($sTax, 1) ?>% MWST (Miete)</span>
+                                                            <?php else: ?>
+                                                                <span class="text-success fw-bold" style="font-size: 0.68rem;">0.0% MWST (Art. 21 MWSTG)</span>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" class="btn w-100 fw-bold btn-sm rounded-3 py-2 text-white shadow-2xs" style="background-color: #2d2421;" onclick="selectStoreOfferAndBook(<?= htmlspecialchars(json_encode($sName), ENT_QUOTES, 'UTF-8') ?>);">
+                                                        Diesen Service wählen &rarr;
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
                                 <!-- Angebot 1: 10er VIP Abo Motorboot Kat. A -->
                                 <div class="col-12 col-md-6 col-lg-4 store-offer-card" data-category="abo fahrschule">
                                     <div class="card h-100 rounded-4 border bg-white shadow-2xs overflow-hidden d-flex flex-column justify-content-between" style="border-color: #e2d5c3 !important;">
@@ -1293,7 +1366,7 @@ ob_start();
                                         </div>
                                     </div>
                                 </div>
-
+                                <?php endif; ?>
                             </div>
                         </div>
 
